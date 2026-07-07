@@ -14,6 +14,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Store,
+  HelpCircle,
 } from "lucide-react"
 
 interface NavItem {
@@ -25,10 +26,14 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Orders", href: "/orders", icon: ShoppingBag, badge: "New" },
+  { label: "Orders", href: "/orders", icon: ShoppingBag, badge: "3" },
   { label: "Menu Items", href: "/menu", icon: UtensilsCrossed },
   { label: "Customers", href: "/customers", icon: Users },
+]
+
+const bottomItems: NavItem[] = [
   { label: "Settings", href: "/settings", icon: Settings },
+  { label: "Help & Support", href: "/help", icon: HelpCircle },
 ]
 
 interface SidebarProps {
@@ -42,21 +47,36 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
   return (
     <aside
       className={cn(
-        "fixed left-0 top-0 z-40 h-screen border-r border-border bg-card transition-all duration-300 flex flex-col",
-        collapsed ? "w-16" : "w-64"
+        "fixed left-0 top-0 z-40 h-screen flex flex-col border-r border-gray-200/80 bg-white transition-all duration-300",
+        collapsed ? "w-[72px]" : "w-[260px]"
       )}
     >
-      <div className={cn("flex h-16 items-center border-b border-border px-4", collapsed && "justify-center")}>
-        {!collapsed && (
-          <Link href="/dashboard" className="flex items-center gap-2">
-            <Store className="h-6 w-6 text-primary" />
-            <span className="text-lg font-bold">Roti Dukaan</span>
+      {/* Logo */}
+      <div className={cn("flex h-16 items-center border-b border-gray-100 px-5", collapsed && "justify-center px-0")}>
+        {!collapsed ? (
+          <Link href="/dashboard" className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-500 shadow-sm shadow-orange-500/20">
+              <Store className="h-5 w-5 text-white" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[15px] font-bold text-gray-900 leading-tight">Roti Dukaan</span>
+              <span className="text-[10px] font-medium text-gray-400 uppercase tracking-wider">Admin</span>
+            </div>
           </Link>
+        ) : (
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-500 shadow-sm shadow-orange-500/20">
+            <Store className="h-5 w-5 text-white" />
+          </div>
         )}
-        {collapsed && <Store className="h-6 w-6 text-primary" />}
       </div>
 
-      <nav className="flex-1 space-y-1 p-2">
+      {/* Navigation */}
+      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
+        <div className={cn("mb-3", collapsed && "hidden")}>
+          <span className="px-3 text-[10px] font-semibold uppercase tracking-widest text-gray-400">
+            Main Menu
+          </span>
+        </div>
         {navItems.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
           return (
@@ -64,20 +84,20 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-all duration-200",
                 isActive
-                  ? "bg-primary/10 text-primary"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                  ? "bg-orange-50 text-orange-600 shadow-sm"
+                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
                 collapsed && "justify-center px-2"
               )}
               title={collapsed ? item.label : undefined}
             >
-              <item.icon className="h-5 w-5 shrink-0" />
+              <item.icon className={cn("h-[18px] w-[18px] shrink-0 transition-colors", isActive ? "text-orange-500" : "text-gray-400 group-hover:text-gray-600")} />
               {!collapsed && (
                 <>
                   <span className="flex-1">{item.label}</span>
                   {item.badge && (
-                    <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                    <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-orange-500 px-1.5 text-[10px] font-bold text-white">
                       {item.badge}
                     </span>
                   )}
@@ -88,26 +108,47 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
         })}
       </nav>
 
-      <div className="border-t border-border p-2">
-        {!collapsed && (
-          <button className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
-            <LogOut className="h-5 w-5 shrink-0" />
-            <span>Log out</span>
-          </button>
-        )}
-        {collapsed && (
-          <button className="flex w-full items-center justify-center rounded-lg px-2 py-2.5 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors" title="Log out">
-            <LogOut className="h-5 w-5" />
-          </button>
-        )}
+      {/* Bottom Section */}
+      <div className="border-t border-gray-100 px-3 py-3 space-y-1">
+        {bottomItems.map((item) => {
+          const isActive = pathname === item.href
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(
+                "flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-all duration-200",
+                isActive
+                  ? "bg-orange-50 text-orange-600"
+                  : "text-gray-500 hover:bg-gray-50 hover:text-gray-700",
+                collapsed && "justify-center px-2"
+              )}
+              title={collapsed ? item.label : undefined}
+            >
+              <item.icon className="h-[18px] w-[18px] shrink-0" />
+              {!collapsed && <span>{item.label}</span>}
+            </Link>
+          )
+        })}
+
+        <button
+          className={cn(
+            "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium text-gray-500 hover:bg-red-50 hover:text-red-600 transition-all duration-200",
+            collapsed && "justify-center px-2"
+          )}
+        >
+          <LogOut className="h-[18px] w-[18px] shrink-0" />
+          {!collapsed && <span>Log out</span>}
+        </button>
       </div>
 
+      {/* Collapse Toggle */}
       {onToggle && (
         <button
           onClick={onToggle}
-          className="absolute -right-3 top-20 z-50 flex h-6 w-6 items-center justify-center rounded-full border bg-background shadow-md hover:bg-muted transition-colors"
+          className="absolute -right-3 top-20 z-50 flex h-6 w-6 items-center justify-center rounded-full border border-gray-200 bg-white shadow-sm hover:bg-gray-50 hover:shadow-md transition-all duration-200"
         >
-          {collapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />}
+          {collapsed ? <ChevronRight className="h-3 w-3 text-gray-500" /> : <ChevronLeft className="h-3 w-3 text-gray-500" />}
         </button>
       )}
     </aside>

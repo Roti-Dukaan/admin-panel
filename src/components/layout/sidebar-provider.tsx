@@ -18,7 +18,7 @@ export function SidebarProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen bg-muted/30">
+    <div className="min-h-screen bg-gray-50/50">
       <Sidebar collapsed={collapsed} onToggle={() => setCollapsed(!collapsed)} />
       <main
         className={cn(
