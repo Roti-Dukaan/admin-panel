@@ -1,0 +1,84 @@
+"use client"
+
+import * as React from "react"
+import { useRouter } from "next/navigation"
+import { toast } from "sonner"
+import type { AuthStep } from "../types/admin-auth"
+
+const DEMO_OTP = "483921"
+
+export function useAdminLogin() {
+  const router = useRouter()
+  const [step, setStep] = React.useState<AuthStep>("phone")
+  const [phoneNumber, setPhoneNumber] = React.useState("")
+  const [otp, setOtp] = React.useState("")
+  const [isLoading, setIsLoading] = React.useState(false)
+  const [isResending, setIsResending] = React.useState(false)
+  const [countdown, setCountdown] = React.useState(0)
+
+  React.useEffect(() => {
+    if (countdown <= 0) return
+    const timer = setTimeout(() => setCountdown(countdown - 1), 1000)
+    return () => clearTimeout(timer)
+  }, [countdown])
+
+  const handleContinue = React.useCallback(async () => {
+    if (phoneNumber.length !== 10) {
+      toast.error("Please enter a valid 10-digit phone number")
+      return
+    }
+    setIsLoading(true)
+    await new Promise((resolve) => setTimeout(resolve, 1000))
+    setIsLoading(false)
+    setStep("otp")
+    setCountdown(30)
+    toast.info("Demo OTP: 483921")
+  }, [phoneNumber])
+
+  const handleVerifyOtp = React.useCallback(async () => {
+    if (otp.length !== 6) {
+      toast.error("Please enter a valid 6-digit OTP")
+      return
+    }
+    setIsLoading(true)
+    await new Promise((resolve) => setTimeout(resolve, 1000))
+    setIsLoading(false)
+
+    if (otp === DEMO_OTP) {
+      toast.success("Login successful!")
+      router.push("/dashboard")
+    } else {
+      toast.error("Invalid OTP. Please try again.")
+      setOtp("")
+    }
+  }, [otp, router])
+
+  const handleResendOtp = React.useCallback(async () => {
+    if (countdown > 0) return
+    setIsResending(true)
+    await new Promise((resolve) => setTimeout(resolve, 1000))
+    setIsResending(false)
+    setCountdown(30)
+    toast.info("OTP resent. Demo OTP: 483921")
+  }, [countdown])
+
+  const handleBack = React.useCallback(() => {
+    setStep("phone")
+    setOtp("")
+  }, [])
+
+  return {
+    step,
+    phoneNumber,
+    otp,
+    isLoading,
+    isResending,
+    countdown,
+    setPhoneNumber,
+    setOtp,
+    handleContinue,
+    handleVerifyOtp,
+    handleResendOtp,
+    handleBack,
+  }
+}
