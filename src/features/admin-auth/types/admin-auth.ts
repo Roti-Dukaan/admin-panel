@@ -1,8 +1,8 @@
-export type AuthStep = "phone" | "otp"
+export type AuthStep = "email" | "otp"
 
 export interface AdminAuthState {
   step: AuthStep
-  phoneNumber: string
+  email: string
   otp: string
   isLoading: boolean
   isResending: boolean
@@ -10,7 +10,7 @@ export interface AdminAuthState {
 }
 
 export interface AdminAuthActions {
-  setPhoneNumber: (phone: string) => void
+  setEmail: (email: string) => void
   setOtp: (otp: string) => void
   handleContinue: () => void
   handleVerifyOtp: () => void

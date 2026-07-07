@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { motion, AnimatePresence } from "motion/react"
-import { PhoneStep } from "./PhoneStep"
+import { EmailStep } from "./EmailStep"
 import { OtpStep } from "./OtpStep"
 import { useAdminLogin } from "../hooks/useAdminLogin"
 import { Store } from "lucide-react"
@@ -10,12 +10,12 @@ import { Store } from "lucide-react"
 export function AdminLoginCard() {
   const {
     step,
-    phoneNumber,
+    email,
     otp,
     isLoading,
     isResending,
     countdown,
-    setPhoneNumber,
+    setEmail,
     setOtp,
     handleContinue,
     handleVerifyOtp,
@@ -41,11 +41,11 @@ export function AdminLoginCard() {
       </div>
 
       <AnimatePresence mode="wait">
-        {step === "phone" ? (
-          <PhoneStep
-            key="phone"
-            phoneNumber={phoneNumber}
-            onPhoneChange={setPhoneNumber}
+        {step === "email" ? (
+          <EmailStep
+            key="email"
+            email={email}
+            onEmailChange={setEmail}
             onContinue={handleContinue}
             isLoading={isLoading}
           />
@@ -60,7 +60,7 @@ export function AdminLoginCard() {
             isLoading={isLoading}
             isResending={isResending}
             countdown={countdown}
-            phoneNumber={phoneNumber}
+            email={email}
           />
         )}
       </AnimatePresence>

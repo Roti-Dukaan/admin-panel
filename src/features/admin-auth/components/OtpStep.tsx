@@ -3,7 +3,6 @@
 import * as React from "react"
 import { motion } from "motion/react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Loader2, ArrowLeft, Shield, RotateCcw } from "lucide-react"
 
 interface OtpStepProps {
@@ -15,7 +14,7 @@ interface OtpStepProps {
   isLoading: boolean
   isResending: boolean
   countdown: number
-  phoneNumber: string
+  email: string
 }
 
 export function OtpStep({
@@ -27,7 +26,7 @@ export function OtpStep({
   isLoading,
   isResending,
   countdown,
-  phoneNumber,
+  email,
 }: OtpStepProps) {
   const inputRefs = React.useRef<(HTMLInputElement | null)[]>([])
 
@@ -82,7 +81,7 @@ export function OtpStep({
               Verify OTP
             </h1>
             <p className="text-sm text-gray-500">
-              Sent to +91 {phoneNumber}
+              Sent to {email}
             </p>
           </div>
         </div>

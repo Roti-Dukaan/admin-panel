@@ -9,8 +9,8 @@ const DEMO_OTP = "483921"
 
 export function useAdminLogin() {
   const router = useRouter()
-  const [step, setStep] = React.useState<AuthStep>("phone")
-  const [phoneNumber, setPhoneNumber] = React.useState("")
+  const [step, setStep] = React.useState<AuthStep>("email")
+  const [email, setEmail] = React.useState("")
   const [otp, setOtp] = React.useState("")
   const [isLoading, setIsLoading] = React.useState(false)
   const [isResending, setIsResending] = React.useState(false)
@@ -23,8 +23,9 @@ export function useAdminLogin() {
   }, [countdown])
 
   const handleContinue = React.useCallback(async () => {
-    if (phoneNumber.length !== 10) {
-      toast.error("Please enter a valid 10-digit phone number")
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      toast.error("Please enter a valid email address")
       return
     }
     setIsLoading(true)
@@ -33,7 +34,7 @@ export function useAdminLogin() {
     setStep("otp")
     setCountdown(30)
     toast.info("Demo OTP: 483921")
-  }, [phoneNumber])
+  }, [email])
 
   const handleVerifyOtp = React.useCallback(async () => {
     if (otp.length !== 6) {
@@ -63,18 +64,18 @@ export function useAdminLogin() {
   }, [countdown])
 
   const handleBack = React.useCallback(() => {
-    setStep("phone")
+    setStep("email")
     setOtp("")
   }, [])
 
   return {
     step,
-    phoneNumber,
+    email,
     otp,
     isLoading,
     isResending,
     countdown,
-    setPhoneNumber,
+    setEmail,
     setOtp,
     handleContinue,
     handleVerifyOtp,
