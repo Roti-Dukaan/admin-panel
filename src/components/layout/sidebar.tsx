@@ -16,6 +16,10 @@ import {
   Store,
   HelpCircle,
   ClipboardList,
+  CreditCard,
+  Clock,
+  Shield,
+  BarChart3,
 } from "lucide-react"
 
 interface NavItem {
@@ -31,6 +35,10 @@ const navItems: NavItem[] = [
   { label: "Kitchen", href: "/kitchen", icon: UtensilsCrossed },
   { label: "Menu Items", href: "/menu", icon: ClipboardList },
   { label: "Customers", href: "/customers", icon: Users },
+  { label: "Subscription Plans", href: "/subscription-plans", icon: CreditCard },
+  { label: "Delivery Slots", href: "/delivery-slots", icon: Clock },
+  { label: "Reports & Analytics", href: "/reports", icon: BarChart3 },
+  { label: "Roles & Permissions", href: "/admin/roles", icon: Shield },
 ]
 
 const bottomItems: NavItem[] = [
