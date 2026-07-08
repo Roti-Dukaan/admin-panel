@@ -8,8 +8,10 @@ export type OrderStatus =
   | "cancelled"
 
 export type PaymentMethod = "cod" | "online" | "subscription"
-export type PaymentStatus = "pending" | "paid" | "failed" | "refunded"
+export type PaymentStatus = "pending" | "paid" | "failed" | "refunded" | "cod_pending" | "cod_collected"
 export type OrderType = "one_time" | "subscription"
+export type PaymentGateway = "razorpay" | null
+export type CodCollectionStatus = "pending" | "collected" | "failed_collection"
 
 export interface Customer {
   id: string
@@ -41,10 +43,25 @@ export interface PaymentInfo {
   method: PaymentMethod
   status: PaymentStatus
   transactionId?: string
+  gateway?: PaymentGateway
+  paymentDateTime?: string
+  referenceNumber?: string
+  discount: number
   subtotal: number
   taxes: number
   deliveryCharges: number
   grandTotal: number
+  cod?: {
+    collectionStatus: CodCollectionStatus
+    collectionTime?: string
+    collectedBy?: string
+  }
+  paymentTimeline?: {
+    initiated?: string
+    authorized?: string
+    successful?: string
+    failed?: string
+  }
 }
 
 export interface OrderTimelineEntry {
@@ -81,6 +98,7 @@ export interface OrderFilters {
   dateFilter: "today" | "tomorrow" | "this_week" | "all"
   status: OrderStatus | "all"
   paymentMethod: PaymentMethod | "all"
+  paymentStatus: PaymentStatus | "all"
   orderType: OrderType | "all"
   search: string
 }
@@ -121,4 +139,21 @@ export const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
   paid: "Paid",
   failed: "Failed",
   refunded: "Refunded",
+  cod_pending: "COD Pending",
+  cod_collected: "COD Collected",
+}
+
+export const PAYMENT_STATUS_CONFIG: Record<PaymentStatus, { bgClass: string; textClass: string; dotClass: string }> = {
+  paid: { bgClass: "bg-emerald-100", textClass: "text-emerald-800", dotClass: "bg-emerald-500" },
+  pending: { bgClass: "bg-amber-100", textClass: "text-amber-800", dotClass: "bg-amber-500" },
+  failed: { bgClass: "bg-red-100", textClass: "text-red-800", dotClass: "bg-red-500" },
+  refunded: { bgClass: "bg-violet-100", textClass: "text-violet-800", dotClass: "bg-violet-500" },
+  cod_pending: { bgClass: "bg-orange-100", textClass: "text-orange-800", dotClass: "bg-orange-500" },
+  cod_collected: { bgClass: "bg-green-100", textClass: "text-green-800", dotClass: "bg-green-500" },
+}
+
+export const PAYMENT_METHOD_CONFIG: Record<PaymentMethod, { label: string; color: string; bgClass: string }> = {
+  online: { label: "Online", color: "emerald", bgClass: "bg-emerald-50 text-emerald-700" },
+  cod: { label: "COD", color: "orange", bgClass: "bg-orange-50 text-orange-700" },
+  subscription: { label: "Subscription", color: "violet", bgClass: "bg-violet-50 text-violet-700" },
 }

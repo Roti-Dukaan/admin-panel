@@ -12,10 +12,11 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { StatusBadge } from "./StatusBadge"
 import { useOrdersStore } from "../hooks/useOrders"
-import type { Order } from "../types/order"
-import { PAYMENT_METHOD_LABELS } from "../types/order"
-import { Eye, RefreshCw, Printer, ChevronLeft, ChevronRight } from "lucide-react"
+import type { Order, PaymentStatus, PaymentMethod } from "../types/order"
+import { PAYMENT_STATUS_CONFIG, PAYMENT_STATUS_LABELS, PAYMENT_METHOD_CONFIG } from "../types/order"
+import { Eye, RefreshCw, Printer, ChevronLeft, ChevronRight, Smartphone, Banknote } from "lucide-react"
 import { toast } from "sonner"
+import { cn } from "@/lib/utils"
 
 function formatCurrency(amount: number) {
   return new Intl.NumberFormat("en-IN", {
@@ -33,11 +34,28 @@ function formatDate(dateStr: string) {
   })
 }
 
-function formatTime(dateStr: string) {
-  return new Date(dateStr).toLocaleTimeString("en-IN", {
-    hour: "2-digit",
-    minute: "2-digit",
-  })
+function PaymentMethodBadge({ method }: { method: PaymentMethod }) {
+  const config = PAYMENT_METHOD_CONFIG[method]
+  return (
+    <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-semibold", config.bgClass)}>
+      {method === "online" ? (
+        <Smartphone className="h-3 w-3" />
+      ) : method === "cod" ? (
+        <Banknote className="h-3 w-3" />
+      ) : null}
+      {config.label}
+    </span>
+  )
+}
+
+function PaymentStatusBadge({ status }: { status: PaymentStatus }) {
+  const config = PAYMENT_STATUS_CONFIG[status]
+  return (
+    <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-semibold", config.bgClass, config.textClass)}>
+      <span className={cn("h-1.5 w-1.5 rounded-full", config.dotClass)} />
+      {PAYMENT_STATUS_LABELS[status]}
+    </span>
+  )
 }
 
 interface OrdersTableProps {
@@ -58,9 +76,10 @@ export function OrdersTable({ onViewDetails }: OrdersTableProps) {
               <Skeleton className="h-4 w-20" />
               <Skeleton className="h-4 w-16" />
               <Skeleton className="h-4 w-24" />
-              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-6 w-20 rounded-full" />
+              <Skeleton className="h-6 w-20 rounded-full" />
               <Skeleton className="h-4 w-28" />
-              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-4 w-20" />
               <Skeleton className="h-6 w-20 rounded-full" />
               <Skeleton className="h-4 w-20" />
             </div>
@@ -97,7 +116,9 @@ export function OrdersTable({ onViewDetails }: OrdersTableProps) {
               <TableHead>Phone</TableHead>
               <TableHead>Items</TableHead>
               <TableHead>Total</TableHead>
-              <TableHead>Payment</TableHead>
+              <TableHead>Payment Method</TableHead>
+              <TableHead>Payment Status</TableHead>
+              <TableHead>Transaction ID</TableHead>
               <TableHead>Delivery Slot</TableHead>
               <TableHead>Delivery Date</TableHead>
               <TableHead>Status</TableHead>
@@ -116,9 +137,21 @@ export function OrdersTable({ onViewDetails }: OrdersTableProps) {
                   {formatCurrency(order.payment.grandTotal)}
                 </TableCell>
                 <TableCell>
-                  <span className="text-xs text-muted-foreground">
-                    {PAYMENT_METHOD_LABELS[order.payment.method]}
-                  </span>
+                  <PaymentMethodBadge method={order.payment.method} />
+                </TableCell>
+                <TableCell>
+                  <PaymentStatusBadge status={order.payment.status} />
+                </TableCell>
+                <TableCell>
+                  {order.payment.transactionId ? (
+                    <span className="text-xs font-mono text-muted-foreground" title={order.payment.transactionId}>
+                      {order.payment.transactionId.length > 16
+                        ? order.payment.transactionId.slice(0, 16) + "..."
+                        : order.payment.transactionId}
+                    </span>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">—</span>
+                  )}
                 </TableCell>
                 <TableCell className="text-xs">{order.delivery.slot}</TableCell>
                 <TableCell className="text-xs">{formatDate(order.delivery.date)}</TableCell>
