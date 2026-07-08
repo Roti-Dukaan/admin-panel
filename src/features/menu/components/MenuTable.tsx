@@ -1,0 +1,229 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import {
+  useReactTable,
+  getCoreRowModel,
+  getSortedRowModel,
+  getFilteredRowModel,
+  flexRender,
+  createColumnHelper,
+  SortingState,
+} from "@tanstack/react-table";
+import { motion } from "motion/react";
+import { ArrowUpDown, MoreHorizontal, Eye, Edit, Copy, Archive, Trash2, Star, ToggleLeft, ToggleRight, ImageIcon } from "lucide-react";
+import { useMenuStore } from "../hooks/useMenu";
+import { FoodItem, CUSTOMER_LABEL_CONFIG, CustomerLabel } from "../types/menu";
+import { CategoryBadge, AvailabilityBadge } from "./CategoryBadge";
+
+const columnHelper = createColumnHelper<FoodItem>();
+
+export function MenuTable() {
+  const getFilteredFoods = useMenuStore((s) => s.getFilteredFoods);
+  const foods = useMemo(() => getFilteredFoods(), [getFilteredFoods]);
+  const openViewDrawer = useMenuStore((s) => s.openViewDrawer);
+  const openEditDrawer = useMenuStore((s) => s.openEditDrawer);
+  const openDeleteModal = useMenuStore((s) => s.openDeleteModal);
+  const duplicateFood = useMenuStore((s) => s.duplicateFood);
+  const archiveFood = useMenuStore((s) => s.archiveFood);
+  const toggleFeatured = useMenuStore((s) => s.toggleFeatured);
+  const toggleAvailability = useMenuStore((s) => s.toggleAvailability);
+
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const [openMenu, setOpenMenu] = useState<string | null>(null);
+
+  const columns = useMemo(() => [
+    columnHelper.display({
+      id: "image",
+      header: "",
+      cell: () => (
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100">
+          <ImageIcon className="h-5 w-5 text-gray-400" />
+        </div>
+      ),
+      size: 60,
+    }),
+    columnHelper.accessor("name", {
+      header: "Food Name",
+      cell: (info) => (
+        <div>
+          <p className="text-sm font-semibold text-gray-900">{info.getValue()}</p>
+          <p className="text-xs text-gray-500 truncate max-w-[180px]">{info.row.original.shortDescription}</p>
+        </div>
+      ),
+    }),
+    columnHelper.accessor("category", {
+      header: "Category",
+      cell: (info) => <CategoryBadge category={info.getValue()} />,
+    }),
+    columnHelper.accessor("price", {
+      header: "Price",
+      cell: (info) => <span className="text-sm font-bold text-gray-900">₹{info.getValue()}</span>,
+    }),
+    columnHelper.accessor("preparationTime", {
+      header: "Prep Time",
+      cell: (info) => <span className="text-sm text-gray-600">{info.getValue()} min</span>,
+    }),
+    columnHelper.accessor("availability", {
+      header: "Status",
+      cell: (info) => <AvailabilityBadge availability={info.getValue()} />,
+    }),
+    columnHelper.accessor("isFeatured", {
+      header: "Featured",
+      cell: (info) => (
+        <button onClick={() => toggleFeatured(info.row.original.id)} className="hover:opacity-70">
+          {info.getValue() ? (
+            <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
+          ) : (
+            <Star className="h-4 w-4 text-gray-300" />
+          )}
+        </button>
+      ),
+    }),
+    columnHelper.display({
+      id: "labels",
+      header: "Labels",
+      cell: (info) => {
+        const labels = info.row.original.customerLabels;
+        return (
+          <div className="flex flex-wrap gap-1">
+            {labels.slice(0, 2).map((label) => {
+              const cfg = CUSTOMER_LABEL_CONFIG[label];
+              return cfg ? (
+                <span key={label} className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${cfg.bgColor} ${cfg.color}`}>
+                  {cfg.label}
+                </span>
+              ) : null;
+            })}
+            {labels.length > 2 && (
+              <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-bold text-gray-500">
+                +{labels.length - 2}
+              </span>
+            )}
+          </div>
+        );
+      },
+    }),
+    columnHelper.accessor("updatedAt", {
+      header: "Updated",
+      cell: (info) => (
+        <span className="text-xs text-gray-500">
+          {new Date(info.getValue()).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+        </span>
+      ),
+    }),
+    columnHelper.display({
+      id: "actions",
+      header: "",
+      cell: (info) => {
+        const food = info.row.original;
+        const isOpen = openMenu === food.id;
+        return (
+          <div className="relative">
+            <button
+              onClick={() => setOpenMenu(isOpen ? null : food.id)}
+              className="rounded-lg p-1.5 hover:bg-gray-100"
+            >
+              <MoreHorizontal className="h-4 w-4 text-gray-500" />
+            </button>
+            {isOpen && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setOpenMenu(null)} />
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="absolute right-0 top-full z-50 mt-1 w-44 rounded-xl border border-gray-200 bg-white py-1.5 shadow-lg"
+                >
+                  <MenuItem icon={Eye} label="View" onClick={() => { openViewDrawer(food); setOpenMenu(null); }} />
+                  <MenuItem icon={Edit} label="Edit" onClick={() => { openEditDrawer(food); setOpenMenu(null); }} />
+                  <MenuItem icon={Copy} label="Duplicate" onClick={() => { duplicateFood(food); setOpenMenu(null); }} />
+                  <MenuItem icon={Archive} label="Archive" onClick={() => { archiveFood(food.id); setOpenMenu(null); }} />
+                  <MenuItem
+                    icon={food.availability === "available" ? ToggleRight : ToggleLeft}
+                    label={food.availability === "available" ? "Unpublish" : "Publish"}
+                    onClick={() => { toggleAvailability(food.id); setOpenMenu(null); }}
+                  />
+                  <div className="my-1 border-t border-gray-100" />
+                  <MenuItem icon={Trash2} label="Delete" onClick={() => { openDeleteModal(food); setOpenMenu(null); }} danger />
+                </motion.div>
+              </>
+            )}
+          </div>
+        );
+      },
+      size: 50,
+    }),
+  ], [toggleFeatured, openViewDrawer, openEditDrawer, openDeleteModal, duplicateFood, archiveFood, toggleAvailability, openMenu]);
+
+  const table = useReactTable({
+    data: foods,
+    columns,
+    state: { sorting },
+    onSortingChange: setSorting,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+  });
+
+  return (
+    <div className="overflow-hidden rounded-xl border border-gray-200/80 bg-white">
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <tr key={headerGroup.id} className="border-b border-gray-100">
+                {headerGroup.headers.map((header) => (
+                  <th
+                    key={header.id}
+                    className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500"
+                    style={{ width: header.getSize() }}
+                  >
+                    {header.isPlaceholder ? null : (
+                      <button
+                        className="flex items-center gap-1 hover:text-gray-700"
+                        onClick={header.column.getToggleSortingHandler()}
+                      >
+                        {flexRender(header.column.columnDef.header, header.getContext())}
+                        {header.column.getCanSort() && <ArrowUpDown className="h-3 w-3" />}
+                      </button>
+                    )}
+                  </th>
+                ))}
+              </tr>
+            ))}
+          </thead>
+          <tbody>
+            {table.getRowModel().rows.map((row) => (
+              <tr key={row.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
+                {row.getVisibleCells().map((cell) => (
+                  <td key={cell.id} className="px-4 py-3">
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {foods.length === 0 && (
+        <div className="flex h-48 items-center justify-center">
+          <p className="text-sm text-gray-400">No food items found</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MenuItem({ icon: Icon, label, onClick, danger }: { icon: React.ElementType; label: string; onClick: () => void; danger?: boolean }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex w-full items-center gap-2.5 px-3.5 py-2 text-sm font-medium transition-colors ${
+        danger ? "text-red-600 hover:bg-red-50" : "text-gray-700 hover:bg-gray-50"
+      }`}
+    >
+      <Icon className="h-4 w-4" />
+      {label}
+    </button>
+  );
+}
