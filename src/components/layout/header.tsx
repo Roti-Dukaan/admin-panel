@@ -4,26 +4,29 @@ import * as React from "react"
 import { cn } from "@/lib/utils"
 import { Bell, Search, ChevronDown, Menu } from "lucide-react"
 import { Avatar } from "@/components/ui/avatar"
+import { useSidebarMobile } from "./sidebar-provider"
 
 interface HeaderProps {
   title?: string
   subtitle?: string
   actions?: React.ReactNode
   className?: string
-  onMenuClick?: () => void
 }
 
-export function Header({ title, subtitle, actions, className, onMenuClick }: HeaderProps) {
+export function Header({ title, subtitle, actions, className }: HeaderProps) {
   const [searchFocused, setSearchFocused] = React.useState(false)
+  const { setMobileOpen } = useSidebarMobile()
 
   return (
     <header className={cn("sticky top-0 z-30 flex h-16 items-center justify-between border-b border-gray-100 bg-white/80 backdrop-blur-xl px-6", className)}>
       <div className="flex items-center gap-4">
-        {onMenuClick && (
-          <button onClick={onMenuClick} className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 lg:hidden">
-            <Menu className="h-5 w-5" />
-          </button>
-        )}
+        <button
+          onClick={() => setMobileOpen(true)}
+          className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 lg:hidden"
+          aria-label="Open menu"
+        >
+          <Menu className="h-5 w-5" />
+        </button>
         {title && (
           <div>
             <h1 className="text-lg font-semibold text-gray-900">{title}</h1>

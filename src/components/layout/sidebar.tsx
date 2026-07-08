@@ -12,7 +12,6 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
-  Store,
   ClipboardList,
   CreditCard,
   Clock,
@@ -59,9 +58,13 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
       {/* Logo */}
       <div className={cn("flex h-16 items-center border-b border-gray-100 px-5", collapsed && "justify-center px-0")}>
         {!collapsed ? (
-          <Link href="/dashboard" className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-500 shadow-sm shadow-orange-500/20">
-              <Store className="h-5 w-5 text-white" />
+          <Link href="/dashboard" className="flex items-center gap-2.5 group">
+            <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full ring-2 ring-orange-500/20 group-hover:ring-orange-500/40 transition-all">
+              <img
+                src="/roti_dukaan_logo.jpg"
+                alt="Roti Dukaan"
+                className="h-full w-full object-cover"
+              />
             </div>
             <div className="flex flex-col">
               <span className="text-[15px] font-bold text-gray-900 leading-tight">Roti Dukaan</span>
@@ -69,8 +72,12 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
             </div>
           </Link>
         ) : (
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-500 shadow-sm shadow-orange-500/20">
-            <Store className="h-5 w-5 text-white" />
+          <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full ring-2 ring-orange-500/20">
+            <img
+              src="/roti_dukaan_logo.jpg"
+              alt="Roti Dukaan"
+              className="h-full w-full object-cover"
+            />
           </div>
         )}
       </div>

@@ -1,0 +1,228 @@
+"use client"
+
+import * as React from "react"
+import Link from "next/link"
+import { cn } from "@/lib/utils"
+import {
+  LayoutDashboard,
+  ShoppingBag,
+  ChefHat,
+  Clock3,
+  UtensilsCrossed,
+  Users,
+  CalendarDays,
+  CreditCard,
+  BarChart3,
+  ShieldCheck,
+  Settings,
+  FileClock,
+} from "lucide-react"
+import { useSidebar } from "./hooks/useSidebar"
+import { SidebarGroup } from "./SidebarGroup"
+import { SidebarItem } from "./SidebarItem"
+import { SidebarFooter } from "./SidebarFooter"
+import { SidebarCollapseButton } from "./SidebarCollapseButton"
+import type { NavGroup } from "./types"
+
+const navGroups: NavGroup[] = [
+  {
+    id: "overview",
+    title: "Overview",
+    items: [
+      { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+    ],
+  },
+  {
+    id: "operations",
+    title: "Operations",
+    items: [
+      { label: "Orders", href: "/orders", icon: ShoppingBag, badge: 3 },
+      { label: "Kitchen", href: "/kitchen", icon: ChefHat },
+      { label: "Delivery Slots", href: "/delivery-slots", icon: Clock3 },
+    ],
+  },
+  {
+    id: "menu",
+    title: "Menu Management",
+    items: [
+      { label: "Menu Items", href: "/menu", icon: UtensilsCrossed },
+    ],
+  },
+  {
+    id: "customers",
+    title: "Customers",
+    items: [
+      { label: "Customers", href: "/customers", icon: Users },
+      { label: "Subscription Plans", href: "/subscription-plans", icon: CalendarDays },
+    ],
+  },
+  {
+    id: "finance",
+    title: "Finance",
+    items: [
+      { label: "Payments", href: "/admin/payments", icon: CreditCard },
+      { label: "Reports & Analytics", href: "/reports", icon: BarChart3 },
+    ],
+  },
+  {
+    id: "system",
+    title: "System",
+    items: [
+      { label: "Roles & Permissions", href: "/admin/roles", icon: ShieldCheck },
+      { label: "Settings", href: "/settings", icon: Settings, disabled: true },
+      { label: "Audit Logs", href: "/audit-logs", icon: FileClock, disabled: true },
+    ],
+  },
+]
+
+interface SidebarProps {
+  collapsed?: boolean
+  onToggle?: () => void
+  mobileOpen?: boolean
+  onMobileClose?: () => void
+}
+
+export function Sidebar({ collapsed = false, onToggle, mobileOpen = false, onMobileClose }: SidebarProps) {
+  const { isGroupExpanded, toggleGroup } = useSidebar()
+
+  const sidebarContent = (
+    <>
+      {/* Logo */}
+      <div className={cn("flex h-16 items-center border-b border-gray-100 px-5", collapsed && "justify-center px-0")}>
+        {!collapsed ? (
+          <Link href="/dashboard" className="flex items-center gap-2.5 group">
+            <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full ring-2 ring-orange-500/20 group-hover:ring-orange-500/40 transition-all">
+              <img src="/roti_dukaan_logo.jpg" alt="Roti Dukaan" className="h-full w-full object-cover" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[15px] font-bold text-gray-900 leading-tight">Roti Dukaan</span>
+              <span className="text-[10px] font-medium text-gray-400 uppercase tracking-wider">Admin</span>
+            </div>
+          </Link>
+        ) : (
+          <Link href="/dashboard" className="h-9 w-9 shrink-0 overflow-hidden rounded-full ring-2 ring-orange-500/20">
+            <img src="/roti_dukaan_logo.jpg" alt="Roti Dukaan" className="h-full w-full object-cover" />
+          </Link>
+        )}
+      </div>
+
+      {/* Navigation */}
+      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1" role="navigation" aria-label="Sidebar navigation">
+        {navGroups.map((group) => (
+          <SidebarGroup
+            key={group.id}
+            id={group.id}
+            title={group.title}
+            collapsed={collapsed}
+            isExpanded={isGroupExpanded(group.id)}
+            onToggle={toggleGroup}
+          >
+            {group.items.map((item) => (
+              <SidebarItem
+                key={item.href}
+                label={item.label}
+                href={item.href}
+                icon={item.icon}
+                badge={item.badge}
+                collapsed={collapsed}
+                disabled={item.disabled}
+              />
+            ))}
+          </SidebarGroup>
+        ))}
+      </nav>
+
+      {/* Footer */}
+      <div className="border-t border-gray-100 px-3 py-3">
+        <SidebarFooter collapsed={collapsed} />
+      </div>
+
+      {/* Collapse Toggle */}
+      {onToggle && <SidebarCollapseButton collapsed={collapsed} onToggle={onToggle} />}
+    </>
+  )
+
+  return (
+    <>
+      {/* Desktop Sidebar */}
+      <aside
+        className={cn(
+          "fixed left-0 top-0 z-40 h-screen flex flex-col border-r border-gray-200/80 bg-white transition-all duration-300",
+          "hidden lg:flex",
+          collapsed ? "w-[72px]" : "w-[260px]"
+        )}
+      >
+        {sidebarContent}
+      </aside>
+
+      {/* Mobile Sidebar */}
+      {mobileOpen && (
+        <>
+          <div
+            className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm lg:hidden"
+            onClick={onMobileClose}
+            aria-hidden="true"
+          />
+          <aside
+            className={cn(
+              "fixed left-0 top-0 z-50 h-screen w-[280px] flex flex-col border-r border-gray-200/80 bg-white",
+              "lg:hidden"
+            )}
+            role="dialog"
+            aria-label="Mobile sidebar"
+          >
+            <div className="flex h-16 items-center justify-between border-b border-gray-100 px-5">
+              <Link href="/dashboard" className="flex items-center gap-2.5" onClick={onMobileClose}>
+                <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full ring-2 ring-orange-500/20">
+                  <img src="/roti_dukaan_logo.jpg" alt="Roti Dukaan" className="h-full w-full object-cover" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[15px] font-bold text-gray-900 leading-tight">Roti Dukaan</span>
+                  <span className="text-[10px] font-medium text-gray-400 uppercase tracking-wider">Admin</span>
+                </div>
+              </Link>
+              <button
+                onClick={onMobileClose}
+                className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                aria-label="Close sidebar"
+              >
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1" role="navigation" aria-label="Sidebar navigation">
+              {navGroups.map((group) => (
+                <SidebarGroup
+                  key={group.id}
+                  id={group.id}
+                  title={group.title}
+                  collapsed={false}
+                  isExpanded={isGroupExpanded(group.id)}
+                  onToggle={toggleGroup}
+                >
+                  {group.items.map((item) => (
+                    <SidebarItem
+                      key={item.href}
+                      label={item.label}
+                      href={item.href}
+                      icon={item.icon}
+                      badge={item.badge}
+                      collapsed={false}
+                      disabled={item.disabled}
+                    />
+                  ))}
+                </SidebarGroup>
+              ))}
+            </nav>
+
+            <div className="border-t border-gray-100 px-3 py-3">
+              <SidebarFooter collapsed={false} />
+            </div>
+          </aside>
+        </>
+      )}
+    </>
+  )
+}
