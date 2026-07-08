@@ -1,7 +1,5 @@
 import { Avatar } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
 import type { Customer } from "../types/order"
-import { Phone, User } from "lucide-react"
 
 interface CustomerCardProps {
   customer: Customer
@@ -27,16 +25,6 @@ export function CustomerCard({ customer }: CustomerCardProps) {
           <p className="text-xs text-muted-foreground">Subscription</p>
           <p className="font-semibold text-xs">{customer.subscription || "None"}</p>
         </div>
-      </div>
-      <div className="flex gap-2">
-        <Button variant="outline" size="sm" className="flex-1">
-          <User className="h-3.5 w-3.5 mr-1" />
-          View
-        </Button>
-        <Button variant="outline" size="sm" className="flex-1">
-          <Phone className="h-3.5 w-3.5 mr-1" />
-          Call
-        </Button>
       </div>
     </div>
   )
