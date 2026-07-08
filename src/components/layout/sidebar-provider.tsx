@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation"
 import { Sidebar } from "@/components/layout/sidebar"
 import { cn } from "@/lib/utils"
 
-const SIDEBAR_ROUTES = ["/dashboard", "/orders", "/menu", "/customers", "/settings"]
+const SIDEBAR_ROUTES = ["/dashboard", "/orders", "/kitchen", "/menu", "/customers", "/settings"]
 
 export function SidebarProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
