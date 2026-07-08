@@ -9,12 +9,10 @@ import {
   ShoppingBag,
   Users,
   UtensilsCrossed,
-  Settings,
   LogOut,
   ChevronLeft,
   ChevronRight,
   Store,
-  HelpCircle,
   ClipboardList,
   CreditCard,
   Clock,
@@ -41,11 +39,6 @@ const navItems: NavItem[] = [
   { label: "Reports & Analytics", href: "/reports", icon: BarChart3 },
   { label: "Payments", href: "/admin/payments", icon: Wallet },
   { label: "Roles & Permissions", href: "/admin/roles", icon: Shield },
-]
-
-const bottomItems: NavItem[] = [
-  { label: "Settings", href: "/settings", icon: Settings },
-  { label: "Help & Support", href: "/help", icon: HelpCircle },
 ]
 
 interface SidebarProps {
@@ -122,27 +115,6 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
 
       {/* Bottom Section */}
       <div className="border-t border-gray-100 px-3 py-3 space-y-1">
-        {bottomItems.map((item) => {
-          const isActive = pathname === item.href
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-all duration-200",
-                isActive
-                  ? "bg-orange-50 text-orange-600"
-                  : "text-gray-500 hover:bg-gray-50 hover:text-gray-700",
-                collapsed && "justify-center px-2"
-              )}
-              title={collapsed ? item.label : undefined}
-            >
-              <item.icon className="h-[18px] w-[18px] shrink-0" />
-              {!collapsed && <span>{item.label}</span>}
-            </Link>
-          )
-        })}
-
         <button
           className={cn(
             "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium text-gray-500 hover:bg-red-50 hover:text-red-600 transition-all duration-200",
