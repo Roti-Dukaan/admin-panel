@@ -20,6 +20,7 @@ import {
   Clock,
   Shield,
   BarChart3,
+  Wallet,
 } from "lucide-react"
 
 interface NavItem {
@@ -38,6 +39,7 @@ const navItems: NavItem[] = [
   { label: "Subscription Plans", href: "/subscription-plans", icon: CreditCard },
   { label: "Delivery Slots", href: "/delivery-slots", icon: Clock },
   { label: "Reports & Analytics", href: "/reports", icon: BarChart3 },
+  { label: "Payments", href: "/admin/payments", icon: Wallet },
   { label: "Roles & Permissions", href: "/admin/roles", icon: Shield },
 ]
 

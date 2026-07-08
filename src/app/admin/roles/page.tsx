@@ -14,12 +14,14 @@ import {
   Mail,
   Search,
   Filter,
+  UserPlus,
 } from "lucide-react";
 import { useRoleStore } from "@/features/rbac/hooks/useRoles";
 import { RolesTable } from "@/features/rbac/components/RolesTable";
 import { RoleHierarchy } from "@/features/rbac/components/RoleHierarchy";
 import { AuditPreview } from "@/features/rbac/components/AuditPreview";
 import { RoleCloneDialog } from "@/features/rbac/components/RoleCloneDialog";
+import { InviteUserDialog } from "@/features/rbac/components/InviteUserDialog";
 import { RolesSkeleton } from "@/features/rbac/components/SkeletonLoader";
 import { RoleStatus } from "@/features/rbac/types/role";
 import { cn } from "@/lib/utils";
@@ -38,6 +40,7 @@ export default function RolesPage() {
   const setCloneSourceRole = useRoleStore((s) => s.setCloneSourceRole);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState(getStats());
+  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 800);
@@ -129,6 +132,13 @@ export default function RolesPage() {
             >
               <RefreshCw className="h-4 w-4" />
               Refresh
+            </button>
+            <button
+              onClick={() => setInviteDialogOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+            >
+              <UserPlus className="h-4 w-4" />
+              Invite User
             </button>
             <button
               onClick={() => router.push("/admin/roles/new")}
@@ -259,6 +269,12 @@ export default function RolesPage() {
           setCloneDialogOpen(false);
           setCloneSourceRole(null);
         }}
+      />
+
+      {/* Invite User Dialog */}
+      <InviteUserDialog
+        open={inviteDialogOpen}
+        onClose={() => setInviteDialogOpen(false)}
       />
     </div>
   );

@@ -1,0 +1,111 @@
+"use client";
+
+import { useMemo } from "react";
+import { motion } from "motion/react";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  Tooltip,
+} from "recharts";
+import { Wallet } from "lucide-react";
+import { generatePaymentMethodDistribution } from "../mock/payments";
+
+const COLORS = ["#22c55e", "#3b82f6", "#f59e0b", "#ef4444", "#a855f7", "#14b8a6"];
+
+function formatCurrency(amount: number) {
+  if (amount >= 100000) return `₹${(amount / 100000).toFixed(1)}L`;
+  if (amount >= 1000) return `₹${(amount / 1000).toFixed(1)}K`;
+  return `₹${amount}`;
+}
+
+function CustomTooltip({ active, payload }: any) {
+  if (!active || !payload?.length) return null;
+  const data = payload[0];
+  return (
+    <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-lg">
+      <p className="text-xs font-semibold text-gray-500">{data.name}</p>
+      <p className="text-sm font-bold text-gray-900">{formatCurrency(data.value)}</p>
+    </div>
+  );
+}
+
+export function PaymentMethodChart() {
+  const rawData = useMemo(() => generatePaymentMethodDistribution(), []);
+  const total = useMemo(() => rawData.reduce((s, d) => s + d.amount, 0), [rawData]);
+
+  const pieData = useMemo(
+    () => rawData.map((d, i) => ({ ...d, color: COLORS[i % COLORS.length], total })),
+    [rawData, total]
+  );
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, delay: 0.2 }}
+      className="rounded-xl border border-gray-200/80 bg-white p-6 shadow-sm"
+    >
+      <div className="flex items-center gap-2 mb-5">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50">
+          <Wallet className="h-4 w-4 text-indigo-600" />
+        </div>
+        <h3 className="text-base font-bold text-gray-900">Payment Methods</h3>
+      </div>
+
+      <div className="flex items-center gap-6">
+        <div className="h-[200px] w-[200px] shrink-0">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={pieData}
+                cx="50%"
+                cy="50%"
+                innerRadius={55}
+                outerRadius={85}
+                paddingAngle={3}
+                dataKey="amount"
+                stroke="none"
+              >
+                {pieData.map((entry, idx) => (
+                  <Cell key={idx} fill={entry.color} />
+                ))}
+              </Pie>
+              <Tooltip content={<CustomTooltip />} />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div className="flex-1 space-y-3">
+          {pieData.map((item, i) => (
+            <motion.div
+              key={item.method}
+              initial={{ opacity: 0, x: 10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.25, delay: 0.25 + i * 0.04 }}
+              className="flex items-center justify-between"
+            >
+              <div className="flex items-center gap-2">
+                <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />
+                <span className="text-xs text-gray-600">{item.label}</span>
+              </div>
+              <div className="text-right">
+                <span className="text-xs font-bold text-gray-900">{formatCurrency(item.amount)}</span>
+                <span className="text-[10px] text-gray-400 ml-1">
+                  {((item.amount / total) * 100).toFixed(0)}%
+                </span>
+              </div>
+            </motion.div>
+          ))}
+          <div className="border-t border-gray-100 pt-2 mt-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-gray-500">Total</span>
+              <span className="text-sm font-bold text-gray-900">{formatCurrency(total)}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
