@@ -40,34 +40,35 @@ export function KitchenOrderCard({ order, overlay }: KitchenOrderCardProps) {
       style={style}
       layout
       initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: isDragging ? 0.5 : 1, scale: 1 }}
+      animate={{ opacity: isDragging ? 0.4 : 1, scale: isDragging ? 1.03 : 1 }}
       exit={{ opacity: 0, scale: 0.95 }}
-      transition={{ duration: 0.2 }}
-      className={`group relative rounded-xl border bg-white p-3.5 shadow-sm transition-shadow hover:shadow-md cursor-pointer ${
-        overlay ? "shadow-xl ring-2 ring-blue-400 rotate-2" : ""
-      } ${isDragging ? "opacity-50" : ""}`}
+      transition={{ duration: 0.15 }}
+      className={`group relative rounded-xl border bg-white p-3.5 cursor-grab active:cursor-grabbing select-none ${
+        overlay
+          ? "shadow-2xl ring-2 ring-blue-400 rotate-[2deg] border-blue-300"
+          : isDragging
+          ? "shadow-xl border-blue-300 ring-1 ring-blue-100"
+          : "shadow-sm border-gray-200/80 hover:shadow-md hover:border-gray-300"
+      }`}
       onClick={() => !isDragging && setSelectedOrder(order)}
+      {...listeners}
+      {...attributes}
     >
-      {/* Drag Handle */}
-      <div
-        {...attributes}
-        {...listeners}
-        className="absolute left-1 top-1/2 -translate-y-1/2 cursor-grab rounded p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-100"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <GripVertical className="h-3.5 w-3.5 text-gray-400" />
+      {/* Drag Handle Indicator */}
+      <div className="absolute left-1.5 top-1/2 -translate-y-1/2 rounded p-0.5 opacity-40 group-hover:opacity-100 transition-opacity">
+        <GripVertical className="h-4 w-4 text-gray-400 group-hover:text-gray-600" />
       </div>
 
       {/* Header: Order Number + Priority */}
-      <div className="mb-2 flex items-center justify-between">
+      <div className="mb-2 flex items-center justify-between pl-4">
         <span className="text-sm font-bold text-gray-900">{order.orderNumber}</span>
         <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold text-white ${priority.color}`}>
           {priority.label}
         </span>
       </div>
 
-      {/* Customer + Slot */}
-      <div className="mb-2 flex items-center justify-between">
+      {/* Customer + Subscription */}
+      <div className="mb-2 flex items-center justify-between pl-4">
         <span className="text-xs font-medium text-gray-600 truncate max-w-[140px]">{order.customerName}</span>
         {order.isSubscription && (
           <span className="inline-flex items-center rounded-full bg-emerald-50 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200">
@@ -77,7 +78,7 @@ export function KitchenOrderCard({ order, overlay }: KitchenOrderCardProps) {
       </div>
 
       {/* Items */}
-      <div className="mb-2 flex flex-wrap gap-1">
+      <div className="mb-2 flex flex-wrap gap-1 pl-4">
         {order.items.map((item) => (
           <span
             key={item.name}
@@ -90,7 +91,7 @@ export function KitchenOrderCard({ order, overlay }: KitchenOrderCardProps) {
 
       {/* Special Instructions */}
       {order.specialInstructions.length > 0 && (
-        <div className="mb-2 flex flex-wrap gap-1">
+        <div className="mb-2 flex flex-wrap gap-1 pl-4">
           {order.specialInstructions.map((instr) => (
             <span
               key={instr}
@@ -104,7 +105,7 @@ export function KitchenOrderCard({ order, overlay }: KitchenOrderCardProps) {
       )}
 
       {/* Footer: Timer + Payment */}
-      <div className="flex items-center justify-between border-t border-gray-100 pt-2">
+      <div className="flex items-center justify-between border-t border-gray-100 pt-2 pl-4">
         <PreparationTimer
           startedAt={order.preparationStartedAt}
           estimatedMinutes={order.estimatedCompletionMinutes}
