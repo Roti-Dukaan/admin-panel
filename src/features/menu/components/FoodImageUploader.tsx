@@ -1,15 +1,16 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Upload, X, Image as ImageIcon } from "lucide-react";
+import { Upload, X, Loader2 } from "lucide-react";
 
 interface FoodImageUploaderProps {
   value: string;
   onChange: (url: string) => void;
   onFileSelect?: (file: File) => void;
+  loading?: boolean;
 }
 
-export function FoodImageUploader({ value, onChange, onFileSelect }: FoodImageUploaderProps) {
+export function FoodImageUploader({ value, onChange, onFileSelect, loading = false }: FoodImageUploaderProps) {
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -82,6 +83,12 @@ export function FoodImageUploader({ value, onChange, onFileSelect }: FoodImageUp
             <Upload className="mx-auto h-8 w-8 text-gray-400" />
             <p className="mt-1 text-xs text-gray-500">Drag & drop or click to upload</p>
             <p className="text-[10px] text-gray-400">PNG, JPG, WebP up to 5MB</p>
+          </div>
+        )}
+        {loading && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center rounded-xl bg-black/40">
+            <Loader2 className="h-7 w-7 animate-spin text-white" />
+            <p className="mt-2 text-xs font-medium text-white">Uploading to S3…</p>
           </div>
         )}
       </div>
