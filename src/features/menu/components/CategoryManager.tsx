@@ -15,11 +15,15 @@ export function CategoryManager() {
 
   const sorted = [...categories].sort((a, b) => a.sortOrder - b.sortOrder);
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!form.name.trim()) return;
-    addCategory({ name: form.name.trim(), slug: "", emoji: form.emoji, color: form.color, bgColor: form.bgColor });
-    setForm({ name: "", emoji: "🌾", color: COLOR_OPTIONS[0].value, bgColor: COLOR_OPTIONS[0].bg });
-    setShowAddForm(false);
+    try {
+      await addCategory({ name: form.name.trim(), slug: "", emoji: form.emoji, color: form.color, bgColor: form.bgColor });
+      setForm({ name: "", emoji: "🌾", color: COLOR_OPTIONS[0].value, bgColor: COLOR_OPTIONS[0].bg });
+      setShowAddForm(false);
+    } catch {
+      // error already logged in store
+    }
   };
 
   const handleUpdate = (cat: Category) => {

@@ -125,13 +125,17 @@ export const useMenuStore = create<MenuStore>((set, get) => ({
     if (get().dataLoaded) return;
     set({ loading: true });
     try {
-      const [catRes, prodRes] = await Promise.all([
+      const [catRes, prodRes] = await Promise.allSettled([
         categoryApi.list({ limit: 100, sort: 'displayOrder', order: 'asc', status: 'active' }),
         productApi.list({ limit: 200, sort: 'sort_order' }),
       ]);
 
-      const categories = (catRes.data?.items || []).map(mapApiCategoryToCategory);
-      const foods = (prodRes.data?.items || []).map(p => mapApiProductToFoodItem(p, categories));
+      const categories = catRes.status === 'fulfilled'
+        ? (catRes.value.data?.items || []).map(mapApiCategoryToCategory)
+        : [];
+      const foods = prodRes.status === 'fulfilled'
+        ? (prodRes.value.data?.items || []).map(p => mapApiProductToFoodItem(p, categories))
+        : [];
 
       set({ categories, foods, dataLoaded: true, loading: false });
     } catch (error) {
