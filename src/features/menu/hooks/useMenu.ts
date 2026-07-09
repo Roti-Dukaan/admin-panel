@@ -1,6 +1,53 @@
 import { create } from 'zustand';
-import { FoodItem, FoodItemFormData, MenuFilters, Availability, HealthTag, Category, DEFAULT_CATEGORIES } from '../types/menu';
-import { mockFoods } from '../mock/foods';
+import { FoodItem, FoodItemFormData, MenuFilters, Availability, HealthTag, Category } from '../types/menu';
+import { categoryApi } from '@/lib/api/category.api';
+import { productApi } from '@/lib/api/food.api';
+import type { ApiCategory, ApiProduct } from '@/lib/types/api';
+
+function mapApiCategoryToCategory(api: ApiCategory): Category {
+  return {
+    id: api.id,
+    name: api.name,
+    slug: api.slug,
+    emoji: '🍽️',
+    color: 'text-gray-700',
+    bgColor: 'bg-gray-100',
+    sortOrder: api.displayOrder,
+    createdAt: new Date(api.createdAt).getTime(),
+  };
+}
+
+function mapApiProductToFoodItem(api: ApiProduct, categories: Category[]): FoodItem {
+  const category = categories.find(c => c.id === api.categoryId);
+  return {
+    id: api.id,
+    name: api.name,
+    slug: api.slug,
+    description: api.description || '',
+    shortDescription: api.shortDescription || '',
+    category: category?.name || category?.slug || 'Uncategorized',
+    price: api.discountPrice || api.price,
+    preparationTime: api.preparationTime || 20,
+    nutrition: {
+      calories: api.calories || 0,
+      protein: api.protein || 0,
+      carbs: 0,
+      fats: 0,
+      servingSize: api.servingSize || '',
+    },
+    healthTags: [],
+    customerLabels: api.isFeatured ? ['chef-special'] : [],
+    availability: !api.isAvailable ? 'unavailable' : 'available',
+    isVegetarian: api.isVeg,
+    isFeatured: api.isFeatured,
+    displayOnWebsite: api.isAvailable,
+    bestPairedWith: [],
+    imageUrl: api.imageUrl || '/foods/placeholder.jpg',
+    galleryImages: api.gallery || [],
+    createdAt: new Date(api.createdAt).getTime(),
+    updatedAt: new Date(api.updatedAt).getTime(),
+  };
+}
 
 interface MenuStore {
   foods: FoodItem[];
@@ -13,6 +60,11 @@ interface MenuStore {
   foodToDelete: FoodItem | null;
   categoryModalOpen: boolean;
   loading: boolean;
+  dataLoaded: boolean;
+
+  loadData: () => Promise<void>;
+  setFoods: (foods: FoodItem[]) => void;
+  setCategories: (categories: Category[]) => void;
 
   setSearch: (search: string) => void;
   toggleCategoryFilter: (category: string) => void;
@@ -31,18 +83,17 @@ interface MenuStore {
   openCategoryModal: () => void;
   closeCategoryModal: () => void;
 
-  addCategory: (data: Omit<Category, 'id' | 'createdAt' | 'sortOrder'>) => void;
-  updateCategory: (id: string, data: Partial<Category>) => void;
-  deleteCategory: (id: string) => void;
-  reorderCategories: (fromIndex: number, toIndex: number) => void;
+  addCategory: (data: { name: string; slug: string; emoji: string; color: string; bgColor: string }) => Promise<void>;
+  updateCategory: (id: string, data: Partial<Category>) => Promise<void>;
+  deleteCategory: (id: string) => Promise<void>;
 
-  addFood: (data: FoodItemFormData) => void;
-  updateFood: (id: string, data: FoodItemFormData) => void;
-  deleteFood: (id: string) => void;
-  duplicateFood: (food: FoodItem) => void;
-  archiveFood: (id: string) => void;
-  toggleFeatured: (id: string) => void;
-  toggleAvailability: (id: string) => void;
+  addFood: (data: FoodItemFormData) => Promise<void>;
+  updateFood: (id: string, data: FoodItemFormData) => Promise<void>;
+  deleteFood: (id: string) => Promise<void>;
+  duplicateFood: (food: FoodItem) => Promise<void>;
+  archiveFood: (id: string) => Promise<void>;
+  toggleFeatured: (id: string) => Promise<void>;
+  toggleAvailability: (id: string) => Promise<void>;
 
   getFilteredFoods: () => FoodItem[];
   getCategoryById: (id: string) => Category | undefined;
@@ -58,8 +109,8 @@ const initialFilters: MenuFilters = {
 };
 
 export const useMenuStore = create<MenuStore>((set, get) => ({
-  foods: mockFoods,
-  categories: DEFAULT_CATEGORIES,
+  foods: [],
+  categories: [],
   filters: { ...initialFilters },
   selectedFood: null,
   drawerOpen: false,
@@ -68,6 +119,29 @@ export const useMenuStore = create<MenuStore>((set, get) => ({
   foodToDelete: null,
   categoryModalOpen: false,
   loading: false,
+  dataLoaded: false,
+
+  loadData: async () => {
+    if (get().dataLoaded) return;
+    set({ loading: true });
+    try {
+      const [catRes, prodRes] = await Promise.all([
+        categoryApi.list({ limit: 100, sort: 'displayOrder', order: 'asc', status: 'active' }),
+        productApi.list({ limit: 200, sort: 'sort_order' }),
+      ]);
+
+      const categories = (catRes.data?.items || []).map(mapApiCategoryToCategory);
+      const foods = (prodRes.data?.items || []).map(p => mapApiProductToFoodItem(p, categories));
+
+      set({ categories, foods, dataLoaded: true, loading: false });
+    } catch (error) {
+      console.error('Failed to load menu data:', error);
+      set({ loading: false });
+    }
+  },
+
+  setFoods: (foods) => set({ foods }),
+  setCategories: (categories) => set({ categories }),
 
   setSearch: (search) => set((state) => ({ filters: { ...state.filters, search } })),
 
@@ -114,130 +188,160 @@ export const useMenuStore = create<MenuStore>((set, get) => ({
   openCategoryModal: () => set({ categoryModalOpen: true }),
   closeCategoryModal: () => set({ categoryModalOpen: false }),
 
-  addCategory: (data) => set((state) => {
-    const id = `cat-${Date.now()}`;
-    const slug = data.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-    const newCategory: Category = {
-      ...data,
-      id,
-      slug,
-      sortOrder: state.categories.length,
-      createdAt: Date.now(),
-    };
-    return { categories: [...state.categories, newCategory] };
-  }),
+  addCategory: async (data) => {
+    try {
+      const formData = new FormData();
+      formData.append('name', data.name);
+      await categoryApi.create(formData);
+      // Reload categories
+      const catRes = await categoryApi.list({ limit: 100, sort: 'displayOrder', order: 'asc' });
+      const categories = (catRes.data?.items || []).map(mapApiCategoryToCategory);
+      set({ categories });
+    } catch (error) {
+      console.error('Failed to create category:', error);
+      throw error;
+    }
+  },
 
-  updateCategory: (id, data) => set((state) => ({
-    categories: state.categories.map((c) =>
-      c.id === id ? { ...c, ...data, slug: data.name ? data.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') : c.slug } : c
-    ),
-  })),
+  updateCategory: async (id, data) => {
+    try {
+      const formData = new FormData();
+      if (data.name) formData.append('name', data.name);
+      await categoryApi.update(id, formData);
+      const catRes = await categoryApi.list({ limit: 100, sort: 'displayOrder', order: 'asc' });
+      const categories = (catRes.data?.items || []).map(mapApiCategoryToCategory);
+      set({ categories });
+    } catch (error) {
+      console.error('Failed to update category:', error);
+      throw error;
+    }
+  },
 
-  deleteCategory: (id) => set((state) => ({
-    categories: state.categories.filter((c) => c.id !== id),
-  })),
+  deleteCategory: async (id) => {
+    try {
+      await categoryApi.remove(id);
+      const catRes = await categoryApi.list({ limit: 100, sort: 'displayOrder', order: 'asc' });
+      const categories = (catRes.data?.items || []).map(mapApiCategoryToCategory);
+      set({ categories });
+    } catch (error) {
+      console.error('Failed to delete category:', error);
+      throw error;
+    }
+  },
 
-  reorderCategories: (fromIndex, toIndex) => set((state) => {
-    const cats = [...state.categories];
-    const [moved] = cats.splice(fromIndex, 1);
-    cats.splice(toIndex, 0, moved);
-    return { categories: cats.map((c, i) => ({ ...c, sortOrder: i })) };
-  }),
-
-  addFood: (data) => set((state) => {
-    const id = `food-${Date.now()}`;
-    const now = Date.now();
-    const newFood: FoodItem = {
-      id,
-      name: data.name,
-      slug: data.name.toLowerCase().replace(/\s+/g, '-'),
-      description: data.description,
-      shortDescription: data.shortDescription,
-      category: data.category,
-      price: data.price,
-      preparationTime: data.preparationTime,
-      nutrition: {
+  addFood: async (data) => {
+    try {
+      const dto: Record<string, unknown> = {
+        name: data.name,
+        description: data.description,
+        shortDescription: data.shortDescription,
+        categoryId: get().categories.find(c => c.name === data.category || c.slug === data.category)?.id || '',
+        price: data.price,
+        preparationTime: data.preparationTime,
+        isVeg: data.isVegetarian,
+        isFeatured: data.isFeatured,
+        isAvailable: data.availability === 'available',
         calories: data.calories,
         protein: data.protein,
-        carbs: data.carbs,
-        fats: data.fats,
         servingSize: data.servingSize,
-      },
-      healthTags: data.healthTags,
-      customerLabels: data.customerLabels,
-      availability: data.availability,
-      isVegetarian: data.isVegetarian,
-      isFeatured: data.isFeatured,
-      displayOnWebsite: data.displayOnWebsite,
-      bestPairedWith: data.bestPairedWith,
-      imageUrl: '/foods/placeholder.jpg',
-      galleryImages: [],
-      createdAt: now,
-      updatedAt: now,
-    };
-    return { foods: [newFood, ...state.foods], drawerOpen: false, selectedFood: null };
-  }),
+      };
+      await productApi.create(dto);
+      // Reload data
+      const prodRes = await productApi.list({ limit: 200, sort: 'sort_order' });
+      const foods = (prodRes.data?.items || []).map(p => mapApiProductToFoodItem(p, get().categories));
+      set({ foods, drawerOpen: false, selectedFood: null });
+    } catch (error) {
+      console.error('Failed to create food:', error);
+      throw error;
+    }
+  },
 
-  updateFood: (id, data) => set((state) => ({
-    foods: state.foods.map((f) =>
-      f.id === id
-        ? {
-            ...f,
-            ...data,
-            slug: data.name.toLowerCase().replace(/\s+/g, '-'),
-            nutrition: {
-              calories: data.calories,
-              protein: data.protein,
-              carbs: data.carbs,
-              fats: data.fats,
-              servingSize: data.servingSize,
-            },
-            updatedAt: Date.now(),
-          }
-        : f
-    ),
-    drawerOpen: false,
-    selectedFood: null,
-  })),
+  updateFood: async (id, data) => {
+    try {
+      const dto: Record<string, unknown> = {
+        name: data.name,
+        description: data.description,
+        shortDescription: data.shortDescription,
+        categoryId: get().categories.find(c => c.name === data.category || c.slug === data.category)?.id,
+        price: data.price,
+        preparationTime: data.preparationTime,
+        isVeg: data.isVegetarian,
+        isFeatured: data.isFeatured,
+        isAvailable: data.availability === 'available',
+        calories: data.calories,
+        protein: data.protein,
+        servingSize: data.servingSize,
+      };
+      await productApi.update(id, dto);
+      const prodRes = await productApi.list({ limit: 200, sort: 'sort_order' });
+      const foods = (prodRes.data?.items || []).map(p => mapApiProductToFoodItem(p, get().categories));
+      set({ foods, drawerOpen: false, selectedFood: null });
+    } catch (error) {
+      console.error('Failed to update food:', error);
+      throw error;
+    }
+  },
 
-  deleteFood: (id) => set((state) => ({
-    foods: state.foods.filter((f) => f.id !== id),
-    deleteModalOpen: false,
-    foodToDelete: null,
-  })),
+  deleteFood: async (id) => {
+    try {
+      await productApi.remove(id);
+      const prodRes = await productApi.list({ limit: 200, sort: 'sort_order' });
+      const foods = (prodRes.data?.items || []).map(p => mapApiProductToFoodItem(p, get().categories));
+      set({ foods, deleteModalOpen: false, foodToDelete: null });
+    } catch (error) {
+      console.error('Failed to delete food:', error);
+      throw error;
+    }
+  },
 
-  duplicateFood: (food) => set((state) => {
-    const now = Date.now();
-    const duplicate: FoodItem = {
-      ...food,
-      id: `food-${now}`,
-      name: `${food.name} (Copy)`,
-      slug: `${food.slug}-copy`,
-      createdAt: now,
-      updatedAt: now,
-    };
-    return { foods: [duplicate, ...state.foods] };
-  }),
+  duplicateFood: async (food) => {
+    try {
+      await productApi.duplicate(food.id);
+      const prodRes = await productApi.list({ limit: 200, sort: 'sort_order' });
+      const foods = (prodRes.data?.items || []).map(p => mapApiProductToFoodItem(p, get().categories));
+      set({ foods });
+    } catch (error) {
+      console.error('Failed to duplicate food:', error);
+      throw error;
+    }
+  },
 
-  archiveFood: (id) => set((state) => ({
-    foods: state.foods.map((f) =>
-      f.id === id ? { ...f, availability: 'unavailable' as const, displayOnWebsite: false, updatedAt: Date.now() } : f
-    ),
-  })),
+  archiveFood: async (id) => {
+    try {
+      await productApi.updateAvailability(id, false);
+      const prodRes = await productApi.list({ limit: 200, sort: 'sort_order' });
+      const foods = (prodRes.data?.items || []).map(p => mapApiProductToFoodItem(p, get().categories));
+      set({ foods });
+    } catch (error) {
+      console.error('Failed to archive food:', error);
+    }
+  },
 
-  toggleFeatured: (id) => set((state) => ({
-    foods: state.foods.map((f) =>
-      f.id === id ? { ...f, isFeatured: !f.isFeatured, updatedAt: Date.now() } : f
-    ),
-  })),
+  toggleFeatured: async (id) => {
+    const food = get().foods.find(f => f.id === id);
+    if (!food) return;
+    try {
+      await productApi.updateFeatured(id, !food.isFeatured);
+      const prodRes = await productApi.list({ limit: 200, sort: 'sort_order' });
+      const foods = (prodRes.data?.items || []).map(p => mapApiProductToFoodItem(p, get().categories));
+      set({ foods });
+    } catch (error) {
+      console.error('Failed to toggle featured:', error);
+    }
+  },
 
-  toggleAvailability: (id) => set((state) => ({
-    foods: state.foods.map((f) => {
-      if (f.id !== id) return f;
-      const next = f.availability === 'available' ? 'unavailable' : 'available';
-      return { ...f, availability: next, updatedAt: Date.now() };
-    }),
-  })),
+  toggleAvailability: async (id) => {
+    const food = get().foods.find(f => f.id === id);
+    if (!food) return;
+    try {
+      await productApi.updateAvailability(id, food.availability !== 'available');
+      const prodRes = await productApi.list({ limit: 200, sort: 'sort_order' });
+      const foods = (prodRes.data?.items || []).map(p => mapApiProductToFoodItem(p, get().categories));
+      set({ foods });
+    } catch (error) {
+      console.error('Failed to toggle availability:', error);
+    }
+  },
 
   getFilteredFoods: () => {
     const { foods, filters } = get();

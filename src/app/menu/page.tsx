@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion } from "motion/react";
-import { Plus, Download, Upload, Search, UtensilsCrossed, Store, ShoppingCart, Layers, DollarSign, X } from "lucide-react";
+import { Plus, Download, Upload, Search, UtensilsCrossed, Store, ShoppingCart, Layers, DollarSign, Loader2 } from "lucide-react";
 import { useMenuStore } from "@/features/menu/hooks/useMenu";
 import { HEALTH_TAG_CONFIG, HealthTag } from "@/features/menu/types/menu";
 import { MenuTable } from "@/features/menu/components/MenuTable";
@@ -19,6 +19,8 @@ const statCards = [
 ];
 
 export default function MenuPage() {
+  const loadData = useMenuStore((s) => s.loadData);
+  const loading = useMenuStore((s) => s.loading);
   const getStats = useMenuStore((s) => s.getStats);
   const stats = useMemo(() => getStats(), [getStats]);
   const filters = useMenuStore((s) => s.filters);
@@ -30,6 +32,10 @@ export default function MenuPage() {
   const clearFilters = useMenuStore((s) => s.clearFilters);
   const openAddDrawer = useMenuStore((s) => s.openAddDrawer);
   const openCategoryModal = useMenuStore((s) => s.openCategoryModal);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const [showFilters, setShowFilters] = useState(false);
   const hasFilters = filters.category.length > 0 || filters.availability.length > 0 || filters.healthTags.length > 0;
@@ -74,6 +80,12 @@ export default function MenuPage() {
         </motion.div>
 
         {/* Stats */}
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+            <span className="ml-3 text-sm text-gray-500">Loading menu data...</span>
+          </div>
+        ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
           {statCards.map((card, i) => {
             const Icon = card.icon;
@@ -101,6 +113,7 @@ export default function MenuPage() {
             );
           })}
         </div>
+        )}
 
         {/* Search + Filters */}
         <motion.div
