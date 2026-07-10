@@ -1,8 +1,8 @@
 import { create } from 'zustand';
 import { FoodItem, FoodItemFormData, MenuFilters, Availability, HealthTag, Category } from '../types/menu';
 import { categoryApi } from '@/lib/api/category.api';
-import { productApi } from '@/lib/api/food.api';
-import type { ApiCategory, ApiProduct } from '@/lib/types/api';
+import { foodItemApi } from '@/lib/api/food.api';
+import type { ApiCategory, ApiFoodItem } from '@/lib/types/api';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
@@ -27,7 +27,7 @@ function mapApiCategoryToCategory(api: ApiCategory): Category {
   };
 }
 
-function mapApiProductToFoodItem(api: ApiProduct, categories: Category[]): FoodItem {
+function mapApiFoodItemToFoodItem(api: ApiFoodItem, categories: Category[]): FoodItem {
   const category = categories.find(c => c.id === api.categoryId);
   return {
     id: api.id,
@@ -138,14 +138,14 @@ export const useMenuStore = create<MenuStore>((set, get) => ({
     try {
       const [catRes, prodRes] = await Promise.allSettled([
         categoryApi.list({ limit: 100, sort: 'displayOrder', order: 'asc', status: 'active' }),
-        productApi.list({ limit: 200, sort: 'sort_order' }),
+        foodItemApi.list({ limit: 200, sort: 'sort_order' }),
       ]);
 
       const categories = catRes.status === 'fulfilled'
         ? (catRes.value.data?.items || []).map(mapApiCategoryToCategory)
         : [];
       const foods = prodRes.status === 'fulfilled'
-        ? (prodRes.value.data?.items || []).map(p => mapApiProductToFoodItem(p, categories))
+        ? (prodRes.value.data?.items || []).map(p => mapApiFoodItemToFoodItem(p, categories))
         : [];
 
       set({ categories, foods, dataLoaded: true, loading: false });
@@ -260,11 +260,11 @@ export const useMenuStore = create<MenuStore>((set, get) => ({
         protein: data.protein,
         servingSize: data.servingSize,
       };
-      const productRes = await productApi.create(dto);
+      const productRes = await foodItemApi.create(dto);
       const createdId = productRes.data?.data?.id || '';
       // Reload data
-      const prodRes = await productApi.list({ limit: 200, sort: 'sort_order' });
-      const foods = (prodRes.data?.items || []).map(p => mapApiProductToFoodItem(p, get().categories));
+      const prodRes = await foodItemApi.list({ limit: 200, sort: 'sort_order' });
+      const foods = (prodRes.data?.items || []).map(p => mapApiFoodItemToFoodItem(p, get().categories));
       set({ foods, drawerOpen: false, selectedFood: null });
       return createdId;
     } catch (error) {
@@ -289,9 +289,9 @@ export const useMenuStore = create<MenuStore>((set, get) => ({
         protein: data.protein,
         servingSize: data.servingSize,
       };
-      await productApi.update(id, dto);
-      const prodRes = await productApi.list({ limit: 200, sort: 'sort_order' });
-      const foods = (prodRes.data?.items || []).map(p => mapApiProductToFoodItem(p, get().categories));
+      await foodItemApi.update(id, dto);
+      const prodRes = await foodItemApi.list({ limit: 200, sort: 'sort_order' });
+      const foods = (prodRes.data?.items || []).map(p => mapApiFoodItemToFoodItem(p, get().categories));
       set({ foods, drawerOpen: false, selectedFood: null });
     } catch (error) {
       console.error('Failed to update food:', error);
@@ -301,8 +301,8 @@ export const useMenuStore = create<MenuStore>((set, get) => ({
 
   reloadFoods: async () => {
     try {
-      const prodRes = await productApi.list({ limit: 200, sort: 'sort_order' });
-      const foods = (prodRes.data?.items || []).map(p => mapApiProductToFoodItem(p, get().categories));
+      const prodRes = await foodItemApi.list({ limit: 200, sort: 'sort_order' });
+      const foods = (prodRes.data?.items || []).map(p => mapApiFoodItemToFoodItem(p, get().categories));
       set({ foods });
     } catch (error) {
       console.error('Failed to reload foods:', error);
@@ -311,9 +311,9 @@ export const useMenuStore = create<MenuStore>((set, get) => ({
 
   deleteFood: async (id) => {
     try {
-      await productApi.remove(id);
-      const prodRes = await productApi.list({ limit: 200, sort: 'sort_order' });
-      const foods = (prodRes.data?.items || []).map(p => mapApiProductToFoodItem(p, get().categories));
+      await foodItemApi.remove(id);
+      const prodRes = await foodItemApi.list({ limit: 200, sort: 'sort_order' });
+      const foods = (prodRes.data?.items || []).map(p => mapApiFoodItemToFoodItem(p, get().categories));
       set({ foods, deleteModalOpen: false, foodToDelete: null });
     } catch (error) {
       console.error('Failed to delete food:', error);
@@ -323,9 +323,9 @@ export const useMenuStore = create<MenuStore>((set, get) => ({
 
   duplicateFood: async (food) => {
     try {
-      await productApi.duplicate(food.id);
-      const prodRes = await productApi.list({ limit: 200, sort: 'sort_order' });
-      const foods = (prodRes.data?.items || []).map(p => mapApiProductToFoodItem(p, get().categories));
+      await foodItemApi.duplicate(food.id);
+      const prodRes = await foodItemApi.list({ limit: 200, sort: 'sort_order' });
+      const foods = (prodRes.data?.items || []).map(p => mapApiFoodItemToFoodItem(p, get().categories));
       set({ foods });
     } catch (error) {
       console.error('Failed to duplicate food:', error);
@@ -335,9 +335,9 @@ export const useMenuStore = create<MenuStore>((set, get) => ({
 
   archiveFood: async (id) => {
     try {
-      await productApi.updateAvailability(id, false);
-      const prodRes = await productApi.list({ limit: 200, sort: 'sort_order' });
-      const foods = (prodRes.data?.items || []).map(p => mapApiProductToFoodItem(p, get().categories));
+      await foodItemApi.updateAvailability(id, false);
+      const prodRes = await foodItemApi.list({ limit: 200, sort: 'sort_order' });
+      const foods = (prodRes.data?.items || []).map(p => mapApiFoodItemToFoodItem(p, get().categories));
       set({ foods });
     } catch (error) {
       console.error('Failed to archive food:', error);
@@ -348,9 +348,9 @@ export const useMenuStore = create<MenuStore>((set, get) => ({
     const food = get().foods.find(f => f.id === id);
     if (!food) return;
     try {
-      await productApi.updateFeatured(id, !food.isFeatured);
-      const prodRes = await productApi.list({ limit: 200, sort: 'sort_order' });
-      const foods = (prodRes.data?.items || []).map(p => mapApiProductToFoodItem(p, get().categories));
+      await foodItemApi.updateFeatured(id, !food.isFeatured);
+      const prodRes = await foodItemApi.list({ limit: 200, sort: 'sort_order' });
+      const foods = (prodRes.data?.items || []).map(p => mapApiFoodItemToFoodItem(p, get().categories));
       set({ foods });
     } catch (error) {
       console.error('Failed to toggle featured:', error);
@@ -361,9 +361,9 @@ export const useMenuStore = create<MenuStore>((set, get) => ({
     const food = get().foods.find(f => f.id === id);
     if (!food) return;
     try {
-      await productApi.updateAvailability(id, food.availability !== 'available');
-      const prodRes = await productApi.list({ limit: 200, sort: 'sort_order' });
-      const foods = (prodRes.data?.items || []).map(p => mapApiProductToFoodItem(p, get().categories));
+      await foodItemApi.updateAvailability(id, food.availability !== 'available');
+      const prodRes = await foodItemApi.list({ limit: 200, sort: 'sort_order' });
+      const foods = (prodRes.data?.items || []).map(p => mapApiFoodItemToFoodItem(p, get().categories));
       set({ foods });
     } catch (error) {
       console.error('Failed to toggle availability:', error);

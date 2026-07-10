@@ -28,7 +28,7 @@ export interface ApiCategory {
   deletedAt: string | null;
 }
 
-export interface ApiProduct {
+export interface ApiFoodItem {
   id: string;
   categoryId: string;
   name: string;
@@ -69,7 +69,7 @@ export interface CategoryQueryParams {
   limit?: number;
 }
 
-export interface ProductQueryParams {
+export interface FoodItemQueryParams {
   page?: number;
   limit?: number;
   category?: string;

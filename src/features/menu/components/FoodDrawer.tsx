@@ -9,7 +9,7 @@ import { AVAILABILITY_CONFIG, CUSTOMER_LABEL_CONFIG, FoodCategory, Availability,
 import { FoodImageUploader } from "./FoodImageUploader";
 import { HealthTagSelector } from "./HealthTagSelector";
 import { FoodPreview } from "./FoodPreview";
-import { productApi } from "@/lib/api/food.api";
+import { foodItemApi } from "@/lib/api/food.api";
 
 interface FormData {
   name: string;
@@ -150,7 +150,7 @@ export function FoodDrawer() {
         // Create product first
         const createdId = await addFood(data);
         // Then upload image
-        await productApi.uploadImage(createdId, imageFile);
+        await foodItemApi.uploadImage(createdId, imageFile);
         await reloadFoods();
       } finally {
         setAddImageLoading(false);
@@ -160,7 +160,7 @@ export function FoodDrawer() {
       try {
         // Update product with image
         await updateFood(selectedFood.id, data);
-        await productApi.uploadImage(selectedFood.id, imageFile);
+        await foodItemApi.uploadImage(selectedFood.id, imageFile);
         await reloadFoods();
       } finally {
         setEditImageLoading(false);
