@@ -73,7 +73,7 @@ function Checkbox({ label, checked, onChange, disabled }: { label: string; check
 }
 
 export function FoodDrawer() {
-  const { drawerOpen, drawerMode, selectedFood, closeDrawer, addFood, updateFood, categories } = useMenuStore();
+  const { drawerOpen, drawerMode, selectedFood, closeDrawer, addFood, updateFood, reloadFoods, categories } = useMenuStore();
   const isView = drawerMode === "view";
   const isEdit = drawerMode === "edit";
   const isAdd = drawerMode === "add";
@@ -151,6 +151,7 @@ export function FoodDrawer() {
         const createdId = await addFood(data);
         // Then upload image
         await productApi.uploadImage(createdId, imageFile);
+        await reloadFoods();
       } finally {
         setAddImageLoading(false);
       }
@@ -160,6 +161,7 @@ export function FoodDrawer() {
         // Update product with image
         await updateFood(selectedFood.id, data);
         await productApi.uploadImage(selectedFood.id, imageFile);
+        await reloadFoods();
       } finally {
         setEditImageLoading(false);
       }
@@ -186,14 +188,22 @@ export function FoodDrawer() {
   return (
     <AnimatePresence>
       {drawerOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+        <>
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            className="w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white shadow-xl"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={closeDrawer}
+            className="fixed inset-0 z-50 bg-black/40"
+          />
+          <motion.div
+            initial={{ x: "100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "100%" }}
+            transition={{ type: "tween", duration: 0.3, ease: "easeInOut" }}
+            className="fixed right-0 top-0 z-50 flex h-full w-full max-w-xl flex-col bg-white shadow-2xl"
           >
-            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-200 bg-white p-6">
+            <div className="flex items-center justify-between border-b border-gray-200 p-6">
               <h2 className="text-xl font-semibold text-gray-900">
                 {isAdd ? "Add Food Item" : isEdit ? "Edit Food Item" : "View Food Item"}
               </h2>
@@ -202,7 +212,7 @@ export function FoodDrawer() {
               </button>
             </div>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-6">
+            <form onSubmit={handleSubmit(onSubmit)} className="flex-1 overflow-y-auto p-6 space-y-6">
               <Section title="Basic Information">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <Field label="Name" error={errors.name?.message}>
@@ -344,7 +354,7 @@ export function FoodDrawer() {
               </div>
             </form>
           </motion.div>
-        </div>
+        </>
       )}
     </AnimatePresence>
   );

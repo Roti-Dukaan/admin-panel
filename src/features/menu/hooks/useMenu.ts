@@ -4,6 +4,16 @@ import { categoryApi } from '@/lib/api/category.api';
 import { productApi } from '@/lib/api/food.api';
 import type { ApiCategory, ApiProduct } from '@/lib/types/api';
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
+// Backend returns image paths relative to the API server; resolve them to absolute URLs
+// so they load correctly from the admin (and any) frontend origin.
+function resolveImageUrl(url?: string | null): string {
+  if (!url) return '/foods/placeholder.jpg';
+  if (/^https?:\/\//.test(url)) return url;
+  return `${API_BASE_URL}${url.startsWith('/') ? '' : '/'}${url}`;
+}
+
 function mapApiCategoryToCategory(api: ApiCategory): Category {
   return {
     id: api.id,
@@ -42,8 +52,8 @@ function mapApiProductToFoodItem(api: ApiProduct, categories: Category[]): FoodI
     isFeatured: api.isFeatured,
     displayOnWebsite: api.isAvailable,
     bestPairedWith: [],
-    imageUrl: api.imageUrl || '/foods/placeholder.jpg',
-    galleryImages: api.gallery || [],
+    imageUrl: resolveImageUrl(api.imageUrl),
+    galleryImages: (api.gallery || []).map(resolveImageUrl),
     createdAt: new Date(api.createdAt).getTime(),
     updatedAt: new Date(api.updatedAt).getTime(),
   };
@@ -89,6 +99,7 @@ interface MenuStore {
 
   addFood: (data: FoodItemFormData) => Promise<string>;
   updateFood: (id: string, data: FoodItemFormData) => Promise<void>;
+  reloadFoods: () => Promise<void>;
   deleteFood: (id: string) => Promise<void>;
   duplicateFood: (food: FoodItem) => Promise<void>;
   archiveFood: (id: string) => Promise<void>;
@@ -288,6 +299,16 @@ export const useMenuStore = create<MenuStore>((set, get) => ({
     }
   },
 
+  reloadFoods: async () => {
+    try {
+      const prodRes = await productApi.list({ limit: 200, sort: 'sort_order' });
+      const foods = (prodRes.data?.items || []).map(p => mapApiProductToFoodItem(p, get().categories));
+      set({ foods });
+    } catch (error) {
+      console.error('Failed to reload foods:', error);
+    }
+  },
+
   deleteFood: async (id) => {
     try {
       await productApi.remove(id);
@@ -381,8 +402,7 @@ export const useMenuStore = create<MenuStore>((set, get) => ({
   },
 
   getStats: () => {
-    const { foods } = get();
-    const uniqueCategories = new Set(foods.map((f) => f.category));
+    const { foods, categories } = get();
     const available = foods.filter((f) => f.availability === 'available');
     const avgPrice = foods.length > 0 ? Math.round(foods.reduce((s, f) => s + f.price, 0) / foods.length) : 0;
 
@@ -390,7 +410,7 @@ export const useMenuStore = create<MenuStore>((set, get) => ({
       total: foods.length,
       available: available.length,
       outOfStock: foods.filter((f) => f.availability === 'out-of-stock').length,
-      categories: uniqueCategories.size,
+      categories: categories.length,
       avgPrice,
     };
   },

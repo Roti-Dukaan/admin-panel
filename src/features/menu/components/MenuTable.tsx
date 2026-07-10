@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import {
   useReactTable,
   getCoreRowModel,
@@ -20,7 +21,9 @@ const columnHelper = createColumnHelper<FoodItem>();
 
 export function MenuTable() {
   const getFilteredFoods = useMenuStore((s) => s.getFilteredFoods);
-  const foods = useMemo(() => getFilteredFoods(), [getFilteredFoods]);
+  const foods = useMenuStore((s) => s.foods);
+  const filters = useMenuStore((s) => s.filters);
+  const filteredFoods = useMemo(() => getFilteredFoods(), [getFilteredFoods, foods, filters]);
   const openViewDrawer = useMenuStore((s) => s.openViewDrawer);
   const openEditDrawer = useMenuStore((s) => s.openEditDrawer);
   const openDeleteModal = useMenuStore((s) => s.openDeleteModal);
@@ -36,11 +39,20 @@ export function MenuTable() {
     columnHelper.display({
       id: "image",
       header: "",
-      cell: () => (
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100">
-          <ImageIcon className="h-5 w-5 text-gray-400" />
-        </div>
-      ),
+      cell: (info) => {
+        const url = info.row.original.imageUrl;
+        return url ? (
+          <img
+            src={url}
+            alt={info.row.original.name}
+            className="h-10 w-10 rounded-lg object-cover"
+          />
+        ) : (
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100">
+            <ImageIcon className="h-5 w-5 text-gray-400" />
+          </div>
+        );
+      },
       size: 60,
     }),
     columnHelper.accessor("name", {
@@ -117,38 +129,19 @@ export function MenuTable() {
       header: "",
       cell: (info) => {
         const food = info.row.original;
-        const isOpen = openMenu === food.id;
         return (
-          <div className="relative">
-            <button
-              onClick={() => setOpenMenu(isOpen ? null : food.id)}
-              className="rounded-lg p-1.5 hover:bg-gray-100"
-            >
-              <MoreHorizontal className="h-4 w-4 text-gray-500" />
-            </button>
-            {isOpen && (
-              <>
-                <div className="fixed inset-0 z-40" onClick={() => setOpenMenu(null)} />
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="absolute right-0 top-full z-50 mt-1 w-44 rounded-xl border border-gray-200 bg-white py-1.5 shadow-lg"
-                >
-                  <MenuItem icon={Eye} label="View" onClick={() => { openViewDrawer(food); setOpenMenu(null); }} />
-                  <MenuItem icon={Edit} label="Edit" onClick={() => { openEditDrawer(food); setOpenMenu(null); }} />
-                  <MenuItem icon={Copy} label="Duplicate" onClick={() => { duplicateFood(food); setOpenMenu(null); }} />
-                  <MenuItem icon={Archive} label="Archive" onClick={() => { archiveFood(food.id); setOpenMenu(null); }} />
-                  <MenuItem
-                    icon={food.availability === "available" ? ToggleRight : ToggleLeft}
-                    label={food.availability === "available" ? "Unpublish" : "Publish"}
-                    onClick={() => { toggleAvailability(food.id); setOpenMenu(null); }}
-                  />
-                  <div className="my-1 border-t border-gray-100" />
-                  <MenuItem icon={Trash2} label="Delete" onClick={() => { openDeleteModal(food); setOpenMenu(null); }} danger />
-                </motion.div>
-              </>
-            )}
-          </div>
+          <RowActions
+            food={food}
+            isOpen={openMenu === food.id}
+            onToggle={() => setOpenMenu(openMenu === food.id ? null : food.id)}
+            onClose={() => setOpenMenu(null)}
+            onView={() => { openViewDrawer(food); setOpenMenu(null); }}
+            onEdit={() => { openEditDrawer(food); setOpenMenu(null); }}
+            onDuplicate={() => { duplicateFood(food); setOpenMenu(null); }}
+            onArchive={() => { archiveFood(food.id); setOpenMenu(null); }}
+            onToggleAvailability={() => { toggleAvailability(food.id); setOpenMenu(null); }}
+            onDelete={() => { openDeleteModal(food); setOpenMenu(null); }}
+          />
         );
       },
       size: 50,
@@ -156,7 +149,7 @@ export function MenuTable() {
   ], [toggleFeatured, openViewDrawer, openEditDrawer, openDeleteModal, duplicateFood, archiveFood, toggleAvailability, openMenu]);
 
   const table = useReactTable({
-    data: foods,
+    data: filteredFoods,
     columns,
     state: { sorting },
     onSortingChange: setSorting,
@@ -205,12 +198,84 @@ export function MenuTable() {
         </table>
       </div>
 
-      {foods.length === 0 && (
+      {filteredFoods.length === 0 && (
         <div className="flex h-48 items-center justify-center">
           <p className="text-sm text-gray-400">No food items found</p>
         </div>
       )}
     </div>
+  );
+}
+
+function RowActions({
+  food,
+  isOpen,
+  onToggle,
+  onClose,
+  onView,
+  onEdit,
+  onDuplicate,
+  onArchive,
+  onToggleAvailability,
+  onDelete,
+}: {
+  food: FoodItem;
+  isOpen: boolean;
+  onToggle: () => void;
+  onClose: () => void;
+  onView: () => void;
+  onEdit: () => void;
+  onDuplicate: () => void;
+  onArchive: () => void;
+  onToggleAvailability: () => void;
+  onDelete: () => void;
+}) {
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const [coords, setCoords] = useState({ top: 0, right: 0 });
+
+  useEffect(() => {
+    if (isOpen && btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect();
+      setCoords({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+    }
+  }, [isOpen]);
+
+  return (
+    <>
+      <button
+        ref={btnRef}
+        onClick={onToggle}
+        className="rounded-lg p-1.5 hover:bg-gray-100"
+        aria-label="Row actions"
+      >
+        <MoreHorizontal className="h-4 w-4 text-gray-500" />
+      </button>
+      {isOpen &&
+        createPortal(
+          <>
+            <div className="fixed inset-0 z-40" onClick={onClose} />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="fixed z-50 w-44 rounded-xl border border-gray-200 bg-white py-1.5 shadow-lg"
+              style={{ top: coords.top, right: coords.right }}
+            >
+              <MenuItem icon={Eye} label="View" onClick={onView} />
+              <MenuItem icon={Edit} label="Edit" onClick={onEdit} />
+              <MenuItem icon={Copy} label="Duplicate" onClick={onDuplicate} />
+              <MenuItem icon={Archive} label="Archive" onClick={onArchive} />
+              <MenuItem
+                icon={food.availability === "available" ? ToggleRight : ToggleLeft}
+                label={food.availability === "available" ? "Unpublish" : "Publish"}
+                onClick={onToggleAvailability}
+              />
+              <div className="my-1 border-t border-gray-100" />
+              <MenuItem icon={Trash2} label="Delete" onClick={onDelete} danger />
+            </motion.div>
+          </>,
+          document.body
+        )}
+    </>
   );
 }
 

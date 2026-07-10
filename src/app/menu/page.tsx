@@ -21,10 +21,23 @@ const statCards = [
 export default function MenuPage() {
   const loadData = useMenuStore((s) => s.loadData);
   const loading = useMenuStore((s) => s.loading);
-  const getStats = useMenuStore((s) => s.getStats);
-  const stats = useMemo(() => getStats(), [getStats]);
+  const foods = useMenuStore((s) => s.foods);
   const filters = useMenuStore((s) => s.filters);
   const categories = useMenuStore((s) => s.categories);
+
+  const stats = useMemo(() => {
+    const total = foods.length;
+    const available = foods.filter((f) => f.availability === "available").length;
+    const outOfStock = foods.filter((f) => f.availability === "out-of-stock").length;
+    const avgPrice = total > 0 ? Math.round(foods.reduce((s, f) => s + f.price, 0) / total) : 0;
+    return {
+      total,
+      available,
+      outOfStock,
+      categories: categories.length,
+      avgPrice,
+    };
+  }, [foods, categories]);
   const setSearch = useMenuStore((s) => s.setSearch);
   const toggleCategoryFilter = useMenuStore((s) => s.toggleCategoryFilter);
   const toggleAvailabilityFilter = useMenuStore((s) => s.toggleAvailabilityFilter);
