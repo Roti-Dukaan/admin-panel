@@ -11,8 +11,9 @@ const statCards = [
 ];
 
 export function CustomersStats() {
+  const customers = useCustomerStore((s) => s.customers);
   const getStats = useCustomerStore((s) => s.getStats);
-  const stats = useMemo(() => getStats(), [getStats]);
+  const stats = useMemo(() => getStats(), [getStats, customers]);
 
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-3">

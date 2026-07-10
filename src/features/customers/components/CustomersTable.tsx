@@ -29,6 +29,7 @@ function getStatusBadge(isActive: boolean) {
 export function CustomersTable() {
   const customers = useCustomerStore((s) => s.customers);
   const loading = useCustomerStore((s) => s.loading);
+  const error = useCustomerStore((s) => s.error);
   const page = useCustomerStore((s) => s.page);
   const totalPages = useCustomerStore((s) => s.totalPages);
   const total = useCustomerStore((s) => s.total);
@@ -139,7 +140,20 @@ export function CustomersTable() {
   });
 
   return (
-    <div className="rounded-xl border border-gray-200/80 bg-white shadow-sm overflow-hidden">
+    <div className="space-y-3">
+      {error && (
+        <div className="flex items-center justify-between rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <span>Failed to load customers: {error}</span>
+          <button
+            onClick={() => fetchCustomers()}
+            className="rounded-lg border border-red-200 bg-white px-3 py-1 text-xs font-semibold text-red-700 hover:bg-red-100 transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
+      <div className="rounded-xl border border-gray-200/80 bg-white shadow-sm overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
@@ -208,6 +222,7 @@ export function CustomersTable() {
           </div>
         )}
       </div>
+    </div>
     </div>
   );
 }

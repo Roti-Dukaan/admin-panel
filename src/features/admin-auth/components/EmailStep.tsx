@@ -47,6 +47,9 @@ export function EmailStep({ email, onEmailChange, onContinue, isLoading }: Email
               className="pl-10 h-12 rounded-xl border-gray-200 bg-gray-50/50 focus:bg-white focus:border-orange-300 focus:ring-orange-200 text-base"
             />
           </div>
+          <p className="text-xs text-gray-400">
+            Demo admin: <span className="font-medium text-gray-600">admin@rotidukaan.com</span>
+          </p>
         </div>
 
         <Button

@@ -1,0 +1,44 @@
+"use client"
+
+import * as React from "react"
+import { usePathname, useRouter } from "next/navigation"
+
+const PUBLIC_PATHS = ["/login"]
+
+function hasAdminSession(): boolean {
+  if (typeof window === "undefined") return false
+  try {
+    const raw = localStorage.getItem("admin-auth")
+    if (!raw) return false
+    const parsed = JSON.parse(raw)
+    return !!parsed?.state?.isAuthenticated && !!parsed?.state?.accessToken
+  } catch {
+    return false
+  }
+}
+
+export function AdminAuthGuard({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname()
+  const router = useRouter()
+  const [allowed, setAllowed] = React.useState<boolean | null>(null)
+
+  React.useEffect(() => {
+    const authed = hasAdminSession()
+    const isPublic = PUBLIC_PATHS.includes(pathname) || pathname === "/"
+
+    if (!authed && !isPublic) {
+      router.replace("/login")
+      setAllowed(false)
+      return
+    }
+    if (authed && (pathname === "/login" || pathname === "/")) {
+      router.replace("/dashboard")
+      setAllowed(false)
+      return
+    }
+    setAllowed(true)
+  }, [pathname, router])
+
+  if (allowed !== true) return null
+  return <>{children}</>
+}

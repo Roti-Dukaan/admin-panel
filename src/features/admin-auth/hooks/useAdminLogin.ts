@@ -4,8 +4,8 @@ import * as React from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import type { AuthStep } from "../types/admin-auth"
-
-const DEMO_OTP = "483921"
+import { adminAuthApi } from "../api/admin-auth.api"
+import { useAdminAuthStore } from "../store/admin-auth-store"
 
 export function useAdminLogin() {
   const router = useRouter()
@@ -29,11 +29,20 @@ export function useAdminLogin() {
       return
     }
     setIsLoading(true)
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-    setIsLoading(false)
-    setStep("otp")
-    setCountdown(30)
-    toast.info("Demo OTP: 483921")
+    try {
+      const result = await adminAuthApi.sendOtp(email)
+      setStep("otp")
+      setCountdown(30)
+      toast.success("OTP sent to your email")
+      if (result?.otp) {
+        toast.info(`Demo OTP: ${result.otp}`, { duration: 8000 })
+      }
+    } catch (err: any) {
+      const message = err?.response?.data?.message || "Failed to send OTP"
+      toast.error(message)
+    } finally {
+      setIsLoading(false)
+    }
   }, [email])
 
   const handleVerifyOtp = React.useCallback(async () => {
@@ -42,26 +51,41 @@ export function useAdminLogin() {
       return
     }
     setIsLoading(true)
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-    setIsLoading(false)
-
-    if (otp === DEMO_OTP) {
+    try {
+      const result = await adminAuthApi.login(email, otp)
+      useAdminAuthStore.getState().login(
+        result.admin,
+        result.accessToken,
+        result.refreshToken,
+      )
       toast.success("Login successful!")
       router.push("/dashboard")
-    } else {
-      toast.error("Invalid OTP. Please try again.")
+    } catch (err: any) {
+      const message = err?.response?.data?.message || "Invalid OTP"
+      toast.error(message)
       setOtp("")
+    } finally {
+      setIsLoading(false)
     }
-  }, [otp, router])
+  }, [otp, email, router])
 
   const handleResendOtp = React.useCallback(async () => {
     if (countdown > 0) return
     setIsResending(true)
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-    setIsResending(false)
-    setCountdown(30)
-    toast.info("OTP resent. Demo OTP: 483921")
-  }, [countdown])
+    try {
+      const result = await adminAuthApi.sendOtp(email)
+      setCountdown(30)
+      toast.success("OTP resent successfully")
+      if (result?.otp) {
+        toast.info(`Demo OTP: ${result.otp}`, { duration: 8000 })
+      }
+    } catch (err: any) {
+      const message = err?.response?.data?.message || "Failed to resend OTP"
+      toast.error(message)
+    } finally {
+      setIsResending(false)
+    }
+  }, [countdown, email])
 
   const handleBack = React.useCallback(() => {
     setStep("email")
