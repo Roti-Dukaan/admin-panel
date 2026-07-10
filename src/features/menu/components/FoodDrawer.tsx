@@ -110,7 +110,7 @@ export function FoodDrawer() {
 
   useEffect(() => {
     setImageFile(null);
-    setImagePreview("");
+    setImagePreview(selectedFood?.imageUrl || "");
     setImageLoading(false);
     if (selectedFood && (isEdit || isView)) {
       reset({
@@ -144,34 +144,34 @@ export function FoodDrawer() {
   }, [selectedFood, isEdit, isView, reset]);
 
   const onSubmit = async (data: FormData) => {
-    if (isAdd && imageFile) {
-      setAddImageLoading(true);
-      try {
-        // Create product first
-        const createdId = await addFood(data);
-        // Then upload image
-        await foodItemApi.uploadImage(createdId, imageFile);
-        await reloadFoods();
-      } finally {
-        setAddImageLoading(false);
+    try {
+      if (isAdd && imageFile) {
+        setAddImageLoading(true);
+        try {
+          await addFood(data, imageFile);
+          await reloadFoods();
+        } finally {
+          setAddImageLoading(false);
+        }
+      } else if (isEdit && selectedFood && imageFile) {
+        setEditImageLoading(true);
+        try {
+          await updateFood(selectedFood.id, data, imageFile);
+          await reloadFoods();
+        } finally {
+          setEditImageLoading(false);
+        }
+      } else {
+        if (isEdit && selectedFood) {
+          await updateFood(selectedFood.id, data);
+        } else if (isAdd) {
+          await addFood(data);
+        }
       }
-    } else if (isEdit && selectedFood && imageFile) {
-      setEditImageLoading(true);
-      try {
-        // Update product with image
-        await updateFood(selectedFood.id, data);
-        await foodItemApi.uploadImage(selectedFood.id, imageFile);
-        await reloadFoods();
-      } finally {
-        setEditImageLoading(false);
-      }
-    } else {
-      // No image to upload, just create/update product
-      if (isEdit && selectedFood) {
-        updateFood(selectedFood.id, data);
-      } else if (isAdd) {
-        addFood(data);
-      }
+    } catch (error) {
+      console.error('Failed to save food item:', error);
+      const message = error instanceof Error ? error.message : 'Failed to save food item. Please try again.';
+      alert(message);
     }
   };
 
@@ -320,7 +320,15 @@ export function FoodDrawer() {
                 </div>
               </Section>
 
-              <FoodImageUploader value={imagePreview} onChange={() => {}} onFileSelect={handleFileSelect} loading={imageLoading} />
+              <FoodImageUploader
+                value={imagePreview}
+                onChange={(url) => {
+                  setImagePreview(url);
+                  if (!url) setImageFile(null);
+                }}
+                onFileSelect={handleFileSelect}
+                loading={imageLoading}
+              />
 
               {isEdit && selectedFood && (
                 <FoodPreview food={selectedFood} />

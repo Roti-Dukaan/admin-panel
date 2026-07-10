@@ -16,6 +16,7 @@ interface FoodPreviewProps {
     healthTags?: HealthTag[];
     customerLabels?: CustomerLabel[];
     nutrition?: { calories: number; protein: number; carbs: number; fats: number; servingSize: string };
+    imageUrl?: string;
   };
 }
 
@@ -28,9 +29,20 @@ export function FoodPreview({ food }: FoodPreviewProps) {
     <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
       {/* Image Placeholder */}
       <div className="relative h-40 bg-gradient-to-br from-orange-100 to-amber-50">
-        <div className="flex h-full items-center justify-center">
-          <span className="text-5xl">{cat?.emoji || "🍽️"}</span>
-        </div>
+        {food.imageUrl ? (
+          <img
+            src={food.imageUrl}
+            alt={food.name}
+            className="h-full w-full object-cover"
+            onError={(e) => {
+              (e.target as HTMLImageElement).style.display = "none";
+            }}
+          />
+        ) : (
+          <div className="flex h-full items-center justify-center">
+            <span className="text-5xl">{cat?.emoji || "🍽️"}</span>
+          </div>
+        )}
         {food.isFeatured && (
           <div className="absolute left-2 top-2">
             <span className="inline-flex items-center gap-1 rounded-full bg-amber-500 px-2 py-0.5 text-[10px] font-bold text-white shadow-sm">

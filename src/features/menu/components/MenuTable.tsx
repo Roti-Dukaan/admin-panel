@@ -59,7 +59,7 @@ export function MenuTable() {
       header: "Food Name",
       cell: (info) => (
         <div>
-          <p className="text-sm font-semibold text-gray-900">{info.getValue()}</p>
+          <p className="text-sm font-semibold text-gray-900 truncate max-w-[150px]">{info.getValue()}</p>
           <p className="text-xs text-gray-500 truncate max-w-[180px]">{info.row.original.shortDescription}</p>
         </div>
       ),
@@ -70,7 +70,13 @@ export function MenuTable() {
     }),
     columnHelper.accessor("price", {
       header: "Price",
-      cell: (info) => <span className="text-sm font-bold text-gray-900">₹{info.getValue()}</span>,
+      cell: (info) => (
+        <span className="text-sm font-bold text-gray-900">
+          ₹{typeof info.getValue() === 'number' && info.getValue() > 99999
+            ? (info.getValue() / 100000).toFixed(1) + 'L'
+            : info.getValue()}
+        </span>
+      ),
     }),
     columnHelper.accessor("preparationTime", {
       header: "Prep Time",

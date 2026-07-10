@@ -27,6 +27,16 @@ function mapApiCategoryToCategory(api: ApiCategory): Category {
   };
 }
 
+function toFormData(dto: Record<string, unknown>, imageFile: File): FormData {
+  const fd = new FormData();
+  Object.entries(dto).forEach(([key, value]) => {
+    if (value === undefined || value === null) return;
+    fd.append(key, String(value));
+  });
+  fd.append('image', imageFile);
+  return fd;
+}
+
 function mapApiFoodItemToFoodItem(api: ApiFoodItem, categories: Category[]): FoodItem {
   const category = categories.find(c => c.id === api.categoryId);
   return {
@@ -36,7 +46,7 @@ function mapApiFoodItemToFoodItem(api: ApiFoodItem, categories: Category[]): Foo
     description: api.description || '',
     shortDescription: api.shortDescription || '',
     category: category?.name || category?.slug || 'Uncategorized',
-    price: api.discountPrice || api.price,
+    price: Number(api.discountPrice || api.price),
     preparationTime: api.preparationTime || 20,
     nutrition: {
       calories: api.calories || 0,
@@ -97,8 +107,8 @@ interface MenuStore {
   updateCategory: (id: string, data: Partial<Category>) => Promise<void>;
   deleteCategory: (id: string) => Promise<void>;
 
-  addFood: (data: FoodItemFormData) => Promise<string>;
-  updateFood: (id: string, data: FoodItemFormData) => Promise<void>;
+  addFood: (data: FoodItemFormData, imageFile?: File) => Promise<string>;
+  updateFood: (id: string, data: FoodItemFormData, imageFile?: File) => Promise<void>;
   reloadFoods: () => Promise<void>;
   deleteFood: (id: string) => Promise<void>;
   duplicateFood: (food: FoodItem) => Promise<void>;
@@ -244,7 +254,7 @@ export const useMenuStore = create<MenuStore>((set, get) => ({
     }
   },
 
-  addFood: async (data) => {
+  addFood: async (data, imageFile) => {
     try {
       const dto: Record<string, unknown> = {
         name: data.name,
@@ -260,7 +270,10 @@ export const useMenuStore = create<MenuStore>((set, get) => ({
         protein: data.protein,
         servingSize: data.servingSize,
       };
-      const productRes = await foodItemApi.create(dto);
+      const payload: Record<string, unknown> | FormData = imageFile
+        ? toFormData(dto, imageFile)
+        : dto;
+      const productRes = await foodItemApi.create(payload);
       const createdId = productRes.data?.data?.id || '';
       // Reload data
       const prodRes = await foodItemApi.list({ limit: 200, sort: 'sort_order' });
@@ -273,7 +286,7 @@ export const useMenuStore = create<MenuStore>((set, get) => ({
     }
   },
 
-  updateFood: async (id, data) => {
+  updateFood: async (id, data, imageFile) => {
     try {
       const dto: Record<string, unknown> = {
         name: data.name,
@@ -289,7 +302,10 @@ export const useMenuStore = create<MenuStore>((set, get) => ({
         protein: data.protein,
         servingSize: data.servingSize,
       };
-      await foodItemApi.update(id, dto);
+      const payload: Record<string, unknown> | FormData = imageFile
+        ? toFormData(dto, imageFile)
+        : dto;
+      await foodItemApi.update(id, payload);
       const prodRes = await foodItemApi.list({ limit: 200, sort: 'sort_order' });
       const foods = (prodRes.data?.items || []).map(p => mapApiFoodItemToFoodItem(p, get().categories));
       set({ foods, drawerOpen: false, selectedFood: null });
@@ -404,7 +420,7 @@ export const useMenuStore = create<MenuStore>((set, get) => ({
   getStats: () => {
     const { foods, categories } = get();
     const available = foods.filter((f) => f.availability === 'available');
-    const avgPrice = foods.length > 0 ? Math.round(foods.reduce((s, f) => s + f.price, 0) / foods.length) : 0;
+    const avgPrice = available.length > 0 ? Math.round(available.reduce((s, f) => s + f.price, 0) / available.length) : 0;
 
     return {
       total: foods.length,

@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { motion } from "motion/react";
-import { Plus, Download, Upload, Search, UtensilsCrossed, Store, ShoppingCart, Layers, DollarSign, Loader2 } from "lucide-react";
+import { Plus, Download, Upload, Search, UtensilsCrossed, Store, ShoppingCart, Layers, IndianRupee, Loader2 } from "lucide-react";
 import { useMenuStore } from "@/features/menu/hooks/useMenu";
 import { HEALTH_TAG_CONFIG, HealthTag } from "@/features/menu/types/menu";
 import { MenuTable } from "@/features/menu/components/MenuTable";
@@ -15,7 +15,7 @@ const statCards = [
   { key: "available", label: "Available Today", icon: Store, color: "text-emerald-600", bg: "bg-emerald-50" },
   { key: "outOfStock", label: "Out of Stock", icon: ShoppingCart, color: "text-red-600", bg: "bg-red-50" },
   { key: "categories", label: "Categories", icon: Layers, color: "text-violet-600", bg: "bg-violet-50" },
-  { key: "avgPrice", label: "Avg Price", icon: DollarSign, color: "text-amber-600", bg: "bg-amber-50", prefix: "₹" },
+  { key: "avgPrice", label: "Avg Price", icon: IndianRupee, color: "text-amber-600", bg: "bg-amber-50", prefix: "₹" },
 ];
 
 export default function MenuPage() {
@@ -29,7 +29,8 @@ export default function MenuPage() {
     const total = foods.length;
     const available = foods.filter((f) => f.availability === "available").length;
     const outOfStock = foods.filter((f) => f.availability === "out-of-stock").length;
-    const avgPrice = total > 0 ? Math.round(foods.reduce((s, f) => s + f.price, 0) / total) : 0;
+    const availableFoods = foods.filter((f) => f.availability === "available");
+    const avgPrice = availableFoods.length > 0 ? Math.round(availableFoods.reduce((s, f) => s + f.price, 0) / availableFoods.length) : 0;
     return {
       total,
       available,
@@ -115,11 +116,11 @@ export default function MenuPage() {
                   <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${card.bg}`}>
                     <Icon className={`h-5 w-5 ${card.color}`} />
                   </div>
-                  <div>
-                    <p className="text-2xl font-bold text-gray-900">
+                  <div className="min-w-0">
+                    <p className="truncate text-2xl font-bold text-gray-900">
                       {(card as { prefix?: string }).prefix || ""}{value}
                     </p>
-                    <p className="text-xs font-medium text-gray-500">{card.label}</p>
+                    <p className="truncate text-xs font-medium text-gray-500">{card.label}</p>
                   </div>
                 </div>
               </motion.div>

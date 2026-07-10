@@ -30,6 +30,7 @@ interface CustomerStore {
   setSelectedCustomer: (customer: Customer | null) => void;
   setDrawerOpen: (open: boolean) => void;
   setDrawerSection: (section: string) => void;
+  openCustomer: (id: string) => Promise<void>;
   toggleCustomerStatus: (id: string) => Promise<void>;
 
   getStats: () => CustomerStats;
@@ -113,6 +114,32 @@ export const useCustomerStore = create<CustomerStore>((set, get) => ({
   },
 
   setSelectedCustomer: (customer) => set({ selectedCustomer: customer, drawerOpen: !!customer, drawerSection: 'information' }),
+
+  openCustomer: async (id) => {
+    set({ drawerOpen: true, drawerSection: 'information', loading: true, error: null });
+    try {
+      const res = await customerApi.getById(id);
+      const c = res.data;
+      set({
+        selectedCustomer: {
+          id: c.id,
+          name: c.fullName || c.name || c.phone || c.email || 'Unknown',
+          phone: c.phone || '',
+          email: c.email || '',
+          fullName: c.fullName || '',
+          gender: c.gender,
+          isVerified: c.isVerified,
+          isActive: c.isActive,
+          lastLoginAt: c.lastLoginAt,
+          createdAt: c.createdAt,
+          updatedAt: c.updatedAt,
+        },
+        loading: false,
+      });
+    } catch {
+      set({ loading: false });
+    }
+  },
 
   setDrawerOpen: (open) => set((state) => ({
     drawerOpen: open,

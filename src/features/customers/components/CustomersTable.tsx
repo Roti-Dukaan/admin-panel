@@ -34,7 +34,7 @@ export function CustomersTable() {
   const totalPages = useCustomerStore((s) => s.totalPages);
   const total = useCustomerStore((s) => s.total);
   const setPage = useCustomerStore((s) => s.setPage);
-  const setSelectedCustomer = useCustomerStore((s) => s.setSelectedCustomer);
+  const openCustomer = useCustomerStore((s) => s.openCustomer);
   const fetchCustomers = useCustomerStore((s) => s.fetchCustomers);
   const [sorting, setSorting] = useState<SortingState>([]);
 
@@ -118,7 +118,7 @@ export function CustomersTable() {
         header: () => <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400">Actions</span>,
         cell: ({ row }) => (
           <button
-            onClick={() => setSelectedCustomer(row.original)}
+            onClick={() => openCustomer(row.original.id)}
             className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
           >
             <Eye className="h-3.5 w-3.5" />
@@ -127,7 +127,7 @@ export function CustomersTable() {
         ),
       },
     ],
-    [setSelectedCustomer]
+    [openCustomer]
   );
 
   const table = useReactTable({
@@ -185,7 +185,7 @@ export function CustomersTable() {
                 <tr
                   key={row.id}
                   className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors cursor-pointer"
-                  onClick={() => setSelectedCustomer(row.original)}
+                  onClick={() => openCustomer(row.original.id)}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <td key={cell.id} className="px-4 py-3">
