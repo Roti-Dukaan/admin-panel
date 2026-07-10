@@ -87,7 +87,7 @@ interface MenuStore {
   updateCategory: (id: string, data: Partial<Category>) => Promise<void>;
   deleteCategory: (id: string) => Promise<void>;
 
-  addFood: (data: FoodItemFormData) => Promise<void>;
+  addFood: (data: FoodItemFormData) => Promise<string>;
   updateFood: (id: string, data: FoodItemFormData) => Promise<void>;
   deleteFood: (id: string) => Promise<void>;
   duplicateFood: (food: FoodItem) => Promise<void>;
@@ -249,11 +249,13 @@ export const useMenuStore = create<MenuStore>((set, get) => ({
         protein: data.protein,
         servingSize: data.servingSize,
       };
-      await productApi.create(dto);
+      const productRes = await productApi.create(dto);
+      const createdId = productRes.data?.data?.id || '';
       // Reload data
       const prodRes = await productApi.list({ limit: 200, sort: 'sort_order' });
       const foods = (prodRes.data?.items || []).map(p => mapApiProductToFoodItem(p, get().categories));
       set({ foods, drawerOpen: false, selectedFood: null });
+      return createdId;
     } catch (error) {
       console.error('Failed to create food:', error);
       throw error;
