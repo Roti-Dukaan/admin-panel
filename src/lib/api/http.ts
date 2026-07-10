@@ -51,7 +51,7 @@ apiClient.interceptors.response.use(
       error.response?.status === 401 &&
       originalRequest &&
       !originalRequest._retry &&
-      originalRequest.url !== '/auth/refresh'
+      originalRequest.url !== '/admin-auth/refresh'
     ) {
       const tokens = getStoredTokens();
       const refreshToken = tokens?.refreshToken;
@@ -78,7 +78,7 @@ apiClient.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const { data } = await apiClient.post('/auth/refresh', { refreshToken });
+        const { data } = await apiClient.post('/admin-auth/refresh', { refreshToken });
         const newAccessToken = data.data?.accessToken || data.accessToken;
         const newRefreshToken = data.data?.refreshToken || data.refreshToken;
 

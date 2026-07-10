@@ -1,21 +1,19 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   useReactTable,
   getCoreRowModel,
   getSortedRowModel,
-  getFilteredRowModel,
   flexRender,
   type ColumnDef,
   type SortingState,
 } from "@tanstack/react-table";
-import { useState } from "react";
-import { ArrowUpDown, ArrowUp, ArrowDown, Eye } from "lucide-react";
+import { ArrowUpDown, ArrowUp, ArrowDown, Eye, ChevronLeft, ChevronRight } from "lucide-react";
 import { useCustomerStore } from "../hooks/useCustomers";
-import { Customer, SUBSCRIPTION_PLAN_CONFIG } from "../types/customer";
+import { Customer } from "../types/customer";
 
-function formatDate(ts: number) {
+function formatDate(ts: string) {
   return new Date(ts).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
 }
 
@@ -23,26 +21,25 @@ function getInitials(name: string) {
   return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
 }
 
-function getStatusBadge(status: string) {
-  if (status === "active") return <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">Active</span>;
+function getStatusBadge(isActive: boolean) {
+  if (isActive) return <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">Active</span>;
   return <span className="inline-flex items-center rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-semibold text-red-700">Inactive</span>;
 }
 
-function getSubscriberBadge(isSubscriber: boolean) {
-  if (!isSubscriber) return <span className="text-xs text-gray-400">—</span>;
-  return <span className="inline-flex items-center rounded-full bg-violet-50 px-2 py-0.5 text-[11px] font-semibold text-violet-700">Subscriber</span>;
-}
-
-function getVipBadge(isVip: boolean) {
-  if (!isVip) return null;
-  return <span className="inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700">VIP</span>;
-}
-
 export function CustomersTable() {
-  const getFilteredCustomers = useCustomerStore((s) => s.getFilteredCustomers);
+  const customers = useCustomerStore((s) => s.customers);
+  const loading = useCustomerStore((s) => s.loading);
+  const page = useCustomerStore((s) => s.page);
+  const totalPages = useCustomerStore((s) => s.totalPages);
+  const total = useCustomerStore((s) => s.total);
+  const setPage = useCustomerStore((s) => s.setPage);
   const setSelectedCustomer = useCustomerStore((s) => s.setSelectedCustomer);
-  const customers = useMemo(() => getFilteredCustomers(), [getFilteredCustomers]);
+  const fetchCustomers = useCustomerStore((s) => s.fetchCustomers);
   const [sorting, setSorting] = useState<SortingState>([]);
+
+  useEffect(() => {
+    fetchCustomers();
+  }, [fetchCustomers]);
 
   const columns = useMemo<ColumnDef<Customer>[]>(
     () => [
@@ -66,51 +63,41 @@ export function CustomersTable() {
               </div>
               <div className="min-w-0">
                 <p className="text-sm font-semibold text-gray-900 truncate">{c.name}</p>
-                <p className="text-xs text-gray-500 truncate">{c.phone}</p>
+                <p className="text-xs text-gray-500 truncate">{c.phone || c.email}</p>
               </div>
             </div>
           );
         },
       },
       {
-        accessorKey: "status",
+        accessorKey: "email",
+        header: () => <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400">Email</span>,
+        cell: ({ getValue }) => (
+          <span className="text-sm text-gray-600">{(getValue() as string) || "—"}</span>
+        ),
+      },
+      {
+        accessorKey: "isActive",
         header: () => <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400">Status</span>,
-        cell: ({ getValue }) => getStatusBadge(getValue() as string),
+        cell: ({ getValue }) => getStatusBadge(getValue() as boolean),
       },
       {
-        accessorKey: "isSubscriber",
-        header: () => <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400">Subscription</span>,
-        cell: ({ row }) => {
-          const c = row.original;
-          if (c.subscription) {
-            const cfg = SUBSCRIPTION_PLAN_CONFIG[c.subscription.plan];
-            return (
-              <div className="flex items-center gap-2">
-                <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ${cfg.color} ${cfg.bgColor}`}>
-                  {cfg.label}
-                </span>
-              </div>
-            );
-          }
-          return getSubscriberBadge(c.isSubscriber);
-        },
+        accessorKey: "createdAt",
+        header: ({ column }) => (
+          <button
+            className="flex items-center gap-1 text-left text-[11px] font-bold uppercase tracking-wider text-gray-400 hover:text-gray-600"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Joined
+            {column.getIsSorted() === "asc" ? <ArrowUp className="h-3 w-3" /> : column.getIsSorted() === "desc" ? <ArrowDown className="h-3 w-3" /> : <ArrowUpDown className="h-3 w-3 opacity-40" />}
+          </button>
+        ),
+        cell: ({ getValue }) => (
+          <span className="text-sm text-gray-600">{formatDate(getValue() as string)}</span>
+        ),
       },
       {
-        id: "orders",
-        header: () => <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400">Orders</span>,
-        cell: ({ row }) => {
-          const c = row.original;
-          const totalSpent = c.orders.reduce((s, o) => s + o.amount, 0);
-          return (
-            <div>
-              <p className="text-sm font-semibold text-gray-900">{c.orders.length}</p>
-              <p className="text-xs text-gray-500">₹{totalSpent.toLocaleString("en-IN")}</p>
-            </div>
-          );
-        },
-      },
-      {
-        accessorKey: "lastLogin",
+        accessorKey: "lastLoginAt",
         header: ({ column }) => (
           <button
             className="flex items-center gap-1 text-left text-[11px] font-bold uppercase tracking-wider text-gray-400 hover:text-gray-600"
@@ -120,14 +107,10 @@ export function CustomersTable() {
             {column.getIsSorted() === "asc" ? <ArrowUp className="h-3 w-3" /> : column.getIsSorted() === "desc" ? <ArrowDown className="h-3 w-3" /> : <ArrowUpDown className="h-3 w-3 opacity-40" />}
           </button>
         ),
-        cell: ({ getValue }) => (
-          <span className="text-sm text-gray-600">{formatDate(getValue() as number)}</span>
-        ),
-      },
-      {
-        id: "vip",
-        header: () => <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400">VIP</span>,
-        cell: ({ row }) => getVipBadge(row.original.isVip),
+        cell: ({ getValue }) => {
+          const val = getValue() as string | null;
+          return <span className="text-sm text-gray-600">{val ? formatDate(val) : "—"}</span>;
+        },
       },
       {
         id: "actions",
@@ -171,10 +154,16 @@ export function CustomersTable() {
             ))}
           </thead>
           <tbody>
-            {table.getRowModel().rows.length === 0 ? (
+            {loading ? (
               <tr>
                 <td colSpan={columns.length} className="px-4 py-12 text-center text-sm text-gray-500">
-                  No customers found matching your filters.
+                  Loading customers...
+                </td>
+              </tr>
+            ) : table.getRowModel().rows.length === 0 ? (
+              <tr>
+                <td colSpan={columns.length} className="px-4 py-12 text-center text-sm text-gray-500">
+                  No customers found.
                 </td>
               </tr>
             ) : (
@@ -195,13 +184,30 @@ export function CustomersTable() {
           </tbody>
         </table>
       </div>
-      {customers.length > 0 && (
-        <div className="border-t border-gray-100 bg-gray-50/30 px-4 py-2.5">
-          <p className="text-xs text-gray-500">
-            Showing <span className="font-semibold text-gray-700">{customers.length}</span> customer{customers.length !== 1 && "s"}
-          </p>
-        </div>
-      )}
+      <div className="border-t border-gray-100 bg-gray-50/30 px-4 py-2.5 flex items-center justify-between">
+        <p className="text-xs text-gray-500">
+          Showing <span className="font-semibold text-gray-700">{customers.length}</span> of <span className="font-semibold text-gray-700">{total}</span> customer{total !== 1 && "s"}
+        </p>
+        {totalPages > 1 && (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPage(page - 1)}
+              disabled={page <= 1}
+              className="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <ChevronLeft className="h-3 w-3" /> Prev
+            </button>
+            <span className="text-xs text-gray-500">Page {page} of {totalPages}</span>
+            <button
+              onClick={() => setPage(page + 1)}
+              disabled={page >= totalPages}
+              className="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Next <ChevronRight className="h-3 w-3" />
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

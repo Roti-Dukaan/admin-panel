@@ -1,64 +1,116 @@
 import { create } from 'zustand';
-import { Customer, CustomerFilters, CustomerStatus, PaymentMethod } from '../types/customer';
-import { mockCustomers } from '../mock/customers';
+import { Customer, CustomerFilters } from '../types/customer';
+import { customerApi, type ApiCustomer } from '@/lib/api/customer.api';
 
 interface CustomerStats {
   total: number;
   active: number;
   inactive: number;
-  subscribers: number;
-  repeatCustomers: number;
-  vipCustomers: number;
 }
 
 interface CustomerStore {
   customers: Customer[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
   filters: CustomerFilters;
   selectedCustomer: Customer | null;
   drawerOpen: boolean;
   drawerSection: string;
+  loading: boolean;
+  error: string | null;
 
+  fetchCustomers: () => Promise<void>;
+  setPage: (page: number) => void;
   setSearch: (search: string) => void;
-  setSubscriptionFilter: (filter: CustomerFilters['subscription']) => void;
   setStatusFilter: (filter: CustomerFilters['status']) => void;
-  setPincodeFilter: (pincode: string) => void;
-  setPaymentPreferenceFilter: (filter: CustomerFilters['paymentPreference']) => void;
   clearFilters: () => void;
 
   setSelectedCustomer: (customer: Customer | null) => void;
   setDrawerOpen: (open: boolean) => void;
   setDrawerSection: (section: string) => void;
+  toggleCustomerStatus: (id: string) => Promise<void>;
 
-  getFilteredCustomers: () => Customer[];
   getStats: () => CustomerStats;
+}
+
+function mapCustomer(c: ApiCustomer): Customer {
+  return {
+    id: c.id,
+    name: c.fullName || c.name || c.phone || c.email || 'Unknown',
+    phone: c.phone || '',
+    email: c.email || '',
+    fullName: c.fullName || '',
+    gender: c.gender,
+    isVerified: c.isVerified,
+    isActive: c.isActive,
+    lastLoginAt: c.lastLoginAt,
+    createdAt: c.createdAt,
+    updatedAt: c.updatedAt,
+  };
 }
 
 const initialFilters: CustomerFilters = {
   search: '',
-  subscription: 'all',
   status: 'all',
-  pincode: '',
-  paymentPreference: 'all',
 };
 
 export const useCustomerStore = create<CustomerStore>((set, get) => ({
-  customers: mockCustomers,
+  customers: [],
+  total: 0,
+  page: 1,
+  limit: 20,
+  totalPages: 0,
   filters: { ...initialFilters },
   selectedCustomer: null,
   drawerOpen: false,
   drawerSection: 'information',
+  loading: false,
+  error: null,
 
-  setSearch: (search) => set((state) => ({ filters: { ...state.filters, search } })),
+  fetchCustomers: async () => {
+    const { filters, page, limit } = get();
+    set({ loading: true, error: null });
+    try {
+      const params: Record<string, unknown> = { page, limit };
+      if (filters.search) params.search = filters.search;
+      if (filters.status === 'active') params.isActive = true;
+      if (filters.status === 'inactive') params.isActive = false;
 
-  setSubscriptionFilter: (subscription) => set((state) => ({ filters: { ...state.filters, subscription } })),
+      const res = await customerApi.list(params);
+      const data = res.data;
+      set({
+        customers: data.items.map(mapCustomer),
+        total: data.total,
+        totalPages: data.totalPages,
+        loading: false,
+      });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to load customers';
+      set({ loading: false, error: message });
+    }
+  },
 
-  setStatusFilter: (status) => set((state) => ({ filters: { ...state.filters, status } })),
+  setPage: (page) => {
+    set({ page });
+    get().fetchCustomers();
+  },
 
-  setPincodeFilter: (pincode) => set((state) => ({ filters: { ...state.filters, pincode } })),
+  setSearch: (search) => {
+    set({ filters: { ...get().filters, search }, page: 1 });
+    get().fetchCustomers();
+  },
 
-  setPaymentPreferenceFilter: (paymentPreference) => set((state) => ({ filters: { ...state.filters, paymentPreference } })),
+  setStatusFilter: (status) => {
+    set({ filters: { ...get().filters, status }, page: 1 });
+    get().fetchCustomers();
+  },
 
-  clearFilters: () => set({ filters: { ...initialFilters } }),
+  clearFilters: () => {
+    set({ filters: { ...initialFilters }, page: 1 });
+    get().fetchCustomers();
+  },
 
   setSelectedCustomer: (customer) => set({ selectedCustomer: customer, drawerOpen: !!customer, drawerSection: 'information' }),
 
@@ -70,51 +122,27 @@ export const useCustomerStore = create<CustomerStore>((set, get) => ({
 
   setDrawerSection: (section) => set({ drawerSection: section }),
 
-  getFilteredCustomers: () => {
-    const { customers, filters } = get();
-    let filtered = [...customers];
-
-    if (filters.search) {
-      const q = filters.search.toLowerCase();
-      filtered = filtered.filter(
-        (c) =>
-          c.name.toLowerCase().includes(q) ||
-          c.phone.includes(q) ||
-          c.email.toLowerCase().includes(q) ||
-          c.pincode.includes(q)
-      );
+  toggleCustomerStatus: async (id) => {
+    const customer = get().customers.find((c) => c.id === id);
+    if (!customer) return;
+    try {
+      await customerApi.updateStatus(id, !customer.isActive);
+      set({
+        customers: get().customers.map((c) =>
+          c.id === id ? { ...c, isActive: !c.isActive } : c
+        ),
+      });
+    } catch {
+      // ignore
     }
-
-    if (filters.subscription === 'subscribed') {
-      filtered = filtered.filter((c) => c.isSubscriber);
-    } else if (filters.subscription === 'not-subscribed') {
-      filtered = filtered.filter((c) => !c.isSubscriber);
-    }
-
-    if (filters.status !== 'all') {
-      filtered = filtered.filter((c) => c.status === filters.status);
-    }
-
-    if (filters.pincode) {
-      filtered = filtered.filter((c) => c.pincode === filters.pincode);
-    }
-
-    if (filters.paymentPreference !== 'all') {
-      filtered = filtered.filter((c) => c.insights.preferredPaymentMethod === filters.paymentPreference);
-    }
-
-    return filtered;
   },
 
   getStats: () => {
     const { customers } = get();
     return {
       total: customers.length,
-      active: customers.filter((c) => c.status === 'active').length,
-      inactive: customers.filter((c) => c.status === 'inactive').length,
-      subscribers: customers.filter((c) => c.isSubscriber).length,
-      repeatCustomers: customers.filter((c) => c.isRepeatCustomer).length,
-      vipCustomers: customers.filter((c) => c.isVip).length,
+      active: customers.filter((c) => c.isActive).length,
+      inactive: customers.filter((c) => !c.isActive).length,
     };
   },
 }));

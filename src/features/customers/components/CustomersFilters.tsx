@@ -1,23 +1,15 @@
 "use client";
 
-import { Search, X, Filter } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { useCustomerStore } from "../hooks/useCustomers";
-import { CustomerFilters as CustomerFiltersType } from "../types/customer";
 
 export function CustomersFilters() {
   const filters = useCustomerStore((s) => s.filters);
   const setSearch = useCustomerStore((s) => s.setSearch);
-  const setSubscriptionFilter = useCustomerStore((s) => s.setSubscriptionFilter);
   const setStatusFilter = useCustomerStore((s) => s.setStatusFilter);
-  const setPincodeFilter = useCustomerStore((s) => s.setPincodeFilter);
-  const setPaymentPreferenceFilter = useCustomerStore((s) => s.setPaymentPreferenceFilter);
   const clearFilters = useCustomerStore((s) => s.clearFilters);
 
-  const hasFilters =
-    filters.subscription !== "all" ||
-    filters.status !== "all" ||
-    filters.pincode !== "" ||
-    filters.paymentPreference !== "all";
+  const hasFilters = filters.status !== "all" || filters.search !== "";
 
   return (
     <div className="space-y-3">
@@ -28,31 +20,11 @@ export function CustomersFilters() {
             type="text"
             value={filters.search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by name, phone, email or pincode..."
+            placeholder="Search by name, phone or email..."
             className="h-10 w-full rounded-xl border border-gray-200 bg-white pl-9 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-300"
           />
         </div>
 
-        {/* Subscription Filter */}
-        <div className="flex rounded-xl border border-gray-200 bg-white overflow-hidden">
-          {(["all", "subscribed", "not-subscribed"] as const).map((val) => {
-            const labels = { all: "All", subscribed: "Subscribed", "not-subscribed": "Not Subscribed" };
-            const active = filters.subscription === val;
-            return (
-              <button
-                key={val}
-                onClick={() => setSubscriptionFilter(val)}
-                className={`px-3 py-2 text-xs font-semibold transition-colors ${
-                  active ? "bg-gray-900 text-white" : "text-gray-600 hover:bg-gray-50"
-                }`}
-              >
-                {labels[val]}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Status Filter */}
         <div className="flex rounded-xl border border-gray-200 bg-white overflow-hidden">
           {(["all", "active", "inactive"] as const).map((val) => {
             const labels = { all: "All", active: "Active", inactive: "Inactive" };
@@ -61,25 +33,6 @@ export function CustomersFilters() {
               <button
                 key={val}
                 onClick={() => setStatusFilter(val)}
-                className={`px-3 py-2 text-xs font-semibold transition-colors ${
-                  active ? "bg-gray-900 text-white" : "text-gray-600 hover:bg-gray-50"
-                }`}
-              >
-                {labels[val]}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Payment Preference Filter */}
-        <div className="flex rounded-xl border border-gray-200 bg-white overflow-hidden">
-          {(["all", "online", "cod"] as const).map((val) => {
-            const labels = { all: "All Payments", online: "Online", cod: "COD" };
-            const active = filters.paymentPreference === val;
-            return (
-              <button
-                key={val}
-                onClick={() => setPaymentPreferenceFilter(val)}
                 className={`px-3 py-2 text-xs font-semibold transition-colors ${
                   active ? "bg-gray-900 text-white" : "text-gray-600 hover:bg-gray-50"
                 }`}

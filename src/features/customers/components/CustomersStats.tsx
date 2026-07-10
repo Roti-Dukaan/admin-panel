@@ -1,16 +1,13 @@
 "use client";
 
 import { useMemo } from "react";
-import { Users, UserCheck, UserX, Repeat, Crown, ShoppingCart } from "lucide-react";
+import { Users, UserCheck, UserX } from "lucide-react";
 import { useCustomerStore } from "../hooks/useCustomers";
 
 const statCards = [
   { key: "total" as const, label: "Total Customers", icon: Users, color: "text-blue-600", bg: "bg-blue-50" },
   { key: "active" as const, label: "Active", icon: UserCheck, color: "text-emerald-600", bg: "bg-emerald-50" },
   { key: "inactive" as const, label: "Inactive", icon: UserX, color: "text-red-600", bg: "bg-red-50" },
-  { key: "subscribers" as const, label: "Subscribers", icon: Repeat, color: "text-violet-600", bg: "bg-violet-50" },
-  { key: "repeatCustomers" as const, label: "Repeat Orders", icon: ShoppingCart, color: "text-amber-600", bg: "bg-amber-50" },
-  { key: "vipCustomers" as const, label: "VIP Customers", icon: Crown, color: "text-orange-600", bg: "bg-orange-50" },
 ];
 
 export function CustomersStats() {
@@ -18,8 +15,8 @@ export function CustomersStats() {
   const stats = useMemo(() => getStats(), [getStats]);
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-      {statCards.map((card, i) => {
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-3">
+      {statCards.map((card) => {
         const Icon = card.icon;
         const value = stats[card.key];
         return (
