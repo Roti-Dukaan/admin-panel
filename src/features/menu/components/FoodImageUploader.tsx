@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Upload, X, Loader2 } from "lucide-react";
+import { Upload, X, Loader2, Info } from "lucide-react";
 
 interface FoodImageUploaderProps {
   value: string;
@@ -48,6 +48,20 @@ export function FoodImageUploader({ value, onChange, onFileSelect, loading = fal
         onChange={handleFileInput}
         className="hidden"
       />
+      <div className="flex items-center gap-2">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400">Food Image</h3>
+        <div className="group relative">
+          <Info className="h-3.5 w-3.5 cursor-help text-gray-400 hover:text-gray-600" />
+          <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 -translate-x-1/2 whitespace-nowrap rounded-lg border border-gray-200 bg-gray-900 px-3 py-2 text-xs text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+            <div className="space-y-1">
+              <p className="font-medium">Recommended: 1200 x 900 px</p>
+              <p className="text-gray-300">Aspect ratio: 4:3</p>
+              <p className="text-gray-300">Formats: PNG, JPG, WebP | Max: 5MB</p>
+            </div>
+            <div className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-gray-900" />
+          </div>
+        </div>
+      </div>
       <div
         onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
         onDragLeave={() => setDragOver(false)}

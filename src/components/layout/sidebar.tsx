@@ -18,6 +18,7 @@ import {
   Shield,
   BarChart3,
   Wallet,
+  Settings,
 } from "lucide-react"
 
 interface NavItem {
@@ -38,6 +39,7 @@ const navItems: NavItem[] = [
   { label: "Reports & Analytics", href: "/reports", icon: BarChart3 },
   { label: "Payments", href: "/admin/payments", icon: Wallet },
   { label: "Roles & Permissions", href: "/admin/roles", icon: Shield },
+  { label: "Settings", href: "/settings", icon: Settings },
 ]
 
 interface SidebarProps {

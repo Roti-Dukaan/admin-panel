@@ -1,0 +1,17 @@
+import type {
+  BusinessSettingsData,
+  TaxConfigData,
+  PaymentConfigData,
+  DeliveryConfigData,
+  PincodeData,
+} from '@/lib/api/settings.api';
+
+export type {
+  BusinessSettingsData,
+  TaxConfigData,
+  PaymentConfigData,
+  DeliveryConfigData,
+  PincodeData,
+};
+
+export type SettingsTab = 'business' | 'tax' | 'payment' | 'delivery' | 'pincodes';

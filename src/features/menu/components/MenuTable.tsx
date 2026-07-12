@@ -12,7 +12,7 @@ import {
   SortingState,
 } from "@tanstack/react-table";
 import { motion } from "motion/react";
-import { ArrowUpDown, MoreHorizontal, Eye, Edit, Copy, Archive, Trash2, Star, ToggleLeft, ToggleRight, ImageIcon } from "lucide-react";
+import { ArrowUpDown, MoreHorizontal, Eye, Edit, Copy, Trash2, Star, ToggleLeft, ToggleRight, ImageIcon } from "lucide-react";
 import { useMenuStore } from "../hooks/useMenu";
 import { FoodItem, CUSTOMER_LABEL_CONFIG, CustomerLabel } from "../types/menu";
 import { CategoryBadge, AvailabilityBadge } from "./CategoryBadge";
@@ -28,7 +28,6 @@ export function MenuTable() {
   const openEditDrawer = useMenuStore((s) => s.openEditDrawer);
   const openDeleteModal = useMenuStore((s) => s.openDeleteModal);
   const duplicateFood = useMenuStore((s) => s.duplicateFood);
-  const archiveFood = useMenuStore((s) => s.archiveFood);
   const toggleFeatured = useMenuStore((s) => s.toggleFeatured);
   const toggleAvailability = useMenuStore((s) => s.toggleAvailability);
 
@@ -144,7 +143,6 @@ export function MenuTable() {
             onView={() => { openViewDrawer(food); setOpenMenu(null); }}
             onEdit={() => { openEditDrawer(food); setOpenMenu(null); }}
             onDuplicate={() => { duplicateFood(food); setOpenMenu(null); }}
-            onArchive={() => { archiveFood(food.id); setOpenMenu(null); }}
             onToggleAvailability={() => { toggleAvailability(food.id); setOpenMenu(null); }}
             onDelete={() => { openDeleteModal(food); setOpenMenu(null); }}
           />
@@ -152,7 +150,7 @@ export function MenuTable() {
       },
       size: 50,
     }),
-  ], [toggleFeatured, openViewDrawer, openEditDrawer, openDeleteModal, duplicateFood, archiveFood, toggleAvailability, openMenu]);
+  ], [toggleFeatured, openViewDrawer, openEditDrawer, openDeleteModal, duplicateFood, toggleAvailability, openMenu]);
 
   const table = useReactTable({
     data: filteredFoods,
@@ -221,7 +219,6 @@ function RowActions({
   onView,
   onEdit,
   onDuplicate,
-  onArchive,
   onToggleAvailability,
   onDelete,
 }: {
@@ -232,7 +229,6 @@ function RowActions({
   onView: () => void;
   onEdit: () => void;
   onDuplicate: () => void;
-  onArchive: () => void;
   onToggleAvailability: () => void;
   onDelete: () => void;
 }) {
@@ -242,7 +238,16 @@ function RowActions({
   useEffect(() => {
     if (isOpen && btnRef.current) {
       const rect = btnRef.current.getBoundingClientRect();
-      setCoords({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+      const menuHeight = 280;
+      const menuWidth = 176;
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+      const showBelow = spaceBelow > menuHeight;
+      const showRight = window.innerWidth - rect.right > menuWidth;
+      setCoords({
+        top: showBelow ? rect.bottom + 4 : Math.max(8, rect.top - menuHeight),
+        right: showRight ? window.innerWidth - rect.right : Math.max(8, window.innerWidth - rect.left - menuWidth),
+      });
     }
   }, [isOpen]);
 
@@ -266,17 +271,16 @@ function RowActions({
               className="fixed z-50 w-44 rounded-xl border border-gray-200 bg-white py-1.5 shadow-lg"
               style={{ top: coords.top, right: coords.right }}
             >
-              <MenuItem icon={Eye} label="View" onClick={onView} />
-              <MenuItem icon={Edit} label="Edit" onClick={onEdit} />
-              <MenuItem icon={Copy} label="Duplicate" onClick={onDuplicate} />
-              <MenuItem icon={Archive} label="Archive" onClick={onArchive} />
-              <MenuItem
-                icon={food.availability === "available" ? ToggleRight : ToggleLeft}
-                label={food.availability === "available" ? "Unpublish" : "Publish"}
-                onClick={onToggleAvailability}
-              />
-              <div className="my-1 border-t border-gray-100" />
-              <MenuItem icon={Trash2} label="Delete" onClick={onDelete} danger />
+<MenuItem icon={Eye} label="View" onClick={onView} />
+               <MenuItem icon={Edit} label="Edit" onClick={onEdit} />
+               <MenuItem icon={Copy} label="Duplicate" onClick={onDuplicate} />
+               <MenuItem
+                 icon={food.availability === "available" ? ToggleRight : ToggleLeft}
+                 label={food.availability === "available" ? "Unpublish" : "Publish"}
+                 onClick={onToggleAvailability}
+               />
+               <div className="my-1 border-t border-gray-100" />
+               <MenuItem icon={Trash2} label="Delete" onClick={onDelete} danger />
             </motion.div>
           </>,
           document.body
