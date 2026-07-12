@@ -21,6 +21,30 @@ export interface ApiCustomerDetail extends ApiCustomer {
   _count: { orders: number; addresses: number };
 }
 
+export interface ApiCustomerAddress {
+  id: string;
+  customerId: string;
+  label: string;
+  receiverName: string;
+  phoneNumber: string;
+  houseNumber: string;
+  apartment: string | null;
+  street: string;
+  landmark: string | null;
+  area: string;
+  city: string;
+  state: string;
+  country: string;
+  pincode: string;
+  latitude: number | null;
+  longitude: number | null;
+  deliveryInstructions: string | null;
+  isDefault: boolean;
+  isServiceable: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface CustomerQueryParams {
   page?: number;
   limit?: number;
@@ -41,6 +65,11 @@ export const customerApi = {
 
   async updateStatus(id: string, isActive: boolean): Promise<ApiResponse<{ id: string; isActive: boolean }>> {
     const { data } = await apiClient.patch(`/admin/customers/${id}/status`, { isActive });
+    return data;
+  },
+
+  async getAddresses(customerId: string): Promise<ApiResponse<{ customer: { id: string; fullName: string | null; email: string | null; phone: string | null }; addresses: ApiCustomerAddress[]; total: number }>> {
+    const { data } = await apiClient.get(`/admin/customers/${customerId}/addresses`);
     return data;
   },
 };

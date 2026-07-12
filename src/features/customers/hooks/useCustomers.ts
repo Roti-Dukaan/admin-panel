@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { Customer, CustomerFilters } from '../types/customer';
-import { customerApi, type ApiCustomer } from '@/lib/api/customer.api';
+import { customerApi, type ApiCustomer, type ApiCustomerAddress } from '@/lib/api/customer.api';
 
 interface CustomerStats {
   total: number;
@@ -20,6 +20,8 @@ interface CustomerStore {
   drawerSection: string;
   loading: boolean;
   error: string | null;
+  customerAddresses: ApiCustomerAddress[];
+  addressesLoading: boolean;
 
   fetchCustomers: () => Promise<void>;
   setPage: (page: number) => void;
@@ -31,6 +33,7 @@ interface CustomerStore {
   setDrawerOpen: (open: boolean) => void;
   setDrawerSection: (section: string) => void;
   openCustomer: (id: string) => Promise<void>;
+  fetchCustomerAddresses: (customerId: string) => Promise<void>;
   toggleCustomerStatus: (id: string) => Promise<void>;
 
   getStats: () => CustomerStats;
@@ -69,6 +72,8 @@ export const useCustomerStore = create<CustomerStore>((set, get) => ({
   drawerSection: 'information',
   loading: false,
   error: null,
+  customerAddresses: [],
+  addressesLoading: false,
 
   fetchCustomers: async () => {
     const { filters, page, limit } = get();
@@ -141,10 +146,21 @@ export const useCustomerStore = create<CustomerStore>((set, get) => ({
     }
   },
 
+  fetchCustomerAddresses: async (customerId) => {
+    set({ addressesLoading: true });
+    try {
+      const res = await customerApi.getAddresses(customerId);
+      set({ customerAddresses: res.data.addresses, addressesLoading: false });
+    } catch {
+      set({ customerAddresses: [], addressesLoading: false });
+    }
+  },
+
   setDrawerOpen: (open) => set((state) => ({
     drawerOpen: open,
     selectedCustomer: open ? state.selectedCustomer : null,
     drawerSection: 'information',
+    customerAddresses: open ? state.customerAddresses : [],
   })),
 
   setDrawerSection: (section) => set({ drawerSection: section }),
