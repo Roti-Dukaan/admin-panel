@@ -319,7 +319,7 @@ function TaxTab({ saving, onSubmit, data }: { saving: boolean; onSubmit: (d: Rec
   const [form, setForm] = useState({
     name: "",
     gstPercentage: 0,
-    hsnCode: "",
+    sacCode: "",
   });
 
   useEffect(() => {
@@ -327,7 +327,7 @@ function TaxTab({ saving, onSubmit, data }: { saving: boolean; onSubmit: (d: Rec
       setForm({
         name: data.name || "",
         gstPercentage: data.gstPercentage || 0,
-        hsnCode: data.hsnCode || "",
+        sacCode: data.sacCode || "",
       });
     }
   }, [data]);
@@ -353,8 +353,8 @@ function TaxTab({ saving, onSubmit, data }: { saving: boolean; onSubmit: (d: Rec
             />
           </div>
         </Field>
-        <Field label="HSN Code">
-          <Input value={form.hsnCode} onChange={(v) => set("hsnCode", v)} placeholder="21069099" />
+        <Field label="SAC Code">
+          <Input value={form.sacCode} onChange={(v) => set("sacCode", v)} placeholder="21069099" />
         </Field>
       </div>
       <SaveButton saving={saving} onClick={() => onSubmit(form)} />

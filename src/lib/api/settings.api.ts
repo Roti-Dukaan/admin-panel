@@ -31,7 +31,7 @@ export interface BusinessSettingsData {
 export interface TaxConfigData {
   id: string;
   name: string;
-  hsnCode: string | null;
+  sacCode: string | null;
   gstPercentage: number;
   gstType: string;
   isActive: boolean;
