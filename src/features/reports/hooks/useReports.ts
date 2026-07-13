@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { DateRange, ChartGranularity, ReportsData } from '../types/report';
+import { DateRange, ChartGranularity, ReportsData, RevenueDataPoint } from '../types/report';
 import { mockReportsData, mockDailyData, mockWeeklyData, mockMonthlyData } from '../mock/reports';
 
 interface ReportsStore {
@@ -9,16 +9,16 @@ interface ReportsStore {
   granularity: ChartGranularity;
   loading: boolean;
   data: ReportsData;
-  dailyData: typeof mockDailyData;
-  weeklyData: typeof mockWeeklyData;
-  monthlyData: typeof mockMonthlyData;
+  dailyData: RevenueDataPoint[];
+  weeklyData: RevenueDataPoint[];
+  monthlyData: RevenueDataPoint[];
 
   setDateRange: (range: DateRange) => void;
   setCustomStartDate: (date: string) => void;
   setCustomEndDate: (date: string) => void;
   setGranularity: (g: ChartGranularity) => void;
   refreshData: () => void;
-  getChartData: () => typeof mockDailyData;
+  getChartData: () => RevenueDataPoint[];
 }
 
 export const useReportsStore = create<ReportsStore>((set, get) => ({
