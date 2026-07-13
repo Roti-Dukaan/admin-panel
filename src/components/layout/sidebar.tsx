@@ -19,6 +19,7 @@ import {
   BarChart3,
   Wallet,
   Settings,
+  Truck,
 } from "lucide-react"
 
 interface NavItem {
@@ -32,6 +33,7 @@ const navItems: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "Orders", href: "/orders", icon: ShoppingBag, badge: "3" },
   { label: "Kitchen", href: "/kitchen", icon: UtensilsCrossed },
+  { label: "Deliveries", href: "/deliveries", icon: Truck },
   { label: "Menu Items", href: "/menu", icon: ClipboardList },
   { label: "Customers", href: "/customers", icon: Users },
   { label: "Subscription Plans", href: "/subscription-plans", icon: CreditCard },

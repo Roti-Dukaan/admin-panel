@@ -1,39 +1,34 @@
-import { create } from "zustand"
-import type {
-  Order,
-  OrderStatistics,
-  OrderFilters,
-  OrderStatus,
-  PaymentStatus,
-} from "../types/order"
-import { mockOrders, mockStatistics } from "../mock/orders"
+import { create } from "zustand";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import type { Order, OrderStatistics, OrderFilters, OrderStatus, PaymentStatus } from "../types/order";
+import { ordersApi } from "@/lib/api/orders.api";
 
-interface OrdersState {
-  orders: Order[]
-  selectedOrder: Order | null
-  statistics: OrderStatistics | null
-  filters: OrderFilters
+interface OrderStore {
+  orders: Order[];
+  selectedOrder: Order | null;
+  statistics: OrderStatistics | null;
+  filters: OrderFilters;
   pagination: {
-    page: number
-    pageSize: number
-    total: number
-    totalPages: number
-  }
-  loading: boolean
-  statisticsLoading: boolean
-  drawerOpen: boolean
-  updatingStatus: string | null
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+  };
+  loading: boolean;
+  statisticsLoading: boolean;
+  drawerOpen: boolean;
+  updatingStatus: string | null;
 
-  setFilters: (filters: Partial<OrderFilters>) => void
-  setPage: (page: number) => void
-  setPageSize: (pageSize: number) => void
-  setSelectedOrder: (order: Order | null) => void
-  setDrawerOpen: (open: boolean) => void
-  fetchOrders: () => Promise<void>
-  fetchStatistics: () => Promise<void>
-  updateOrderStatus: (orderId: string, status: OrderStatus) => Promise<void>
-  cancelOrder: (orderId: string, reason?: string) => Promise<void>
-  refreshAll: () => Promise<void>
+  setFilters: (filters: Partial<OrderFilters>) => void;
+  setPage: (page: number) => void;
+  setPageSize: (pageSize: number) => void;
+  setSelectedOrder: (order: Order | null) => void;
+  setDrawerOpen: (open: boolean) => void;
+  fetchOrders: () => Promise<void>;
+  fetchStatistics: () => Promise<void>;
+  updateOrderStatus: (orderId: string, status: OrderStatus) => Promise<void>;
+  cancelOrder: (orderId: string) => Promise<void>;
+  refreshAll: () => Promise<void>;
 }
 
 const defaultFilters: OrderFilters = {
@@ -43,67 +38,9 @@ const defaultFilters: OrderFilters = {
   paymentStatus: "all",
   orderType: "all",
   search: "",
-}
+};
 
-function filterOrders(orders: Order[], filters: OrderFilters): Order[] {
-  let filtered = [...orders]
-
-  if (filters.search) {
-    const q = filters.search.toLowerCase()
-    filtered = filtered.filter(
-      (o) =>
-        o.orderNumber.toLowerCase().includes(q) ||
-        o.customer.name.toLowerCase().includes(q) ||
-        o.customer.phone.includes(q) ||
-        o.payment.transactionId?.toLowerCase().includes(q) ||
-        o.id.toLowerCase().includes(q)
-    )
-  }
-
-  if (filters.status !== "all") {
-    filtered = filtered.filter((o) => o.status === filters.status)
-  }
-
-  if (filters.paymentMethod !== "all") {
-    filtered = filtered.filter((o) => o.payment.method === filters.paymentMethod)
-  }
-
-  if (filters.paymentStatus !== "all") {
-    filtered = filtered.filter((o) => o.payment.status === filters.paymentStatus)
-  }
-
-  if (filters.orderType !== "all") {
-    filtered = filtered.filter((o) => o.orderType === filters.orderType)
-  }
-
-  if (filters.dateFilter !== "all") {
-    const now = new Date()
-    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-
-    filtered = filtered.filter((o) => {
-      const orderDate = new Date(o.createdAt)
-      switch (filters.dateFilter) {
-        case "today":
-          return orderDate >= startOfDay
-        case "tomorrow": {
-          const tomorrow = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000)
-          const dayAfter = new Date(startOfDay.getTime() + 48 * 60 * 60 * 1000)
-          return orderDate >= tomorrow && orderDate < dayAfter
-        }
-        case "this_week": {
-          const weekAgo = new Date(startOfDay.getTime() - 7 * 24 * 60 * 60 * 1000)
-          return orderDate >= weekAgo
-        }
-        default:
-          return true
-      }
-    })
-  }
-
-  return filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-}
-
-export const useOrdersStore = create<OrdersState>((set, get) => ({
+export const useOrdersStore = create<OrderStore>((set, get) => ({
   orders: [],
   selectedOrder: null,
   statistics: null,
@@ -118,122 +55,103 @@ export const useOrdersStore = create<OrdersState>((set, get) => ({
     set((state) => ({
       filters: { ...state.filters, ...newFilters },
       pagination: { ...state.pagination, page: 1 },
-    }))
-    get().fetchOrders()
+    }));
+    get().fetchOrders();
   },
 
-  setPage: (page) => {
-    set((state) => ({
-      pagination: { ...state.pagination, page },
-    }))
-  },
+  setPage: (page) => set((state) => ({ pagination: { ...state.pagination, page } })),
 
-  setPageSize: (pageSize) => {
-    set((state) => ({
-      pagination: { ...state.pagination, pageSize, page: 1 },
-    }))
-  },
+  setPageSize: (pageSize) =>
+    set((state) => ({ pagination: { ...state.pagination, pageSize, page: 1 } })),
 
   setSelectedOrder: (order) => set({ selectedOrder: order }),
+
   setDrawerOpen: (open) => set({ drawerOpen: open }),
 
   fetchOrders: async () => {
-    const { filters, pagination } = get()
-    set({ loading: true })
+    const { filters, pagination } = get();
+    set({ loading: true });
     try {
-      await new Promise((r) => setTimeout(r, 300))
-      const filtered = filterOrders(mockOrders, filters)
-      const totalPages = Math.ceil(filtered.length / pagination.pageSize)
-      const start = (pagination.page - 1) * pagination.pageSize
-      const paginatedData = filtered.slice(start, start + pagination.pageSize)
-
+      const data = await ordersApi.list({
+        page: pagination.page,
+        limit: pagination.pageSize,
+        status: filters.status,
+        paymentMethod: filters.paymentMethod,
+        paymentStatus: filters.paymentStatus,
+        orderType: filters.orderType,
+        search: filters.search,
+      });
       set({
-        orders: paginatedData,
+        orders: data.items as Order[],
         pagination: {
           ...pagination,
-          total: filtered.length,
-          totalPages,
+          total: data.total,
+          totalPages: Math.ceil(data.total / data.limit) || 0,
         },
-      })
+        loading: false,
+      });
     } catch (error) {
-      console.error("Failed to fetch orders:", error)
-    } finally {
-      set({ loading: false })
+      console.error("Failed to fetch orders:", error);
+      set({ loading: false });
     }
   },
 
   fetchStatistics: async () => {
-    set({ statisticsLoading: true })
+    set({ statisticsLoading: true });
     try {
-      await new Promise((r) => setTimeout(r, 200))
-      set({ statistics: mockStatistics })
+      const data = await ordersApi.getStats();
+      set({ statistics: data as OrderStatistics, statisticsLoading: false });
     } catch (error) {
-      console.error("Failed to fetch statistics:", error)
-    } finally {
-      set({ statisticsLoading: false })
+      console.error("Failed to fetch statistics:", error);
+      set({ statisticsLoading: false });
     }
   },
 
   updateOrderStatus: async (orderId, status) => {
-    set({ updatingStatus: orderId })
+    set({ updatingStatus: orderId });
     try {
-      await new Promise((r) => setTimeout(r, 400))
-      const order = mockOrders.find((o) => o.id === orderId)
-      if (order) {
-        order.status = status
-        order.timeline.push({
-          status,
-          timestamp: new Date().toISOString(),
-          label: status.replace(/_/g, " "),
-        })
-      }
+      await ordersApi.updateStatus(orderId, { status });
       set((state) => ({
-        orders: state.orders.map((o) => (o.id === orderId ? { ...o, status, timeline: order?.timeline || o.timeline } : o)),
-        selectedOrder:
-          state.selectedOrder?.id === orderId
-            ? { ...state.selectedOrder, status, timeline: order?.timeline || state.selectedOrder.timeline }
-            : state.selectedOrder,
-      }))
+        orders: state.orders.map((o) => (o.id === orderId ? { ...o, status } : o)),
+        selectedOrder: state.selectedOrder?.id === orderId ? { ...state.selectedOrder, status } : state.selectedOrder,
+        updatingStatus: null,
+      }));
     } catch (error) {
-      console.error("Failed to update order status:", error)
-      throw error
-    } finally {
-      set({ updatingStatus: null })
+      console.error("Failed to update order status:", error);
+      set({ updatingStatus: null });
     }
   },
 
-  cancelOrder: async (orderId, reason) => {
-    set({ updatingStatus: orderId })
+  cancelOrder: async (orderId) => {
+    set({ updatingStatus: orderId });
     try {
-      await new Promise((r) => setTimeout(r, 400))
-      const order = mockOrders.find((o) => o.id === orderId)
-      if (order) {
-        order.status = "cancelled"
-        order.payment.status = order.payment.method === "cod" ? "failed" : "failed"
-        order.timeline.push({
-          status: "cancelled",
-          timestamp: new Date().toISOString(),
-          label: "Cancelled",
-        })
-      }
+      // Backend doesn't have cancel endpoint in orders.api, use direct API call
+      const { apiClient } = await import("@/lib/api/http");
+      await apiClient.post(`/admin/orders/${orderId}/cancel`, { reason: "Cancelled by admin" });
       set((state) => ({
-        orders: state.orders.map((o) =>
-          o.id === orderId ? { ...o, status: "cancelled" as OrderStatus, payment: { ...o.payment, status: "failed" as PaymentStatus }, timeline: order?.timeline || o.timeline } : o
-        ),
-        selectedOrder:
-          state.selectedOrder?.id === orderId
-            ? { ...state.selectedOrder, status: "cancelled" as OrderStatus, payment: { ...state.selectedOrder.payment, status: "failed" as PaymentStatus }, timeline: order?.timeline || state.selectedOrder.timeline }
-            : state.selectedOrder,
-      }))
+        orders: state.orders.map((o) => o.id === orderId ? { ...o, status: "cancelled" } : o),
+        selectedOrder: state.selectedOrder?.id === orderId ? { ...state.selectedOrder, status: "cancelled" } : state.selectedOrder,
+        updatingStatus: null,
+      }));
     } catch (error) {
-      console.error("Failed to cancel order:", error)
-      throw error
-    } finally {
-      set({ updatingStatus: null })
+      console.error("Failed to cancel order:", error);
+      set({ updatingStatus: null });
     }
   },
 
   refreshAll: async () => {
-    await Promise.all([get().fetchOrders(), get().fetchStatistics()])
+    await Promise.all([get().fetchOrders(), get().fetchStatistics()]);
   },
-}))
+}));
+
+// React Query hooks for external use
+export function useOrders() {
+  return useQuery({
+    queryKey: ["orders"],
+    queryFn: async () => {
+      const data = await ordersApi.list();
+      return data;
+    },
+    staleTime: 30_000,
+  });
+}

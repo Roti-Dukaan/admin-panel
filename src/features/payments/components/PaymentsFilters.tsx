@@ -96,8 +96,21 @@ export function PaymentsFilters() {
   const filters = usePaymentStore((s) => s.filters);
   const setFilters = usePaymentStore((s) => s.setFilters);
   const clearFilters = usePaymentStore((s) => s.clearFilters);
+  const refresh = usePaymentStore((s) => s.refresh);
   const [panelOpen, setPanelOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
+  const isFirstRun = useRef(true);
+
+  useEffect(() => {
+    if (isFirstRun.current) {
+      isFirstRun.current = false;
+      return;
+    }
+    const timer = setTimeout(() => {
+      refresh();
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [filters.status, filters.method, filters.dateFilter, filters.customDateFrom, filters.customDateTo, filters.search, refresh]);
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {

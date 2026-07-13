@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { Input } from "@/components/ui/input"
-import { Select } from "@/components/ui/select"
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import { useOrdersStore } from "../hooks/useOrders"
 import type { OrderFilters as OrderFiltersType, OrderStatus, PaymentMethod, PaymentStatus, OrderType } from "../types/order"
@@ -74,36 +74,66 @@ export function OrderFilters() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
-        <Select
-          options={dateFilterOptions}
-          value={filters.dateFilter}
-          onChange={(e) => setFilters({ dateFilter: e.target.value as OrderFiltersType["dateFilter"] })}
-          className="w-[160px]"
-        />
-        <Select
-          options={statusOptions}
-          value={filters.status}
-          onChange={(e) => setFilters({ status: e.target.value as OrderStatus | "all" })}
-          className="w-[180px]"
-        />
-        <Select
-          options={paymentOptions}
-          value={filters.paymentMethod}
-          onChange={(e) => setFilters({ paymentMethod: e.target.value as PaymentMethod | "all" })}
-          className="w-[200px]"
-        />
-        <Select
-          options={paymentStatusOptions}
-          value={filters.paymentStatus}
-          onChange={(e) => setFilters({ paymentStatus: e.target.value as PaymentStatus | "all" })}
-          className="w-[200px]"
-        />
-        <Select
-          options={orderTypeOptions}
-          value={filters.orderType}
-          onChange={(e) => setFilters({ orderType: e.target.value as OrderType | "all" })}
-          className="w-[160px]"
-        />
+        <div className="w-[160px]">
+          <Select value={filters.dateFilter} onValueChange={(v) => setFilters({ dateFilter: v as OrderFiltersType["dateFilter"] })}>
+            <SelectTrigger>
+              <SelectValue placeholder="Date Filter" />
+            </SelectTrigger>
+            <SelectContent>
+              {dateFilterOptions.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="w-[180px]">
+          <Select value={filters.status} onValueChange={(v) => setFilters({ status: v as OrderStatus | "all" })}>
+            <SelectTrigger>
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              {statusOptions.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="w-[200px]">
+          <Select value={filters.paymentMethod} onValueChange={(v) => setFilters({ paymentMethod: v as PaymentMethod | "all" })}>
+            <SelectTrigger>
+              <SelectValue placeholder="Payment Method" />
+            </SelectTrigger>
+            <SelectContent>
+              {paymentOptions.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="w-[200px]">
+          <Select value={filters.paymentStatus} onValueChange={(v) => setFilters({ paymentStatus: v as PaymentStatus | "all" })}>
+            <SelectTrigger>
+              <SelectValue placeholder="Payment Status" />
+            </SelectTrigger>
+            <SelectContent>
+              {paymentStatusOptions.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="w-[160px]">
+          <Select value={filters.orderType} onValueChange={(v) => setFilters({ orderType: v as OrderType | "all" })}>
+            <SelectTrigger>
+              <SelectValue placeholder="Order Type" />
+            </SelectTrigger>
+            <SelectContent>
+              {orderTypeOptions.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
         <div className="relative flex-1 min-w-[200px] max-w-sm">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />

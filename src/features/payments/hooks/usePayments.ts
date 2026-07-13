@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { Payment, PaymentFilters, CodRecord, FailedPayment, PaymentStatus, PaymentMethodType } from '../types/payment';
-import { mockPayments, mockCodRecords, mockFailedPayments } from '../mock/payments';
+import { mockCodRecords, mockFailedPayments } from '../mock/payments';
+import { paymentsApi } from '@/lib/api/payments.api';
 
 const now = Date.now();
 const day = 24 * 60 * 60 * 1000;
@@ -29,10 +30,11 @@ interface PaymentStore {
   failedPayments: FailedPayment[];
   filters: PaymentFilters;
   loading: boolean;
+  error: string | null;
 
   setFilters: (filters: Partial<PaymentFilters>) => void;
   clearFilters: () => void;
-  refresh: () => void;
+  refresh: () => Promise<void>;
 
   getFilteredPayments: () => Payment[];
   getPaymentById: (id: string) => Payment | undefined;
@@ -77,20 +79,42 @@ function isInDateRange(timestamp: number, filter: PaymentFilters): boolean {
   }
 }
 
+async function fetchPayments(filters: PaymentFilters): Promise<Payment[]> {
+  try {
+    return await paymentsApi.list({
+      status: filters.status === 'all' ? undefined : filters.status,
+      method: filters.method === 'all' ? undefined : filters.method,
+      gateway: filters.gateway === 'all' ? undefined : filters.gateway,
+      search: filters.search || undefined,
+      page: 1,
+      limit: 100,
+    });
+  } catch (e) {
+    console.error('Failed to fetch payments:', e);
+    return [];
+  }
+}
+
 export const usePaymentStore = create<PaymentStore>((set, get) => ({
-  payments: mockPayments,
+  payments: [],
   codRecords: mockCodRecords,
   failedPayments: mockFailedPayments,
   filters: { ...initialFilters },
   loading: false,
+  error: null,
 
   setFilters: (newFilters) => set((state) => ({ filters: { ...state.filters, ...newFilters } })),
 
   clearFilters: () => set({ filters: { ...initialFilters } }),
 
-  refresh: () => {
-    set({ loading: true });
-    setTimeout(() => set({ loading: false }), 500);
+  refresh: async () => {
+    set({ loading: true, error: null });
+    try {
+      const payments = await fetchPayments(get().filters);
+      set({ payments, loading: false });
+    } catch (e) {
+      set({ loading: false, error: e instanceof Error ? e.message : 'Failed to load payments' });
+    }
   },
 
   getFilteredPayments: () => {

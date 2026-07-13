@@ -1,0 +1,101 @@
+import { apiClient } from './http';
+import type { Payment, PaymentFilters, CodRecord, FailedPayment } from '@/features/payments/types/payment';
+
+interface ApiResponse<T> {
+  success: boolean;
+  message: string;
+  data: T;
+}
+
+interface PaymentListResponse {
+  items: Payment[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+interface PaymentStatsResponse {
+  byStatus: { status: string; count: number }[];
+  totalCollected: number;
+}
+
+function mapBackendStatus(status: string): Payment['paymentStatus'] {
+  const map: Record<string, Payment['paymentStatus']> = {
+    CAPTURED: 'paid',
+    AUTHORIZED: 'authorized',
+    CREATED: 'pending',
+    PAYMENT_PENDING: 'pending',
+    FAILED: 'failed',
+    REFUNDED: 'refunded',
+    CANCELLED: 'cancelled',
+  };
+  return map[status] ?? 'pending';
+}
+
+function mapBackendMethod(method: string): Payment['paymentMethod'] {
+  const map: Record<string, Payment['paymentMethod']> = {
+    ONLINE: 'upi',
+    COD: 'cod',
+  };
+  return map[method] ?? 'upi';
+}
+
+function mapBackendPayment(backend: any): Payment {
+  return {
+    id: backend.id,
+    paymentId: backend.paymentReference || backend.id,
+    orderId: backend.order?.orderNumber || backend.checkoutReference || '—',
+    customerName: backend.customerName || backend.customer?.fullName || backend.customer?.name || 'Guest',
+    customerPhone: backend.customerPhone || backend.customer?.phone || '',
+    customerEmail: backend.customerEmail || backend.customer?.email || '',
+    amount: Number(backend.amount),
+    currency: backend.currency || 'INR',
+    paymentMethod: mapBackendMethod(backend.paymentMethod),
+    paymentStatus: mapBackendStatus(backend.status),
+    gateway: backend.provider?.toLowerCase() || 'razorpay',
+    transactionTime: new Date(backend.createdAt).getTime(),
+    items: backend.items?.map((item: any) => ({
+      name: item.foodNameSnapshot,
+      quantity: item.quantity,
+      price: Number(item.lineTotal) / (item.quantity || 1),
+    })) || [],
+    subtotal: Number(backend.grandTotal || backend.amount || 0),
+    deliveryCharges: 0,
+    discount: 0,
+    gst: 0,
+    grandTotal: Number(backend.grandTotal || backend.amount || 0),
+    deliverySlot: backend.deliverySlot || '',
+    orderStatus: backend.orderStatus || 'placed',
+    deliveryAddress: backend.deliveryAddress || '',
+    razorpayInfo: backend.razorpayInfo || null,
+    timeline: [],
+  };
+}
+
+export const paymentsApi = {
+  list: async (filters?: Partial<PaymentFilters> & { page?: number; limit?: number }): Promise<Payment[]> => {
+    const params = new URLSearchParams();
+    if (filters?.status && filters.status !== 'all') params.set('status', filters.status);
+    if (filters?.method && filters.method !== 'all') params.set('paymentMethod', filters.method);
+    if (filters?.gateway && filters.gateway !== 'all') params.set('provider', filters.gateway);
+    if (filters?.search) params.set('search', filters.search);
+    params.set('page', String(filters?.page || 1));
+    params.set('limit', String(filters?.limit || 20));
+
+    const { data } = await apiClient.get<ApiResponse<PaymentListResponse>>(`/admin/payments?${params.toString()}`);
+    if (!data.success) throw new Error(data.message);
+    return data.data.items.map(mapBackendPayment);
+  },
+
+  getById: async (id: string): Promise<Payment> => {
+    const { data } = await apiClient.get<ApiResponse<any>>(`/admin/payments/${encodeURIComponent(id)}`);
+    if (!data.success) throw new Error(data.message);
+    return mapBackendPayment(data.data);
+  },
+
+  getStats: async (): Promise<PaymentStatsResponse> => {
+    const { data } = await apiClient.get<ApiResponse<PaymentStatsResponse>>('/admin/payments/stats');
+    if (!data.success) throw new Error(data.message);
+    return data.data;
+  },
+};

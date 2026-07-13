@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Receipt, Banknote, XCircle, BarChart3 } from "lucide-react";
 import { PaymentsHeader } from "@/features/payments/components/PaymentsHeader";
@@ -13,6 +13,7 @@ import { CodDashboard } from "@/features/payments/components/CodDashboard";
 import { CodTable } from "@/features/payments/components/CodTable";
 import { FailedPayments } from "@/features/payments/components/FailedPayments";
 import { ExportDialog } from "@/features/payments/components/ExportDialog";
+import { usePaymentStore } from "@/features/payments/hooks/usePayments";
 
 type TabKey = "transactions" | "cod" | "failed" | "analytics";
 
@@ -26,11 +27,23 @@ const TABS: { key: TabKey; label: string; icon: React.ElementType; count?: numbe
 export default function PaymentsPage() {
   const [activeTab, setActiveTab] = useState<TabKey>("transactions");
   const [exportDialog, setExportDialog] = useState<{ open: boolean; format: 'csv' | 'excel' }>({ open: false, format: 'csv' });
+  const refresh = usePaymentStore((s) => s.refresh);
+  const loading = usePaymentStore((s) => s.loading);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
 
   return (
     <div className="min-h-screen bg-gray-50/50">
       <div className="p-6 space-y-6">
-        {/* Header */}
+        {loading && (
+          <div className="flex items-center justify-center py-12">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-gray-900" />
+          </div>
+        )}
+        <div className="space-y-6">
+            {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -134,10 +147,11 @@ export default function PaymentsPage() {
               </div>
             </motion.div>
           )}
-        </AnimatePresence>
-      </div>
+          </AnimatePresence>
+        </div>
+    </div>
 
-      {/* Export Dialog */}
+    {/* Export Dialog */}
       <ExportDialog
         open={exportDialog.open}
         onClose={() => setExportDialog({ ...exportDialog, open: false })}

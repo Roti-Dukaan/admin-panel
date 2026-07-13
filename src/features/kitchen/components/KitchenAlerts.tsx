@@ -2,16 +2,25 @@
 
 import { motion } from "motion/react";
 import { AlertTriangle, AlertCircle, Info, CheckCircle } from "lucide-react";
-import { useKitchenStore } from "../hooks/useKitchen";
 
-const alertIcons = {
+interface KitchenAlert {
+  id: string;
+  type: "warning" | "danger" | "info" | "success";
+  message: string;
+  timestamp: number;
+}
+
+// Static alerts for now - can be replaced with real API when backend endpoint is added
+const mockAlerts: KitchenAlert[] = [];
+
+const alertIcons: Record<string, typeof AlertTriangle> = {
   danger: AlertTriangle,
   warning: AlertCircle,
   info: Info,
   success: CheckCircle,
 };
 
-const alertStyles = {
+const alertStyles: Record<string, string> = {
   danger: "border-red-200 bg-red-50 text-red-800",
   warning: "border-amber-200 bg-amber-50 text-amber-800",
   info: "border-blue-200 bg-blue-50 text-blue-800",
@@ -19,12 +28,10 @@ const alertStyles = {
 };
 
 export function KitchenAlerts() {
-  const alerts = useKitchenStore((s) => s.alerts);
-
   return (
     <div className="space-y-2">
-      {alerts.map((alert, i) => {
-        const Icon = alertIcons[alert.type];
+      {mockAlerts.map((alert: KitchenAlert, i: number) => {
+        const Icon = alertIcons[alert.type] || Info;
         return (
           <motion.div
             key={alert.id}

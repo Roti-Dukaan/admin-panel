@@ -1,7 +1,8 @@
 "use client"
 
 import { Drawer, DrawerHeader, DrawerTitle, DrawerContent, DrawerFooter, DrawerClose } from "@/components/ui/drawer"
-import { Button } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 import { Separator } from "@/components/ui/separator"
 import { OrderTimeline } from "./OrderTimeline"
 import { OrderItems } from "./OrderItems"
@@ -12,7 +13,10 @@ import { StatusBadge } from "./StatusBadge"
 import { useOrdersStore } from "../hooks/useOrders"
 import { toast } from "sonner"
 import type { OrderStatus } from "../types/order"
-import { RefreshCw } from "lucide-react"
+import { RefreshCw, ExternalLink, Truck } from "lucide-react"
+import { useQuery } from "@tanstack/react-query"
+import { deliveryApi } from "@/features/delivery/services/delivery.api"
+import { DeliveryStatusBadge, DeliveryProviderBadge } from "@/features/delivery/components/DeliveryStatusBadge"
 
 const NEXT_STATUS_MAP: Partial<Record<OrderStatus, OrderStatus>> = {
   pending: "accepted",
@@ -60,6 +64,12 @@ export function OrderDrawer() {
 
   const nextStatus = selectedOrder ? NEXT_STATUS_MAP[selectedOrder.status] : undefined
 
+  const { data: deliveryTracking, isLoading: deliveryLoading } = useQuery({
+    queryKey: ["order-delivery", selectedOrder?.id],
+    queryFn: () => deliveryApi.getByOrderId(selectedOrder!.id),
+    enabled: !!selectedOrder?.id,
+  })
+
   return (
     <Drawer open={drawerOpen} onOpenChange={handleClose}>
       {selectedOrder && (
@@ -76,6 +86,76 @@ export function OrderDrawer() {
             <CustomerCard customer={selectedOrder.customer} />
 
             <DeliveryCard delivery={selectedOrder.delivery} />
+
+            <div className="rounded-lg border border-gray-200 bg-gray-50/50 p-4">
+              <div className="mb-3 flex items-center justify-between">
+                <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-900">
+                  <Truck className="h-4 w-4 text-gray-500" />
+                  Delivery Status
+                </h3>
+                {deliveryTracking && (
+                  <DeliveryStatusBadge status={deliveryTracking.status} size="sm" />
+                )}
+              </div>
+
+              {deliveryLoading ? (
+                <p className="text-sm text-muted-foreground">Loading delivery…</p>
+              ) : deliveryTracking ? (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground">Provider</span>
+                      <DeliveryProviderBadge provider={deliveryTracking.provider} size="sm" />
+                    </div>
+                    {deliveryTracking.riderName && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground">Rider</span>
+                        <span className="font-medium">{deliveryTracking.riderName}</span>
+                      </div>
+                    )}
+                    {deliveryTracking.trackingNumber && (
+                      <div className="col-span-2 flex items-center justify-between">
+                        <span className="text-muted-foreground">Tracking #</span>
+                        <span className="font-mono text-xs font-medium">{deliveryTracking.trackingNumber}</span>
+                      </div>
+                    )}
+                    {deliveryTracking.estimatedDeliveryAt && (
+                      <div className="col-span-2 flex items-center justify-between">
+                        <span className="text-muted-foreground">Est. Delivery</span>
+                        <span className="font-medium">
+                          {new Date(deliveryTracking.estimatedDeliveryAt).toLocaleString()}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2 pt-1">
+                    <Button
+                      href={`/deliveries?deliveryId=${deliveryTracking.id}`}
+                      variant="outline"
+                      size="sm"
+                    >
+                      Manage Delivery
+                    </Button>
+                    {deliveryTracking.trackingUrl && (
+                      <a
+                        href={deliveryTracking.trackingUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}
+                      >
+                        <ExternalLink className="mr-1 h-4 w-4" />
+                        Track Externally
+                      </a>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  No delivery has been created for this order yet.
+                </p>
+              )}
+            </div>
 
             <PaymentCard payment={selectedOrder.payment} />
 
