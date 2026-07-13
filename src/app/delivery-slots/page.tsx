@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Clock,
@@ -17,6 +17,7 @@ import {
   XCircle,
   GripVertical,
 } from "lucide-react";
+import { deliverySlotsApi, DeliverySlot as ApiDeliverySlot } from "@/lib/api/delivery-slots.api";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -65,6 +66,25 @@ export default function DeliverySlotsPage() {
   const [deleteTarget, setDeleteTarget] = useState<DeliverySlot | null>(null);
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadSlots();
+  }, []);
+
+  const loadSlots = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await deliverySlotsApi.list();
+      setSlots(data);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to load delivery slots");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   const filtered = useMemo(() => {
     if (!search.trim()) return slots;
@@ -79,7 +99,8 @@ export default function DeliverySlotsPage() {
   /* ---- open helpers ---- */
 
   const openAdd = () => {
-    setEditing({ ...EMPTY_SLOT, displayOrder: slots.length + 1 });
+    const maxOrder = slots.reduce((max, s) => Math.max(max, s.displayOrder), 0);
+    setEditing({ ...EMPTY_SLOT, displayOrder: maxOrder + 1 });
     setDrawerMode("add");
     setSelectedSlot(null);
     setErrors({});
@@ -158,44 +179,50 @@ export default function DeliverySlotsPage() {
     return Object.keys(e).length === 0;
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!validate()) return;
-    const now = new Date().toISOString();
 
-    if (drawerMode === "edit" && selectedSlot) {
-      setSlots((prev) =>
-        prev.map((s) =>
-          s.id === selectedSlot.id
-            ? { ...s, ...editing, updatedAt: now }
-            : s
-        )
-      );
-    } else {
-      const newSlot: DeliverySlot = {
-        ...editing,
-        id: crypto.randomUUID(),
-        createdAt: now,
-        updatedAt: now,
-      };
-      setSlots((prev) => [...prev, newSlot]);
+    try {
+      if (drawerMode === "edit" && selectedSlot) {
+        const updated = await deliverySlotsApi.update(selectedSlot.id, editing);
+        setSlots((prev) =>
+          prev.map((s) => (s.id === selectedSlot.id ? updated : s))
+        );
+      } else {
+        const created = await deliverySlotsApi.create({
+          ...editing,
+          displayOrder: editing.displayOrder || slots.length + 1,
+        });
+        setSlots((prev) => [...prev, created]);
+      }
+      setDrawerOpen(false);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to save delivery slot");
     }
-    setDrawerOpen(false);
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!deleteTarget) return;
-    setSlots((prev) => prev.filter((s) => s.id !== deleteTarget.id));
-    setDeleteTarget(null);
+    try {
+      await deliverySlotsApi.remove(deleteTarget.id);
+      setSlots((prev) => prev.filter((s) => s.id !== deleteTarget.id));
+      setDeleteTarget(null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to delete delivery slot");
+    }
   };
 
-  const toggleStatus = (slot: DeliverySlot) => {
-    setSlots((prev) =>
-      prev.map((s) =>
-        s.id === slot.id
-          ? { ...s, isActive: !s.isActive, updatedAt: new Date().toISOString() }
-          : s
-      )
-    );
+  const toggleStatus = async (slot: DeliverySlot) => {
+    try {
+      const updated = await deliverySlotsApi.update(slot.id, {
+        isActive: !slot.isActive,
+      });
+      setSlots((prev) =>
+        prev.map((s) => (s.id === slot.id ? updated : s))
+      );
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to update status");
+    }
   };
 
   /* ---- stats ---- */
@@ -275,7 +302,21 @@ export default function DeliverySlotsPage() {
         </div>
 
         {/* Table or Empty */}
-        {slots.length === 0 ? (
+        {loading ? (
+           <div className="flex justify-center items-center py-20">
+             <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+           </div>
+         ) : error ? (
+           <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-center">
+             <p className="text-red-600 font-medium">{error}</p>
+             <button
+               onClick={loadSlots}
+               className="mt-4 inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-sm font-bold text-white hover:bg-red-700"
+             >
+               Retry
+             </button>
+           </div>
+         ) : slots.length === 0 ? (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
