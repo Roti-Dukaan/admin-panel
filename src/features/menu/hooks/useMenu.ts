@@ -46,7 +46,7 @@ function mapApiFoodItemToFoodItem(api: ApiFoodItem, categories: Category[]): Foo
     description: api.description || '',
     shortDescription: api.shortDescription || '',
     category: category?.name || category?.slug || 'Uncategorized',
-    price: Number(api.discountPrice || api.price),
+    price: Number(api.discountPrice || api.basePrice),
     preparationTime: api.preparationTime || 20,
     nutrition: {
       calories: api.calories || 0,

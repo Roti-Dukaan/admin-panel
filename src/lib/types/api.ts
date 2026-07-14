@@ -36,7 +36,7 @@ export interface ApiFoodItem {
   sku: string | null;
   shortDescription: string | null;
   description: string | null;
-  price: number;
+  basePrice: number;
   discountPrice: number | null;
   imageUrl: string | null;
   gallery: string[];
