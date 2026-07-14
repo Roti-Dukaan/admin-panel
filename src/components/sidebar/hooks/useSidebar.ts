@@ -6,25 +6,21 @@ const SIDEBAR_STATE_KEY = "rd-sidebar-collapsed"
 const SIDEBAR_GROUPS_KEY = "rd-sidebar-groups"
 
 export function useSidebar() {
-  const [collapsed, setCollapsedState] = React.useState<boolean>(() => {
-    if (typeof window === "undefined") return false
+  const [collapsed, setCollapsedState] = React.useState<boolean>(false)
+  const [expandedGroups, setExpandedGroupsState] = React.useState<Record<string, boolean>>({})
+
+  // Load persisted sidebar state after mount to avoid SSR/client hydration
+  // mismatch (localStorage is unavailable on the server and may differ on the client).
+  React.useEffect(() => {
     try {
       const stored = localStorage.getItem(SIDEBAR_STATE_KEY)
-      return stored === "true"
-    } catch {
-      return false
-    }
-  })
-
-  const [expandedGroups, setExpandedGroupsState] = React.useState<Record<string, boolean>>(() => {
-    if (typeof window === "undefined") return {}
+      if (stored !== null) setCollapsedState(stored === "true")
+    } catch {}
     try {
       const stored = localStorage.getItem(SIDEBAR_GROUPS_KEY)
-      return stored ? JSON.parse(stored) : {}
-    } catch {
-      return {}
-    }
-  })
+      if (stored !== null) setExpandedGroupsState(JSON.parse(stored))
+    } catch {}
+  }, [])
 
   const setCollapsed = React.useCallback((value: boolean | ((prev: boolean) => boolean)) => {
     setCollapsedState((prev) => {

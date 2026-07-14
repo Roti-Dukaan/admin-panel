@@ -8,27 +8,32 @@ import { useKitchenStore } from "../hooks/useKitchen";
 import { SLOT_CONFIG } from "../types/kitchen";
 
 export function KitchenHeader() {
-  const [currentTime, setCurrentTime] = useState(new Date());
+  const [currentTime, setCurrentTime] = useState<Date | null>(null);
   const currentSlot = useKitchenStore((s) => s.currentSlot);
 
   useEffect(() => {
+    setCurrentTime(new Date());
     const interval = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(interval);
   }, []);
 
-  const timeStr = currentTime.toLocaleTimeString("en-IN", {
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: true,
-  });
+  const timeStr = currentTime
+    ? currentTime.toLocaleTimeString("en-IN", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: true,
+      })
+    : "";
 
-  const dateStr = currentTime.toLocaleDateString("en-IN", {
-    weekday: "long",
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
+  const dateStr = currentTime
+    ? currentTime.toLocaleDateString("en-IN", {
+        weekday: "long",
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      })
+    : "";
 
   return (
     <motion.div
