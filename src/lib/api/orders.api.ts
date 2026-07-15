@@ -1,4 +1,5 @@
 import { apiClient } from "./http";
+import type { InvoiceView } from "../../features/orders/types/invoice";
 
 interface OrderListParams {
   page?: number;
@@ -40,6 +41,20 @@ export const ordersApi = {
 
   updateStatus: async (id: string, dto: { status: string; remarks?: string }) => {
     const { data } = await apiClient.patch<{ success: boolean; data: unknown }>(`/admin/orders/${id}/status`, dto);
+    return data.data;
+  },
+
+  getInvoice: async (id: string): Promise<InvoiceView> => {
+    const { data } = await apiClient.get<{ success: boolean; data: InvoiceView }>(
+      `/admin/orders/${id}/invoice`
+    );
+    return data.data;
+  },
+
+  regenerateInvoice: async (id: string): Promise<InvoiceView> => {
+    const { data } = await apiClient.post<{ success: boolean; data: InvoiceView }>(
+      `/admin/orders/${id}/invoice/regenerate`
+    );
     return data.data;
   },
 };

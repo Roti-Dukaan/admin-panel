@@ -10,6 +10,7 @@ import { CustomerCard } from "./CustomerCard"
 import { PaymentCard } from "./PaymentCard"
 import { DeliveryCard } from "./DeliveryCard"
 import { StatusBadge } from "./StatusBadge"
+import { InvoiceCard } from "./InvoiceCard"
 import { useOrdersStore } from "../hooks/useOrders"
 import { toast } from "sonner"
 import type { OrderStatus } from "../types/order"
@@ -158,6 +159,8 @@ export function OrderDrawer() {
             </div>
 
             <PaymentCard payment={selectedOrder.payment} />
+
+            <InvoiceCard orderId={selectedOrder.id} />
 
             <Separator />
 
