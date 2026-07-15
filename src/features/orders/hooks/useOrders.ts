@@ -109,8 +109,10 @@ export const useOrdersStore = create<OrderStore>((set, get) => ({
 
   updateOrderStatus: async (orderId, status) => {
     set({ updatingStatus: orderId });
+    // Convert kebab-case to SNAKE_CASE for backend
+    const backendStatus = status.toUpperCase().replace(/-/g, '_');
     try {
-      await ordersApi.updateStatus(orderId, { status });
+      await ordersApi.updateStatus(orderId, { status: backendStatus });
       set((state) => ({
         orders: state.orders.map((o) => (o.id === orderId ? { ...o, status } : o)),
         selectedOrder: state.selectedOrder?.id === orderId ? { ...state.selectedOrder, status } : state.selectedOrder,

@@ -1,11 +1,17 @@
 export type OrderStatus =
+  | "pending-confirmation"
+  | "confirmed"
   | "pending"
   | "accepted"
   | "preparing"
+  | "ready-for-pickup"
+  | "picked-up"
   | "packed"
-  | "out_for_delivery"
+  | "out-for-delivery"
   | "delivered"
   | "cancelled"
+  | "failed"
+  | "refunded"
 
 export type PaymentMethod = "cod" | "online" | "subscription"
 export type PaymentStatus = "pending" | "paid" | "failed" | "refunded" | "cod_pending" | "cod_collected"
@@ -124,13 +130,19 @@ export type StatusConfig = {
 }
 
 export const STATUS_CONFIG: Record<OrderStatus, StatusConfig> = {
+  "pending-confirmation": { label: "Pending Confirmation", color: "gray", bgClass: "bg-gray-100", textClass: "text-gray-800" },
+  confirmed: { label: "Confirmed", color: "blue", bgClass: "bg-blue-100", textClass: "text-blue-800" },
   pending: { label: "Pending", color: "orange", bgClass: "bg-orange-100", textClass: "text-orange-800" },
   accepted: { label: "Accepted", color: "blue", bgClass: "bg-blue-100", textClass: "text-blue-800" },
   preparing: { label: "Preparing", color: "yellow", bgClass: "bg-yellow-100", textClass: "text-yellow-800" },
+  "ready-for-pickup": { label: "Ready for Pickup", color: "cyan", bgClass: "bg-cyan-100", textClass: "text-cyan-800" },
+  "picked-up": { label: "Picked Up", color: "indigo", bgClass: "bg-indigo-100", textClass: "text-indigo-800" },
   packed: { label: "Packed", color: "purple", bgClass: "bg-purple-100", textClass: "text-purple-800" },
-  out_for_delivery: { label: "Out for Delivery", color: "indigo", bgClass: "bg-indigo-100", textClass: "text-indigo-800" },
+  "out-for-delivery": { label: "Out for Delivery", color: "indigo", bgClass: "bg-indigo-100", textClass: "text-indigo-800" },
   delivered: { label: "Delivered", color: "green", bgClass: "bg-green-100", textClass: "text-green-800" },
   cancelled: { label: "Cancelled", color: "red", bgClass: "bg-red-100", textClass: "text-red-800" },
+  failed: { label: "Failed", color: "red", bgClass: "bg-red-100", textClass: "text-red-800" },
+  refunded: { label: "Refunded", color: "violet", bgClass: "bg-violet-100", textClass: "text-violet-800" },
 }
 
 export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {

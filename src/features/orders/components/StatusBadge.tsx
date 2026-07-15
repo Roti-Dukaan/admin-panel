@@ -3,12 +3,18 @@ import type { OrderStatus } from "../types/order"
 import { STATUS_CONFIG } from "../types/order"
 
 interface StatusBadgeProps {
-  status: OrderStatus
+  status: string
   className?: string
 }
 
+// Normalize backend status (uppercase) to frontend format
+function normalizeStatus(status: string): OrderStatus {
+  return (status.toLowerCase().replace(/_/g, '-') as OrderStatus) || 'pending';
+}
+
 export function StatusBadge({ status, className }: StatusBadgeProps) {
-  const config = STATUS_CONFIG[status]
+  const normalizedStatus = normalizeStatus(status)
+  const config = STATUS_CONFIG[normalizedStatus] || STATUS_CONFIG.pending
 
   return (
     <span

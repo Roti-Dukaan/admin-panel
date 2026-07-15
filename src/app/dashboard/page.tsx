@@ -68,25 +68,31 @@ const orderStats = [
 
 const recentOrders = [
   { id: "#ORD-1234", customer: "Rahul Sharma", items: 3, total: "₹420", status: "preparing", time: "2 min ago" },
-  { id: "#ORD-1233", customer: "Priya Patel", items: 5, total: "₹780", status: "out_for_delivery", time: "8 min ago" },
+  { id: "#ORD-1233", customer: "Priya Patel", items: 5, total: "₹780", status: "out-for-delivery", time: "8 min ago" },
   { id: "#ORD-1232", customer: "Amit Kumar", items: 2, total: "₹310", status: "delivered", time: "15 min ago" },
   { id: "#ORD-1231", customer: "Sneha Gupta", items: 4, total: "₹560", status: "packed", time: "18 min ago" },
-  { id: "#ORD-1230", customer: "Vikram Singh", items: 1, total: "₹180", status: "pending", time: "22 min ago" },
+  { id: "#ORD-1230", customer: "Vikram Singh", items: 1, total: "₹180", status: "pending-confirmation", time: "22 min ago" },
 ]
 
 const statusStyles: Record<string, { bg: string; text: string; dot: string }> = {
+  "pending-confirmation": { bg: "bg-gray-50", text: "text-gray-700", dot: "bg-gray-500" },
+  confirmed: { bg: "bg-blue-50", text: "text-blue-700", dot: "bg-blue-500" },
   pending: { bg: "bg-orange-50", text: "text-orange-700", dot: "bg-orange-500" },
   preparing: { bg: "bg-yellow-50", text: "text-yellow-700", dot: "bg-yellow-500" },
   packed: { bg: "bg-purple-50", text: "text-purple-700", dot: "bg-purple-500" },
-  out_for_delivery: { bg: "bg-blue-50", text: "text-blue-700", dot: "bg-blue-500" },
+  "ready-for-pickup": { bg: "bg-cyan-50", text: "text-cyan-700", dot: "bg-cyan-500" },
+  "out-for-delivery": { bg: "bg-blue-50", text: "text-blue-700", dot: "bg-blue-500" },
   delivered: { bg: "bg-green-50", text: "text-green-700", dot: "bg-green-500" },
 }
 
 const statusLabels: Record<string, string> = {
+  "pending-confirmation": "Pending",
+  confirmed: "Confirmed",
   pending: "Pending",
   preparing: "Preparing",
   packed: "Packed",
-  out_for_delivery: "Out for Delivery",
+  "ready-for-pickup": "Ready for Pickup",
+  "out-for-delivery": "Out for Delivery",
   delivered: "Delivered",
 }
 

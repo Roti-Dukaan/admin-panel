@@ -20,18 +20,21 @@ import { deliveryApi } from "@/features/delivery/services/delivery.api"
 import { DeliveryStatusBadge, DeliveryProviderBadge } from "@/features/delivery/components/DeliveryStatusBadge"
 
 const NEXT_STATUS_MAP: Partial<Record<OrderStatus, OrderStatus>> = {
-  pending: "accepted",
+  "pending-confirmation": "confirmed",
+  confirmed: "accepted",
   accepted: "preparing",
   preparing: "packed",
-  packed: "out_for_delivery",
-  out_for_delivery: "delivered",
+  packed: "ready-for-pickup",
+  "ready-for-pickup": "out-for-delivery",
+  "out-for-delivery": "delivered",
 }
 
 const STATUS_ACTION_LABELS: Record<string, string> = {
   accepted: "Accept Order",
   preparing: "Start Preparing",
   packed: "Mark Packed",
-  out_for_delivery: "Mark Out For Delivery",
+  "ready-for-pickup": "Mark Ready for Pickup",
+  "out-for-delivery": "Mark Out For Delivery",
   delivered: "Mark Delivered",
 }
 

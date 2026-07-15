@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { motion } from "motion/react";
-import { CheckCircle, Clock, Circle } from "lucide-react";
+import { CheckCircle, Clock, Circle, Package, Truck } from "lucide-react";
 import type { PaymentTimelineEvent } from "../types/payment";
 
 function formatDateTime(ts: number) {
@@ -21,7 +21,8 @@ const EVENT_ICONS: Record<string, typeof CheckCircle> = {
   payment_successful: CheckCircle,
   order_accepted: CheckCircle,
   preparing: Clock,
-  out_for_delivery: Clock,
+  ready_for_pickup: Package,
+  out_for_delivery: Truck,
   delivered: CheckCircle,
 };
 

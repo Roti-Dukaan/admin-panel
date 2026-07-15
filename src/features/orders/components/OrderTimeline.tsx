@@ -3,22 +3,29 @@ import type { OrderTimelineEntry, OrderStatus } from "../types/order"
 import { CheckCircle2, Clock, Circle } from "lucide-react"
 
 const STATUS_ORDER: OrderStatus[] = [
-  "pending",
+  "pending-confirmation",
+  "confirmed",
   "accepted",
   "preparing",
   "packed",
-  "out_for_delivery",
+  "ready-for-pickup",
+  "out-for-delivery",
   "delivered",
 ]
 
 const STATUS_LABELS: Record<OrderStatus, string> = {
+  "pending-confirmation": "Order Placed",
+  confirmed: "Confirmed",
   pending: "Order Placed",
   accepted: "Accepted",
   preparing: "Preparing",
   packed: "Packed",
-  out_for_delivery: "Out For Delivery",
+  "ready-for-pickup": "Ready for Pickup",
+  "out-for-delivery": "Out For Delivery",
   delivered: "Delivered",
   cancelled: "Cancelled",
+  failed: "Failed",
+  refunded: "Refunded",
 }
 
 interface OrderTimelineProps {

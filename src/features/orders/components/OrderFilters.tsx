@@ -17,11 +17,14 @@ const dateFilterOptions = [
 
 const statusOptions = [
   { label: "All Statuses", value: "all" },
+  { label: "Pending Confirmation", value: "pending-confirmation" },
+  { label: "Confirmed", value: "confirmed" },
   { label: "Pending", value: "pending" },
   { label: "Accepted", value: "accepted" },
   { label: "Preparing", value: "preparing" },
   { label: "Packed", value: "packed" },
-  { label: "Out For Delivery", value: "out_for_delivery" },
+  { label: "Ready for Pickup", value: "ready-for-pickup" },
+  { label: "Out For Delivery", value: "out-for-delivery" },
   { label: "Delivered", value: "delivered" },
   { label: "Cancelled", value: "cancelled" },
 ]
