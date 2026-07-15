@@ -46,10 +46,20 @@ const paymentStatusIcons = {
 }
 
 interface PaymentCardProps {
-  payment: PaymentInfo
+  payment: PaymentInfo | undefined
 }
 
 export function PaymentCard({ payment }: PaymentCardProps) {
+  if (!payment) {
+    return (
+      <div className="space-y-4">
+        <div className="rounded-xl border border-border p-4">
+          <p className="text-sm text-muted-foreground">Payment information not available</p>
+        </div>
+      </div>
+    )
+  }
+
   const StatusIcon = paymentStatusIcons[payment.status]
   const statusConfig = PAYMENT_STATUS_CONFIG[payment.status]
   const isCod = payment.method === "cod"

@@ -130,20 +130,28 @@ export function OrdersTable({ onViewDetails }: OrdersTableProps) {
             {orders.map((order) => (
               <TableRow key={order.id}>
                 <TableCell className="font-medium">{order.orderNumber}</TableCell>
-                <TableCell>{order.customer.name}</TableCell>
-                <TableCell className="text-muted-foreground">{order.customer.phone}</TableCell>
+<TableCell>{order.customer?.name ?? '—'}</TableCell>
+                 <TableCell className="text-muted-foreground">{order.customer?.phone ?? '—'}</TableCell>
                 <TableCell>{order.items.length} item(s)</TableCell>
                 <TableCell className="font-medium">
-                  {formatCurrency(order.payment.grandTotal)}
+                  {order.payment ? formatCurrency(order.payment.grandTotal) : "—"}
                 </TableCell>
                 <TableCell>
-                  <PaymentMethodBadge method={order.payment.method} />
+                  {order.payment ? (
+                    <PaymentMethodBadge method={order.payment.method} />
+                  ) : (
+                    "—"
+                  )}
                 </TableCell>
                 <TableCell>
-                  <PaymentStatusBadge status={order.payment.status} />
+                  {order.payment ? (
+                    <PaymentStatusBadge status={order.payment.status} />
+                  ) : (
+                    "—"
+                  )}
                 </TableCell>
                 <TableCell>
-                  {order.payment.transactionId ? (
+                  {order.payment?.transactionId ? (
                     <span className="text-xs font-mono text-muted-foreground" title={order.payment.transactionId}>
                       {order.payment.transactionId.length > 16
                         ? order.payment.transactionId.slice(0, 16) + "..."
@@ -153,8 +161,8 @@ export function OrdersTable({ onViewDetails }: OrdersTableProps) {
                     <span className="text-xs text-muted-foreground">—</span>
                   )}
                 </TableCell>
-                <TableCell className="text-xs">{order.delivery.slot}</TableCell>
-                <TableCell className="text-xs">{formatDate(order.delivery.date)}</TableCell>
+<TableCell className="text-xs">{order.delivery?.slot ?? '—'}</TableCell>
+                 <TableCell className="text-xs">{order.delivery?.date ? formatDate(order.delivery.date) : '—'}</TableCell>
                 <TableCell>
                   <StatusBadge status={order.status} />
                 </TableCell>

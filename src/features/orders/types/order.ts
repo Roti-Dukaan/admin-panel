@@ -32,11 +32,16 @@ export interface OrderItem {
 }
 
 export interface DeliveryInfo {
-  address: string
-  pincode: string
-  slot: string
-  date: string
-  instructions?: string
+  address: string;
+  pincode: string;
+  slot: string;
+  date: string;
+  instructions?: string;
+}
+
+export interface AdminDeliveryInfo {
+  slot: string;
+  date: string;
 }
 
 export interface PaymentInfo {
@@ -73,10 +78,10 @@ export interface OrderTimelineEntry {
 export interface Order {
   id: string
   orderNumber: string
-  customer: Customer
+  customer: Customer | undefined
   items: OrderItem[]
-  delivery: DeliveryInfo
-  payment: PaymentInfo
+  delivery: AdminDeliveryInfo | undefined
+  payment: PaymentInfo | undefined
   status: OrderStatus
   orderType: OrderType
   timeline: OrderTimelineEntry[]

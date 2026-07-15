@@ -2,10 +2,18 @@ import { Avatar } from "@/components/ui/avatar"
 import type { Customer } from "../types/order"
 
 interface CustomerCardProps {
-  customer: Customer
+  customer: Customer | undefined
 }
 
 export function CustomerCard({ customer }: CustomerCardProps) {
+  if (!customer) {
+    return (
+      <div className="rounded-xl border border-border p-4 space-y-3">
+        <h4 className="text-sm font-semibold">Customer</h4>
+        <p className="text-sm text-muted-foreground">—</p>
+      </div>
+    )
+  }
   return (
     <div className="rounded-xl border border-border p-4 space-y-3">
       <h4 className="text-sm font-semibold">Customer</h4>
