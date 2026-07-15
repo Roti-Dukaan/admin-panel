@@ -15,13 +15,25 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 
-const STATUS_ORDER = ["PENDING", "ASSIGNED", "PICKED_UP", "IN_TRANSIT", "DELIVERED", "FAILED", "CANCELLED"] as const;
+const STATUS_ORDER = [
+  "WAITING_FOR_KITCHEN",
+  "WAITING_FOR_PROVIDER",
+  "PROVIDER_ASSIGNED",
+  "RIDER_ARRIVING",
+  "PICKED_UP",
+  "OUT_FOR_DELIVERY",
+  "DELIVERED",
+  "FAILED",
+  "CANCELLED",
+] as const;
 
 const TIMELINE_CONFIG: Record<string, { icon: React.ReactNode; color: string; bgColor: string }> = {
-  PENDING: { icon: <Package className="w-4 h-4" />, color: "text-amber-600", bgColor: "bg-amber-100" },
-  ASSIGNED: { icon: <User className="w-4 h-4" />, color: "text-blue-600", bgColor: "bg-blue-100" },
+  WAITING_FOR_KITCHEN: { icon: <Package className="w-4 h-4" />, color: "text-amber-600", bgColor: "bg-amber-100" },
+  WAITING_FOR_PROVIDER: { icon: <Package className="w-4 h-4" />, color: "text-orange-600", bgColor: "bg-orange-100" },
+  PROVIDER_ASSIGNED: { icon: <User className="w-4 h-4" />, color: "text-blue-600", bgColor: "bg-blue-100" },
+  RIDER_ARRIVING: { icon: <User className="w-4 h-4" />, color: "text-cyan-600", bgColor: "bg-cyan-100" },
   PICKED_UP: { icon: <Truck className="w-4 h-4" />, color: "text-purple-600", bgColor: "bg-purple-100" },
-  IN_TRANSIT: { icon: <Truck className="w-4 h-4" />, color: "text-indigo-600", bgColor: "bg-indigo-100" },
+  OUT_FOR_DELIVERY: { icon: <Truck className="w-4 h-4" />, color: "text-indigo-600", bgColor: "bg-indigo-100" },
   DELIVERED: { icon: <CheckCircle className="w-4 h-4" />, color: "text-emerald-600", bgColor: "bg-emerald-100" },
   FAILED: { icon: <AlertCircle className="w-4 h-4" />, color: "text-red-600", bgColor: "bg-red-100" },
   CANCELLED: { icon: <X className="w-4 h-4" />, color: "text-gray-600", bgColor: "bg-gray-100" },
@@ -70,7 +82,7 @@ export function DeliveryDetailModal({
     const entries: Array<{ status: string; timestamp: string; label: string; details?: string }> = [];
 
     entries.push({
-      status: "PENDING",
+      status: delivery.deliveryType === "SCHEDULED" ? "WAITING_FOR_KITCHEN" : "WAITING_FOR_PROVIDER",
       timestamp: delivery.createdAt,
       label: "Order Placed",
       details: `Order ${order?.orderNumber} created`,
@@ -78,7 +90,7 @@ export function DeliveryDetailModal({
 
     if (delivery.providerShipmentId) {
       entries.push({
-        status: "ASSIGNED",
+        status: "PROVIDER_ASSIGNED",
         timestamp: delivery.updatedAt,
         label: "Delivery Assigned",
         details: `Assigned to ${delivery.provider}`,
@@ -94,11 +106,11 @@ export function DeliveryDetailModal({
       });
     }
 
-    if (delivery.status === "IN_TRANSIT" || delivery.status === "DELIVERED") {
+    if (delivery.status === "OUT_FOR_DELIVERY" || delivery.status === "DELIVERED") {
       entries.push({
-        status: "IN_TRANSIT",
+        status: "OUT_FOR_DELIVERY",
         timestamp: delivery.updatedAt,
-        label: "In Transit",
+        label: "Out for Delivery",
         details: "Package is on the way to customer",
       });
     }

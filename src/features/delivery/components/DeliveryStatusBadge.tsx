@@ -1,12 +1,14 @@
 "use client";
 
-import type { DeliveryStatus, DeliveryProvider } from "@/features/delivery/types/delivery";
+import type { DeliveryStatus, DeliveryProvider, DeliveryType } from "@/features/delivery/types/delivery";
 
 const STATUS_CONFIG: Record<DeliveryStatus, { label: string; bgClass: string; textClass: string; dotClass: string }> = {
-  PENDING: { label: "Pending", bgClass: "bg-amber-100", textClass: "text-amber-800", dotClass: "bg-amber-500" },
-  ASSIGNED: { label: "Assigned", bgClass: "bg-blue-100", textClass: "text-blue-800", dotClass: "bg-blue-500" },
+  WAITING_FOR_KITCHEN: { label: "Waiting for Kitchen", bgClass: "bg-amber-100", textClass: "text-amber-800", dotClass: "bg-amber-500" },
+  WAITING_FOR_PROVIDER: { label: "Waiting for Provider", bgClass: "bg-orange-100", textClass: "text-orange-800", dotClass: "bg-orange-500" },
+  PROVIDER_ASSIGNED: { label: "Provider Assigned", bgClass: "bg-blue-100", textClass: "text-blue-800", dotClass: "bg-blue-500" },
+  RIDER_ARRIVING: { label: "Rider Arriving", bgClass: "bg-cyan-100", textClass: "text-cyan-800", dotClass: "bg-cyan-500" },
   PICKED_UP: { label: "Picked Up", bgClass: "bg-purple-100", textClass: "text-purple-800", dotClass: "bg-purple-500" },
-  IN_TRANSIT: { label: "In Transit", bgClass: "bg-indigo-100", textClass: "text-indigo-800", dotClass: "bg-indigo-500" },
+  OUT_FOR_DELIVERY: { label: "Out for Delivery", bgClass: "bg-indigo-100", textClass: "text-indigo-800", dotClass: "bg-indigo-500" },
   DELIVERED: { label: "Delivered", bgClass: "bg-emerald-100", textClass: "text-emerald-800", dotClass: "bg-emerald-500" },
   FAILED: { label: "Failed", bgClass: "bg-red-100", textClass: "text-red-800", dotClass: "bg-red-500" },
   CANCELLED: { label: "Cancelled", bgClass: "bg-gray-100", textClass: "text-gray-800", dotClass: "bg-gray-500" },
@@ -64,6 +66,26 @@ interface DeliveryProviderBadgeProps {
 
 export function DeliveryProviderBadge({ provider, size = "md" }: DeliveryProviderBadgeProps) {
   const config = PROVIDER_CONFIG[provider] || { label: provider, bgClass: "bg-gray-100", textClass: "text-gray-800" };
+
+  return (
+    <span className={`inline-flex items-center rounded-full font-medium ${config.bgClass} ${config.textClass} ${SIZE_CLASSES[size]}`}>
+      {config.label}
+    </span>
+  );
+}
+
+const DELIVERY_TYPE_CONFIG: Record<DeliveryType, { label: string; bgClass: string; textClass: string }> = {
+  QUICK: { label: "Quick", bgClass: "bg-rose-100", textClass: "text-rose-800" },
+  SCHEDULED: { label: "Scheduled", bgClass: "bg-sky-100", textClass: "text-sky-800" },
+};
+
+interface DeliveryTypeBadgeProps {
+  deliveryType: DeliveryType;
+  size?: BadgeSize;
+}
+
+export function DeliveryTypeBadge({ deliveryType, size = "sm" }: DeliveryTypeBadgeProps) {
+  const config = DELIVERY_TYPE_CONFIG[deliveryType] || { label: deliveryType, bgClass: "bg-gray-100", textClass: "text-gray-800" };
 
   return (
     <span className={`inline-flex items-center rounded-full font-medium ${config.bgClass} ${config.textClass} ${SIZE_CLASSES[size]}`}>

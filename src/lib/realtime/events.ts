@@ -13,6 +13,9 @@ export const REALTIME_EVENTS = {
   ADMIN_ORDER_CREATED: "admin:order_created",
   ADMIN_ORDER_UPDATED: "admin:order_updated",
 
+  ADMIN_DELIVERY_UPDATED: "admin:delivery_updated",
+  CUSTOMER_DELIVERY_UPDATED: "customer:delivery_updated",
+
   CUSTOMER_ORDER_UPDATED: "customer:order_updated",
 } as const;
 
@@ -53,4 +56,18 @@ export interface AdminOrderUpdatedPayload {
   status: string;
   previousStatus?: string;
   occurredAt: string;
+}
+
+export interface DeliveryUpdatedPayload {
+  deliveryId: string;
+  orderId: string;
+  orderNumber: string;
+  customerId: string;
+  deliveryType: string;
+  status: string;
+  previousStatus: string | null;
+  occurredAt: string;
+  actorType: "SYSTEM" | "ADMIN" | "CUSTOMER" | "PROVIDER";
+  actorId: string;
+  remarks?: string | null;
 }

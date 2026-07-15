@@ -1,11 +1,15 @@
 export type DeliveryStatus =
-  | "PENDING"
-  | "ASSIGNED"
+  | "WAITING_FOR_KITCHEN"
+  | "WAITING_FOR_PROVIDER"
+  | "PROVIDER_ASSIGNED"
+  | "RIDER_ARRIVING"
   | "PICKED_UP"
-  | "IN_TRANSIT"
+  | "OUT_FOR_DELIVERY"
   | "DELIVERED"
   | "FAILED"
   | "CANCELLED";
+
+export type DeliveryType = "QUICK" | "SCHEDULED";
 
 export type DeliveryProvider =
   | "SHADOWFAX"
@@ -32,11 +36,13 @@ export interface Delivery {
   id: string;
   orderId: string;
   orderNumber: string;
+  deliveryType: DeliveryType;
   provider: DeliveryProvider;
   providerShipmentId?: string;
   trackingNumber?: string;
   trackingUrl?: string;
   status: DeliveryStatus;
+  deliveryFee?: number;
   estimatedPickupAt?: string;
   estimatedDeliveryAt?: string;
   actualPickupAt?: string;
@@ -92,6 +98,7 @@ export interface DeliveryFilters {
   limit?: number;
   status?: DeliveryStatus | "all";
   provider?: DeliveryProvider | "all";
+  deliveryType?: DeliveryType | "all";
   orderId?: string;
   customerId?: string;
   dateFrom?: string;
@@ -101,10 +108,12 @@ export interface DeliveryFilters {
 
 export interface DeliveryStatistics {
   total: number;
-  pending: number;
-  assigned: number;
+  waitingForKitchen: number;
+  waitingForProvider: number;
+  providerAssigned: number;
+  riderArriving: number;
   pickedUp: number;
-  inTransit: number;
+  outForDelivery: number;
   delivered: number;
   failed: number;
   cancelled: number;
@@ -114,6 +123,7 @@ export interface DeliveryTracking {
   id: string;
   orderId: string;
   orderNumber: string;
+  deliveryType?: DeliveryType;
   provider: string;
   providerShipmentId?: string;
   trackingNumber?: string;
@@ -185,6 +195,8 @@ export interface DeliveryListItem {
   trackingNumber?: string;
   trackingUrl?: string;
   status: DeliveryStatus;
+  deliveryType?: DeliveryType;
+  deliveryFee?: number;
   estimatedPickupAt?: string;
   estimatedDeliveryAt?: string;
   actualPickupAt?: string;
@@ -216,13 +228,20 @@ export type DeliveryStatusConfig = {
 };
 
 export const DELIVERY_STATUS_CONFIG: Record<DeliveryStatus, DeliveryStatusConfig> = {
-  PENDING: { label: "Pending", color: "orange", bgClass: "bg-orange-100", textClass: "text-orange-800", dotClass: "bg-orange-500" },
-  ASSIGNED: { label: "Assigned", color: "blue", bgClass: "bg-blue-100", textClass: "text-blue-800", dotClass: "bg-blue-500" },
+  WAITING_FOR_KITCHEN: { label: "Waiting for Kitchen", color: "amber", bgClass: "bg-amber-100", textClass: "text-amber-800", dotClass: "bg-amber-500" },
+  WAITING_FOR_PROVIDER: { label: "Waiting for Provider", color: "orange", bgClass: "bg-orange-100", textClass: "text-orange-800", dotClass: "bg-orange-500" },
+  PROVIDER_ASSIGNED: { label: "Provider Assigned", color: "blue", bgClass: "bg-blue-100", textClass: "text-blue-800", dotClass: "bg-blue-500" },
+  RIDER_ARRIVING: { label: "Rider Arriving", color: "cyan", bgClass: "bg-cyan-100", textClass: "text-cyan-800", dotClass: "bg-cyan-500" },
   PICKED_UP: { label: "Picked Up", color: "purple", bgClass: "bg-purple-100", textClass: "text-purple-800", dotClass: "bg-purple-500" },
-  IN_TRANSIT: { label: "In Transit", color: "indigo", bgClass: "bg-indigo-100", textClass: "text-indigo-800", dotClass: "bg-indigo-500" },
-  DELIVERED: { label: "Delivered", color: "green", bgClass: "bg-green-100", textClass: "text-green-800", dotClass: "bg-green-500" },
+  OUT_FOR_DELIVERY: { label: "Out for Delivery", color: "indigo", bgClass: "bg-indigo-100", textClass: "text-indigo-800", dotClass: "bg-indigo-500" },
+  DELIVERED: { label: "Delivered", color: "green", bgClass: "bg-emerald-100", textClass: "text-emerald-800", dotClass: "bg-emerald-500" },
   FAILED: { label: "Failed", color: "red", bgClass: "bg-red-100", textClass: "text-red-800", dotClass: "bg-red-500" },
   CANCELLED: { label: "Cancelled", color: "gray", bgClass: "bg-gray-100", textClass: "text-gray-800", dotClass: "bg-gray-500" },
+};
+
+export const DELIVERY_TYPE_LABELS: Record<DeliveryType, string> = {
+  QUICK: "Quick",
+  SCHEDULED: "Scheduled",
 };
 
 export const DELIVERY_PROVIDER_LABELS: Record<DeliveryProvider, string> = {
@@ -233,18 +252,29 @@ export const DELIVERY_PROVIDER_LABELS: Record<DeliveryProvider, string> = {
 };
 
 export const DELIVERY_STATUS_ORDER: DeliveryStatus[] = [
-  "PENDING",
-  "ASSIGNED",
+  "WAITING_FOR_KITCHEN",
+  "WAITING_FOR_PROVIDER",
+  "PROVIDER_ASSIGNED",
+  "RIDER_ARRIVING",
   "PICKED_UP",
-  "IN_TRANSIT",
+  "OUT_FOR_DELIVERY",
   "DELIVERED",
   "FAILED",
   "CANCELLED",
 ];
 
+const DELIVERY_ALLOWED_TRANSITIONS: Record<DeliveryStatus, DeliveryStatus[]> = {
+  WAITING_FOR_KITCHEN: ["WAITING_FOR_PROVIDER", "CANCELLED"],
+  WAITING_FOR_PROVIDER: ["PROVIDER_ASSIGNED", "CANCELLED"],
+  PROVIDER_ASSIGNED: ["RIDER_ARRIVING", "CANCELLED"],
+  RIDER_ARRIVING: ["PICKED_UP", "CANCELLED"],
+  PICKED_UP: ["OUT_FOR_DELIVERY", "CANCELLED"],
+  OUT_FOR_DELIVERY: ["DELIVERED", "FAILED", "CANCELLED"],
+  DELIVERED: [],
+  FAILED: ["WAITING_FOR_PROVIDER"],
+  CANCELLED: [],
+};
+
 export function canTransition(from: DeliveryStatus, to: DeliveryStatus): boolean {
-  const fromIndex = DELIVERY_STATUS_ORDER.indexOf(from);
-  const toIndex = DELIVERY_STATUS_ORDER.indexOf(to);
-  if (fromIndex === -1 || toIndex === -1) return false;
-  return toIndex >= fromIndex || to === "CANCELLED" || to === "FAILED";
+  return DELIVERY_ALLOWED_TRANSITIONS[from]?.includes(to) ?? false;
 }

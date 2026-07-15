@@ -4,9 +4,10 @@ import { useState, useEffect, useCallback } from "react";
 import { Search, Filter, RefreshCw, ChevronLeft, ChevronRight, Download } from "lucide-react";
 import { format } from "date-fns";
 import type { Delivery, DeliveryFilters, DeliveryStatus, DeliveryProvider } from "@/features/delivery/types/delivery";
-import { DeliveryStatusBadge, DeliveryProviderBadge } from "./DeliveryStatusBadge";
+import { DeliveryStatusBadge, DeliveryProviderBadge, DeliveryTypeBadge } from "./DeliveryStatusBadge";
 import { DeliveryDetailModal } from "./DeliveryDetailModal";
 import { deliveryApi } from "../services/delivery.api";
+import { useDeliveriesRealtime } from "../hooks/useDeliveriesRealtime";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -103,6 +104,8 @@ export function DeliveryListPage() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  useDeliveriesRealtime(fetchData);
 
   const handleViewDetails = (delivery: Delivery) => {
     setSelectedDelivery(delivery);
@@ -256,10 +259,12 @@ export function DeliveryListPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="PENDING">Pending</SelectItem>
-                  <SelectItem value="ASSIGNED">Assigned</SelectItem>
+                  <SelectItem value="WAITING_FOR_KITCHEN">Waiting for Kitchen</SelectItem>
+                  <SelectItem value="WAITING_FOR_PROVIDER">Waiting for Provider</SelectItem>
+                  <SelectItem value="PROVIDER_ASSIGNED">Provider Assigned</SelectItem>
+                  <SelectItem value="RIDER_ARRIVING">Rider Arriving</SelectItem>
                   <SelectItem value="PICKED_UP">Picked Up</SelectItem>
-                  <SelectItem value="IN_TRANSIT">In Transit</SelectItem>
+                  <SelectItem value="OUT_FOR_DELIVERY">Out for Delivery</SelectItem>
                   <SelectItem value="DELIVERED">Delivered</SelectItem>
                   <SelectItem value="FAILED">Failed</SelectItem>
                   <SelectItem value="CANCELLED">Cancelled</SelectItem>
@@ -275,6 +280,16 @@ export function DeliveryListPage() {
                   <SelectItem value="SELF_DELIVERY">Self Delivery</SelectItem>
                   <SelectItem value="SHIPROCKET">Shiprocket</SelectItem>
                   <SelectItem value="PORTER">Porter</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={filters.deliveryType || "all"} onValueChange={(v) => handleFilterChange("deliveryType", v)}>
+                <SelectTrigger className="w-[160px]">
+                  <SelectValue placeholder="All Types" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="QUICK">Quick</SelectItem>
+                  <SelectItem value="SCHEDULED">Scheduled</SelectItem>
                 </SelectContent>
               </Select>
               <Input
@@ -338,7 +353,10 @@ export function DeliveryListPage() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <DeliveryProviderBadge provider={getProviderFromRow(delivery)} size="sm" />
+                      <div className="flex flex-col gap-1">
+                        <DeliveryProviderBadge provider={getProviderFromRow(delivery)} size="sm" />
+                        {delivery.deliveryType && <DeliveryTypeBadge deliveryType={delivery.deliveryType} size="sm" />}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <DeliveryStatusBadge status={getStatusFromRow(delivery)} size="sm" />
