@@ -1,71 +1,89 @@
-"use client";
+﻿"use client";
 
-import { useDroppable } from "@dnd-kit/core";
-import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import { motion } from "motion/react";
-import { OrderStatus, STATUS_CONFIG } from "../types/kitchen";
-import { KitchenOrderCard } from "./KitchenOrderCard";
-import { KitchenOrder } from "../types/kitchen";
+import { Inbox } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
+import { KitchenCard } from "./KitchenCard";
+import { STAGE_META } from "../types/kitchen";
+import type { KitchenOrderView, KitchenStage } from "../types/kitchen";
+import type { KitchenOrderDetail } from "@/lib/api/kitchen.api";
 
-interface KitchenColumnProps {
-  status: OrderStatus;
-  orders: KitchenOrder[];
+function KitchenCardSkeleton() {
+  return (
+    <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+      <div className="flex items-center justify-between">
+        <Skeleton className="h-5 w-24 rounded-full" />
+        <Skeleton className="h-4 w-14" />
+      </div>
+      <Skeleton className="mt-3 h-4 w-28" />
+      <div className="mt-3 flex gap-2">
+        <Skeleton className="h-5 w-14 rounded-full" />
+        <Skeleton className="h-5 w-20 rounded-full" />
+      </div>
+      <Skeleton className="mt-3 h-4 w-full" />
+      <Skeleton className="mt-2 h-4 w-3/4" />
+      <Skeleton className="mt-3 h-9 w-full rounded-lg" />
+    </div>
+  );
 }
 
-export function KitchenColumn({ status, orders }: KitchenColumnProps) {
-  const config = STATUS_CONFIG[status];
-  const { setNodeRef, isOver } = useDroppable({ id: status });
-
-  const totalItems = orders.reduce((sum, o) => sum + o.items.reduce((s, i) => s + i.quantity, 0), 0);
-  const avgWait = orders.length > 0
-    ? Math.round(orders.reduce((sum, o) => {
-        if (!o.preparationStartedAt) return sum;
-        return sum + (Date.now() - o.preparationStartedAt) / 60000;
-      }, 0) / orders.length)
-    : 0;
+export function KitchenColumn({
+  stage,
+  orders,
+  now,
+  detailMap,
+  onOpen,
+  onAction,
+  updatingId,
+  isLoading,
+}: {
+  stage: KitchenStage;
+  orders: KitchenOrderView[];
+  now: number;
+  detailMap: Record<string, KitchenOrderDetail | undefined>;
+  onOpen: (order: KitchenOrderView) => void;
+  onAction: (orderId: string, action: "preparing" | "ready") => void;
+  updatingId: string | null;
+  isLoading: boolean;
+}) {
+  const meta = STAGE_META[stage];
 
   return (
-    <div className="flex min-w-[280px] flex-col">
-      {/* Column Header */}
-      <div className={`mb-3 flex items-center justify-between rounded-lg px-3 py-2.5 ${config.bgColor} ${config.borderColor} border`}>
+    <section className="flex flex-col overflow-hidden rounded-2xl bg-white/60 ring-1 ring-black/5">
+      <header className={cn("flex items-center justify-between gap-2 px-4 py-3", meta.columnClass)}>
         <div className="flex items-center gap-2">
-          <span className="text-base">{config.emoji}</span>
-          <span className={`text-sm font-bold ${config.color}`}>{config.label}</span>
+          <span className="text-lg leading-none">{meta.emoji}</span>
+          <h2 className="text-sm font-bold uppercase tracking-wide text-gray-700">{meta.label}</h2>
         </div>
-        <div className="flex items-center gap-2">
-          <span className={`inline-flex items-center justify-center rounded-full ${config.bgColor} px-2 py-0.5 text-xs font-bold ${config.color}`}>
-            {orders.length}
-          </span>
-          <span className="text-[11px] text-gray-400">{totalItems} items</span>
-          {avgWait > 0 && status === "preparing" && (
-            <span className="text-[11px] text-amber-500 font-medium">~{avgWait}m avg</span>
-          )}
-        </div>
-      </div>
+        <span className="inline-flex min-w-7 items-center justify-center rounded-full bg-white px-2 py-0.5 text-xs font-semibold text-gray-600 ring-1 ring-black/5">
+          {isLoading ? "–" : orders.length}
+        </span>
+      </header>
 
-      {/* Column Body */}
-      <div
-        ref={setNodeRef}
-        className={`flex-1 space-y-2.5 rounded-xl p-2 transition-colors min-h-[200px] ${
-          isOver ? "bg-blue-50/80 ring-2 ring-blue-200 ring-inset" : "bg-gray-50/50"
-        }`}
-      >
-        <SortableContext items={orders.map((o) => o.id)} strategy={verticalListSortingStrategy}>
-          {orders.map((order) => (
-            <KitchenOrderCard key={order.id} order={order} />
-          ))}
-        </SortableContext>
-
-        {orders.length === 0 && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="flex h-24 items-center justify-center rounded-lg border-2 border-dashed border-gray-200 text-sm text-gray-400"
-          >
-            Drop orders here
-          </motion.div>
+      <div className="space-y-3 p-3">
+        {isLoading ? (
+          Array.from({ length: 2 }).map((_, i) => <KitchenCardSkeleton key={i} />)
+        ) : orders.length === 0 ? (
+          <div className="flex flex-col items-center justify-center gap-3 px-4 py-10 text-center">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white text-gray-300 ring-1 ring-black/5">
+              <Inbox className="h-7 w-7" />
+            </div>
+            <p className="text-sm font-medium text-gray-400">No {meta.label.toLowerCase()} kitchen orders</p>
+          </div>
+        ) : (
+          orders.map((order) => (
+            <KitchenCard
+              key={order.ticketId}
+              order={order}
+              detail={detailMap[order.orderId]}
+              now={now}
+              onOpen={() => onOpen(order)}
+              onAction={(action) => onAction(order.orderId, action)}
+              isUpdating={updatingId === order.orderId}
+            />
+          ))
         )}
       </div>
-    </div>
+    </section>
   );
 }

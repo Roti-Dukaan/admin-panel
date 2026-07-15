@@ -1,52 +1,74 @@
 "use client";
 
-import { motion } from "motion/react";
-import { X } from "lucide-react";
-import { useKitchenStore } from "../hooks/useKitchen";
-import { Priority, PaymentMethod, PRIORITY_CONFIG } from "../types/kitchen";
+import { Zap, Clock3, CreditCard, IndianRupee } from "lucide-react";
+import { cn } from "@/lib/utils";
+import type { DeliveryKind, PaymentFilter, PrepTimeFilter } from "../types/kitchen";
 
-const quickFilters: { type: "priority" | "paymentMethod"; value: Priority | PaymentMethod; label: string; color: string }[] = [
-  { type: "priority", value: "subscription", label: "Subscription", color: "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 data-[active=true]:bg-emerald-600 data-[active=true]:text-white" },
-  { type: "priority", value: "express", label: "Express", color: "bg-red-50 text-red-700 border-red-200 hover:bg-red-100 data-[active=true]:bg-red-600 data-[active=true]:text-white" },
-  { type: "priority", value: "vip", label: "VIP", color: "bg-violet-50 text-violet-700 border-violet-200 hover:bg-violet-100 data-[active=true]:bg-violet-600 data-[active=true]:text-white" },
-  { type: "paymentMethod", value: "cod", label: "COD", color: "bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100 data-[active=true]:bg-orange-600 data-[active=true]:text-white" },
-  { type: "paymentMethod", value: "online", label: "Online", color: "bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 data-[active=true]:bg-blue-600 data-[active=true]:text-white" },
-];
+function Chip({
+  active,
+  onClick,
+  icon: Icon,
+  label,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: React.ElementType;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500",
+        active
+          ? "border-orange-300 bg-orange-50 text-orange-700"
+          : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+      )}
+    >
+      <Icon className="h-3.5 w-3.5" />
+      {label}
+    </button>
+  );
+}
 
-export function QuickFilters() {
-  const filters = useKitchenStore((s) => s.filters);
-  const toggleFilter = useKitchenStore((s) => s.toggleFilter);
-  const clearFilters = useKitchenStore((s) => s.clearFilters);
-
-  const hasActiveFilters = filters.priority.length > 0 || filters.paymentMethod.length > 0;
+export function QuickFilters({
+  deliveryKind,
+  onDeliveryKind,
+  payment,
+  onPayment,
+  prepTime,
+  onPrepTime,
+}: {
+  deliveryKind: DeliveryKind | "all";
+  onDeliveryKind: (value: DeliveryKind | "all") => void;
+  payment: PaymentFilter;
+  onPayment: (value: PaymentFilter) => void;
+  prepTime: PrepTimeFilter;
+  onPrepTime: (value: PrepTimeFilter) => void;
+}) {
+  const toggleDelivery = () =>
+    onDeliveryKind(deliveryKind === "quick" ? "all" : "quick");
+  const toggleScheduled = () =>
+    onDeliveryKind(deliveryKind === "scheduled" ? "all" : "scheduled");
+  const togglePaid = () => onPayment(payment === "paid" ? "all" : "paid");
+  const toggleCod = () => onPayment(payment === "cod" ? "all" : "cod");
+  const togglePrep = () =>
+    onPrepTime(prepTime === "oldest" ? "newest" : "oldest");
 
   return (
-    <div className="flex items-center gap-2 flex-wrap">
-      {quickFilters.map((f) => {
-        const isActive = filters[f.type].includes(f.value as never);
-        return (
-          <motion.button
-            key={`${f.type}-${f.value}`}
-            whileTap={{ scale: 0.95 }}
-            data-active={isActive}
-            onClick={() => toggleFilter(f.type, f.value)}
-            className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold transition-colors ${f.color}`}
-          >
-            {f.label}
-          </motion.button>
-        );
-      })}
-      {hasActiveFilters && (
-        <motion.button
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          onClick={clearFilters}
-          className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600 hover:bg-gray-200"
-        >
-          <X className="h-3 w-3" />
-          Clear
-        </motion.button>
-      )}
+    <div className="flex flex-wrap items-center gap-2">
+      <Chip active={deliveryKind === "quick"} onClick={toggleDelivery} icon={Zap} label="Quick" />
+      <Chip active={deliveryKind === "scheduled"} onClick={toggleScheduled} icon={Clock3} label="Scheduled" />
+      <Chip active={payment === "paid"} onClick={togglePaid} icon={IndianRupee} label="Paid" />
+      <Chip active={payment === "cod"} onClick={toggleCod} icon={CreditCard} label="COD" />
+      <Chip
+        active={prepTime === "oldest"}
+        onClick={togglePrep}
+        icon={Clock3}
+        label={prepTime === "oldest" ? "Oldest" : "Newest"}
+      />
     </div>
   );
 }

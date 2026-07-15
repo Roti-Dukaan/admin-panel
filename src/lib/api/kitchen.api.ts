@@ -1,58 +1,130 @@
-import axios from "axios";
+import { apiClient } from "./http";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "/api";
+export type KitchenStage = "PENDING" | "PREPARING" | "READY_FOR_PICKUP";
 
-const api = axios.create({
-  baseURL: `${API_BASE}/v1`,
-  headers: { "Content-Type": "application/json" },
-});
+export type KitchenPriority = "NORMAL" | "HIGH" | "URGENT";
 
-api.interceptors.request.use((config) => {
-  if (typeof window !== "undefined") {
-    const token = localStorage.getItem("admin_token");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-  }
-  return config;
-});
+export interface KitchenPrepTimer {
+  estimatedPreparationMinutes?: number;
+  elapsedMinutes: number;
+  preparingMinutes: number | null;
+  readyDurationMinutes: number | null;
+  isReady: boolean;
+}
 
-interface KitchenTicket {
+export interface KitchenDeliverySlot {
   id: string;
+  name: string;
+  startTime: string;
+  endTime: string;
+}
+
+export interface KitchenOrderListItem {
+  ticketId: string;
   ticketNumber: string;
   orderId: string;
-  priority: "NORMAL" | "HIGH" | "URGENT";
-  status: "PENDING" | "ACCEPTED" | "PREPARING" | "READY" | "DISPATCHED" | "CANCELLED";
-  estimatedPreparationMinutes?: number;
-  startedAt?: string;
-  readyAt?: string;
-  completedAt?: string;
-  createdAt: string;
-  updatedAt: string;
-  order?: {
+  orderNumber: string;
+  kitchenStatus: KitchenStage;
+  stageLabel: string;
+  priority: KitchenPriority;
+  customer: {
     id: string;
-    orderNumber: string;
-    customer?: {
-      id: string;
-      fullName: string;
-      name: string;
-      phone: string;
-    };
-    deliverySlot?: {
-      id: string;
-      name: string;
-      startTime: string;
-      endTime: string;
-    };
-    estimatedPreparationTime?: number;
-    createdAt: string;
+    name: string;
+    phone: string;
+  } | null;
+  itemsCount: number;
+  totalQuantity: number;
+  deliveryType: string;
+  deliverySlot?: KitchenDeliverySlot | null;
+  startedPreparingAt?: string;
+  readyAt?: string;
+  orderCreatedAt: string;
+  timer: KitchenPrepTimer;
+}
+
+export interface KitchenOrderListResponse {
+  items: KitchenOrderListItem[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface KitchenTaxLine {
+  foodNameSnapshot: string;
+  hsnCode?: string;
+  gstPercentage: number;
+  gstType: string;
+  lineGSTAmount: number;
+}
+
+export interface KitchenOrderDetail {
+  ticketId: string;
+  ticketNumber: string;
+  orderId: string;
+  orderNumber: string;
+  kitchenStatus: KitchenStage;
+  stageLabel: string;
+  priority: KitchenPriority;
+  deliveryType: string;
+  specialInstructions?: string;
+  customer: {
+    id: string;
+    name: string;
+    phone: string;
+    email?: string;
   } | null;
   items: Array<{
     id: string;
     foodNameSnapshot: string;
+    categorySnapshot?: string;
     quantity: number;
-    categorySnapshot: string;
+    finalUnitPrice: number;
+    lineTotal: number;
   }>;
+  address: {
+    customerName: string;
+    phoneNumber: string;
+    addressLine1: string;
+    addressLine2?: string;
+    landmark?: string;
+    city: string;
+    state: string;
+    pincode: string;
+  } | null;
+  pricing: {
+    currency: string;
+    subtotalBaseAmount: number;
+    subtotalGSTAmount: number;
+    subtotalAmount: number;
+    deliveryCharge: number;
+    deliveryGSTAmount: number;
+    discountAmount: number;
+    roundOffAmount: number;
+    grandTotal: number;
+  };
+  taxes: {
+    totalGSTAmount: number;
+    lines: KitchenTaxLine[];
+  };
+  payment: {
+    id: string;
+    paymentReference?: string;
+    paymentMethod: string;
+    status?: string;
+    amount?: number;
+  } | null;
+  invoice: {
+    id: string;
+    invoiceNumber: string;
+    status: string;
+    pdfUrl?: string;
+  } | null;
+  deliverySlot?: KitchenDeliverySlot | null;
+  startedPreparingAt?: string;
+  readyAt?: string;
+  orderCreatedAt: string;
+  timer: KitchenPrepTimer;
   timeline: Array<{
     id: string;
     status: string;
@@ -63,86 +135,41 @@ interface KitchenTicket {
   }>;
 }
 
-interface KitchenListResponse {
-  items: KitchenTicket[];
-  total: number;
-  page: number;
-  limit: number;
+export interface KitchenOrderQuery {
+  page?: number;
+  limit?: number;
+  status?: KitchenStage;
+  search?: string;
+  sortBy?: "createdAt" | "status" | "startedAt" | "readyAt";
+  sortOrder?: "asc" | "desc";
+}
+
+function unwrap<T>(promise: Promise<{ data: { success: boolean; data: T } }>): Promise<T> {
+  return promise.then((res) => res.data.data);
 }
 
 export const kitchenApi = {
-  list: async (filters?: {
-    page?: number;
-    limit?: number;
-    status?: string;
-    priority?: string;
-    orderId?: string;
-    search?: string;
-  }): Promise<KitchenListResponse> => {
+  /** GET /admin/kitchen/orders — kitchen queue with filters, search, pagination & sorting. */
+  listOrders: (query: KitchenOrderQuery = {}): Promise<KitchenOrderListResponse> => {
     const params = new URLSearchParams();
-    if (filters?.status) params.append("status", filters.status);
-    if (filters?.priority) params.append("priority", filters.priority);
-    if (filters?.orderId) params.append("orderId", filters.orderId);
-    if (filters?.page) params.append("page", String(filters.page));
-    if (filters?.limit) params.append("limit", String(filters.limit));
-    if (filters?.search) params.append("search", filters.search);
-    params.append("page", String(filters?.page || 1));
-    params.append("limit", String(filters?.limit || 20));
-
-    const { data } = await api.get<{ success: boolean; data: KitchenListResponse }>(
-      `/admin/kitchen/list?${params.toString()}`
-    );
-    return data.data;
+    if (query.page) params.append("page", String(query.page));
+    if (query.limit) params.append("limit", String(query.limit));
+    if (query.status) params.append("status", query.status);
+    if (query.search) params.append("search", query.search);
+    if (query.sortBy) params.append("sortBy", query.sortBy);
+    if (query.sortOrder) params.append("sortOrder", query.sortOrder);
+    return unwrap(apiClient.get(`/admin/kitchen/orders?${params.toString()}`));
   },
 
-  getKanban: async () => {
-    const { data } = await api.get<{ success: boolean; data: any }>(
-      "/admin/kitchen"
-    );
-    return data.data;
-  },
+  /** GET /admin/kitchen/orders/:id — full kitchen order detail. */
+  getOrderDetail: (id: string): Promise<KitchenOrderDetail> =>
+    unwrap(apiClient.get(`/admin/kitchen/orders/${id}`)),
 
-  getById: async (id: string): Promise<KitchenTicket> => {
-    const { data } = await api.get<{ success: boolean; data: KitchenTicket }>(
-      `/admin/kitchen/${id}`
-    );
-    return data.data;
-  },
+  /** PATCH /admin/kitchen/orders/:id/preparing — PENDING → PREPARING. */
+  markPreparing: (id: string): Promise<KitchenOrderDetail> =>
+    unwrap(apiClient.patch(`/admin/kitchen/orders/${id}/preparing`)),
 
-  getByOrderId: async (orderId: string): Promise<KitchenTicket> => {
-    const { data } = await api.get<{ success: boolean; data: KitchenTicket }>(
-      `/admin/kitchen/order/${orderId}`
-    );
-    return data.data;
-  },
-
-  updateStatus: async (id: string, dto: { status: string; remarks?: string }): Promise<KitchenTicket> => {
-    const { data } = await api.patch<{ success: boolean; data: KitchenTicket }>(
-      `/admin/kitchen/${id}/status`,
-      dto
-    );
-    return data.data;
-  },
-
-  updatePriority: async (id: string, dto: { priority: string }): Promise<KitchenTicket> => {
-    const { data } = await api.patch<{ success: boolean; data: KitchenTicket }>(
-      `/admin/kitchen/${id}/priority`,
-      dto
-    );
-    return data.data;
-  },
-
-  cancel: async (id: string): Promise<KitchenTicket> => {
-    const { data } = await api.post<{ success: boolean; data: KitchenTicket }>(
-      `/admin/kitchen/${id}/cancel`
-    );
-    return data.data;
-  },
-
-  getTimeline: async (id: string): Promise<KitchenTicket[]> => {
-    const { data } = await api.get<{ success: boolean; data: KitchenTicket[] }>(
-      `/admin/kitchen/${id}/timeline`
-    );
-    return data.data;
-  },
+  /** PATCH /admin/kitchen/orders/:id/ready — PREPARING → READY_FOR_PICKUP. */
+  markReady: (id: string): Promise<KitchenOrderDetail> =>
+    unwrap(apiClient.patch(`/admin/kitchen/orders/${id}/ready`)),
 };

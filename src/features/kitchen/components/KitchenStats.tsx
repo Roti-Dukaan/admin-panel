@@ -1,50 +1,50 @@
 "use client";
 
-import { useMemo } from "react";
-import { motion } from "motion/react";
-import { Clock, AlertTriangle, Package, ChefHat, CheckCircle2, Timer } from "lucide-react";
-import { useKitchenStore } from "../hooks/useKitchen";
+import { cn } from "@/lib/utils";
 
-const statCards = [
-  { key: "pending" as const, label: "Pending Orders", icon: Clock, color: "text-blue-600", bg: "bg-blue-50", ring: "ring-blue-100" },
-  { key: "preparing" as const, label: "Preparing", icon: ChefHat, color: "text-amber-600", bg: "bg-amber-50", ring: "ring-amber-100" },
-  { key: "ready" as const, label: "Ready", icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-50", ring: "ring-emerald-100" },
-  { key: "packed" as const, label: "Packed", icon: Package, color: "text-violet-600", bg: "bg-violet-50", ring: "ring-violet-100" },
-  { key: "delayed" as const, label: "Delayed", icon: AlertTriangle, color: "text-red-600", bg: "bg-red-50", ring: "ring-red-100" },
-  { key: "avgPrepTime" as const, label: "Avg Prep Time", icon: Timer, color: "text-gray-600", bg: "bg-gray-50", ring: "ring-gray-100", suffix: " min" },
+export interface KitchenStatsData {
+  pending: number;
+  preparing: number;
+  ready: number;
+  total: number;
+  delayed: number;
+  avgPrep: number;
+}
+
+const STAT_CARDS: {
+  key: keyof KitchenStatsData;
+  label: string;
+  emoji: string;
+  color: string;
+  bg: string;
+  suffix?: string;
+}[] = [
+  { key: "pending", label: "Pending", emoji: "🆕", color: "text-blue-600", bg: "bg-blue-50" },
+  { key: "preparing", label: "Preparing", emoji: "👨‍🍳", color: "text-amber-600", bg: "bg-amber-50" },
+  { key: "ready", label: "Ready", emoji: "✅", color: "text-emerald-600", bg: "bg-emerald-50" },
+  { key: "total", label: "Live Orders", emoji: "📊", color: "text-gray-700", bg: "bg-gray-50" },
+  { key: "delayed", label: "Delayed", emoji: "⏰", color: "text-red-600", bg: "bg-red-50" },
+  { key: "avgPrep", label: "Avg Prep", emoji: "⏱️", color: "text-violet-600", bg: "bg-violet-50", suffix: "m" },
 ];
 
-export function KitchenStats() {
-  const getStats = useKitchenStore((s) => s.getStats);
-  const stats = useMemo(() => getStats(), [getStats]);
-
+export function KitchenStats({ stats }: { stats: KitchenStatsData }) {
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-      {statCards.map((card, i) => {
-        const Icon = card.icon;
-        const value = stats[card.key];
-        return (
-          <motion.div
-            key={card.key}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: i * 0.05 }}
-            className="rounded-xl border border-gray-200/80 bg-white p-4 shadow-sm"
-          >
-            <div className="flex items-center gap-3">
-              <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${card.bg} ring-1 ${card.ring}`}>
-                <Icon className={`h-5 w-5 ${card.color}`} />
-              </div>
-              <div className="min-w-0">
-                <p className="text-2xl font-bold text-gray-900">
-                  {value}{(card as { suffix?: string }).suffix || ""}
-                </p>
-                <p className="text-xs font-medium text-gray-500 truncate">{card.label}</p>
-              </div>
-            </div>
-          </motion.div>
-        );
-      })}
+      {STAT_CARDS.map((card) => (
+        <div
+          key={card.key}
+          className={cn("flex items-center gap-3 rounded-2xl border border-gray-100 p-4 shadow-sm", card.bg)}
+        >
+          <span className="text-2xl">{card.emoji}</span>
+          <div>
+            <p className={cn("text-xl font-bold tabular-nums", card.color)}>
+              {stats[card.key]}
+              {card.suffix ?? ""}
+            </p>
+            <p className="text-xs font-medium text-gray-500">{card.label}</p>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

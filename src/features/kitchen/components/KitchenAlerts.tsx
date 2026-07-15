@@ -1,53 +1,46 @@
-"use client";
+﻿"use client";
 
-import { motion } from "motion/react";
-import { AlertTriangle, AlertCircle, Info, CheckCircle } from "lucide-react";
+import { AlertTriangle, AlarmClock, Info, CheckCircle2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-interface KitchenAlert {
+export interface KitchenAlert {
   id: string;
   type: "warning" | "danger" | "info" | "success";
   message: string;
-  timestamp: number;
 }
 
-// Static alerts for now - can be replaced with real API when backend endpoint is added
-const mockAlerts: KitchenAlert[] = [];
-
-const alertIcons: Record<string, typeof AlertTriangle> = {
-  danger: AlertTriangle,
-  warning: AlertCircle,
-  info: Info,
-  success: CheckCircle,
+const ALERT_STYLE: Record<KitchenAlert["type"], { icon: React.ElementType; cls: string }> = {
+  danger: { icon: AlertTriangle, cls: "border-red-200 bg-red-50 text-red-700" },
+  warning: { icon: AlarmClock, cls: "border-amber-200 bg-amber-50 text-amber-700" },
+  info: { icon: Info, cls: "border-sky-200 bg-sky-50 text-sky-700" },
+  success: { icon: CheckCircle2, cls: "border-emerald-200 bg-emerald-50 text-emerald-700" },
 };
 
-const alertStyles: Record<string, string> = {
-  danger: "border-red-200 bg-red-50 text-red-800",
-  warning: "border-amber-200 bg-amber-50 text-amber-800",
-  info: "border-blue-200 bg-blue-50 text-blue-800",
-  success: "border-emerald-200 bg-emerald-50 text-emerald-800",
-};
-
-export function KitchenAlerts() {
+export function KitchenAlerts({ alerts }: { alerts: KitchenAlert[] }) {
   return (
-    <div className="space-y-2">
-      {mockAlerts.map((alert: KitchenAlert, i: number) => {
-        const Icon = alertIcons[alert.type] || Info;
-        return (
-          <motion.div
-            key={alert.id}
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.3, delay: i * 0.05 }}
-            className={`flex items-center gap-3 rounded-lg border px-4 py-3 ${alertStyles[alert.type]}`}
-          >
-            <Icon className="h-4 w-4 shrink-0" />
-            <span className="text-sm font-medium flex-1">{alert.message}</span>
-            <span className="text-xs opacity-60 shrink-0">
-              {Math.round((Date.now() - alert.timestamp) / 60000)}m ago
-            </span>
-          </motion.div>
-        );
-      })}
+    <div>
+      <h2 className="mb-3 text-sm font-bold uppercase tracking-wider text-gray-400">Kitchen Alerts</h2>
+      {alerts.length === 0 ? (
+        <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
+          <CheckCircle2 className="h-4 w-4" />
+          All orders are on track 🎉
+        </div>
+      ) : (
+        <ul className="space-y-2">
+          {alerts.map((alert) => {
+            const { icon: Icon, cls } = ALERT_STYLE[alert.type];
+            return (
+              <li
+                key={alert.id}
+                className={cn("flex items-center gap-2 rounded-xl border px-4 py-3 text-sm font-medium", cls)}
+              >
+                <Icon className="h-4 w-4 shrink-0" />
+                {alert.message}
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </div>
   );
 }

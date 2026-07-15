@@ -1,79 +1,24 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { motion } from "motion/react";
-import { RefreshCw, Settings, Clock } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useKitchenStore } from "../hooks/useKitchen";
-import { SLOT_CONFIG } from "../types/kitchen";
+import { format } from "date-fns";
+import { Clock } from "lucide-react";
+import { usePrepClock } from "../hooks/usePrepClock";
 
 export function KitchenHeader() {
-  const [currentTime, setCurrentTime] = useState<Date | null>(null);
-  const currentSlot = useKitchenStore((s) => s.currentSlot);
-
-  useEffect(() => {
-    setCurrentTime(new Date());
-    const interval = setInterval(() => setCurrentTime(new Date()), 1000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const timeStr = currentTime
-    ? currentTime.toLocaleTimeString("en-IN", {
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-        hour12: true,
-      })
-    : "";
-
-  const dateStr = currentTime
-    ? currentTime.toLocaleDateString("en-IN", {
-        weekday: "long",
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-      })
-    : "";
-
+  const now = usePrepClock(true);
   return (
-    <motion.div
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
-    >
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-gray-900">
-          Kitchen Operations
-        </h1>
-        <div className="mt-1 flex items-center gap-3 text-sm text-gray-500">
-          <span className="flex items-center gap-1.5">
-            <Clock className="h-3.5 w-3.5" />
-            {timeStr}
-          </span>
-          <span className="text-gray-300">|</span>
-          <span>{dateStr}</span>
-          <span className="text-gray-300">|</span>
-          <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700">
-            {SLOT_CONFIG[currentSlot].emoji} {SLOT_CONFIG[currentSlot].label} Slot
-          </span>
-        </div>
+        <h1 className="text-2xl font-bold tracking-tight text-gray-900">Kitchen Operations</h1>
+        <p className="text-sm text-gray-500">{format(now, "EEEE, dd MMMM yyyy")}</p>
       </div>
-
-      <div className="flex items-center gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          className="gap-2"
-          onClick={() => window.location.reload()}
-        >
-          <RefreshCw className="h-4 w-4" />
-          Refresh
-        </Button>
-        <Button variant="outline" size="sm" disabled className="gap-2 opacity-50">
-          <Settings className="h-4 w-4" />
-          Settings
-        </Button>
+      <div className="flex items-center gap-2 rounded-xl bg-white px-4 py-2 shadow-sm ring-1 ring-black/5">
+        <Clock className="h-4 w-4 text-gray-400" />
+        <span className="text-xs font-medium text-gray-500">Local Time</span>
+        <span className="font-mono text-sm font-semibold tabular-nums text-gray-900">
+          {format(now, "hh:mm:ss a")}
+        </span>
       </div>
-    </motion.div>
+    </div>
   );
 }
