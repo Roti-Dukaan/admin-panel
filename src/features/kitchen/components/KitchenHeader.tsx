@@ -1,10 +1,10 @@
 "use client";
 
 import { format } from "date-fns";
-import { Clock } from "lucide-react";
+import { Clock, Wifi, WifiOff } from "lucide-react";
 import { usePrepClock } from "../hooks/usePrepClock";
 
-export function KitchenHeader() {
+export function KitchenHeader({ connected = false }: { connected?: boolean }) {
   const now = usePrepClock(true);
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -13,6 +13,15 @@ export function KitchenHeader() {
         <p className="text-sm text-gray-500">{format(now, "EEEE, dd MMMM yyyy")}</p>
       </div>
       <div className="flex items-center gap-2 rounded-xl bg-white px-4 py-2 shadow-sm ring-1 ring-black/5">
+        <span
+          className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-semibold ${
+            connected ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-600"
+          }`}
+          title={connected ? "Live updates connected" : "Reconnecting…"}
+        >
+          {connected ? <Wifi className="h-3.5 w-3.5" /> : <WifiOff className="h-3.5 w-3.5" />}
+          {connected ? "Live" : "Offline"}
+        </span>
         <Clock className="h-4 w-4 text-gray-400" />
         <span className="text-xs font-medium text-gray-500">Local Time</span>
         <span className="font-mono text-sm font-semibold tabular-nums text-gray-900">

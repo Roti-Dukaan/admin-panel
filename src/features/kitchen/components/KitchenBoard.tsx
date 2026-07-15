@@ -48,7 +48,26 @@ export function KitchenBoard() {
   const orderIds = useMemo(() => (query.data?.items ?? []).map((i) => i.orderId), [query.data]);
   const detailMap = useKitchenDetailMap(orderIds);
   const mutation = useKitchenStageMutation();
-  useKitchenRealtime();
+  const realtime = useKitchenRealtime({
+    onNewOrder: (payload) => {
+      const minimal: KitchenOrderView = {
+        ticketId: payload.ticketId,
+        ticketNumber: payload.ticketNumber,
+        orderId: payload.orderId,
+        orderNumber: payload.orderNumber,
+        kitchenStatus: "PENDING",
+        stageLabel: "New Orders",
+        priority: "NORMAL",
+        customer: null,
+        itemsCount: 0,
+        totalQuantity: 0,
+        deliveryType: "DELIVERY",
+        orderCreatedAt: new Date().toISOString(),
+        timer: { elapsedMinutes: 0, preparingMinutes: null, readyDurationMinutes: null, isReady: false },
+      };
+      setSelected(minimal);
+    },
+  });
 
   const enriched = useMemo<KitchenOrderView[]>(
     () => (query.data?.items ?? []).map((i) => ({ ...i })),
@@ -148,7 +167,7 @@ export function KitchenBoard() {
 
   return (
     <div className="flex min-h-screen flex-col gap-5 bg-gray-50/50 p-6">
-      <KitchenHeader />
+      <KitchenHeader connected={realtime.connected} />
 
       <KitchenStats stats={stats} />
 

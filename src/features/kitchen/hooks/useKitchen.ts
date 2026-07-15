@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import {
   useQuery,
   useQueries,
@@ -12,6 +12,9 @@ import { toast } from "sonner";
 import { kitchenApi } from "@/lib/api/kitchen.api";
 import type { KitchenStage, KitchenOrderListResponse, KitchenOrderDetail } from "@/lib/api/kitchen.api";
 import type { KitchenOrderView, DeliveryKind, PaymentFilter, PrepTimeFilter } from "../types/kitchen";
+import { connectRealtime, disconnectRealtime, onRealtime } from "@/lib/realtime/socket";
+import { playChime, ensureNotificationPermission, showOrderNotification } from "@/lib/realtime/notify";
+import { REALTIME_EVENTS, type KitchenTicketCreatedPayload, type KitchenTicketUpdatedPayload } from "@/lib/realtime/events";
 
 const KITCHEN_QUERY_KEY = ["kitchen", "orders"] as const;
 const AUTO_REFRESH_MS = 30_000;
@@ -131,12 +134,92 @@ export function useKitchenStageMutation() {
 }
 
 /**
- * Placeholder for the next-phase realtime layer. The dashboard is architected
- * so the board can subscribe to kitchen events here without touching business
- * logic or the API routes.
+ * Live updates for the kitchen board over Socket.IO.
+ *
+ * - New tickets appear instantly (the list refetches) with a single chime + a
+ *   browser notification (when the tab is hidden) that opens the order on click.
+ * - Stage changes (PREPARING / READY_FOR_PICKUP) patch the board cache in place
+ *   so cards glide between columns with no flicker/refetch.
+ * - Events are de-duped by orderId + timestamp so retries / multi-tab setups
+ *   never double-apply.
  */
-export function useKitchenRealtime() {
-  return { connected: false, enabled: false };
+export function useKitchenRealtime(options?: {
+  onNewOrder?: (payload: KitchenTicketCreatedPayload) => void;
+}) {
+  const qc = useQueryClient();
+  const [connected, setConnected] = useState(false);
+  const seen = useRef<Set<string>>(new Set());
+  const onNewOrderRef = useRef(options?.onNewOrder);
+  onNewOrderRef.current = options?.onNewOrder;
+
+  useEffect(() => {
+    const socket = connectRealtime();
+
+    const offConnect = onRealtime(REALTIME_EVENTS.CONNECT, () => setConnected(true));
+    const offDisconnect = onRealtime(REALTIME_EVENTS.DISCONNECT, () => setConnected(false));
+    setConnected(socket.connected);
+
+    const isNew = (key: string) => {
+      if (seen.current.has(key)) return false;
+      seen.current.add(key);
+      if (seen.current.size > 200) seen.current.clear();
+      return true;
+    };
+
+    const offCreated = onRealtime(REALTIME_EVENTS.KITCHEN_TICKET_CREATED, (raw) => {
+      const payload = raw as KitchenTicketCreatedPayload;
+      const key = `${payload.orderId}:${payload.occurredAt}`;
+      if (!isNew(key)) return;
+
+      playChime();
+      ensureNotificationPermission();
+      if (typeof document !== "undefined" && document.hidden) {
+        showOrderNotification(
+          `New order ${payload.orderNumber}`,
+          "A new order just arrived in the kitchen.",
+          () => onNewOrderRef.current?.(payload),
+        );
+      }
+      qc.invalidateQueries({ queryKey: KITCHEN_QUERY_KEY });
+      onNewOrderRef.current?.(payload);
+    });
+
+    const offUpdated = onRealtime(REALTIME_EVENTS.KITCHEN_TICKET_UPDATED, (raw) => {
+      const payload = raw as KitchenTicketUpdatedPayload;
+      const key = `${payload.orderId}:${payload.occurredAt}`;
+      if (!isNew(key)) return;
+
+      const stamp = payload.occurredAt;
+      qc.setQueriesData<KitchenOrderListResponse>({ queryKey: KITCHEN_QUERY_KEY }, (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          items: old.items.map((it) =>
+            it.orderId === payload.orderId
+              ? {
+                  ...it,
+                  kitchenStatus: payload.stage,
+                  startedPreparingAt:
+                    payload.stage === "PREPARING" ? stamp : it.startedPreparingAt,
+                  readyAt: payload.stage === "READY_FOR_PICKUP" ? stamp : it.readyAt,
+                }
+              : it,
+          ),
+        };
+      });
+      qc.invalidateQueries({ queryKey: ["kitchen", "detail", payload.orderId] });
+    });
+
+    return () => {
+      offConnect();
+      offDisconnect();
+      offCreated();
+      offUpdated();
+      disconnectRealtime();
+    };
+  }, [qc]);
+
+  return { connected };
 }
 
 /** Apply client-side delivery-kind + payment filters to enriched orders. */

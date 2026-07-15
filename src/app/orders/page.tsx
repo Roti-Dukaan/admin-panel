@@ -7,6 +7,7 @@ import { OrderFilters } from "@/features/orders/components/OrderFilters"
 import { OrdersTable } from "@/features/orders/components/OrdersTable"
 import { OrderDrawer } from "@/features/orders/components/OrderDrawer"
 import { useOrdersStore } from "@/features/orders/hooks/useOrders"
+import { useAdminOrdersRealtime } from "@/features/orders/hooks/useOrdersRealtime"
 import { Button } from "@/components/ui/button"
 import { RefreshCw, Download } from "lucide-react"
 import { toast } from "sonner"
@@ -15,6 +16,7 @@ import { motion } from "motion/react"
 
 export default function OrdersPage() {
   const { fetchOrders, fetchStatistics, setDrawerOpen, setSelectedOrder, refreshAll, loading } = useOrdersStore()
+  useAdminOrdersRealtime()
 
   React.useEffect(() => {
     fetchOrders()
