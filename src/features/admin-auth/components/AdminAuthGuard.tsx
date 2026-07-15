@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { usePathname, useRouter } from "next/navigation"
+import { useAdminAuthStore } from "../store/admin-auth-store"
 
 const PUBLIC_PATHS = ["/login"]
 
@@ -23,6 +24,7 @@ export function AdminAuthGuard({ children }: { children: React.ReactNode }) {
   const [allowed, setAllowed] = React.useState<boolean | null>(null)
 
   React.useEffect(() => {
+    useAdminAuthStore.persist.rehydrate()
     const authed = hasAdminSession()
     const isPublic = PUBLIC_PATHS.includes(pathname) || pathname === "/"
 

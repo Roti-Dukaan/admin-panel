@@ -52,6 +52,7 @@ export const useAdminAuthStore = create<AdminAuthState>()(
         accessToken: state.accessToken,
         refreshToken: state.refreshToken,
       }),
+      skipHydration: true,
     },
   ),
 );
