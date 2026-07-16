@@ -4,6 +4,23 @@ export type KitchenStage = "PENDING" | "PREPARING" | "READY_FOR_PICKUP";
 
 export type KitchenPriority = "NORMAL" | "HIGH" | "URGENT";
 
+export type KitchenStatusValue = "OPEN" | "BUSY" | "CLOSED" | "MAINTENANCE";
+
+export interface KitchenOperationsStatus {
+  status: KitchenStatusValue;
+  busyDelayMinutes: number;
+  message: string | null;
+  updatedBy: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+
+export interface UpdateKitchenOperationsPayload {
+  status: KitchenStatusValue;
+  busyDelayMinutes?: number;
+  message?: string;
+}
+
 export interface KitchenPrepTimer {
   estimatedPreparationMinutes?: number;
   elapsedMinutes: number;
@@ -172,4 +189,12 @@ export const kitchenApi = {
   /** PATCH /admin/kitchen/orders/:id/ready — PREPARING → READY_FOR_PICKUP. */
   markReady: (id: string): Promise<KitchenOrderDetail> =>
     unwrap(apiClient.patch(`/admin/kitchen/orders/${id}/ready`)),
+
+  /** GET /admin/kitchen/status — current kitchen operational status. */
+  getKitchenStatus: (): Promise<KitchenOperationsStatus> =>
+    unwrap(apiClient.get(`/admin/kitchen/status`)),
+
+  /** PATCH /admin/kitchen/status — update the kitchen operational status. */
+  updateKitchenStatus: (payload: UpdateKitchenOperationsPayload): Promise<KitchenOperationsStatus> =>
+    unwrap(apiClient.patch(`/admin/kitchen/status`, payload)),
 };

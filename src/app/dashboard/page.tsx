@@ -19,6 +19,7 @@ import {
   Eye,
 } from "lucide-react"
 import Link from "next/link"
+import { KitchenOperationsCard } from "@/features/kitchen-operations/KitchenOperationsCard"
 
 const stats = [
   {
@@ -112,6 +113,9 @@ export default function DashboardPage() {
       />
 
       <div className="p-6 space-y-6">
+        {/* Kitchen Operations — global status control */}
+        <KitchenOperationsCard />
+
         {/* Stats Grid */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {stats.map((stat, i) => (
