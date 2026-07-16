@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { Drawer, DrawerHeader, DrawerTitle, DrawerContent, DrawerFooter, DrawerClose } from "@/components/ui/drawer"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -17,7 +18,9 @@ import type { OrderStatus } from "../types/order"
 import { RefreshCw, ExternalLink, Truck } from "lucide-react"
 import { useQuery } from "@tanstack/react-query"
 import { deliveryApi } from "@/features/delivery/services/delivery.api"
-import { DeliveryStatusBadge, DeliveryProviderBadge } from "@/features/delivery/components/DeliveryStatusBadge"
+import { DeliveryStatusBadge } from "@/features/delivery/components/DeliveryStatusBadge"
+import { DeliveryInformation } from "@/features/orders/delivery/DeliveryInformation"
+import { DeliveryTimeline } from "@/features/orders/delivery/DeliveryTimeline"
 
 const NEXT_STATUS_MAP: Partial<Record<OrderStatus, OrderStatus>> = {
   "pending-confirmation": "confirmed",
@@ -74,6 +77,8 @@ export function OrderDrawer() {
     enabled: !!selectedOrder?.id,
   })
 
+  const [showTimeline, setShowTimeline] = useState(false)
+
   return (
     <Drawer open={drawerOpen} onOpenChange={handleClose}>
       {selectedOrder && (
@@ -106,53 +111,20 @@ export function OrderDrawer() {
                 <p className="text-sm text-muted-foreground">Loading delivery…</p>
               ) : deliveryTracking ? (
                 <div className="space-y-3">
-                  <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">Provider</span>
-                      <DeliveryProviderBadge provider={deliveryTracking.provider} size="sm" />
-                    </div>
-                    {deliveryTracking.riderName && (
-                      <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground">Rider</span>
-                        <span className="font-medium">{deliveryTracking.riderName}</span>
-                      </div>
-                    )}
-                    {deliveryTracking.trackingNumber && (
-                      <div className="col-span-2 flex items-center justify-between">
-                        <span className="text-muted-foreground">Tracking #</span>
-                        <span className="font-mono text-xs font-medium">{deliveryTracking.trackingNumber}</span>
-                      </div>
-                    )}
-                    {deliveryTracking.estimatedDeliveryAt && (
-                      <div className="col-span-2 flex items-center justify-between">
-                        <span className="text-muted-foreground">Est. Delivery</span>
-                        <span className="font-medium">
-                          {new Date(deliveryTracking.estimatedDeliveryAt).toLocaleString()}
-                        </span>
-                      </div>
-                    )}
-                  </div>
+                  <DeliveryInformation
+                    delivery={deliveryTracking}
+                    onViewTimeline={() => setShowTimeline((v) => !v)}
+                  />
 
-                  <div className="flex flex-wrap items-center gap-2 pt-1">
-                    <Button
-                      href={`/deliveries?deliveryId=${deliveryTracking.id}`}
-                      variant="outline"
-                      size="sm"
-                    >
-                      Manage Delivery
-                    </Button>
-                    {deliveryTracking.trackingUrl && (
-                      <a
-                        href={deliveryTracking.trackingUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}
-                      >
-                        <ExternalLink className="mr-1 h-4 w-4" />
-                        Track Externally
-                      </a>
-                    )}
-                  </div>
+                  {showTimeline && (
+                    <div className="rounded-xl border border-gray-200 bg-white p-4">
+                      <p className="mb-3 text-sm font-semibold text-gray-700">Delivery Timeline</p>
+                      <DeliveryTimeline
+                        entries={deliveryTracking.timeline ?? []}
+                        currentStatus={deliveryTracking.status}
+                      />
+                    </div>
+                  )}
                 </div>
               ) : (
                 <p className="text-sm text-muted-foreground">

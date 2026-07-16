@@ -138,6 +138,23 @@ export interface KitchenOrderDetail {
     pdfUrl?: string;
   } | null;
   deliverySlot?: KitchenDeliverySlot | null;
+  delivery?: {
+    id: string;
+    status: string;
+    provider?: string | null;
+    providerShipmentId?: string;
+    trackingNumber?: string;
+    trackingUrl?: string;
+    riderName?: string;
+    riderPhone?: string;
+    vehicleNumber?: string;
+    pickupOtp?: string;
+    estimatedPickupAt?: string;
+    estimatedDeliveryAt?: string;
+    actualPickupAt?: string;
+    actualDeliveryAt?: string;
+    providerStatus?: string | null;
+  } | null;
   startedPreparingAt?: string;
   readyAt?: string;
   orderCreatedAt: string;

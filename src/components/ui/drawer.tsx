@@ -38,7 +38,7 @@ function Drawer({ open, onOpenChange, children }: DrawerProps) {
         className="fixed inset-0 bg-black/40 backdrop-blur-sm transition-opacity"
         onClick={() => onOpenChange(false)}
       />
-      <div className="relative z-50 h-full w-full max-w-lg bg-background shadow-xl animate-in slide-in-from-right duration-300">
+      <div className="relative z-50 flex h-full w-full max-w-lg flex-col bg-background shadow-xl animate-in slide-in-from-right duration-300">
         {children}
       </div>
     </div>
@@ -46,7 +46,7 @@ function Drawer({ open, onOpenChange, children }: DrawerProps) {
 }
 
 function DrawerHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("flex items-center justify-between border-b p-6", className)} {...props} />
+  return <div className={cn("flex shrink-0 items-center justify-between border-b p-6", className)} {...props} />
 }
 
 function DrawerTitle({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
@@ -54,7 +54,7 @@ function DrawerTitle({ className, ...props }: React.HTMLAttributes<HTMLDivElemen
 }
 
 function DrawerContent({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("flex-1 overflow-y-auto p-6", className)} {...props} />
+  return <div className={cn("min-h-0 flex-1 overflow-y-auto p-6", className)} {...props} />
 }
 
 function DrawerFooter({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {

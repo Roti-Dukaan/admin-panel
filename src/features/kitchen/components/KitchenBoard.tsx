@@ -11,6 +11,7 @@ import { ProductionSummary, type ProductionItem } from "./ProductionSummary";
 import { SlotSelector } from "./SlotSelector";
 import { SearchBar } from "./SearchBar";
 import { QuickFilters } from "./QuickFilters";
+import { KitchenStatusSelector } from "@/features/kitchen-operations/KitchenStatusSelector";
 import { KitchenKanban } from "./KitchenKanban";
 import { KitchenAlerts, type KitchenAlert } from "./KitchenAlerts";
 import { KitchenOrderDrawer } from "./KitchenOrderDrawer";
@@ -163,7 +164,7 @@ export function KitchenBoard() {
     return <ErrorState onRetry={handleRefresh} />;
   }
 
-  const isLoading = query.isLoading;
+const isLoading = query.isLoading;
 
   return (
     <div className="flex min-h-screen flex-col gap-5 bg-gray-50/50 p-6">
@@ -171,9 +172,10 @@ export function KitchenBoard() {
 
       <KitchenStats stats={stats} />
 
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+<div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <SlotSelector slots={slotOptions} value={slot} onChange={setSlot} />
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <KitchenStatusSelector />
           <SearchBar value={search} onChange={setSearch} />
           <QuickFilters
             deliveryKind={deliveryKind}

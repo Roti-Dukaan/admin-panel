@@ -4,6 +4,8 @@ export type DeliveryStatus =
   | "PROVIDER_ASSIGNMENT_FAILED"
   | "PROVIDER_ASSIGNED"
   | "RIDER_ARRIVING"
+  | "RIDER_ARRIVED"
+  | "AWAITING_PICKUP"
   | "PICKED_UP"
   | "OUT_FOR_DELIVERY"
   | "DELIVERED"
@@ -27,10 +29,12 @@ export interface RiderInfo {
 }
 
 export interface DeliveryTimelineEntry {
+  id?: string;
   status: DeliveryStatus;
-  timestamp: string;
+  title?: string | null;
+  description?: string | null;
   label: string;
-  description?: string;
+  timestamp: string;
 }
 
 export interface Delivery {
@@ -48,6 +52,7 @@ export interface Delivery {
   estimatedDeliveryAt?: string;
   actualPickupAt?: string;
   actualDeliveryAt?: string;
+  pickupOtp?: string;
   riderName?: string;
   riderPhone?: string;
   vehicleNumber?: string;
@@ -60,6 +65,7 @@ export interface Delivery {
   providerAssignedAt?: string | null;
   providerResponse?: Record<string, unknown>;
   webhookPayload?: Record<string, unknown>;
+  timeline?: DeliveryTimelineEntry[];
   createdAt: string;
   updatedAt: string;
   order?: {
@@ -141,6 +147,7 @@ export interface DeliveryTracking {
   estimatedDeliveryAt?: string;
   actualPickupAt?: string;
   actualDeliveryAt?: string;
+  pickupOtp?: string;
   riderName?: string;
   riderPhone?: string;
   vehicleNumber?: string;
@@ -153,6 +160,7 @@ export interface DeliveryTracking {
   providerAssignedAt?: string | null;
   providerResponse?: Record<string, unknown>;
   webhookPayload?: Record<string, unknown>;
+  timeline?: DeliveryTimelineEntry[];
   createdAt: string;
   updatedAt: string;
   order?: DeliveryOrder;
@@ -252,6 +260,8 @@ export const DELIVERY_STATUS_CONFIG: Record<DeliveryStatus, DeliveryStatusConfig
   PROVIDER_ASSIGNMENT_FAILED: { label: "Assignment Failed", color: "rose", bgClass: "bg-rose-100", textClass: "text-rose-800", dotClass: "bg-rose-500" },
   PROVIDER_ASSIGNED: { label: "Provider Assigned", color: "blue", bgClass: "bg-blue-100", textClass: "text-blue-800", dotClass: "bg-blue-500" },
   RIDER_ARRIVING: { label: "Rider Arriving", color: "cyan", bgClass: "bg-cyan-100", textClass: "text-cyan-800", dotClass: "bg-cyan-500" },
+  RIDER_ARRIVED: { label: "Rider Arrived", color: "orange", bgClass: "bg-orange-100", textClass: "text-orange-800", dotClass: "bg-orange-500" },
+  AWAITING_PICKUP: { label: "Awaiting Pickup", color: "orange", bgClass: "bg-orange-100", textClass: "text-orange-800", dotClass: "bg-orange-500" },
   PICKED_UP: { label: "Picked Up", color: "purple", bgClass: "bg-purple-100", textClass: "text-purple-800", dotClass: "bg-purple-500" },
   OUT_FOR_DELIVERY: { label: "Out for Delivery", color: "indigo", bgClass: "bg-indigo-100", textClass: "text-indigo-800", dotClass: "bg-indigo-500" },
   DELIVERED: { label: "Delivered", color: "green", bgClass: "bg-emerald-100", textClass: "text-emerald-800", dotClass: "bg-emerald-500" },
@@ -277,6 +287,8 @@ export const DELIVERY_STATUS_ORDER: DeliveryStatus[] = [
   "PROVIDER_ASSIGNMENT_FAILED",
   "PROVIDER_ASSIGNED",
   "RIDER_ARRIVING",
+  "RIDER_ARRIVED",
+  "AWAITING_PICKUP",
   "PICKED_UP",
   "OUT_FOR_DELIVERY",
   "DELIVERED",
@@ -289,7 +301,9 @@ const DELIVERY_ALLOWED_TRANSITIONS: Record<DeliveryStatus, DeliveryStatus[]> = {
   WAITING_FOR_PROVIDER: ["PROVIDER_ASSIGNED", "PROVIDER_ASSIGNMENT_FAILED", "CANCELLED"],
   PROVIDER_ASSIGNMENT_FAILED: ["WAITING_FOR_PROVIDER", "CANCELLED"],
   PROVIDER_ASSIGNED: ["RIDER_ARRIVING", "PICKED_UP", "CANCELLED"],
-  RIDER_ARRIVING: ["PICKED_UP", "CANCELLED"],
+  RIDER_ARRIVING: ["RIDER_ARRIVED", "PICKED_UP", "CANCELLED"],
+  RIDER_ARRIVED: ["AWAITING_PICKUP", "PICKED_UP", "CANCELLED"],
+  AWAITING_PICKUP: ["PICKED_UP", "CANCELLED"],
   PICKED_UP: ["OUT_FOR_DELIVERY", "FAILED", "CANCELLED"],
   OUT_FOR_DELIVERY: ["DELIVERED", "FAILED", "CANCELLED"],
   DELIVERED: [],

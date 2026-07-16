@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { PreparationTimer } from "./PreparationTimer";
+import { DeliveryStatusCard } from "./DeliveryStatusCard";
 import { STAGE_META, priorityBadge, getDeliveryKind, formatSlotWindow } from "../types/kitchen";
 import type { KitchenOrderView } from "../types/kitchen";
 import type { KitchenOrderDetail } from "@/lib/api/kitchen.api";
@@ -163,10 +164,16 @@ export function KitchenCard({
           </Button>
         )}
         {order.kitchenStatus === "READY_FOR_PICKUP" && (
-          <div className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-emerald-200 bg-emerald-50 px-3 py-2.5 text-center text-xs font-medium text-emerald-700">
-            <CheckCircle2 className="h-4 w-4" />
-            Waiting for Delivery Assignment
-          </div>
+          detail?.delivery ? (
+            <div onClick={(e) => e.stopPropagation()}>
+              <DeliveryStatusCard delivery={detail.delivery} />
+            </div>
+          ) : (
+            <div className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-emerald-200 bg-emerald-50 px-3 py-2.5 text-center text-xs font-medium text-emerald-700">
+              <CheckCircle2 className="h-4 w-4" />
+              Waiting for Delivery Assignment
+            </div>
+          )
         )}
       </div>
     </div>
