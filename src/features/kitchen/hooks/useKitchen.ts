@@ -55,6 +55,7 @@ export function useKitchenDetailMap(orderIds: string[]) {
       queryKey: ["kitchen", "detail", id],
       queryFn: () => kitchenApi.getOrderDetail(id),
       staleTime: AUTO_REFRESH_MS,
+      refetchInterval: 10_000,
       enabled: !!id,
     })),
   });

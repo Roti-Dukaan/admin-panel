@@ -1,11 +1,11 @@
 ﻿"use client";
 
-import { User, Phone, Zap, Clock, Package, IndianRupee, Play, CheckCircle2, AlertCircle } from "lucide-react";
+import { User, Phone, Zap, Clock, Package, IndianRupee, AlertCircle, Play, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { PreparationTimer } from "./PreparationTimer";
-import { DeliveryStatusCard } from "./DeliveryStatusCard";
+import { DeliveryBanner } from "./DeliveryStatusCard";
 import { STAGE_META, priorityBadge, getDeliveryKind, formatSlotWindow } from "../types/kitchen";
 import type { KitchenOrderView } from "../types/kitchen";
 import type { KitchenOrderDetail } from "@/lib/api/kitchen.api";
@@ -50,6 +50,12 @@ export function KitchenCard({
       onKeyDown={handleKeyDown}
       className="w-full rounded-2xl border border-gray-100 bg-white p-4 text-left shadow-sm transition-shadow hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2"
     >
+      {detail?.delivery && (
+        <div onClick={(e) => e.stopPropagation()}>
+          <DeliveryBanner delivery={detail.delivery} />
+        </div>
+      )}
+
       <div className="flex items-center justify-between gap-2">
         <span className={cn("inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold", meta.pillClass)}>
           <span>{meta.emoji}</span>
@@ -164,16 +170,10 @@ export function KitchenCard({
           </Button>
         )}
         {order.kitchenStatus === "READY_FOR_PICKUP" && (
-          detail?.delivery ? (
-            <div onClick={(e) => e.stopPropagation()}>
-              <DeliveryStatusCard delivery={detail.delivery} />
-            </div>
-          ) : (
-            <div className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-emerald-200 bg-emerald-50 px-3 py-2.5 text-center text-xs font-medium text-emerald-700">
-              <CheckCircle2 className="h-4 w-4" />
-              Waiting for Delivery Assignment
-            </div>
-          )
+          <div className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-emerald-200 bg-emerald-50 px-3 py-2.5 text-center text-xs font-medium text-emerald-700">
+            <CheckCircle2 className="h-4 w-4" />
+            Ready For Pickup
+          </div>
         )}
       </div>
     </div>

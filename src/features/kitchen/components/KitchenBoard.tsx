@@ -156,9 +156,10 @@ export function KitchenBoard() {
     return list;
   }, [filtered, now]);
 
+  const handleRefresh = () => query.refetch();
+
   const updatingId = mutation.isPending ? (mutation.variables as { id: string } | undefined)?.id ?? null : null;
   const handleAction = (orderId: string, action: "preparing" | "ready") => mutation.mutate({ id: orderId, action });
-  const handleRefresh = () => query.refetch();
 
   if (query.isError && !query.data) {
     return <ErrorState onRetry={handleRefresh} />;

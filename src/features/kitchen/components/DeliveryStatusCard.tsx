@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { Bike, User, Phone, MapPin, Clock, Loader2, PackageCheck, Timer, CheckCircle2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Bike, User, Phone, MapPin, Clock, Loader2, PackageCheck, Timer, CheckCircle2, Navigation } from "lucide-react";
 
 export interface KitchenDeliveryInfo {
   status: string;
@@ -216,6 +216,52 @@ export function DeliveryPartnerCard({
           <p className="font-mono text-lg font-bold tracking-[0.25em] text-indigo-700">{otp}</p>
           <p className="text-[11px] text-indigo-500">Pickup OTP</p>
         </div>
+      )}
+    </div>
+  );
+}
+
+const BANNER_META: Record<
+  string,
+  { icon: React.ReactNode; label: string; bg: string; text: string; pulse?: boolean }
+> = {
+  WAITING_FOR_PROVIDER: { icon: <Loader2 className="h-3.5 w-3.5" />, label: "Searching", bg: "bg-blue-50", text: "text-blue-700", pulse: true },
+  PROVIDER_ASSIGNMENT_FAILED: { icon: <Bike className="h-3.5 w-3.5" />, label: "Assignment Failed", bg: "bg-rose-50", text: "text-rose-700" },
+  PROVIDER_ASSIGNED: { icon: <Navigation className="h-3.5 w-3.5" />, label: "Partner Assigned", bg: "bg-emerald-50", text: "text-emerald-700" },
+  RIDER_ARRIVING: { icon: <MapPin className="h-3.5 w-3.5" />, label: "Rider En Route", bg: "bg-amber-50", text: "text-amber-700", pulse: true },
+  RIDER_ARRIVED: { icon: <CheckCircle2 className="h-3.5 w-3.5" />, label: "Partner Arrived", bg: "bg-emerald-50", text: "text-emerald-700" },
+  AWAITING_PICKUP: { icon: <Timer className="h-3.5 w-3.5" />, label: "Awaiting Pickup", bg: "bg-orange-50", text: "text-orange-700" },
+  PICKED_UP: { icon: <PackageCheck className="h-3.5 w-3.5" />, label: "Picked Up", bg: "bg-emerald-50", text: "text-emerald-700" },
+};
+
+/**
+ * Compact full-width delivery banner shown at the top of the KitchenCard.
+ * Shows status + live countdown or "Partner Arrived" elapsed time.
+ */
+export function DeliveryBanner({ delivery }: { delivery: KitchenDeliveryInfo }) {
+  const meta = BANNER_META[delivery.status] ?? BANNER_META.WAITING_FOR_PROVIDER;
+  const isArrived = delivery.status === "RIDER_ARRIVED" || delivery.status === "AWAITING_PICKUP";
+  const isPreArrival = ["WAITING_FOR_PROVIDER", "PROVIDER_ASSIGNED", "RIDER_ARRIVING"].includes(delivery.status);
+
+  const countdown = useCountdown(isPreArrival ? delivery.estimatedPickupAt : undefined);
+  const elapsed = useElapsed(isArrived ? (delivery.riderArrivedAt ?? delivery.estimatedPickupAt) : undefined);
+
+  // Build the trailing text
+  let trailing = "";
+  if (isPreArrival && countdown) {
+    trailing = countdown.text;
+  } else if (isArrived && elapsed) {
+    trailing = elapsed;
+  }
+
+  return (
+    <div className={`flex items-center justify-between gap-2 rounded-t-2xl ${meta.bg} px-3 py-1.5 -mb-1 ${meta.text}`}>
+      <div className="flex items-center gap-1.5 min-w-0">
+        <span className={meta.pulse ? "animate-pulse" : ""}>{meta.icon}</span>
+        <span className="text-xs font-semibold truncate">{meta.label}</span>
+      </div>
+      {trailing && (
+        <span className="font-mono text-xs font-bold tabular-nums shrink-0">{trailing}</span>
       )}
     </div>
   );
