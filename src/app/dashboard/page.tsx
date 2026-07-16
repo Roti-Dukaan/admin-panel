@@ -113,9 +113,6 @@ export default function DashboardPage() {
       />
 
       <div className="p-6 space-y-6">
-        {/* Kitchen Operations — global status control */}
-        <KitchenOperationsCard />
-
         {/* Stats Grid */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {stats.map((stat, i) => (
@@ -149,6 +146,9 @@ export default function DashboardPage() {
             </motion.div>
           ))}
         </div>
+
+        {/* Kitchen Operations — global status control */}
+        <KitchenOperationsCard compact />
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           {/* Order Status */}

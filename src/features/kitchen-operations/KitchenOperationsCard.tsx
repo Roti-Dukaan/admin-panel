@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Loader2, RotateCcw, Save, UtensilsCrossed } from "lucide-react";
+import { ChevronDown, Loader2, RotateCcw, Save, UtensilsCrossed } from "lucide-react";
 import { motion } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -44,12 +44,13 @@ const DEFAULT_MESSAGES: Record<KitchenStatusValue, string> = {
   MAINTENANCE: "Kitchen temporarily unavailable.",
 };
 
-export function KitchenOperationsCard() {
+export function KitchenOperationsCard({ compact = false }: { compact?: boolean } = {}) {
   const { data, isLoading, isError, refetch } = useKitchenStatus();
   const updateMutation = useUpdateKitchenStatus();
   const user = useAdminAuthStore((s) => s.user);
 
   const [status, setStatus] = useState<KitchenStatusValue>("OPEN");
+  const [expanded, setExpanded] = useState(!compact);
 
   const {
     register,
@@ -145,68 +146,95 @@ export function KitchenOperationsCard() {
       transition={{ duration: 0.4 }}
     >
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 border-b border-gray-100 px-6 py-4">
+        <CardHeader
+          onClick={compact ? () => setExpanded((v) => !v) : undefined}
+          className={
+            compact
+              ? "flex flex-row items-center justify-between space-y-0 px-4 py-2.5 cursor-pointer"
+              : "flex flex-row items-center justify-between space-y-0 border-b border-gray-100 px-6 py-4"
+          }
+        >
           <div className="flex items-center gap-2">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-50">
-              <UtensilsCrossed className="h-5 w-5 text-orange-500" />
+            <span
+              className={
+                compact
+                  ? "flex h-7 w-7 items-center justify-center rounded-lg bg-orange-50"
+                  : "flex h-9 w-9 items-center justify-center rounded-xl bg-orange-50"
+              }
+            >
+              <UtensilsCrossed className={compact ? "h-4 w-4 text-orange-500" : "h-5 w-5 text-orange-500"} />
             </span>
             <div>
-              <CardTitle className="text-base font-semibold text-gray-900">
+              <CardTitle className={compact ? "text-sm font-semibold text-gray-900" : "text-base font-semibold text-gray-900"}>
                 Kitchen Operations
               </CardTitle>
-              <p className="text-sm text-gray-500">Control whether new orders are accepted</p>
+              {!compact && (
+                <p className="text-sm text-gray-500">Control whether new orders are accepted</p>
+              )}
             </div>
           </div>
-          {data && <KitchenStatusBadge status={data.status} />}
+          <div className="flex items-center gap-2">
+            {data && <KitchenStatusBadge status={data.status} />}
+            {compact && (
+              <ChevronDown
+                className={`h-4 w-4 text-gray-400 transition-transform ${expanded ? "rotate-180" : ""}`}
+              />
+            )}
+          </div>
         </CardHeader>
 
-        <CardContent className="p-6">
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-            <div className="space-y-2">
-              <Label htmlFor="kitchen-status">Kitchen Status</Label>
-              <Select value={status} onValueChange={(v) => onStatusChange(v as KitchenStatusValue)}>
-                <SelectTrigger id="kitchen-status" className="w-full sm:w-64">
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  {STATUS_OPTIONS.map((option) => (
-                    <SelectItem key={option} value={option}>
-                      {KITCHEN_STATUS_CONFIG[option].label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+        {expanded && (
+        <CardContent className={compact ? "p-4 pt-2 border-t border-gray-100" : "p-6"}>
+          <form onSubmit={handleSubmit(onSubmit)} className={compact ? "space-y-3" : "space-y-5"}>
+            <div className={compact ? "flex flex-col gap-3 sm:flex-row sm:items-end" : "space-y-2"}>
+              <div className={compact ? "space-y-1.5" : "space-y-2"}>
+                <Label htmlFor="kitchen-status">Kitchen Status</Label>
+                <Select value={status} onValueChange={(v) => onStatusChange(v as KitchenStatusValue)}>
+                  <SelectTrigger id="kitchen-status" className={compact ? "w-full sm:w-48" : "w-full sm:w-64"}>
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {STATUS_OPTIONS.map((option) => (
+                      <SelectItem key={option} value={option}>
+                        {KITCHEN_STATUS_CONFIG[option].label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {isBusy && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  className={compact ? "space-y-1.5" : "space-y-2"}
+                >
+                  <Label htmlFor="busy-delay">Busy Delay (minutes)</Label>
+                  <Input
+                    id="busy-delay"
+                    type="number"
+                    min={0}
+                    max={240}
+                    className={compact ? "w-full sm:w-40" : "w-full sm:w-64"}
+                    {...register("busyDelayMinutes")}
+                  />
+                  {errors.busyDelayMinutes && (
+                    <p className="text-xs text-red-500">{errors.busyDelayMinutes.message}</p>
+                  )}
+                  {!compact && (
+                    <p className="text-xs text-gray-400">
+                      Added to estimated delivery while the kitchen is busy.
+                    </p>
+                  )}
+                </motion.div>
+              )}
             </div>
 
-            {isBusy && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                className="space-y-2"
-              >
-                <Label htmlFor="busy-delay">Busy Delay (minutes)</Label>
-                <Input
-                  id="busy-delay"
-                  type="number"
-                  min={0}
-                  max={240}
-                  className="w-full sm:w-64"
-                  {...register("busyDelayMinutes")}
-                />
-                {errors.busyDelayMinutes && (
-                  <p className="text-xs text-red-500">{errors.busyDelayMinutes.message}</p>
-                )}
-                <p className="text-xs text-gray-400">
-                  Added to estimated delivery while the kitchen is busy.
-                </p>
-              </motion.div>
-            )}
-
-            <div className="space-y-2">
+            <div className={compact ? "space-y-1.5" : "space-y-2"}>
               <Label htmlFor="kitchen-message">Custom Customer Message</Label>
               <Textarea
                 id="kitchen-message"
-                rows={3}
+                rows={compact ? 2 : 3}
                 placeholder="e.g. Kitchen is busy. Expect slight delivery delays."
                 {...register("message")}
               />
@@ -218,6 +246,7 @@ export function KitchenOperationsCard() {
             <div className="flex items-center gap-3 pt-1">
               <Button
                 type="submit"
+                size={compact ? "sm" : "default"}
                 disabled={updateMutation.isPending || !isDirty}
                 className="bg-orange-500 hover:bg-orange-600"
               >
@@ -228,13 +257,14 @@ export function KitchenOperationsCard() {
                 )}
                 Save
               </Button>
-              <Button type="button" variant="outline" onClick={handleReset} disabled={!isDirty}>
+              <Button type="button" size={compact ? "sm" : "default"} variant="outline" onClick={handleReset} disabled={!isDirty}>
                 <RotateCcw className="h-4 w-4" />
                 Reset
               </Button>
             </div>
           </form>
         </CardContent>
+        )}
       </Card>
     </motion.div>
   );
