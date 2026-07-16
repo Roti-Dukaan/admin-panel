@@ -15,6 +15,7 @@ export const REALTIME_EVENTS = {
 
   ADMIN_DELIVERY_UPDATED: "admin:delivery_updated",
   CUSTOMER_DELIVERY_UPDATED: "customer:delivery_updated",
+  KITCHEN_DELIVERY_UPDATED: "kitchen:delivery_updated",
 
   CUSTOMER_ORDER_UPDATED: "customer:order_updated",
 } as const;

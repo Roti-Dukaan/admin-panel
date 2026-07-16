@@ -13,8 +13,8 @@ import { kitchenApi } from "@/lib/api/kitchen.api";
 import type { KitchenStage, KitchenOrderListResponse, KitchenOrderDetail } from "@/lib/api/kitchen.api";
 import type { KitchenOrderView, DeliveryKind, PaymentFilter, PrepTimeFilter } from "../types/kitchen";
 import { connectRealtime, disconnectRealtime, onRealtime } from "@/lib/realtime/socket";
-import { playChime, ensureNotificationPermission, showOrderNotification } from "@/lib/realtime/notify";
-import { REALTIME_EVENTS, type KitchenTicketCreatedPayload, type KitchenTicketUpdatedPayload } from "@/lib/realtime/events";
+import { playChime, ensureNotificationPermission, showOrderNotification, unlockAudio } from "@/lib/realtime/notify";
+import { REALTIME_EVENTS, type KitchenTicketCreatedPayload, type KitchenTicketUpdatedPayload, type DeliveryUpdatedPayload } from "@/lib/realtime/events";
 
 const KITCHEN_QUERY_KEY = ["kitchen", "orders"] as const;
 const AUTO_REFRESH_MS = 30_000;
@@ -122,13 +122,13 @@ export function useKitchenStageMutation() {
       toast.error("Could not update the order. Please try again.");
     },
 
-    onSuccess: (_data, { action }) => {
+    onSuccess: (_data, { action, id }) => {
       toast.success(action === "preparing" ? "Order moved to Preparing." : "Order marked Ready for Pickup.");
-    },
-
-    onSettled: () => {
-      qc.invalidateQueries({ queryKey: KITCHEN_QUERY_KEY });
-      qc.invalidateQueries({ queryKey: ["kitchen", "detail"] });
+      // Only refresh the affected order's detail (so its delivery/timeline
+      // reflect the new stage). The board cache is already patched optimistically,
+      // so we deliberately avoid invalidating the whole list/all details here —
+      // that caused a refetch storm that made cards feel slow to move.
+      qc.invalidateQueries({ queryKey: ["kitchen", "detail", id] });
     },
   });
 }
@@ -153,6 +153,11 @@ export function useKitchenRealtime(options?: {
   onNewOrderRef.current = options?.onNewOrder;
 
   useEffect(() => {
+    // Prime the audio + notification pipeline so the first new-order chime
+    // actually plays (browsers require a prior user gesture to unlock audio).
+    unlockAudio();
+    ensureNotificationPermission();
+
     const socket = connectRealtime();
 
     const offConnect = onRealtime(REALTIME_EVENTS.CONNECT, () => setConnected(true));
@@ -180,8 +185,41 @@ export function useKitchenRealtime(options?: {
           () => onNewOrderRef.current?.(payload),
         );
       }
+
+      // Optimistically insert a minimal card so it appears instantly without
+      // waiting for the full-list refetch. The refetch then fills in real data.
+      qc.setQueriesData<KitchenOrderListResponse>({ queryKey: KITCHEN_QUERY_KEY }, (old) => {
+        if (!old) return old;
+        // Prevent duplicate if the card is already present
+        if (old.items.some((it) => it.orderId === payload.orderId)) return old;
+        const minimalItem: KitchenOrderListResponse["items"][0] = {
+          orderId: payload.orderId,
+          ticketId: payload.ticketId,
+          ticketNumber: payload.ticketNumber,
+          orderNumber: payload.orderNumber,
+          kitchenStatus: "PENDING",
+          stageLabel: "New Orders",
+          priority: "NORMAL",
+          customer: null,
+          itemsCount: 0,
+          totalQuantity: 0,
+          deliveryType: "DELIVERY",
+          orderCreatedAt: payload.occurredAt,
+          timer: { elapsedMinutes: 0, preparingMinutes: null, readyDurationMinutes: null, isReady: false },
+        };
+        return { ...old, items: [minimalItem, ...old.items] };
+      });
+
+      // Trigger a background refetch to fill in full data
       qc.invalidateQueries({ queryKey: KITCHEN_QUERY_KEY });
       onNewOrderRef.current?.(payload);
+    });
+
+    // Listen for delivery status changes (rider arriving, arrived, picked up, etc.)
+    // and invalidate the detail query so the delivery card updates in real-time.
+    const offDeliveryUpdated = onRealtime(REALTIME_EVENTS.KITCHEN_DELIVERY_UPDATED, (raw) => {
+      const payload = raw as DeliveryUpdatedPayload;
+      qc.invalidateQueries({ queryKey: ["kitchen", "detail", payload.orderId] });
     });
 
     const offUpdated = onRealtime(REALTIME_EVENTS.KITCHEN_TICKET_UPDATED, (raw) => {
@@ -215,6 +253,7 @@ export function useKitchenRealtime(options?: {
       offDisconnect();
       offCreated();
       offUpdated();
+      offDeliveryUpdated();
       disconnectRealtime();
     };
   }, [qc]);

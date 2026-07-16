@@ -10,6 +10,7 @@
 
 let audioCtx: AudioContext | null = null;
 let lastChimeAt = 0;
+let audioUnlockBound = false;
 
 function getAudioContext(): AudioContext | null {
   if (typeof window === "undefined") return null;
@@ -23,6 +24,31 @@ function getAudioContext(): AudioContext | null {
   }
 }
 
+/**
+ * Browsers create AudioContext in a "suspended" state and only allow it to
+ * resume after a user gesture. Without this, the very first (and often every)
+ * chime is silently dropped. Call this once on mount — it wires a one-time
+ * listener that resumes/pre-warms the context on the user's first interaction.
+ */
+export function unlockAudio(): void {
+  if (typeof window === "undefined" || audioUnlockBound) return;
+  audioUnlockBound = true;
+
+  const unlock = () => {
+    const ctx = getAudioContext();
+    if (ctx && ctx.state === "suspended") {
+      void ctx.resume().catch(() => undefined);
+    }
+    window.removeEventListener("pointerdown", unlock);
+    window.removeEventListener("keydown", unlock);
+    window.removeEventListener("touchstart", unlock);
+  };
+
+  window.addEventListener("pointerdown", unlock);
+  window.addEventListener("keydown", unlock);
+  window.addEventListener("touchstart", unlock);
+}
+
 /** Play a short two-tone chime. Safe to call repeatedly; throttled to 1.5s. */
 export function playChime(): void {
   const now = Date.now();
@@ -32,7 +58,12 @@ export function playChime(): void {
   const ctx = getAudioContext();
   if (!ctx) return;
   try {
-    if (ctx.state === "suspended") void ctx.resume();
+    if (ctx.state === "suspended") {
+      // Best-effort resume. If the browser rejects it (no user gesture yet),
+      // we still try to beep — some browsers will allow a short silent beep
+      // which at least doesn't error out.
+      void ctx.resume().catch(() => {});
+    }
     const beep = (freq: number, startAt: number, duration: number) => {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();

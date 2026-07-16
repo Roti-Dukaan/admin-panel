@@ -151,6 +151,7 @@ export interface KitchenOrderDetail {
     pickupOtp?: string;
     estimatedPickupAt?: string;
     estimatedDeliveryAt?: string;
+    riderArrivedAt?: string;
     actualPickupAt?: string;
     actualDeliveryAt?: string;
     providerStatus?: string | null;

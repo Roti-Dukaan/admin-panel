@@ -16,7 +16,6 @@ import {
   ChefHat,
   FileText,
   IndianRupee,
-  Radio,
 } from "lucide-react";
 import { Drawer, DrawerHeader, DrawerTitle, DrawerContent, DrawerClose } from "@/components/ui/drawer";
 import { Badge } from "@/components/ui/badge";
@@ -24,6 +23,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { useKitchenOrderDetail } from "../hooks/useKitchen";
 import { PreparationTimer } from "./PreparationTimer";
+import { DeliveryStatusCard } from "./DeliveryStatusCard";
 import { STAGE_META, getDeliveryKind, formatSlotWindow } from "../types/kitchen";
 import type { KitchenOrderView } from "../types/kitchen";
 
@@ -290,11 +290,12 @@ export function KitchenOrderDrawer({
               </ol>
             </Section>
 
-            {/* Future Delivery Status placeholder (next phase) */}
-            <div className="flex items-center gap-2 rounded-xl bg-gray-50 p-3 text-xs text-gray-400">
-              <Radio className="h-4 w-4" />
-              Delivery status will appear here once Delivery Management is connected.
-            </div>
+            {/* Delivery status — live rider arrival + pickup for QUICK orders */}
+            {detail.delivery && (
+              <Section icon={Truck} title="Delivery">
+                <DeliveryStatusCard delivery={detail.delivery} />
+              </Section>
+            )}
           </div>
         )}
       </DrawerContent>

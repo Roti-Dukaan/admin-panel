@@ -25,7 +25,7 @@ export function KitchenStatusSelector() {
         setMessage(data?.message ?? "");
         setShowMessageModal(true);
       } else {
-        updateMutation.mutate({ status: value, message: data?.message });
+        updateMutation.mutate({ status: value, message: data?.message ?? undefined });
       }
     }
   };
