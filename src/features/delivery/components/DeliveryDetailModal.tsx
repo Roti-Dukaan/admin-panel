@@ -18,6 +18,7 @@ import { toast } from "sonner";
 const STATUS_ORDER = [
   "WAITING_FOR_KITCHEN",
   "WAITING_FOR_PROVIDER",
+  "PROVIDER_ASSIGNMENT_FAILED",
   "PROVIDER_ASSIGNED",
   "RIDER_ARRIVING",
   "PICKED_UP",
@@ -30,6 +31,7 @@ const STATUS_ORDER = [
 const TIMELINE_CONFIG: Record<string, { icon: React.ReactNode; color: string; bgColor: string }> = {
   WAITING_FOR_KITCHEN: { icon: <Package className="w-4 h-4" />, color: "text-amber-600", bgColor: "bg-amber-100" },
   WAITING_FOR_PROVIDER: { icon: <Package className="w-4 h-4" />, color: "text-orange-600", bgColor: "bg-orange-100" },
+  PROVIDER_ASSIGNMENT_FAILED: { icon: <AlertCircle className="w-4 h-4" />, color: "text-rose-600", bgColor: "bg-rose-100" },
   PROVIDER_ASSIGNED: { icon: <User className="w-4 h-4" />, color: "text-blue-600", bgColor: "bg-blue-100" },
   RIDER_ARRIVING: { icon: <User className="w-4 h-4" />, color: "text-cyan-600", bgColor: "bg-cyan-100" },
   PICKED_UP: { icon: <Truck className="w-4 h-4" />, color: "text-purple-600", bgColor: "bg-purple-100" },
@@ -46,6 +48,7 @@ interface DeliveryDetailModalProps {
   onUpdateStatus?: (status: string, remarks?: string) => Promise<void>;
   onCancel?: (reason: string) => Promise<void>;
   onRefresh?: () => Promise<void>;
+  onRetry?: () => Promise<void>;
   isUpdating?: boolean;
 }
 
@@ -56,6 +59,7 @@ export function DeliveryDetailModal({
   onUpdateStatus,
   onCancel,
   onRefresh,
+  onRetry,
   isUpdating,
 }: DeliveryDetailModalProps) {
   const [activeTab, setActiveTab] = useState("timeline");
@@ -88,10 +92,21 @@ export function DeliveryDetailModal({
       details: `Order ${order?.orderNumber} created`,
     });
 
+    if (delivery.status === "PROVIDER_ASSIGNMENT_FAILED") {
+      entries.push({
+        status: "PROVIDER_ASSIGNMENT_FAILED",
+        timestamp: delivery.lastAttemptAt ?? delivery.updatedAt,
+        label: "Assignment Failed",
+        details: delivery.assignmentFailedReason
+          ? delivery.assignmentFailedReason
+          : `Could not assign a ${delivery.provider} rider`,
+      });
+    }
+
     if (delivery.providerShipmentId) {
       entries.push({
         status: "PROVIDER_ASSIGNED",
-        timestamp: delivery.updatedAt,
+        timestamp: delivery.providerAssignedAt ?? delivery.updatedAt,
         label: "Delivery Assigned",
         details: `Assigned to ${delivery.provider}`,
       });
@@ -283,17 +298,30 @@ export function DeliveryDetailModal({
         </div>
       )}
 
-      {delivery.trackingUrl && (
-        <div className="flex justify-end">
-          <a
-            href={delivery.trackingUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-2 text-indigo-600 hover:underline text-sm"
-          >
-            <ExternalLink className="w-4 h-4" />
-            View on {delivery.provider} Tracking
-          </a>
+      {(delivery.trackingUrl || delivery.riderTrackingUrl) && (
+        <div className="flex justify-end gap-4">
+          {delivery.riderTrackingUrl && (
+            <a
+              href={delivery.riderTrackingUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 text-emerald-600 hover:underline text-sm"
+            >
+              <Map className="w-4 h-4" />
+              Live Rider Tracking
+            </a>
+          )}
+          {delivery.trackingUrl && (
+            <a
+              href={delivery.trackingUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 text-indigo-600 hover:underline text-sm"
+            >
+              <ExternalLink className="w-4 h-4" />
+              View on {delivery.provider} Tracking
+            </a>
+          )}
         </div>
       )}
     </TabsContent>
@@ -334,6 +362,31 @@ export function DeliveryDetailModal({
           </DialogHeader>
 
           <div className="p-4 space-y-6 overflow-y-auto max-h-[calc(90vh-200px)]">
+            {delivery.status === "PROVIDER_ASSIGNMENT_FAILED" && (
+              <div className="flex items-start gap-3 rounded-xl border border-rose-200 bg-rose-50 p-4">
+                <AlertCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <p className="font-semibold text-rose-800">Provider assignment failed</p>
+                  <p className="text-sm text-rose-700 mt-1">
+                    {delivery.assignmentFailedReason ?? `No ${delivery.provider} rider could be assigned.`}
+                  </p>
+                  {typeof delivery.providerAttempts === "number" && delivery.providerAttempts > 0 && (
+                    <p className="text-xs text-rose-600 mt-1">{delivery.providerAttempts} attempt(s) made</p>
+                  )}
+                </div>
+                {onRetry && (
+                  <Button
+                    size="sm"
+                    onClick={() => onRetry()}
+                    disabled={isUpdating}
+                    className="gap-2 bg-rose-600 hover:bg-rose-700"
+                  >
+                    <RefreshCw className={`w-4 h-4 ${isUpdating ? "animate-spin" : ""}`} />
+                    Retry
+                  </Button>
+                )}
+              </div>
+            )}
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid w-full grid-cols-3 mb-4">
                 <TabsTrigger value="timeline">Timeline</TabsTrigger>

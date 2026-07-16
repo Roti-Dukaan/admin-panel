@@ -142,6 +142,21 @@ export function DeliveryListPage() {
     }
   };
 
+  const handleRetryDelivery = async () => {
+    if (!selectedDelivery) return;
+    setUpdatingId(selectedDelivery.id);
+    try {
+      const updated = await deliveryApi.retry(selectedDelivery.id);
+      setSelectedDelivery(updated);
+      toast.success("Provider assignment retried");
+      fetchData();
+    } catch (error) {
+      toast.error("Failed to retry assignment");
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
   const handleRefreshDelivery = async () => {
     if (!selectedDelivery) return;
     setUpdatingId(selectedDelivery.id);
@@ -261,6 +276,7 @@ export function DeliveryListPage() {
                   <SelectItem value="all">All Statuses</SelectItem>
                   <SelectItem value="WAITING_FOR_KITCHEN">Waiting for Kitchen</SelectItem>
                   <SelectItem value="WAITING_FOR_PROVIDER">Waiting for Provider</SelectItem>
+                  <SelectItem value="PROVIDER_ASSIGNMENT_FAILED">Assignment Failed</SelectItem>
                   <SelectItem value="PROVIDER_ASSIGNED">Provider Assigned</SelectItem>
                   <SelectItem value="RIDER_ARRIVING">Rider Arriving</SelectItem>
                   <SelectItem value="PICKED_UP">Picked Up</SelectItem>
@@ -451,6 +467,7 @@ export function DeliveryListPage() {
         onUpdateStatus={handleStatusUpdate}
         onCancel={handleCancel}
         onRefresh={handleRefreshDelivery}
+        onRetry={handleRetryDelivery}
         isUpdating={!!updatingId}
       />
     </div>

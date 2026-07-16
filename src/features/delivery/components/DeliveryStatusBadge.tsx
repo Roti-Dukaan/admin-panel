@@ -5,6 +5,7 @@ import type { DeliveryStatus, DeliveryProvider, DeliveryType } from "@/features/
 const STATUS_CONFIG: Record<DeliveryStatus, { label: string; bgClass: string; textClass: string; dotClass: string }> = {
   WAITING_FOR_KITCHEN: { label: "Waiting for Kitchen", bgClass: "bg-amber-100", textClass: "text-amber-800", dotClass: "bg-amber-500" },
   WAITING_FOR_PROVIDER: { label: "Waiting for Provider", bgClass: "bg-orange-100", textClass: "text-orange-800", dotClass: "bg-orange-500" },
+  PROVIDER_ASSIGNMENT_FAILED: { label: "Assignment Failed", bgClass: "bg-rose-100", textClass: "text-rose-800", dotClass: "bg-rose-500" },
   PROVIDER_ASSIGNED: { label: "Provider Assigned", bgClass: "bg-blue-100", textClass: "text-blue-800", dotClass: "bg-blue-500" },
   RIDER_ARRIVING: { label: "Rider Arriving", bgClass: "bg-cyan-100", textClass: "text-cyan-800", dotClass: "bg-cyan-500" },
   PICKED_UP: { label: "Picked Up", bgClass: "bg-purple-100", textClass: "text-purple-800", dotClass: "bg-purple-500" },

@@ -76,6 +76,13 @@ export const deliveryApi = {
     return data.data;
   },
 
+  retry: async (id: string): Promise<Delivery> => {
+    const { data } = await api.post<{ success: boolean; data: Delivery }>(
+      `/admin/deliveries/${id}/retry`
+    );
+    return data.data;
+  },
+
   getStats: async (): Promise<DeliveryStatistics> => {
     const { data } = await api.get<{ success: boolean; data: DeliveryStatistics }>("/admin/deliveries/stats");
     return data.data;

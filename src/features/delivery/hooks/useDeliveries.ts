@@ -121,3 +121,18 @@ export function useCancelDelivery() {
     },
   });
 }
+
+export function useRetryDelivery() {
+  const queryClient = useQueryClient();
+  const { setSelectedDelivery } = useDeliveriesStore();
+
+  return useMutation({
+    mutationFn: ({ id }: { id: string }) => deliveryApi.retry(id),
+    onSuccess: (updatedDelivery) => {
+      queryClient.invalidateQueries({ queryKey: ["deliveries"] });
+      queryClient.invalidateQueries({ queryKey: ["delivery", updatedDelivery.id] });
+      queryClient.invalidateQueries({ queryKey: ["deliveryStats"] });
+      setSelectedDelivery(updatedDelivery);
+    },
+  });
+}
