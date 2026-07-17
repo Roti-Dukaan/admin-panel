@@ -12,7 +12,7 @@ import {
   DeliveryRules,
   SeoConfig,
 } from '../types/subscription-plan';
-import { mockSubscriptionPlans } from '../mock/subscription-plans';
+import { plansApi } from '../services/plans.api';
 
 interface SubscriptionPlanStore {
   plans: SubscriptionPlan[];
@@ -29,6 +29,8 @@ interface SubscriptionPlanStore {
   setSearchQuery: (query: string) => void;
   setStatusFilter: (status: PlanStatus | 'all') => void;
 
+  loadPlans: () => Promise<void>;
+
   openCreateEditor: () => void;
   openEditEditor: (plan: SubscriptionPlan) => void;
   openViewEditor: (plan: SubscriptionPlan) => void;
@@ -38,13 +40,13 @@ interface SubscriptionPlanStore {
   openDeleteModal: (plan: SubscriptionPlan) => void;
   closeDeleteModal: () => void;
 
-  addPlan: (plan: Omit<SubscriptionPlan, 'id' | 'createdAt' | 'updatedAt' | 'subscribers'>) => void;
-  updatePlan: (id: string, data: Partial<SubscriptionPlan>) => void;
-  deletePlan: (id: string) => void;
-  duplicatePlan: (plan: SubscriptionPlan) => void;
-  archivePlan: (id: string) => void;
+  addPlan: (plan: Omit<SubscriptionPlan, 'id' | 'createdAt' | 'updatedAt' | 'subscribers'>) => Promise<SubscriptionPlan>;
+  updatePlan: (id: string, data: Partial<SubscriptionPlan>) => Promise<SubscriptionPlan>;
+  deletePlan: (id: string) => Promise<void>;
+  duplicatePlan: (plan: SubscriptionPlan) => Promise<void>;
+  archivePlan: (id: string) => Promise<void>;
   toggleFeatured: (id: string) => void;
-  toggleStatus: (id: string, status: PlanStatus) => void;
+  toggleStatus: (id: string, status: PlanStatus) => Promise<void>;
 
   updatePlanPricing: (id: string, pricing: Partial<PlanPricing>) => void;
   updatePlanMeals: (id: string, meals: Partial<MealConfiguration>) => void;
@@ -67,7 +69,7 @@ interface SubscriptionPlanStore {
 }
 
 export const useSubscriptionPlanStore = create<SubscriptionPlanStore>((set, get) => ({
-  plans: mockSubscriptionPlans,
+  plans: [],
   loading: false,
   searchQuery: '',
   statusFilter: 'all',
@@ -77,6 +79,16 @@ export const useSubscriptionPlanStore = create<SubscriptionPlanStore>((set, get)
   selectedPlan: null,
   deleteModalOpen: false,
   planToDelete: null,
+
+  loadPlans: async () => {
+    set({ loading: true });
+    try {
+      const plans = await plansApi.list();
+      set({ plans, loading: false });
+    } catch {
+      set({ loading: false });
+    }
+  },
 
   setSearchQuery: (query) => set({ searchQuery: query }),
   setStatusFilter: (status) => set({ statusFilter: status }),
@@ -117,61 +129,56 @@ export const useSubscriptionPlanStore = create<SubscriptionPlanStore>((set, get)
   openDeleteModal: (plan) => set({ deleteModalOpen: true, planToDelete: plan }),
   closeDeleteModal: () => set({ deleteModalOpen: false, planToDelete: null }),
 
-  addPlan: (planData) => {
-    const now = Date.now();
-    const newPlan: SubscriptionPlan = {
-      ...planData,
-      id: `plan-${now}`,
-      subscribers: 0,
-      createdAt: now,
-      updatedAt: now,
-    };
+  addPlan: async (planData) => {
+    const created = await plansApi.create(planData as SubscriptionPlan);
     set((state) => ({
-      plans: [newPlan, ...state.plans],
+      plans: [created, ...state.plans],
       editorOpen: false,
       selectedPlan: null,
     }));
+    return created;
   },
 
-  updatePlan: (id, data) =>
+  updatePlan: async (id, data) => {
+    const updated = await plansApi.update(id, data as SubscriptionPlan);
     set((state) => ({
-      plans: state.plans.map((p) =>
-        p.id === id ? { ...p, ...data, updatedAt: Date.now() } : p
-      ),
+      plans: state.plans.map((p) => (p.id === id ? updated : p)),
       editorOpen: false,
       selectedPlan: null,
-    })),
+    }));
+    return updated;
+  },
 
-  deletePlan: (id) =>
+  deletePlan: async (id) => {
+    await plansApi.remove(id);
     set((state) => ({
       plans: state.plans.filter((p) => p.id !== id),
       deleteModalOpen: false,
       planToDelete: null,
-    })),
+    }));
+  },
 
-  duplicatePlan: (plan) => {
-    const now = Date.now();
-    const duplicate: SubscriptionPlan = {
+  duplicatePlan: async (plan) => {
+    const copy: SubscriptionPlan = {
       ...plan,
-      id: `plan-${now}`,
+      id: '',
       name: `${plan.name} (Copy)`,
       slug: `${plan.slug}-copy`,
       status: 'draft',
       subscribers: 0,
-      createdAt: now,
-      updatedAt: now,
     };
-    set((state) => ({
-      plans: [duplicate, ...state.plans],
-    }));
+    const created = await plansApi.create(copy);
+    set((state) => ({ plans: [created, ...state.plans] }));
   },
 
-  archivePlan: (id) =>
+  archivePlan: async (id) => {
+    const plan = get().plans.find((p) => p.id === id);
+    if (!plan) return;
+    const updated = await plansApi.setActive(id, false);
     set((state) => ({
-      plans: state.plans.map((p) =>
-        p.id === id ? { ...p, status: 'archived' as const, updatedAt: Date.now() } : p
-      ),
-    })),
+      plans: state.plans.map((p) => (p.id === id ? { ...updated, status: 'archived' as const } : p)),
+    }));
+  },
 
   toggleFeatured: (id) =>
     set((state) => ({
@@ -180,12 +187,12 @@ export const useSubscriptionPlanStore = create<SubscriptionPlanStore>((set, get)
       ),
     })),
 
-  toggleStatus: (id, status) =>
+  toggleStatus: async (id, status) => {
+    const updated = await plansApi.setActive(id, status === 'published');
     set((state) => ({
-      plans: state.plans.map((p) =>
-        p.id === id ? { ...p, status, updatedAt: Date.now() } : p
-      ),
-    })),
+      plans: state.plans.map((p) => (p.id === id ? { ...updated, status } : p)),
+    }));
+  },
 
   updatePlanPricing: (id, pricing) =>
     set((state) => ({

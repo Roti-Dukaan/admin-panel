@@ -89,6 +89,7 @@ const EMPTY_PLAN: SubscriptionPlan = {
     maxCurries: 1,
     dailyQuantityLimit: 1,
   },
+  menuItems: [],
   benefits: [],
   rules: {
     pauseAllowed: true,
@@ -199,11 +200,16 @@ export function PlanEditor() {
     }));
   };
 
-  const handleSave = () => {
-    if (editorMode === "create") {
-      addPlan(localPlan);
-    } else if (editorMode === "edit" && selectedPlan) {
-      updatePlan(selectedPlan.id, localPlan);
+  const handleSave = async () => {
+    try {
+      if (editorMode === "create") {
+        await addPlan(localPlan);
+      } else if (editorMode === "edit" && selectedPlan) {
+        await updatePlan(selectedPlan.id, localPlan);
+      }
+      closeEditor();
+    } catch (e) {
+      // Errors are surfaced via the API interceptor; keep the editor open.
     }
   };
 

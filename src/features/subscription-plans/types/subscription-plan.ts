@@ -81,6 +81,13 @@ export interface SeoConfig {
   ogImageUrl: string;
 }
 
+export interface PlanMenuItem {
+  foodItemId: string;
+  name: string;
+  mealSlot: MealType;
+  isDefault: boolean;
+}
+
 export interface SubscriptionPlan {
   id: string;
   name: string;
@@ -95,6 +102,8 @@ export interface SubscriptionPlan {
   meals: MealConfiguration;
   delivery: DeliverySchedule;
   menu: MenuInclusion;
+  /// Real catalog food items delivered per meal slot (mapped to backend plan items).
+  menuItems: PlanMenuItem[];
   benefits: PlanBenefit[];
   rules: PlanRules;
   deliveryRules: DeliveryRules;

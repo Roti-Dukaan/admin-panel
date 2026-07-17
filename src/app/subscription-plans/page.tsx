@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion } from "motion/react";
 import {
   Plus,
@@ -30,6 +30,7 @@ const statCards = [
 
 export default function SubscriptionPlansPage() {
   const plans = useSubscriptionPlanStore((s) => s.plans);
+  const loadPlans = useSubscriptionPlanStore((s) => s.loadPlans);
   const stats = useMemo(() => ({
     total: plans.length,
     active: plans.filter((p) => p.status === "published").length,
@@ -43,6 +44,10 @@ export default function SubscriptionPlansPage() {
   const statusFilter = useSubscriptionPlanStore((s) => s.statusFilter);
   const setStatusFilter = useSubscriptionPlanStore((s) => s.setStatusFilter);
   const openCreateEditor = useSubscriptionPlanStore((s) => s.openCreateEditor);
+
+  useEffect(() => {
+    loadPlans();
+  }, [loadPlans]);
 
   return (
     <div className="min-h-screen bg-gray-50/50">
@@ -65,7 +70,10 @@ export default function SubscriptionPlansPage() {
                 Soon
               </span>
             </button>
-            <button className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
+            <button
+              onClick={() => loadPlans()}
+              className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
+            >
               <RefreshCw className="h-4 w-4" />
               Refresh
             </button>
