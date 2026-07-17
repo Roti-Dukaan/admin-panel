@@ -23,6 +23,7 @@ import { SidebarItem } from "./SidebarItem"
 import { SidebarFooter } from "./SidebarFooter"
 import { SidebarCollapseButton } from "./SidebarCollapseButton"
 import type { NavGroup } from "./types"
+import { useOrdersStore } from "@/features/orders/hooks/useOrders"
 
 const navGroups: NavGroup[] = [
   {
@@ -36,7 +37,7 @@ const navGroups: NavGroup[] = [
     id: "operations",
     title: "Operations",
     items: [
-      { label: "Orders", href: "/orders", icon: ShoppingBag, badge: 3 },
+      { label: "Orders", href: "/orders", icon: ShoppingBag },
       { label: "Kitchen", href: "/kitchen", icon: ChefHat },
       { label: "Delivery Slots", href: "/delivery-slots", icon: Clock3 },
     ],
@@ -84,6 +85,8 @@ interface SidebarProps {
 
 export function Sidebar({ collapsed = false, onToggle, mobileOpen = false, onMobileClose }: SidebarProps) {
   const { isGroupExpanded, toggleGroup } = useSidebar()
+  const statistics = useOrdersStore((s) => s.statistics)
+  const kitchenLiveOrders = (statistics?.preparing ?? 0) + (statistics?.packed ?? 0)
 
   const sidebarContent = (
     <>
@@ -123,7 +126,7 @@ export function Sidebar({ collapsed = false, onToggle, mobileOpen = false, onMob
                 label={item.label}
                 href={item.href}
                 icon={item.icon}
-                badge={item.badge}
+                badge={item.href === "/kitchen" ? kitchenLiveOrders : undefined}
                 collapsed={collapsed}
                 disabled={item.disabled}
               />
@@ -208,7 +211,7 @@ export function Sidebar({ collapsed = false, onToggle, mobileOpen = false, onMob
                       label={item.label}
                       href={item.href}
                       icon={item.icon}
-                      badge={item.badge}
+                      badge={item.href === "/kitchen" ? kitchenLiveOrders : undefined}
                       collapsed={false}
                       disabled={item.disabled}
                     />

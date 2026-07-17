@@ -23,11 +23,24 @@ function ensureSocket(): Socket {
       path: "/socket.io",
       withCredentials: true,
       transports: ["websocket", "polling"],
-      auth: () => ({ token: getToken() }),
+      auth: () => {
+        const token = getToken();
+        return { token };
+      },
       autoConnect: false,
       reconnection: true,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 8000,
+    });
+
+    socket.on("connect_error", (err) => {
+      console.error("[Socket] Connection error:", err.message);
+    });
+    socket.on("connect", () => {
+      console.log("[Socket] Connected:", socket?.id);
+    });
+    socket.on("disconnect", (reason) => {
+      console.log("[Socket] Disconnected:", reason);
     });
   }
   return socket;
