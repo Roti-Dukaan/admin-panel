@@ -8,13 +8,14 @@ import { useSidebarMobile } from "./sidebar-provider"
 interface HeaderProps {
   title?: string
   subtitle?: string
+  titleNode?: React.ReactNode
   dateFilter?: React.ReactNode
   actions?: React.ReactNode
   showSearch?: boolean
   className?: string
 }
 
-export function Header({ title, subtitle, dateFilter, actions, showSearch = true, className }: HeaderProps) {
+export function Header({ title, subtitle, titleNode, dateFilter, actions, showSearch = true, className }: HeaderProps) {
   const [searchFocused, setSearchFocused] = React.useState(false)
   const { setMobileOpen } = useSidebarMobile()
 
@@ -28,11 +29,15 @@ export function Header({ title, subtitle, dateFilter, actions, showSearch = true
         >
           <Menu className="h-5 w-5" />
         </button>
-        {title && (
-          <div>
-            <h1 className="text-lg font-semibold text-gray-900">{title}</h1>
-            {subtitle && <p className="text-sm text-gray-500">{subtitle}</p>}
-          </div>
+        {titleNode ? (
+          <div className="min-w-0">{titleNode}</div>
+        ) : (
+          title && (
+            <div>
+              <h1 className="text-lg font-semibold text-gray-900">{title}</h1>
+              {subtitle && <p className="text-sm text-gray-500">{subtitle}</p>}
+            </div>
+          )
         )}
       </div>
 

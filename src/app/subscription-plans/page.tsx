@@ -15,6 +15,7 @@ import {
   Search,
 } from "lucide-react";
 import { useSubscriptionPlanStore } from "@/features/subscription-plans/hooks/useSubscriptionPlans";
+import { Header } from "@/components/layout/header";
 import { PlansTable } from "@/features/subscription-plans/components/PlansTable";
 import { PlanEditor } from "@/features/subscription-plans/components/PlanEditor";
 import { DeleteConfirmation } from "@/features/subscription-plans/components/DeleteConfirmation";
@@ -51,18 +52,11 @@ export default function SubscriptionPlansPage() {
 
   return (
     <div className="min-h-screen bg-gray-50/50">
-      <div className="p-6 space-y-6">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
-        >
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight text-gray-900">Subscription Plans</h1>
-            <p className="mt-1 text-sm text-gray-500">Create and manage recurring meal plans.</p>
-          </div>
-          <div className="flex items-center gap-2">
+      <Header
+        title="Subscription Plans"
+        subtitle="Create and manage recurring meal plans."
+        actions={
+          <>
             <button className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
               <Download className="h-4 w-4" />
               Export
@@ -84,9 +78,11 @@ export default function SubscriptionPlansPage() {
               <Plus className="h-4 w-4" />
               Create Plan
             </button>
-          </div>
-        </motion.div>
+          </>
+        }
+      />
 
+      <div className="p-6 space-y-6">
         {/* Stats */}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
           {statCards.map((card, i) => {

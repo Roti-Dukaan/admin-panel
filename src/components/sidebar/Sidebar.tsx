@@ -11,7 +11,6 @@ import {
   UtensilsCrossed,
   Users,
   CalendarDays,
-  Repeat,
   CreditCard,
   BarChart3,
   ShieldCheck,
@@ -39,7 +38,6 @@ const navGroups: NavGroup[] = [
     title: "Operations",
     items: [
       { label: "Orders", href: "/orders", icon: ShoppingBag },
-      { label: "Subscriptions", href: "/subscriptions", icon: Repeat },
       { label: "Kitchen", href: "/kitchen", icon: ChefHat },
       { label: "Delivery Slots", href: "/delivery-slots", icon: Clock3 },
     ],

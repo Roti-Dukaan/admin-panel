@@ -5,6 +5,7 @@ import { motion } from "motion/react";
 import { Plus, Download, Upload, Search, UtensilsCrossed, Store, ShoppingCart, Layers, IndianRupee, Loader2 } from "lucide-react";
 import { useMenuStore } from "@/features/menu/hooks/useMenu";
 import { HEALTH_TAG_CONFIG, HealthTag } from "@/features/menu/types/menu";
+import { Header } from "@/components/layout/header";
 import { MenuTable } from "@/features/menu/components/MenuTable";
 import { FoodDrawer } from "@/features/menu/components/FoodDrawer";
 import { DeleteConfirmation } from "@/features/menu/components/DeleteConfirmation";
@@ -56,18 +57,11 @@ export default function MenuPage() {
 
   return (
     <div className="min-h-screen bg-gray-50/50">
-      <div className="p-6 space-y-6">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
-        >
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight text-gray-900">Menu Management</h1>
-            <p className="mt-1 text-sm text-gray-500">Manage all food items, pricing and availability.</p>
-          </div>
-          <div className="flex items-center gap-2">
+      <Header
+        title="Menu Management"
+        subtitle="Manage all food items, pricing and availability."
+        actions={
+          <>
             <button
               onClick={openCategoryModal}
               className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50"
@@ -90,9 +84,11 @@ export default function MenuPage() {
               <Plus className="h-4 w-4" />
               Add Food Item
             </button>
-          </div>
-        </motion.div>
+          </>
+        }
+      />
 
+      <div className="p-6 space-y-6">
         {/* Stats */}
         {loading ? (
           <div className="flex items-center justify-center py-12">

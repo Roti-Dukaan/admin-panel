@@ -25,6 +25,7 @@ import { InviteUserDialog } from "@/features/rbac/components/InviteUserDialog";
 import { RolesSkeleton } from "@/features/rbac/components/SkeletonLoader";
 import { RoleStatus } from "@/features/rbac/types/role";
 import { cn } from "@/lib/utils";
+import { Header } from "@/components/layout/header";
 
 export default function RolesPage() {
   const router = useRouter();
@@ -110,45 +111,37 @@ export default function RolesPage() {
     <div className="min-h-screen bg-gray-50/50">
       <div className="p-6 space-y-6">
         {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
-        >
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight text-gray-900">
-              Role & Permission Management
-            </h1>
-            <p className="mt-1 text-sm text-gray-500">
-              Control access to every module in the Admin Portal.
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => {
-                setStats(getStats());
-              }}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
-            >
-              <RefreshCw className="h-4 w-4" />
-              Refresh
-            </button>
-            <button
-              onClick={() => setInviteDialogOpen(true)}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
-            >
-              <UserPlus className="h-4 w-4" />
-              Invite User
-            </button>
-            <button
-              onClick={() => router.push("/admin/roles/new")}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 transition-colors"
-            >
-              <Plus className="h-4 w-4" />
-              Create Role
-            </button>
-          </div>
-        </motion.div>
+          <Header
+            title="Role & Permission Management"
+            subtitle="Control access to every module in the Admin Portal."
+            actions={
+              <>
+                <button
+                  onClick={() => {
+                    setStats(getStats());
+                  }}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  Refresh
+                </button>
+                <button
+                  onClick={() => setInviteDialogOpen(true)}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+                >
+                  <UserPlus className="h-4 w-4" />
+                  Invite User
+                </button>
+                <button
+                  onClick={() => router.push("/admin/roles/new")}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 transition-colors"
+                >
+                  <Plus className="h-4 w-4" />
+                  Create Role
+                </button>
+              </>
+            }
+          />
 
         {/* KPI Cards */}
         <motion.div

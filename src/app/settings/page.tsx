@@ -31,6 +31,7 @@ import { useSettingsStore } from "@/features/settings/hooks/useSettings";
 import { useDeliveryProviderStore } from "@/features/delivery-providers/hooks/useDeliveryProviders";
 import type { SettingsTab, PincodeData, BusinessSettingsData, TaxConfigData, PaymentConfigData, DeliveryConfigData } from "@/features/settings/types/settings";
 import { PROVIDER_LABELS, STRATEGY_LABELS } from "@/features/delivery-providers/types/delivery-provider";
+import { Header } from "@/components/layout/header";
 
 const tabs: { key: SettingsTab; label: string; icon: React.ElementType }[] = [
   { key: "business", label: "Business", icon: Building2 },
@@ -87,19 +88,12 @@ export default function SettingsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50/50">
-      <div className="p-6 space-y-6">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
-        >
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight text-gray-900">Settings</h1>
-            <p className="mt-1 text-sm text-gray-500">Manage your business configuration.</p>
-          </div>
-        </motion.div>
+      <Header
+        title="Settings"
+        subtitle="Manage your business configuration."
+      />
 
+      <div className="p-6 space-y-6">
         {/* Toast */}
         {successMessage && (
           <motion.div

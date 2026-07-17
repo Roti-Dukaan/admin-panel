@@ -18,6 +18,7 @@ import {
   GripVertical,
 } from "lucide-react";
 import { deliverySlotsApi, DeliverySlot as ApiDeliverySlot } from "@/lib/api/delivery-slots.api";
+import { Header } from "@/components/layout/header";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -245,17 +246,10 @@ export default function DeliverySlotsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50/50">
-      <div className="p-6 space-y-6">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
-        >
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight text-gray-900">Delivery Slots</h1>
-            <p className="mt-1 text-sm text-gray-500">Manage delivery time slots for customer orders.</p>
-          </div>
+      <Header
+        title="Delivery Slots"
+        subtitle="Manage delivery time slots for customer orders."
+        actions={
           <button
             onClick={openAdd}
             className="inline-flex items-center gap-2 rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-bold text-white hover:bg-gray-800"
@@ -263,8 +257,10 @@ export default function DeliverySlotsPage() {
             <Plus className="h-4 w-4" />
             Add Slot
           </button>
-        </motion.div>
+        }
+      />
 
+      <div className="p-6 space-y-6">
         {/* Stats */}
         {slots.length > 0 && (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">

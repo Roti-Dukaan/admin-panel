@@ -37,6 +37,7 @@ import { RoleEditor } from "@/features/rbac/components/RoleEditor";
 import { RoleDetailSkeleton } from "@/features/rbac/components/SkeletonLoader";
 import { ModulePermission } from "@/features/rbac/types/role";
 import { cn } from "@/lib/utils";
+import { Header } from "@/components/layout/header";
 
 const iconMap: Record<string, React.ElementType> = {
   Shield,
@@ -174,19 +175,16 @@ export default function RoleDetailPage({
     <div className="min-h-screen bg-gray-50/50">
       <div className="p-6 space-y-6">
         {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
-        >
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => router.push("/admin/roles")}
-              className="inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white p-2 text-gray-600 hover:bg-gray-50 transition-colors"
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </button>
+        <Header
+          showSearch={false}
+          titleNode={
             <div className="flex items-center gap-3">
+              <button
+                onClick={() => router.push("/admin/roles")}
+                className="inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white p-2 text-gray-600 hover:bg-gray-50 transition-colors"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </button>
               <div
                 className="flex h-12 w-12 items-center justify-center rounded-xl"
                 style={{ backgroundColor: `${role.color}15` }}
@@ -219,45 +217,47 @@ export default function RoleDetailPage({
                 </p>
               </div>
             </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => {
-                setCloneSourceRole(role);
-                setCloneDialogOpen(true);
-              }}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
-            >
-              <Copy className="h-4 w-4" />
-              Clone
-            </button>
-            <button
-              onClick={() => setEditMode(true)}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
-            >
-              <Pencil className="h-4 w-4" />
-              Edit
-            </button>
-            {!role.isSystem && (
-              <>
-                <button
-                  onClick={handleArchive}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-700 hover:bg-amber-100 transition-colors"
-                >
-                  <Archive className="h-4 w-4" />
-                  Archive
-                </button>
-                <button
-                  onClick={handleDelete}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-100 transition-colors"
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Delete
-                </button>
-              </>
-            )}
-          </div>
-        </motion.div>
+          }
+          actions={
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  setCloneSourceRole(role);
+                  setCloneDialogOpen(true);
+                }}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+              >
+                <Copy className="h-4 w-4" />
+                Clone
+              </button>
+              <button
+                onClick={() => setEditMode(true)}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+              >
+                <Pencil className="h-4 w-4" />
+                Edit
+              </button>
+              {!role.isSystem && (
+                <>
+                  <button
+                    onClick={handleArchive}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-700 hover:bg-amber-100 transition-colors"
+                  >
+                    <Archive className="h-4 w-4" />
+                    Archive
+                  </button>
+                  <button
+                    onClick={handleDelete}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-100 transition-colors"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Delete
+                  </button>
+                </>
+              )}
+            </div>
+          }
+        />
 
         {/* Role Info Row */}
         <motion.div
