@@ -105,8 +105,12 @@ export interface OrderStatistics {
   totalRevenueToday: number
 }
 
+export type OrderDatePreset = "today" | "yesterday" | "7d" | "30d" | "this-month" | "custom" | "all"
+
 export interface OrderFilters {
-  dateFilter: "today" | "tomorrow" | "this_week" | "all"
+  dateFilter: OrderDatePreset
+  customStartDate: string
+  customEndDate: string
   status: OrderStatus | "all"
   paymentMethod: PaymentMethod | "all"
   paymentStatus: PaymentStatus | "all"

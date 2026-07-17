@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import type { Order, OrderStatistics, OrderFilters, OrderStatus, PaymentStatus } from "../types/order";
+import type { Order, OrderStatistics, OrderFilters, OrderDatePreset, OrderStatus, PaymentStatus } from "../types/order";
 import { ordersApi } from "@/lib/api/orders.api";
 
 interface OrderStore {
@@ -20,6 +20,7 @@ interface OrderStore {
   updatingStatus: string | null;
 
   setFilters: (filters: Partial<OrderFilters>) => void;
+  setDateRange: (preset: OrderDatePreset, startDate?: string, endDate?: string) => void;
   setPage: (page: number) => void;
   setPageSize: (pageSize: number) => void;
   setSelectedOrder: (order: Order | null) => void;
@@ -33,6 +34,8 @@ interface OrderStore {
 
 const defaultFilters: OrderFilters = {
   dateFilter: "all",
+  customStartDate: "",
+  customEndDate: "",
   status: "all",
   paymentMethod: "all",
   paymentStatus: "all",
@@ -54,6 +57,19 @@ export const useOrdersStore = create<OrderStore>((set, get) => ({
   setFilters: (newFilters) => {
     set((state) => ({
       filters: { ...state.filters, ...newFilters },
+      pagination: { ...state.pagination, page: 1 },
+    }));
+    get().fetchOrders();
+  },
+
+  setDateRange: (preset, startDate = "", endDate = "") => {
+    set((state) => ({
+      filters: {
+        ...state.filters,
+        dateFilter: preset,
+        customStartDate: startDate,
+        customEndDate: endDate,
+      },
       pagination: { ...state.pagination, page: 1 },
     }));
     get().fetchOrders();

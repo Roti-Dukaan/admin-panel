@@ -2,21 +2,36 @@
 
 import * as React from "react"
 import { Header } from "@/components/layout/header"
+import { DateRangeFilter, type DateRangeValue } from "@/components/shared/DateRangeFilter"
 import { OrderStatistics } from "@/features/orders/components/OrderStatistics"
 import { OrderFilters } from "@/features/orders/components/OrderFilters"
 import { OrdersTable } from "@/features/orders/components/OrdersTable"
 import { OrderDrawer } from "@/features/orders/components/OrderDrawer"
 import { useOrdersStore } from "@/features/orders/hooks/useOrders"
 import { useAdminOrdersRealtime } from "@/features/orders/hooks/useOrdersRealtime"
-import { Button } from "@/components/ui/button"
-import { RefreshCw, Download } from "lucide-react"
+import { RefreshCw } from "lucide-react"
 import { toast } from "sonner"
 import type { Order } from "@/features/orders/types/order"
+import type { OrderDatePreset } from "@/features/orders/types/order"
 import { motion } from "motion/react"
 
 export default function OrdersPage() {
-  const { fetchOrders, fetchStatistics, setDrawerOpen, setSelectedOrder, refreshAll, loading } = useOrdersStore()
+  const { fetchOrders, fetchStatistics, setDrawerOpen, setSelectedOrder, refreshAll, loading, filters, setDateRange } = useOrdersStore()
   useAdminOrdersRealtime()
+
+  const dateRangeValue: DateRangeValue = {
+    preset: filters.dateFilter === "all" ? "today" : filters.dateFilter as DateRangeValue["preset"],
+    startDate: filters.customStartDate,
+    endDate: filters.customEndDate,
+  }
+
+  const handleDateRangeChange = (value: DateRangeValue) => {
+    setDateRange(
+      value.preset as OrderDatePreset,
+      value.startDate || "",
+      value.endDate || ""
+    )
+  }
 
   React.useEffect(() => {
     fetchOrders()
@@ -38,17 +53,17 @@ export default function OrdersPage() {
       <Header
         title="Orders"
         subtitle="Manage and monitor all customer orders."
+        showSearch={false}
+        dateFilter={<DateRangeFilter value={dateRangeValue} onChange={handleDateRangeChange} />}
         actions={
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" disabled>
-              <Download className="h-4 w-4 mr-1" />
-              Export (Soon)
-            </Button>
-            <Button variant="outline" size="sm" onClick={handleRefresh} disabled={loading}>
-              <RefreshCw className={`h-4 w-4 mr-1 ${loading ? "animate-spin" : ""}`} />
-              Refresh
-            </Button>
-          </div>
+          <button
+            onClick={handleRefresh}
+            disabled={loading}
+            className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors disabled:opacity-50"
+            title="Refresh orders"
+          >
+            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+          </button>
         }
       />
 

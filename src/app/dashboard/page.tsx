@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { Header } from "@/components/layout/header"
+import { DateRangeFilter, type DateRangeValue } from "@/components/shared/DateRangeFilter"
 import { motion } from "motion/react"
 import {
   ShoppingBag,
@@ -105,11 +106,14 @@ const todayHighlights = [
 ]
 
 export default function DashboardPage() {
+  const [dateRange, setDateRange] = React.useState<DateRangeValue>({ preset: "today" })
+
   return (
     <div className="min-h-screen bg-gray-50/50">
       <Header
         title="Dashboard"
         subtitle="Welcome back! Here's what's happening today."
+        dateFilter={<DateRangeFilter value={dateRange} onChange={setDateRange} />}
       />
 
       <div className="p-6 space-y-6">

@@ -36,6 +36,9 @@ function formatDate(dateStr: string) {
 
 function PaymentMethodBadge({ method }: { method: PaymentMethod }) {
   const config = PAYMENT_METHOD_CONFIG[method]
+  if (!config) {
+    return <span className="text-xs text-gray-500">{method}</span>
+  }
   return (
     <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-semibold", config.bgClass)}>
       {method === "online" ? (
@@ -119,8 +122,6 @@ export function OrdersTable({ onViewDetails }: OrdersTableProps) {
               <TableHead>Payment Method</TableHead>
               <TableHead>Payment Status</TableHead>
               <TableHead>Transaction ID</TableHead>
-              <TableHead>Delivery Slot</TableHead>
-              <TableHead>Delivery Date</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Created</TableHead>
               <TableHead className="text-right">Actions</TableHead>
@@ -130,8 +131,8 @@ export function OrdersTable({ onViewDetails }: OrdersTableProps) {
             {orders.map((order) => (
               <TableRow key={order.id}>
                 <TableCell className="font-medium">{order.orderNumber}</TableCell>
-<TableCell>{order.customer?.name ?? '—'}</TableCell>
-                 <TableCell className="text-muted-foreground">{order.customer?.phone ?? '—'}</TableCell>
+                <TableCell>{order.customer?.name ?? '—'}</TableCell>
+                <TableCell className="text-muted-foreground">{order.customer?.phone ?? '—'}</TableCell>
                 <TableCell>{order.items.length} item(s)</TableCell>
                 <TableCell className="font-medium">
                   {order.payment ? formatCurrency(order.payment.grandTotal) : "—"}
@@ -161,8 +162,6 @@ export function OrdersTable({ onViewDetails }: OrdersTableProps) {
                     <span className="text-xs text-muted-foreground">—</span>
                   )}
                 </TableCell>
-<TableCell className="text-xs">{order.delivery?.slot ?? '—'}</TableCell>
-                 <TableCell className="text-xs">{order.delivery?.date ? formatDate(order.delivery.date) : '—'}</TableCell>
                 <TableCell>
                   <StatusBadge status={order.status} />
                 </TableCell>

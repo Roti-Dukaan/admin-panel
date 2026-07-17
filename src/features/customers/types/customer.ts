@@ -14,9 +14,14 @@ export interface Customer {
   updatedAt: string;
 }
 
+export type CustomerDatePreset = "today" | "yesterday" | "7d" | "30d" | "this-month" | "custom" | "all"
+
 export interface CustomerFilters {
   search: string;
   status: CustomerStatus | 'all';
+  datePreset: CustomerDatePreset;
+  customStartDate: string;
+  customEndDate: string;
 }
 
 export const CUSTOMER_STATUS_CONFIG: Record<CustomerStatus, { label: string; color: string; bgColor: string }> = {

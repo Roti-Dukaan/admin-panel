@@ -8,13 +8,6 @@ import { useOrdersStore } from "../hooks/useOrders"
 import type { OrderFilters as OrderFiltersType, OrderStatus, PaymentMethod, PaymentStatus, OrderType } from "../types/order"
 import { Search, X } from "lucide-react"
 
-const dateFilterOptions = [
-  { label: "All Orders", value: "all" },
-  { label: "Today", value: "today" },
-  { label: "Tomorrow", value: "tomorrow" },
-  { label: "This Week", value: "this_week" },
-]
-
 const statusOptions = [
   { label: "All Statuses", value: "all" },
   { label: "Pending Confirmation", value: "pending-confirmation" },
@@ -66,6 +59,8 @@ export function OrderFilters() {
   const clearFilters = () => {
     setFilters({
       dateFilter: "all",
+      customStartDate: "",
+      customEndDate: "",
       status: "all",
       paymentMethod: "all",
       paymentStatus: "all",
@@ -77,18 +72,6 @@ export function OrderFilters() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
-        <div className="w-[160px]">
-          <Select value={filters.dateFilter} onValueChange={(v) => setFilters({ dateFilter: v as OrderFiltersType["dateFilter"] })}>
-            <SelectTrigger>
-              <SelectValue placeholder="Date Filter" />
-            </SelectTrigger>
-            <SelectContent>
-              {dateFilterOptions.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
         <div className="w-[180px]">
           <Select value={filters.status} onValueChange={(v) => setFilters({ status: v as OrderStatus | "all" })}>
             <SelectTrigger>

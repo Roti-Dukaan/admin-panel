@@ -2,18 +2,19 @@
 
 import * as React from "react"
 import { cn } from "@/lib/utils"
-import { Bell, Search, ChevronDown, Menu } from "lucide-react"
-import { Avatar } from "@/components/ui/avatar"
+import { Bell, Search, Menu } from "lucide-react"
 import { useSidebarMobile } from "./sidebar-provider"
 
 interface HeaderProps {
   title?: string
   subtitle?: string
+  dateFilter?: React.ReactNode
   actions?: React.ReactNode
+  showSearch?: boolean
   className?: string
 }
 
-export function Header({ title, subtitle, actions, className }: HeaderProps) {
+export function Header({ title, subtitle, dateFilter, actions, showSearch = true, className }: HeaderProps) {
   const [searchFocused, setSearchFocused] = React.useState(false)
   const { setMobileOpen } = useSidebarMobile()
 
@@ -35,20 +36,23 @@ export function Header({ title, subtitle, actions, className }: HeaderProps) {
         )}
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3">
+        {dateFilter}
         {actions}
 
         {/* Search */}
-        <div className={cn("relative transition-all duration-200", searchFocused ? "w-64" : "w-44")}>
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search..."
-            onFocus={() => setSearchFocused(true)}
-            onBlur={() => setSearchFocused(false)}
-            className="h-9 w-full rounded-lg border border-gray-200 bg-gray-50/50 pl-9 pr-3 text-sm text-gray-700 placeholder:text-gray-400 focus:border-orange-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-100 transition-all"
-          />
-        </div>
+        {showSearch && (
+          <div className={cn("relative transition-all duration-200", searchFocused ? "w-64" : "w-44")}>
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search..."
+              onFocus={() => setSearchFocused(true)}
+              onBlur={() => setSearchFocused(false)}
+              className="h-9 w-full rounded-lg border border-gray-200 bg-gray-50/50 pl-9 pr-3 text-sm text-gray-700 placeholder:text-gray-400 focus:border-orange-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-100 transition-all"
+            />
+          </div>
+        )}
 
         {/* Notifications */}
         <button className="relative rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors">
@@ -59,15 +63,7 @@ export function Header({ title, subtitle, actions, className }: HeaderProps) {
           </span>
         </button>
 
-        {/* Profile */}
-        <button className="flex items-center gap-2 rounded-lg py-1.5 pl-1.5 pr-2 hover:bg-gray-100 transition-colors">
-          <Avatar alt="Admin" size="sm" className="ring-2 ring-gray-100" />
-          <div className="hidden sm:block text-left">
-            <p className="text-sm font-medium text-gray-700 leading-tight">Admin</p>
-            <p className="text-[10px] text-gray-400">Super Admin</p>
-          </div>
-          <ChevronDown className="h-3.5 w-3.5 text-gray-400 hidden sm:block" />
-        </button>
+
       </div>
     </header>
   )

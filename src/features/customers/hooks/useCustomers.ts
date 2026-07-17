@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Customer, CustomerFilters } from '../types/customer';
+import { Customer, CustomerFilters, CustomerDatePreset } from '../types/customer';
 import { customerApi, type ApiCustomer, type ApiCustomerAddress } from '@/lib/api/customer.api';
 
 interface CustomerStats {
@@ -27,6 +27,7 @@ interface CustomerStore {
   setPage: (page: number) => void;
   setSearch: (search: string) => void;
   setStatusFilter: (filter: CustomerFilters['status']) => void;
+  setDateRange: (preset: CustomerDatePreset, startDate?: string, endDate?: string) => void;
   clearFilters: () => void;
 
   setSelectedCustomer: (customer: Customer | null) => void;
@@ -58,6 +59,9 @@ function mapCustomer(c: ApiCustomer): Customer {
 const initialFilters: CustomerFilters = {
   search: '',
   status: 'all',
+  datePreset: 'all',
+  customStartDate: '',
+  customEndDate: '',
 };
 
 export const useCustomerStore = create<CustomerStore>((set, get) => ({
@@ -110,6 +114,19 @@ export const useCustomerStore = create<CustomerStore>((set, get) => ({
 
   setStatusFilter: (status) => {
     set({ filters: { ...get().filters, status }, page: 1 });
+    get().fetchCustomers();
+  },
+
+  setDateRange: (preset, startDate = '', endDate = '') => {
+    set({
+      filters: {
+        ...get().filters,
+        datePreset: preset,
+        customStartDate: startDate,
+        customEndDate: endDate,
+      },
+      page: 1,
+    });
     get().fetchCustomers();
   },
 

@@ -9,22 +9,11 @@ export function CustomersFilters() {
   const setStatusFilter = useCustomerStore((s) => s.setStatusFilter);
   const clearFilters = useCustomerStore((s) => s.clearFilters);
 
-  const hasFilters = filters.status !== "all" || filters.search !== "";
+  const hasFilters = filters.status !== "all" || filters.search !== "" || filters.datePreset !== "all";
 
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-3">
-        <div className="relative flex-1 min-w-[200px] max-w-md">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-          <input
-            type="text"
-            value={filters.search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by name, phone or email..."
-            className="h-10 w-full rounded-xl border border-gray-200 bg-white pl-9 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-300"
-          />
-        </div>
-
         <div className="flex rounded-xl border border-gray-200 bg-white overflow-hidden">
           {(["all", "active", "inactive"] as const).map((val) => {
             const labels = { all: "All", active: "Active", inactive: "Inactive" };
@@ -41,6 +30,17 @@ export function CustomersFilters() {
               </button>
             );
           })}
+        </div>
+
+        <div className="relative flex-1 min-w-[200px] max-w-md">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            value={filters.search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by name, phone or email..."
+            className="h-10 w-full rounded-xl border border-gray-200 bg-white pl-9 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-300"
+          />
         </div>
 
         {hasFilters && (
