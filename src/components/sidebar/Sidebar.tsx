@@ -9,6 +9,7 @@ import {
   ChefHat,
   Clock3,
   UtensilsCrossed,
+  Truck,
   Users,
   CalendarDays,
   CreditCard,
@@ -39,6 +40,7 @@ const navGroups: NavGroup[] = [
     items: [
       { label: "Orders", href: "/orders", icon: ShoppingBag },
       { label: "Kitchen", href: "/kitchen", icon: ChefHat },
+      { label: "Deliveries", href: "/deliveries", icon: Truck },
       { label: "Delivery Slots", href: "/delivery-slots", icon: Clock3 },
     ],
   },
