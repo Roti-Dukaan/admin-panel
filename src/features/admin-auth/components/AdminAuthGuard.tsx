@@ -23,10 +23,11 @@ export function AdminAuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const [allowed, setAllowed] = React.useState<boolean | null>(null)
 
+  const isPublic = PUBLIC_PATHS.includes(pathname) || pathname === "/"
+
   React.useEffect(() => {
     useAdminAuthStore.persist.rehydrate()
     const authed = hasAdminSession()
-    const isPublic = PUBLIC_PATHS.includes(pathname) || pathname === "/"
 
     if (!authed && !isPublic) {
       router.replace("/login")
@@ -39,8 +40,9 @@ export function AdminAuthGuard({ children }: { children: React.ReactNode }) {
       return
     }
     setAllowed(true)
-  }, [pathname, router])
+  }, [pathname, router, isPublic])
 
+  if (isPublic) return <>{children}</>
   if (allowed !== true) return null
   return <>{children}</>
 }

@@ -48,7 +48,7 @@ export function EmailStep({ email, onEmailChange, onContinue, isLoading }: Email
             />
           </div>
           <p className="text-xs text-gray-400">
-            Demo admin: <span className="font-medium text-gray-600">admin@rotidukaan.com</span>
+            Enter your admin email to receive a one-time password.
           </p>
         </div>
 
