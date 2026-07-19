@@ -112,7 +112,7 @@ export function Sidebar({ collapsed = false, onToggle, mobileOpen = false, onMob
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-4 space-y-1" role="navigation" aria-label="Sidebar navigation">
+            <nav className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-4 space-y-1 scrollbar-thin" role="navigation" aria-label="Sidebar navigation">
         {navGroups.map((group) => (
           <SidebarGroup
             key={group.id}
@@ -201,7 +201,7 @@ export function Sidebar({ collapsed = false, onToggle, mobileOpen = false, onMob
               </button>
             </div>
 
-            <nav className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-4 space-y-1" role="navigation" aria-label="Sidebar navigation">
+      <nav className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-4 space-y-1 scrollbar-thin" role="navigation" aria-label="Sidebar navigation">
               {navGroups.map((group) => (
                 <SidebarGroup
                   key={group.id}

@@ -87,7 +87,7 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
+      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1 scrollbar-thin">
         <div className={cn("mb-3", collapsed && "hidden")}>
           <span className="px-3 text-[10px] font-semibold uppercase tracking-widest text-gray-400">
             Main Menu

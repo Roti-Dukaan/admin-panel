@@ -38,3 +38,104 @@
     color: var(--color-foreground);
   }
 }
+
+@layer components {
+  .scrollbar-thin {
+    scrollbar-width: thin !important;
+    scrollbar-color: #d1d5db transparent !important;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 8px !important;
+    height: 8px !important;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent !important;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: #d1d5db !important;
+    border-radius: 9999px !important;
+    border: 2px solid transparent !important;
+    background-clip: padding-box !important;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af !important;
+    border: 2px solid transparent !important;
+    background-clip: padding-box !important;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-button {
+    display: none !important;
+    height: 0 !important;
+    width: 0 !important;
+  }
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #d1d5db transparent;
+}
+
+::-webkit-scrollbar {
+  width: 8px !important;
+  height: 8px !important;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d1d5db !important;
+  border-radius: 9999px !important;
+  border: 2px solid transparent !important;
+  background-clip: padding-box !important;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af !important;
+  border: 2px solid transparent !important;
+  background-clip: padding-box !important;
+}
+
+::-webkit-scrollbar-button {
+  display: none !important;
+  height: 0 !important;
+  width: 0 !important;
+}
+
+aside nav::-webkit-scrollbar {
+  width: 8px !important;
+  height: 8px !important;
+}
+
+aside nav::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+aside nav::-webkit-scrollbar-thumb {
+  background: #d1d5db !important;
+  border-radius: 9999px !important;
+  border: 2px solid transparent !important;
+  background-clip: padding-box !important;
+}
+
+aside nav::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af !important;
+  border: 2px solid transparent !important;
+  background-clip: padding-box !important;
+}
+
+aside nav::-webkit-scrollbar-button {
+  display: none !important;
+  height: 0 !important;
+  width: 0 !important;
+}
+
+aside nav {
+  scrollbar-width: thin !important;
+  scrollbar-color: #d1d5db transparent !important;
+}
