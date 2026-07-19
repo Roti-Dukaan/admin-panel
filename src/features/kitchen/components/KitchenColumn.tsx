@@ -1,5 +1,6 @@
 ﻿"use client";
 
+import { useEffect, useRef, useState } from "react";
 import { Inbox } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -27,6 +28,41 @@ function KitchenCardSkeleton() {
   );
 }
 
+/**
+ * Tracks orders that just left the column so we can animate them out (fade +
+ * slide-down) instead of removing them instantly. Keeps the card mounted for
+ * EXIT_MS, then drops it. Used when an order is delivered and removed from the
+ * live Kitchen Queue in real time.
+ */
+const EXIT_MS = 400;
+
+function useExitingOrders(orders: KitchenOrderView[]) {
+  const prev = useRef<KitchenOrderView[]>(orders);
+  const [exiting, setExiting] = useState<KitchenOrderView[]>([]);
+
+  useEffect(() => {
+    const prevIds = new Set(prev.current.map((o) => o.orderId));
+    const currentIds = new Set(orders.map((o) => o.orderId));
+    const removed = prev.current.filter((o) => !currentIds.has(o.orderId) && prevIds.has(o.orderId));
+
+    if (removed.length > 0) {
+      setExiting((list) => [...list, ...removed]);
+      const timer = setTimeout(() => {
+        setExiting((list) =>
+          list.filter((o) => !removed.some((r) => r.orderId === o.orderId)),
+        );
+      }, EXIT_MS);
+      return () => clearTimeout(timer);
+    }
+    prev.current = orders;
+  }, [orders]);
+
+  // Keep prev in sync when nothing exited (runs every render where removed was empty)
+  if (exiting.length === 0 && prev.current !== orders) prev.current = orders;
+
+  return exiting;
+}
+
 export function KitchenColumn({
   stage,
   orders,
@@ -47,6 +83,12 @@ export function KitchenColumn({
   isLoading: boolean;
 }) {
   const meta = STAGE_META[stage];
+  const exiting = useExitingOrders(orders);
+
+  // Orders currently shown + ones mid-exit animation (so they stay mounted).
+  const exitingSet = new Set(exiting.map((o) => o.orderId));
+  const visibleOrders = orders.filter((o) => !exitingSet.has(o.orderId));
+  const allToRender = [...visibleOrders, ...exiting];
 
   return (
     <section className="flex flex-col overflow-hidden rounded-2xl bg-white/60 ring-1 ring-black/5">
@@ -63,7 +105,7 @@ export function KitchenColumn({
       <div className="space-y-3 p-3">
         {isLoading ? (
           Array.from({ length: 2 }).map((_, i) => <KitchenCardSkeleton key={i} />)
-        ) : orders.length === 0 ? (
+        ) : allToRender.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-3 px-4 py-10 text-center">
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white text-gray-300 ring-1 ring-black/5">
               <Inbox className="h-7 w-7" />
@@ -71,7 +113,7 @@ export function KitchenColumn({
             <p className="text-sm font-medium text-gray-400">No {meta.label.toLowerCase()} kitchen orders</p>
           </div>
         ) : (
-          orders.map((order) => (
+          allToRender.map((order) => (
             <KitchenCard
               key={order.ticketId}
               order={order}
@@ -80,6 +122,7 @@ export function KitchenColumn({
               onOpen={() => onOpen(order)}
               onAction={(action) => onAction(order.orderId, action)}
               isUpdating={updatingId === order.orderId}
+              isExiting={exitingSet.has(order.orderId)}
             />
           ))
         )}
