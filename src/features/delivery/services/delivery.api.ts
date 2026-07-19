@@ -7,10 +7,10 @@ import type {
   DeliveryStatus,
 } from "../types/delivery";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "/api";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
 const api = axios.create({
-  baseURL: `${API_BASE}/v1`,
+  baseURL: `${API_BASE}/api/v1`,
   headers: { "Content-Type": "application/json" },
 });
 
