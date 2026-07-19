@@ -17,7 +17,29 @@ export function FailedPayments() {
   const getFailedPaymentsList = usePaymentStore((s) => s.getFailedPaymentsList);
   const failed = useMemo(() => getFailedPaymentsList(), [getFailedPaymentsList]);
 
-  if (failed.length === 0) return null;
+  if (failed.length === 0) {
+    return (
+      <div className="rounded-xl border border-gray-200/80 bg-white shadow-sm">
+        <div className="flex items-center gap-2 px-6 py-4 border-b border-gray-100">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-50">
+            <XCircle className="h-4 w-4 text-red-600" />
+          </div>
+          <h4 className="text-sm font-bold text-gray-900">Failed Payments</h4>
+        </div>
+        <div className="flex flex-col items-center justify-center gap-3 px-6 py-16 text-center">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-50">
+            <XCircle className="h-6 w-6 text-gray-300" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-gray-700">No failed payments</p>
+            <p className="text-xs text-gray-500 mt-1 max-w-sm">
+              Failed and declined transactions will appear here. Everything looks healthy right now.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <motion.div

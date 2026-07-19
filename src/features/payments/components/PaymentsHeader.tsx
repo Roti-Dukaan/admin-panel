@@ -5,11 +5,10 @@ import { usePaymentStore } from "../hooks/usePayments";
 
 interface PaymentsHeaderProps {
   onExportCSV: () => void;
-  onExportExcel: () => void;
   loading?: boolean;
 }
 
-export function PaymentsHeader({ onExportCSV, onExportExcel, loading = false }: PaymentsHeaderProps) {
+export function PaymentsHeader({ onExportCSV, loading = false }: PaymentsHeaderProps) {
   const refresh = usePaymentStore((s) => s.refresh);
 
   return (
@@ -34,17 +33,10 @@ export function PaymentsHeader({ onExportCSV, onExportExcel, loading = false }: 
         </button>
         <button
           onClick={onExportCSV}
-          className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
-        >
-          <Download className="h-4 w-4" />
-          Export CSV
-        </button>
-        <button
-          onClick={onExportExcel}
           className="inline-flex items-center gap-2 rounded-xl bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-gray-800 transition-colors"
         >
           <Download className="h-4 w-4" />
-          Export Excel
+          Export CSV
         </button>
       </div>
     </div>

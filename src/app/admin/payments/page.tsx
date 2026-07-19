@@ -12,8 +12,9 @@ import { PaymentMethodChart } from "@/features/payments/components/PaymentMethod
 import { CodDashboard } from "@/features/payments/components/CodDashboard";
 import { CodTable } from "@/features/payments/components/CodTable";
 import { FailedPayments } from "@/features/payments/components/FailedPayments";
-import { ExportDialog } from "@/features/payments/components/ExportDialog";
 import { usePaymentStore } from "@/features/payments/hooks/usePayments";
+import { PAYMENT_STATUS_CONFIG, PAYMENT_METHOD_CONFIG } from "@/features/payments/types/payment";
+import { toast } from "sonner";
 
 type TabKey = "transactions" | "cod" | "failed" | "analytics";
 
@@ -26,13 +27,83 @@ const TABS: { key: TabKey; label: string; icon: React.ElementType; count?: numbe
 
 export default function PaymentsPage() {
   const [activeTab, setActiveTab] = useState<TabKey>("transactions");
-  const [exportDialog, setExportDialog] = useState<{ open: boolean; format: 'csv' | 'excel' }>({ open: false, format: 'csv' });
   const refresh = usePaymentStore((s) => s.refresh);
   const loading = usePaymentStore((s) => s.loading);
 
   useEffect(() => {
     refresh();
   }, [refresh]);
+
+  const handleExportCSV = () => {
+    const state = usePaymentStore.getState();
+    const filters = state.filters;
+
+    let rows: Record<string, string>[] = [];
+    let headers: string[] = [];
+
+    if (activeTab === "cod") {
+      const records = state.getFilteredCodRecords();
+      headers = ["Order ID", "Customer", "Phone", "Amount", "Collection Status", "Order Date"];
+      rows = records.map((r) => ({
+        "Order ID": r.orderId,
+        "Customer": r.customerName,
+        "Phone": r.customerPhone,
+        "Amount": r.amount.toString(),
+        "Collection Status": r.collectionStatus,
+        "Order Date": new Date(r.orderDate).toLocaleString("en-IN"),
+      }));
+    } else if (activeTab === "failed") {
+      const records = state.getFailedPaymentsList();
+      headers = ["Payment ID", "Order ID", "Customer", "Phone", "Amount", "Failure Reason", "Method", "Transaction Time"];
+      rows = records.map((r) => ({
+        "Payment ID": r.paymentId,
+        "Order ID": r.orderId,
+        "Customer": r.customerName,
+        "Phone": r.customerPhone,
+        "Amount": r.amount.toString(),
+        "Failure Reason": r.failureReason,
+        "Method": PAYMENT_METHOD_CONFIG[r.paymentMethod]?.label || r.paymentMethod,
+        "Transaction Time": new Date(r.transactionTime).toLocaleString("en-IN"),
+      }));
+    } else {
+      const payments = state.getFilteredPayments();
+      headers = ["Payment ID", "Order ID", "Customer", "Phone", "Amount", "Method", "Status", "Gateway", "Transaction Time"];
+      rows = payments.map((p) => ({
+        "Payment ID": p.paymentId,
+        "Order ID": p.orderId,
+        "Customer": p.customerName,
+        "Phone": p.customerPhone,
+        "Amount": p.amount.toString(),
+        "Method": PAYMENT_METHOD_CONFIG[p.paymentMethod]?.label || p.paymentMethod,
+        "Status": PAYMENT_STATUS_CONFIG[p.paymentStatus]?.label || p.paymentStatus,
+        "Gateway": p.gateway,
+        "Transaction Time": new Date(p.transactionTime).toLocaleString("en-IN"),
+      }));
+    }
+
+    if (rows.length === 0) {
+      toast.error("No data to export for the current filters");
+      return;
+    }
+
+    const escape = (v: string) => `"${v.replace(/"/g, '""')}"`;
+    const csv = [
+      headers.map(escape).join(","),
+      ...rows.map((row) => headers.map((h) => escape(row[h] ?? "")).join(",")),
+    ].join("\n");
+
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    const stamp = new Date().toISOString().slice(0, 10);
+    link.href = url;
+    link.download = `payments-${activeTab}-${stamp}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success(`Exported ${rows.length} record${rows.length === 1 ? "" : "s"} to CSV`);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50/50">
@@ -44,8 +115,7 @@ export default function PaymentsPage() {
           animate={{ opacity: 1, y: 0 }}
         >
           <PaymentsHeader
-            onExportCSV={() => setExportDialog({ open: true, format: 'csv' })}
-            onExportExcel={() => setExportDialog({ open: true, format: 'excel' })}
+            onExportCSV={handleExportCSV}
             loading={loading}
           />
         </motion.div>
@@ -145,14 +215,7 @@ export default function PaymentsPage() {
           )}
           </AnimatePresence>
         </div>
-    </div>
-
-    {/* Export Dialog */}
-      <ExportDialog
-        open={exportDialog.open}
-        onClose={() => setExportDialog({ ...exportDialog, open: false })}
-        format={exportDialog.format}
-      />
+      </div>
     </div>
   );
 }
