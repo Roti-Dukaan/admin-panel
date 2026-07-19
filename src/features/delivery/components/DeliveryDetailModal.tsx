@@ -321,43 +321,43 @@ export function DeliveryDetailModal({
           <div className="bg-gray-50 rounded-xl p-4">
             <h5 className="font-medium text-gray-900 mb-3">Provider Webhook Data</h5>
             <div className="grid grid-cols-2 gap-3 text-sm">
-              {payload.status && (
+              {!!payload.status && (
                 <div>
                   <span className="text-gray-500">Status</span>
                   <p className="font-medium">{String(payload.status)}</p>
                 </div>
               )}
-              {payload.order_status && (
+              {!!payload.order_status && (
                 <div>
                   <span className="text-gray-500">Order Status</span>
                   <p className="font-medium">{String(payload.order_status)}</p>
                 </div>
               )}
-              {payload.courier_name && (
+              {!!payload.courier_name && (
                 <div>
                   <span className="text-gray-500">Courier</span>
                   <p className="font-medium">{String(payload.courier_name)}</p>
                 </div>
               )}
-              {payload.courier_phone && (
+              {!!payload.courier_phone && (
                 <div>
                   <span className="text-gray-500">Courier Phone</span>
                   <p className="font-medium">{String(payload.courier_phone)}</p>
                 </div>
               )}
-              {payload.status_updated_at && (
+              {!!payload.status_updated_at && (
                 <div>
                   <span className="text-gray-500">Last Update</span>
                   <p className="font-medium">{String(payload.status_updated_at)}</p>
                 </div>
               )}
-              {payload.estimated_pickup_time && (
+              {!!payload.estimated_pickup_time && (
                 <div>
                   <span className="text-gray-500">Est. Pickup</span>
                   <p className="font-medium">{String(payload.estimated_pickup_time)}</p>
                 </div>
               )}
-              {payload.estimated_delivery_time && (
+              {!!payload.estimated_delivery_time && (
                 <div>
                   <span className="text-gray-500">Est. Delivery</span>
                   <p className="font-medium">{String(payload.estimated_delivery_time)}</p>
