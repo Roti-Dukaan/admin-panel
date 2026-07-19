@@ -34,11 +34,10 @@ export function SidebarItem({
     return (
       <div
         className={cn(
-          "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-all duration-200",
+          "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-all duration-200",
           "cursor-not-allowed text-gray-300 opacity-50",
           collapsed && "justify-center px-2"
         )}
-        title={collapsed ? tooltip || label : tooltip}
       >
         <Icon className="h-[18px] w-[18px] shrink-0 text-gray-300" />
         {!collapsed && (
@@ -55,13 +54,12 @@ export function SidebarItem({
     <Link
       href={href}
       className={cn(
-        "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-all duration-200",
+        "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-all duration-200",
         isActive
           ? "bg-orange-50 text-orange-600 shadow-sm"
           : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
         collapsed && "justify-center px-2"
       )}
-      title={collapsed ? tooltip || label : tooltip}
       aria-current={isActive ? "page" : undefined}
     >
       <Icon

@@ -105,14 +105,14 @@ export function Sidebar({ collapsed = false, onToggle, mobileOpen = false, onMob
             </div>
           </Link>
         ) : (
-          <Link href="/dashboard" className="h-9 w-9 shrink-0 overflow-hidden rounded-full ring-2 ring-orange-500/20">
+          <Link href="/dashboard" className="h-9 w-9 shrink-0 overflow-hidden rounded-full ring-2 ring-orange-500/20 hover:ring-orange-500/40 transition-all">
             <img src="/roti_dukaan_logo.jpg" alt="Roti Dukaan" className="h-full w-full object-cover" />
           </Link>
         )}
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1" role="navigation" aria-label="Sidebar navigation">
+      <nav className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-4 space-y-1" role="navigation" aria-label="Sidebar navigation">
         {navGroups.map((group) => (
           <SidebarGroup
             key={group.id}
@@ -137,13 +137,17 @@ export function Sidebar({ collapsed = false, onToggle, mobileOpen = false, onMob
         ))}
       </nav>
 
-      {/* Footer */}
-      <div className="border-t border-gray-100 px-3 py-3">
-        <SidebarFooter collapsed={collapsed} />
+      {/* Bottom section: Collapse toggle + Footer */}
+      <div className="mt-auto border-t border-gray-100">
+        {onToggle && (
+          <div className="px-3 pt-3 pb-1">
+            <SidebarCollapseButton collapsed={collapsed} onToggle={onToggle} />
+          </div>
+        )}
+        <div className="px-3 pb-3">
+          <SidebarFooter collapsed={collapsed} />
+        </div>
       </div>
-
-      {/* Collapse Toggle */}
-      {onToggle && <SidebarCollapseButton collapsed={collapsed} onToggle={onToggle} />}
     </>
   )
 
@@ -197,7 +201,7 @@ export function Sidebar({ collapsed = false, onToggle, mobileOpen = false, onMob
               </button>
             </div>
 
-            <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1" role="navigation" aria-label="Sidebar navigation">
+            <nav className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-4 space-y-1" role="navigation" aria-label="Sidebar navigation">
               {navGroups.map((group) => (
                 <SidebarGroup
                   key={group.id}

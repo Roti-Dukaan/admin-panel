@@ -200,6 +200,19 @@ export const kitchenApi = {
   getOrderDetail: (id: string): Promise<KitchenOrderDetail> =>
     unwrap(apiClient.get(`/admin/kitchen/orders/${id}`)),
 
+  /** POST /admin/kitchen/orders/batch — batch fetch full details for multiple order IDs. */
+  batchGetOrderDetails: (ids: string[]): Promise<Record<string, KitchenOrderDetail>> =>
+    unwrap(apiClient.post(`/admin/kitchen/orders/batch`, { ids })).then(
+      (items: unknown) => {
+        const list = (items as KitchenOrderDetail[]) ?? [];
+        const map: Record<string, KitchenOrderDetail> = {};
+        for (const item of list) {
+          map[item.orderId] = item;
+        }
+        return map;
+      }
+    ),
+
   /** PATCH /admin/kitchen/orders/:id/preparing — PENDING → PREPARING. */
   markPreparing: (id: string): Promise<KitchenOrderDetail> =>
     unwrap(apiClient.patch(`/admin/kitchen/orders/${id}/preparing`)),

@@ -38,7 +38,7 @@ export function SidebarProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <SidebarContext.Provider value={{ mobileOpen, setMobileOpen }}>
-      <div className="min-h-screen bg-gray-50/50">
+      <div className="min-h-screen overflow-x-hidden bg-gray-50/50">
         <Sidebar
           collapsed={collapsed}
           onToggle={() => setCollapsed((prev) => !prev)}
