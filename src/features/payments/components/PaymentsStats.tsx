@@ -6,11 +6,7 @@ import {
   IndianRupee,
   CreditCard,
   Banknote,
-  Clock,
   XCircle,
-  RefreshCw,
-  TrendingUp,
-  Receipt,
 } from "lucide-react";
 import { usePaymentStore } from "../hooks/usePayments";
 
@@ -46,45 +42,12 @@ const statCards = [
     format: "currency" as const,
   },
   {
-    key: "pendingPayments" as const,
-    label: "Pending Payments",
-    icon: Clock,
-    color: "text-orange-600",
-    bg: "bg-orange-50",
-    format: "currency" as const,
-  },
-  {
     key: "failedPayments" as const,
     label: "Failed Payments",
     icon: XCircle,
     color: "text-red-600",
     bg: "bg-red-50",
     format: "currency" as const,
-  },
-  {
-    key: "refundedAmount" as const,
-    label: "Refunded (Soon)",
-    icon: RefreshCw,
-    color: "text-violet-600",
-    bg: "bg-violet-50",
-    format: "currency" as const,
-    badge: true,
-  },
-  {
-    key: "averageOrderValue" as const,
-    label: "Avg Order Value",
-    icon: TrendingUp,
-    color: "text-teal-600",
-    bg: "bg-teal-50",
-    format: "currency" as const,
-  },
-  {
-    key: "totalTransactions" as const,
-    label: "Total Transactions",
-    icon: Receipt,
-    color: "text-gray-600",
-    bg: "bg-gray-100",
-    format: "number" as const,
   },
 ];
 
@@ -93,7 +56,7 @@ export function PaymentsStats() {
   const stats = useMemo(() => getStats(), [getStats]);
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
       {statCards.map((card, i) => {
         const Icon = card.icon;
         const value = stats[card.key];
@@ -105,11 +68,6 @@ export function PaymentsStats() {
             transition={{ duration: 0.3, delay: i * 0.04 }}
             className="rounded-xl border border-gray-200/80 bg-white p-4 shadow-sm relative"
           >
-            {card.badge && (
-              <span className="absolute top-2 right-2 rounded-full bg-violet-100 px-1.5 py-0.5 text-[9px] font-bold text-violet-600 uppercase">
-                Soon
-              </span>
-            )}
             <div className="flex items-center gap-3">
               <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${card.bg}`}>
                 <Icon className={`h-4.5 w-4.5 ${card.color}`} />
