@@ -10,7 +10,7 @@ import {
   Tooltip,
 } from "recharts";
 import { Wallet } from "lucide-react";
-import { generatePaymentMethodDistribution } from "../mock/payments";
+import { usePaymentStore } from "../hooks/usePayments";
 
 const COLORS = ["#22c55e", "#3b82f6", "#f59e0b", "#ef4444", "#a855f7", "#14b8a6"];
 
@@ -32,7 +32,8 @@ function CustomTooltip({ active, payload }: any) {
 }
 
 export function PaymentMethodChart() {
-  const rawData = useMemo(() => generatePaymentMethodDistribution(), []);
+  const getMethodDistribution = usePaymentStore((s) => s.getMethodDistribution);
+  const rawData = useMemo(() => getMethodDistribution(), [getMethodDistribution]);
   const total = useMemo(() => rawData.reduce((s, d) => s + d.amount, 0), [rawData]);
 
   const pieData = useMemo(

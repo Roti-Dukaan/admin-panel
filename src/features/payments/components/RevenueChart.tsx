@@ -12,7 +12,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { TrendingUp } from "lucide-react";
-import { generateRevenueTrendData } from "../mock/payments";
+import { usePaymentStore } from "../hooks/usePayments";
 
 type ChartGranularity = 'daily' | 'weekly';
 
@@ -39,7 +39,8 @@ function CustomTooltip({ active, payload, label }: any) {
 }
 
 export function RevenueChart() {
-  const rawData = useMemo(() => generateRevenueTrendData(), []);
+  const getRevenueTrend = usePaymentStore((s) => s.getRevenueTrend);
+  const rawData = useMemo(() => getRevenueTrend(), [getRevenueTrend]);
   const [granularity, setGranularity] = useState<ChartGranularity>('daily');
 
   const chartData = useMemo(() => {

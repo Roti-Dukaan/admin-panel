@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import type { Payment, PaymentFilters, CodRecord, FailedPayment, PaymentStatus, PaymentMethodType } from '../types/payment';
-import { mockCodRecords, mockFailedPayments } from '../mock/payments';
+import type { Payment, PaymentFilters, CodRecord, FailedPayment, CodCollectionStatus, PaymentMethodType } from '../types/payment';
+import { PAYMENT_METHOD_CONFIG } from '../types/payment';
 import { paymentsApi } from '@/lib/api/payments.api';
 
 const now = Date.now();
@@ -42,6 +42,8 @@ interface PaymentStore {
   getCodStats: () => CodStats;
   getFilteredCodRecords: () => CodRecord[];
   getFailedPaymentsList: () => FailedPayment[];
+  getRevenueTrend: () => { label: string; online: number; cod: number; total: number }[];
+  getMethodDistribution: () => { method: string; label: string; amount: number }[];
 }
 
 const initialFilters: PaymentFilters = {
@@ -95,10 +97,49 @@ async function fetchPayments(filters: PaymentFilters): Promise<Payment[]> {
   }
 }
 
+/**
+ * Derive COD records from the real payment list. The backend payment list does
+ * not yet expose a per-payment collection status, so every COD order is treated
+ * as awaiting collection (pending) until collection data is wired up.
+ */
+function toCodRecords(payments: Payment[]): CodRecord[] {
+  return payments
+    .filter((p) => p.paymentMethod === 'cod')
+    .map((p) => ({
+      id: p.id,
+      orderId: p.orderId,
+      customerName: p.customerName,
+      customerPhone: p.customerPhone,
+      amount: p.amount,
+      collectionStatus: 'pending' as CodCollectionStatus,
+      collectedBy: '',
+      collectionTime: null,
+      remarks: '',
+      orderDate: p.transactionTime,
+    }));
+}
+
+function toFailedPayments(payments: Payment[]): FailedPayment[] {
+  return payments
+    .filter((p) => p.paymentStatus === 'failed')
+    .map((p) => ({
+      id: p.id,
+      paymentId: p.paymentId,
+      orderId: p.orderId,
+      customerName: p.customerName,
+      customerPhone: p.customerPhone,
+      amount: p.amount,
+      failureReason: 'Payment failed',
+      paymentMethod: p.paymentMethod,
+      retryStatus: 'not_retried' as const,
+      transactionTime: p.transactionTime,
+    }));
+}
+
 export const usePaymentStore = create<PaymentStore>((set, get) => ({
   payments: [],
-  codRecords: mockCodRecords,
-  failedPayments: mockFailedPayments,
+  codRecords: [],
+  failedPayments: [],
   filters: { ...initialFilters },
   loading: false,
   error: null,
@@ -111,7 +152,12 @@ export const usePaymentStore = create<PaymentStore>((set, get) => ({
     set({ loading: true, error: null });
     try {
       const payments = await fetchPayments(get().filters);
-      set({ payments, loading: false });
+      set({
+        payments,
+        codRecords: toCodRecords(payments),
+        failedPayments: toFailedPayments(payments),
+        loading: false,
+      });
     } catch (e) {
       set({ loading: false, error: e instanceof Error ? e.message : 'Failed to load payments' });
     }
@@ -201,5 +247,47 @@ export const usePaymentStore = create<PaymentStore>((set, get) => ({
   getFailedPaymentsList: () => {
     const { failedPayments } = get();
     return failedPayments;
+  },
+
+  getRevenueTrend: () => {
+    const { payments } = get();
+    const dayMs = 24 * 60 * 60 * 1000;
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    const todayStart = startOfToday.getTime();
+
+    // Build a rolling 30-day series ending today.
+    const buckets: { label: string; online: number; cod: number; total: number }[] = [];
+    for (let i = 29; i >= 0; i--) {
+      const dayStart = todayStart - i * dayMs;
+      const d = new Date(dayStart);
+      const label = d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+      buckets.push({ label, online: 0, cod: 0, total: 0 });
+      const bucket = buckets[buckets.length - 1];
+      for (const p of payments) {
+        if (p.transactionTime >= dayStart && p.transactionTime < dayStart + dayMs) {
+          const amt = p.amount;
+          bucket.total += amt;
+          if (p.paymentMethod === 'cod') bucket.cod += amt;
+          else bucket.online += amt;
+        }
+      }
+    }
+    return buckets;
+  },
+
+  getMethodDistribution: () => {
+    const { payments } = get();
+    const totals: Record<string, number> = {};
+    for (const p of payments) {
+      const method: PaymentMethodType = p.paymentMethod;
+      const amt = p.paymentStatus === 'paid' || p.paymentStatus === 'refunded' ? p.amount : 0;
+      totals[method] = (totals[method] || 0) + amt;
+    }
+    return Object.entries(totals).map(([method, amount]) => ({
+      method,
+      label: PAYMENT_METHOD_CONFIG[method as PaymentMethodType]?.label || method,
+      amount,
+    }));
   },
 }));
