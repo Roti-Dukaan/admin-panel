@@ -33,7 +33,7 @@ interface OrderStore {
 }
 
 const defaultFilters: OrderFilters = {
-  dateFilter: "all",
+  dateFilter: "today",
   customStartDate: "",
   customEndDate: "",
   status: "all",
@@ -96,6 +96,9 @@ export const useOrdersStore = create<OrderStore>((set, get) => ({
         paymentStatus: filters.paymentStatus,
         orderType: filters.orderType,
         search: filters.search,
+        dateFilter: filters.dateFilter,
+        customStartDate: filters.customStartDate,
+        customEndDate: filters.customEndDate,
       });
       set({
         orders: data.items as Order[],

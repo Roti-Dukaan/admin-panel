@@ -2,14 +2,65 @@ import { apiClient } from "./http";
 import type { InvoiceView } from "../../features/orders/types/invoice";
 
 interface OrderListParams {
-  page?: number;
-  limit?: number;
-  status?: string;
-  paymentMethod?: string;
-  paymentStatus?: string;
-  orderType?: string;
-  search?: string;
-  dateFilter?: string;
+  page?: number
+  limit?: number
+  status?: string
+  paymentMethod?: string
+  paymentStatus?: string
+  orderType?: string
+  search?: string
+  dateFilter?: string
+  customStartDate?: string
+  customEndDate?: string
+}
+
+/** Compute [from, to] ISO instants (UTC) for a date preset, reckoned in IST. */
+function resolveDateRange(
+  dateFilter: string | undefined,
+  customStartDate?: string,
+  customEndDate?: string,
+): { dateFrom?: string; dateTo?: string } {
+  if (dateFilter === "custom") {
+    if (!customStartDate || !customEndDate) return {};
+    const start = new Date(`${customStartDate}T00:00:00+05:30`)
+    const end = new Date(`${customEndDate}T23:59:59+05:30`)
+    return { dateFrom: start.toISOString(), dateTo: end.toISOString() }
+  }
+
+  const now = new Date()
+  const istNow = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" }))
+  const startOfTodayIst = new Date(istNow.getFullYear(), istNow.getMonth(), istNow.getDate(), 0, 0, 0, 0)
+  const startOfTodayUtc = new Date(startOfTodayIst.getTime() - istNow.getTime() + now.getTime())
+
+  switch (dateFilter) {
+    case "today": {
+      const to = new Date(startOfTodayUtc.getTime() + 24 * 60 * 60 * 1000)
+      return { dateFrom: startOfTodayUtc.toISOString(), dateTo: to.toISOString() }
+    }
+    case "yesterday": {
+      const from = new Date(startOfTodayUtc.getTime() - 24 * 60 * 60 * 1000)
+      const to = startOfTodayUtc
+      return { dateFrom: from.toISOString(), dateTo: to.toISOString() }
+    }
+    case "7d": {
+      const from = new Date(startOfTodayUtc.getTime() - 7 * 24 * 60 * 60 * 1000)
+      const to = new Date(startOfTodayUtc.getTime() + 24 * 60 * 60 * 1000)
+      return { dateFrom: from.toISOString(), dateTo: to.toISOString() }
+    }
+    case "30d": {
+      const from = new Date(startOfTodayUtc.getTime() - 30 * 24 * 60 * 60 * 1000)
+      const to = new Date(startOfTodayUtc.getTime() + 24 * 60 * 60 * 1000)
+      return { dateFrom: from.toISOString(), dateTo: to.toISOString() }
+    }
+    case "this-month": {
+      const firstOfMonthIst = new Date(istNow.getFullYear(), istNow.getMonth(), 1, 0, 0, 0, 0)
+      const from = new Date(firstOfMonthIst.getTime() - istNow.getTime() + now.getTime())
+      const to = new Date(startOfTodayUtc.getTime() + 24 * 60 * 60 * 1000)
+      return { dateFrom: from.toISOString(), dateTo: to.toISOString() }
+    }
+    default:
+      return {}
+  }
 }
 
 export const ordersApi = {
@@ -22,6 +73,14 @@ export const ordersApi = {
     if (params.paymentStatus && params.paymentStatus !== "all") queryParams.set("paymentStatus", params.paymentStatus);
     if (params.orderType && params.orderType !== "all") queryParams.set("orderType", params.orderType);
     if (params.search) queryParams.set("search", params.search);
+
+    const { dateFrom, dateTo } = resolveDateRange(
+      params.dateFilter,
+      params.customStartDate,
+      params.customEndDate,
+    );
+    if (dateFrom) queryParams.set("dateFrom", dateFrom);
+    if (dateTo) queryParams.set("dateTo", dateTo);
 
     const { data } = await apiClient.get<{ success: boolean; data: { items: unknown[]; total: number; page: number; limit: number } }>(
       `/admin/orders?${queryParams.toString()}`
