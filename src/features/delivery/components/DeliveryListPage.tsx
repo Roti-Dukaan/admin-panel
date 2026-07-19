@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Search, Filter, RefreshCw, ChevronLeft, ChevronRight, Download } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 import type { Delivery, DeliveryFilters, DeliveryStatus, DeliveryProvider } from "@/features/delivery/types/delivery";
 import { DeliveryStatusBadge, DeliveryProviderBadge, DeliveryTypeBadge } from "./DeliveryStatusBadge";
@@ -184,79 +184,12 @@ export function DeliveryListPage() {
     setFilters((prev) => ({ ...prev, page }));
   };
 
-  const handleRefresh = async () => {
-    await fetchData();
-    toast.success("Refreshed");
-  };
-
-  const handleExport = () => {
-    if (deliveries.length === 0) {
-      toast.error("No data to export");
-      return;
-    }
-    const headers = [
-      "Order #",
-      "Customer",
-      "Phone",
-      "Provider",
-      "Status",
-      "Rider",
-      "Address",
-      "Est. Pickup",
-      "Est. Delivery",
-    ];
-    const escape = (value: string) => `"${value.replace(/"/g, '""')}"`;
-    const rows = deliveries.map((d) =>
-      [
-        d.order?.orderNumber ?? d.orderId,
-        customerName(d),
-        customerPhone(d),
-        d.provider,
-        d.status,
-        d.riderName ?? "",
-        formatAddress(d.order?.address),
-        d.estimatedPickupAt ? format(new Date(d.estimatedPickupAt), "yyyy-MM-dd HH:mm") : "",
-        d.estimatedDeliveryAt ? format(new Date(d.estimatedDeliveryAt), "yyyy-MM-dd HH:mm") : "",
-      ]
-        .map((v) => escape(String(v)))
-        .join(",")
-    );
-    const csv = [headers.map(escape).join(","), ...rows].join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `deliveries-page-${pagination.page}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  };
-
   const getStatusFromRow = (row: Delivery) => row.status as DeliveryStatus;
   const getProviderFromRow = (row: Delivery) => row.provider as DeliveryProvider;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Delivery Management</h1>
-            <p className="text-gray-600 mt-1">Track and manage all deliveries</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Button variant="outline" onClick={handleRefresh} disabled={loading} className="gap-2">
-              <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
-              Refresh
-            </Button>
-            <Button variant="outline" onClick={handleExport} className="gap-2">
-              <Download className="w-4 h-4" />
-              Export
-            </Button>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6">
+    <div className="p-6 space-y-6">
+        <div className="bg-white rounded-xl border border-gray-200 p-4">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1 max-w-xs">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -458,7 +391,6 @@ export function DeliveryListPage() {
             </div>
           )}
         </div>
-      </div>
 
       <DeliveryDetailModal
         delivery={selectedDelivery}

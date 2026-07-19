@@ -73,7 +73,7 @@ const navGroups: NavGroup[] = [
     items: [
       { label: "Roles & Permissions", href: "/admin/roles", icon: ShieldCheck },
       { label: "Settings", href: "/settings", icon: Settings },
-      { label: "Audit Logs", href: "/audit-logs", icon: FileClock, disabled: true },
+      { label: "Audit Logs", href: "/audit-logs", icon: FileClock },
     ],
   },
 ]
