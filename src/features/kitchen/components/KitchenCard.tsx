@@ -17,6 +17,7 @@ export function KitchenCard({
   onOpen,
   onAction,
   isUpdating,
+  isExiting,
 }: {
   order: KitchenOrderView;
   detail?: KitchenOrderDetail;
@@ -24,6 +25,7 @@ export function KitchenCard({
   onOpen: () => void;
   onAction: (action: "preparing" | "ready") => void;
   isUpdating: boolean;
+  isExiting?: boolean;
 }) {
   const meta = STAGE_META[order.kitchenStatus];
   const isScheduled = getDeliveryKind(order) === "scheduled";
@@ -48,7 +50,11 @@ export function KitchenCard({
       tabIndex={0}
       onClick={onOpen}
       onKeyDown={handleKeyDown}
-      className="w-full rounded-2xl border border-gray-100 bg-white p-4 text-left shadow-sm transition-shadow hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2"
+      className={cn(
+        "w-full rounded-2xl border border-gray-100 bg-white p-4 text-left shadow-sm transition-shadow hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2",
+        isExiting &&
+          "pointer-events-none opacity-0 translate-y-2 scale-[0.98] transition-all duration-500 ease-in-out",
+      )}
     >
       {detail?.delivery && (
         <div onClick={(e) => e.stopPropagation()}>

@@ -216,10 +216,26 @@ export function useKitchenRealtime(options?: {
       onNewOrderRef.current?.(payload);
     });
 
-    // Listen for delivery status changes (rider arriving, arrived, picked up, etc.)
-    // and invalidate the detail query so the delivery card updates in real-time.
+    // Listen for delivery status changes (rider arriving, arrived, picked up,
+    // delivered, etc.). When a delivery reaches DELIVERED, the order has left
+    // production and must disappear from the live Kitchen Queue immediately —
+    // without a page refresh. We patch the list cache to drop that orderId; the
+    // card animates out (see KitchenColumn exit transition). The order itself is
+    // untouched and remains fully available in the Orders module.
     const offDeliveryUpdated = onRealtime(REALTIME_EVENTS.KITCHEN_DELIVERY_UPDATED, (raw) => {
       const payload = raw as DeliveryUpdatedPayload;
+      // When a delivery reaches DELIVERED, the order has left production and must
+      // disappear from the live Kitchen Queue immediately — without a page refresh.
+      // We patch the list cache to drop that orderId; the card animates out
+      // (see KitchenColumn exit transition). The order itself is untouched and
+      // remains fully available in the Orders module.
+      if (payload.status === "DELIVERED") {
+        qc.setQueriesData<KitchenOrderListResponse>({ queryKey: KITCHEN_QUERY_KEY }, (old) => {
+          if (!old) return old;
+          if (!old.items.some((it) => it.orderId === payload.orderId)) return old;
+          return { ...old, items: old.items.filter((it) => it.orderId !== payload.orderId) };
+        });
+      }
       qc.invalidateQueries({ queryKey: ["kitchen", "detail", payload.orderId] });
     });
 
