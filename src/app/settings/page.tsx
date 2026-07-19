@@ -26,6 +26,8 @@ import {
   Server,
   Shield,
   Zap,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { useSettingsStore } from "@/features/settings/hooks/useSettings";
 import { useDeliveryProviderStore } from "@/features/delivery-providers/hooks/useDeliveryProviders";
@@ -209,6 +211,35 @@ function Input({ value, onChange, type = "text", placeholder, disabled }: {
   );
 }
 
+function SecretInput({ value, onChange, placeholder, disabled }: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  disabled?: boolean;
+}) {
+  const [visible, setVisible] = useState(false);
+  return (
+    <div className="relative">
+      <input
+        type={visible ? "text" : "password"}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        disabled={disabled}
+        className="h-10 w-full rounded-lg border border-gray-200 bg-white px-3 pr-10 text-sm text-gray-900 placeholder:text-gray-400 focus:border-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-300 disabled:opacity-50"
+      />
+      <button
+        type="button"
+        onClick={() => setVisible((v) => !v)}
+        className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600"
+        tabIndex={-1}
+      >
+        {visible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+      </button>
+    </div>
+  );
+}
+
 function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) {
   return (
     <label className="flex items-center justify-between cursor-pointer group">
@@ -216,9 +247,13 @@ function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: 
       <button
         type="button"
         onClick={() => onChange(!checked)}
-        className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors"
+        style={{ backgroundColor: checked ? '#f97316' : '#e5e7eb' }}
+        className="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors"
       >
-        <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${checked ? "translate-x-6 bg-orange-500" : "translate-x-1 bg-gray-300"}`} />
+        <span
+          style={{ transform: checked ? 'translateX(24px)' : 'translateX(4px)' }}
+          className="inline-block h-4 w-4 rounded-full bg-white shadow transition-transform"
+        />
       </button>
     </label>
   );
@@ -417,7 +452,7 @@ function PaymentTab({ saving, onSubmit, data }: { saving: boolean; onSubmit: (d:
             <Input value={form.razorpayKeyId} onChange={(v) => set("razorpayKeyId", v)} placeholder="rzp_test_..." />
           </Field>
           <Field label="Razorpay Key Secret">
-            <Input type="password" value={form.razorpayKeySecret} onChange={(v) => set("razorpayKeySecret", v)} placeholder="Enter secret key" />
+            <SecretInput value={form.razorpayKeySecret} onChange={(v) => set("razorpayKeySecret", v)} placeholder="Enter secret key" />
           </Field>
         </div>
       )}
