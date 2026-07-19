@@ -6,9 +6,10 @@ import { usePaymentStore } from "../hooks/usePayments";
 interface PaymentsHeaderProps {
   onExportCSV: () => void;
   onExportExcel: () => void;
+  loading?: boolean;
 }
 
-export function PaymentsHeader({ onExportCSV, onExportExcel }: PaymentsHeaderProps) {
+export function PaymentsHeader({ onExportCSV, onExportExcel, loading = false }: PaymentsHeaderProps) {
   const refresh = usePaymentStore((s) => s.refresh);
 
   return (
@@ -25,9 +26,10 @@ export function PaymentsHeader({ onExportCSV, onExportExcel }: PaymentsHeaderPro
       <div className="flex items-center gap-2">
         <button
           onClick={refresh}
-          className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
+          disabled={loading}
+          className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-70"
         >
-          <RefreshCw className="h-4 w-4" />
+          <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           Refresh
         </button>
         <button

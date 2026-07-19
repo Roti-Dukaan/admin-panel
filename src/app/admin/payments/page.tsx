@@ -37,11 +37,6 @@ export default function PaymentsPage() {
   return (
     <div className="min-h-screen bg-gray-50/50">
       <div className="p-6 space-y-6">
-        {loading && (
-          <div className="flex items-center justify-center py-12">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-gray-900" />
-          </div>
-        )}
         <div className="space-y-6">
             {/* Header */}
         <motion.div
@@ -51,6 +46,7 @@ export default function PaymentsPage() {
           <PaymentsHeader
             onExportCSV={() => setExportDialog({ open: true, format: 'csv' })}
             onExportExcel={() => setExportDialog({ open: true, format: 'excel' })}
+            loading={loading}
           />
         </motion.div>
 
