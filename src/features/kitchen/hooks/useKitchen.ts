@@ -3,7 +3,6 @@
 import { useMemo, useState, useEffect, useRef } from "react";
 import {
   useQuery,
-  useQueries,
   useMutation,
   useQueryClient,
   keepPreviousData,
@@ -17,6 +16,7 @@ import { playChime, ensureNotificationPermission, showOrderNotification, unlockA
 import { REALTIME_EVENTS, type KitchenTicketCreatedPayload, type KitchenTicketUpdatedPayload, type DeliveryUpdatedPayload } from "@/lib/realtime/events";
 
 const KITCHEN_QUERY_KEY = ["kitchen", "orders"] as const;
+const KITCHEN_DETAIL_QUERY_KEY = ["kitchen", "details"] as const;
 const AUTO_REFRESH_MS = 30_000;
 
 export interface KitchenFilterState {
@@ -48,25 +48,20 @@ export function useKitchenOrders(filters: KitchenFilterState) {
  * Batch-resolve full order detail per order. Powers the payment badge, item
  * lines, variants and special notes shown on each card, and is shared with the
  * drawer so clicking a card opens instantly.
+ *
+ * Uses a single POST /admin/kitchen/orders/batch call instead of N individual
+ * GET requests. Realtime Socket.IO events trigger refetch — no polling.
  */
 export function useKitchenDetailMap(orderIds: string[]) {
-  const queries = useQueries({
-    queries: orderIds.map((id) => ({
-      queryKey: ["kitchen", "detail", id],
-      queryFn: () => kitchenApi.getOrderDetail(id),
-      staleTime: AUTO_REFRESH_MS,
-      refetchInterval: 10_000,
-      enabled: !!id,
-    })),
-  });
+  const sortedIds = useMemo(() => [...orderIds].sort(), [orderIds]);
 
-  return useMemo(() => {
-    const map: Record<string, KitchenOrderDetail | undefined> = {};
-    queries.forEach((q, i) => {
-      if (q.data) map[orderIds[i]] = q.data;
-    });
-    return map;
-  }, [queries, orderIds]);
+  return useQuery({
+    queryKey: [...KITCHEN_DETAIL_QUERY_KEY, sortedIds] as const,
+    queryFn: () => kitchenApi.batchGetOrderDetails(sortedIds),
+    staleTime: AUTO_REFRESH_MS,
+    enabled: sortedIds.length > 0,
+    placeholderData: keepPreviousData,
+  }).data ?? {};
 }
 
 /** Full order detail for the drawer (shares cache with the payment map). */
@@ -213,6 +208,7 @@ export function useKitchenRealtime(options?: {
 
       // Trigger a background refetch to fill in full data
       qc.invalidateQueries({ queryKey: KITCHEN_QUERY_KEY });
+      qc.invalidateQueries({ queryKey: KITCHEN_DETAIL_QUERY_KEY });
       onNewOrderRef.current?.(payload);
     });
 
@@ -224,11 +220,6 @@ export function useKitchenRealtime(options?: {
     // untouched and remains fully available in the Orders module.
     const offDeliveryUpdated = onRealtime(REALTIME_EVENTS.KITCHEN_DELIVERY_UPDATED, (raw) => {
       const payload = raw as DeliveryUpdatedPayload;
-      // When a delivery reaches DELIVERED, the order has left production and must
-      // disappear from the live Kitchen Queue immediately — without a page refresh.
-      // We patch the list cache to drop that orderId; the card animates out
-      // (see KitchenColumn exit transition). The order itself is untouched and
-      // remains fully available in the Orders module.
       if (payload.status === "DELIVERED") {
         qc.setQueriesData<KitchenOrderListResponse>({ queryKey: KITCHEN_QUERY_KEY }, (old) => {
           if (!old) return old;
@@ -236,7 +227,7 @@ export function useKitchenRealtime(options?: {
           return { ...old, items: old.items.filter((it) => it.orderId !== payload.orderId) };
         });
       }
-      qc.invalidateQueries({ queryKey: ["kitchen", "detail", payload.orderId] });
+      qc.invalidateQueries({ queryKey: KITCHEN_DETAIL_QUERY_KEY });
     });
 
     const offUpdated = onRealtime(REALTIME_EVENTS.KITCHEN_TICKET_UPDATED, (raw) => {
@@ -262,7 +253,7 @@ export function useKitchenRealtime(options?: {
           ),
         };
       });
-      qc.invalidateQueries({ queryKey: ["kitchen", "detail", payload.orderId] });
+      qc.invalidateQueries({ queryKey: KITCHEN_DETAIL_QUERY_KEY });
     });
 
     return () => {

@@ -37,7 +37,8 @@ export function SidebarGroup({
 
   if (collapsed) {
     return (
-      <div className="py-1">
+      <div className="py-1.5">
+        <div className="mx-3 my-1 h-px bg-gray-100 first:hidden" />
         {React.Children.map(children, (child) => {
           if (React.isValidElement(child)) {
             return React.cloneElement(child as React.ReactElement<{ collapsed?: boolean }>, {

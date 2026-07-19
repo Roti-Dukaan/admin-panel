@@ -1,6 +1,6 @@
 "use client"
 
-import { ChevronLeft, ChevronRight } from "lucide-react"
+import { PanelLeftClose, PanelLeftOpen } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface SidebarCollapseButtonProps {
@@ -13,16 +13,20 @@ export function SidebarCollapseButton({ collapsed, onToggle }: SidebarCollapseBu
     <button
       onClick={onToggle}
       className={cn(
-        "absolute -right-3 top-20 z-50 flex h-6 w-6 items-center justify-center",
-        "rounded-full border border-gray-200 bg-white shadow-sm",
-        "hover:bg-gray-50 hover:shadow-md transition-all duration-200"
+        "group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-all duration-200",
+        "text-gray-500 hover:bg-gray-100 hover:text-gray-700",
+        collapsed && "justify-center px-2"
       )}
       aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+      title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
     >
       {collapsed ? (
-        <ChevronRight className="h-3 w-3 text-gray-500" />
+        <PanelLeftOpen className="h-[18px] w-[18px] shrink-0 transition-colors" />
       ) : (
-        <ChevronLeft className="h-3 w-3 text-gray-500" />
+        <>
+          <PanelLeftClose className="h-[18px] w-[18px] shrink-0 transition-colors" />
+          <span className="flex-1 text-left">Collapse</span>
+        </>
       )}
     </button>
   )

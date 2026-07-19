@@ -38,7 +38,7 @@ function Drawer({ open, onOpenChange, children }: DrawerProps) {
         className="fixed inset-0 bg-black/40 backdrop-blur-sm transition-opacity"
         onClick={() => onOpenChange(false)}
       />
-      <div className="relative z-50 flex h-full w-full max-w-lg flex-col bg-background shadow-xl animate-in slide-in-from-right duration-300">
+      <div className="relative z-50 flex h-full w-full max-w-3xl flex-col bg-background shadow-xl animate-in slide-in-from-right duration-300">
         {children}
       </div>
     </div>

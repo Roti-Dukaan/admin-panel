@@ -1,4 +1,4 @@
-import axios from "axios";
+import { apiClient } from "@/lib/api/http";
 import type {
   Delivery,
   DeliveryListEntity,
@@ -6,23 +6,6 @@ import type {
   DeliveryStatistics,
   DeliveryStatus,
 } from "../types/delivery";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "/api";
-
-const api = axios.create({
-  baseURL: `${API_BASE}/v1`,
-  headers: { "Content-Type": "application/json" },
-});
-
-api.interceptors.request.use((config) => {
-  if (typeof window !== "undefined") {
-    const token = localStorage.getItem("admin_token");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-  }
-  return config;
-});
 
 export const deliveryApi = {
   list: async (filters: DeliveryFilters = {}): Promise<DeliveryListEntity> => {
@@ -37,24 +20,24 @@ export const deliveryApi = {
     params.append("page", (filters.page || 1).toString());
     params.append("limit", (filters.limit || 10).toString());
 
-    const { data } = await api.get<{ success: boolean; data: DeliveryListEntity }>(
+    const { data } = await apiClient.get<{ success: boolean; data: DeliveryListEntity }>(
       `/admin/deliveries?${params.toString()}`
     );
     return data.data;
   },
 
   getById: async (id: string): Promise<Delivery> => {
-    const { data } = await api.get<{ success: boolean; data: Delivery }>(`/admin/deliveries/${id}`);
+    const { data } = await apiClient.get<{ success: boolean; data: Delivery }>(`/admin/deliveries/${id}`);
     return data.data;
   },
 
   getByOrderId: async (orderId: string): Promise<Delivery> => {
-    const { data } = await api.get<{ success: boolean; data: Delivery }>(`/admin/deliveries/order/${orderId}`);
+    const { data } = await apiClient.get<{ success: boolean; data: Delivery }>(`/admin/deliveries/order/${orderId}`);
     return data.data;
   },
 
   updateStatus: async (id: string, status: DeliveryStatus, remarks?: string): Promise<Delivery> => {
-    const { data } = await api.patch<{ success: boolean; data: Delivery }>(
+    const { data } = await apiClient.patch<{ success: boolean; data: Delivery }>(
       `/admin/deliveries/${id}/status`,
       { status, remarks }
     );
@@ -62,7 +45,7 @@ export const deliveryApi = {
   },
 
   cancel: async (id: string, reason: string): Promise<Delivery> => {
-    const { data } = await api.post<{ success: boolean; data: Delivery }>(
+    const { data } = await apiClient.post<{ success: boolean; data: Delivery }>(
       `/admin/deliveries/${id}/cancel`,
       { reason }
     );
@@ -70,21 +53,21 @@ export const deliveryApi = {
   },
 
   refresh: async (id: string): Promise<Delivery> => {
-    const { data } = await api.post<{ success: boolean; data: Delivery }>(
+    const { data } = await apiClient.post<{ success: boolean; data: Delivery }>(
       `/admin/deliveries/${id}/refresh`
     );
     return data.data;
   },
 
   retry: async (id: string): Promise<Delivery> => {
-    const { data } = await api.post<{ success: boolean; data: Delivery }>(
+    const { data } = await apiClient.post<{ success: boolean; data: Delivery }>(
       `/admin/deliveries/${id}/retry`
     );
     return data.data;
   },
 
   getStats: async (): Promise<DeliveryStatistics> => {
-    const { data } = await api.get<{ success: boolean; data: DeliveryStatistics }>("/admin/deliveries/stats");
+    const { data } = await apiClient.get<{ success: boolean; data: DeliveryStatistics }>("/admin/deliveries/stats");
     return data.data;
   },
 };
