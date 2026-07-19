@@ -19,6 +19,38 @@ interface PaymentStatsResponse {
   totalCollected: number;
 }
 
+/** Convert a date preset (IST-aware) into [dateFrom, dateTo] ISO instants. */
+function resolvePaymentDateRange(
+  dateFilter: string | undefined,
+  customDateFrom?: string,
+  customDateTo?: string,
+): { dateFrom?: string; dateTo?: string } {
+  if (dateFilter === 'custom') {
+    if (!customDateFrom || !customDateTo) return {};
+    const start = new Date(`${customDateFrom}T00:00:00+05:30`);
+    const end = new Date(`${customDateTo}T23:59:59+05:30`);
+    return { dateFrom: start.toISOString(), dateTo: end.toISOString() };
+  }
+
+  const now = new Date();
+  const istNow = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+  const startOfTodayIst = new Date(istNow.getFullYear(), istNow.getMonth(), istNow.getDate(), 0, 0, 0, 0);
+  const startOfTodayUtc = new Date(startOfTodayIst.getTime() - istNow.getTime() + now.getTime());
+  const dayMs = 24 * 60 * 60 * 1000;
+
+  switch (dateFilter) {
+    case 'today':
+      return { dateFrom: startOfTodayUtc.toISOString(), dateTo: new Date(startOfTodayUtc.getTime() + dayMs).toISOString() };
+    case 'yesterday':
+      return { dateFrom: new Date(startOfTodayUtc.getTime() - dayMs).toISOString(), dateTo: startOfTodayUtc.toISOString() };
+    case 'last_7_days':
+      return { dateFrom: new Date(startOfTodayUtc.getTime() - 7 * dayMs).toISOString(), dateTo: new Date(startOfTodayUtc.getTime() + dayMs).toISOString() };
+    case 'last_30_days':
+    default:
+      return { dateFrom: new Date(startOfTodayUtc.getTime() - 30 * dayMs).toISOString(), dateTo: new Date(startOfTodayUtc.getTime() + dayMs).toISOString() };
+  }
+}
+
 function mapBackendStatus(status: string): Payment['paymentStatus'] {
   const map: Record<string, Payment['paymentStatus']> = {
     CAPTURED: 'paid',
@@ -81,6 +113,14 @@ export const paymentsApi = {
     if (filters?.search) params.set('search', filters.search);
     params.set('page', String(filters?.page || 1));
     params.set('limit', String(filters?.limit || 20));
+
+    const { dateFrom, dateTo } = resolvePaymentDateRange(
+      filters?.dateFilter,
+      filters?.customDateFrom,
+      filters?.customDateTo,
+    );
+    if (dateFrom) params.set('dateFrom', dateFrom);
+    if (dateTo) params.set('dateTo', dateTo);
 
     const { data } = await apiClient.get<ApiResponse<PaymentListResponse>>(`/admin/payments?${params.toString()}`);
     if (!data.success) throw new Error(data.message);

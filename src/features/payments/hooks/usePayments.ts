@@ -4,7 +4,6 @@ import { PAYMENT_METHOD_CONFIG } from '../types/payment';
 import { paymentsApi } from '@/lib/api/payments.api';
 
 const now = Date.now();
-const day = 24 * 60 * 60 * 1000;
 
 interface PaymentStats {
   todayRevenue: number;
@@ -55,31 +54,6 @@ const initialFilters: PaymentFilters = {
   customDateFrom: '',
   customDateTo: '',
 };
-
-function isInDateRange(timestamp: number, filter: PaymentFilters): boolean {
-  if (filter.dateFilter === 'custom') {
-    if (!filter.customDateFrom || !filter.customDateTo) return true;
-    const from = new Date(filter.customDateFrom).getTime();
-    const to = new Date(filter.customDateTo).getTime() + day;
-    return timestamp >= from && timestamp <= to;
-  }
-
-  const startOfDay = new Date();
-  startOfDay.setHours(0, 0, 0, 0);
-  const todayStart = startOfDay.getTime();
-
-  switch (filter.dateFilter) {
-    case 'today':
-      return timestamp >= todayStart;
-    case 'yesterday':
-      return timestamp >= todayStart - day && timestamp < todayStart;
-    case 'last_7_days':
-      return timestamp >= todayStart - 7 * day;
-    case 'last_30_days':
-    default:
-      return true;
-  }
-}
 
 async function fetchPayments(filters: PaymentFilters): Promise<Payment[]> {
   try {
@@ -189,8 +163,6 @@ export const usePaymentStore = create<PaymentStore>((set, get) => ({
     if (filters.gateway !== 'all') {
       filtered = filtered.filter((p) => p.gateway === filters.gateway);
     }
-
-    filtered = filtered.filter((p) => isInDateRange(p.transactionTime, filters));
 
     return filtered;
   },
