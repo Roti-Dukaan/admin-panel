@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { X, MapPin, Phone, Truck, Clock, User, Package, Map, ExternalLink, CheckCircle, AlertCircle, RefreshCw } from "lucide-react";
+import { useState } from "react";
+import { X, Phone, Truck, User, Package, Map, ExternalLink, CheckCircle, AlertCircle, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
 import type { DeliveryTracking, DeliveryOrder, DeliveryAddress } from "@/features/delivery/types/delivery";
 import { DeliveryStatusBadge, DeliveryProviderBadge } from "./DeliveryStatusBadge";
@@ -11,9 +11,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Drawer, DrawerHeader, DrawerTitle, DrawerContent, DrawerFooter, DrawerClose } from "@/components/ui/drawer";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 
 const STATUS_ORDER = [
   "WAITING_FOR_KITCHEN",
@@ -67,15 +68,6 @@ export function DeliveryDetailModal({
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [remarks, setRemarks] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
-
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = "hidden";
-    }
-    return () => {
-      document.body.style.overflow = "unset";
-    };
-  }, [isOpen]);
 
   if (!delivery || !isOpen) return null;
 
@@ -180,7 +172,7 @@ export function DeliveryDetailModal({
   const canUpdate = delivery.status !== "DELIVERED" && delivery.status !== "FAILED" && delivery.status !== "CANCELLED";
 
   const renderTimelineTab = () => (
-    <TabsContent value="timeline" className="space-y-4">
+    <TabsContent value="timeline" className="space-y-4 mt-4">
       <div className="relative">
         {timelineEntries.map((entry, index) => {
           const config = TIMELINE_CONFIG[entry.status] || TIMELINE_CONFIG.PENDING;
@@ -218,41 +210,39 @@ export function DeliveryDetailModal({
   );
 
   const renderDetailsTab = () => (
-    <TabsContent value="details" className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="space-y-4">
-          <h4 className="font-semibold text-gray-900 border-b pb-2">Order Information</h4>
-          <div className="space-y-3 text-sm">
-            <div className="flex justify-between"><span className="text-gray-500">Order Number</span><span className="font-mono font-medium">{order?.orderNumber}</span></div>
-            <div className="flex justify-between"><span className="text-gray-500">Delivery ID</span><span className="font-mono font-medium text-xs">{delivery.id}</span></div>
-            <div className="flex justify-between"><span className="text-gray-500">Provider</span><DeliveryProviderBadge provider={delivery.provider as any} size="sm" /></div>
-            {delivery.providerShipmentId && (
-              <div className="flex justify-between"><span className="text-gray-500">Shipment ID</span><span className="font-mono text-xs font-medium">{delivery.providerShipmentId}</span></div>
-            )}
-            {delivery.trackingNumber && (
-              <div className="flex justify-between"><span className="text-gray-500">Tracking #</span><span className="font-mono text-xs font-medium">{delivery.trackingNumber}</span></div>
-            )}
-            <div className="flex justify-between"><span className="text-gray-500">Created</span><span>{format(new Date(delivery.createdAt), "MMM d, yyyy HH:mm")}</span></div>
-            <div className="flex justify-between"><span className="text-gray-500">Last Updated</span><span>{format(new Date(delivery.updatedAt), "MMM d, yyyy HH:mm")}</span></div>
-          </div>
+    <TabsContent value="details" className="space-y-6 mt-4">
+      <div className="space-y-4">
+        <h4 className="font-semibold text-gray-900 border-b pb-2">Order Information</h4>
+        <div className="space-y-3 text-sm">
+          <div className="flex justify-between"><span className="text-gray-500">Order Number</span><span className="font-mono font-medium">{order?.orderNumber}</span></div>
+          <div className="flex justify-between"><span className="text-gray-500">Delivery ID</span><span className="font-mono font-medium text-xs">{delivery.id}</span></div>
+          <div className="flex justify-between"><span className="text-gray-500">Provider</span><DeliveryProviderBadge provider={delivery.provider as any} size="sm" /></div>
+          {delivery.providerShipmentId && (
+            <div className="flex justify-between"><span className="text-gray-500">Shipment ID</span><span className="font-mono text-xs font-medium">{delivery.providerShipmentId}</span></div>
+          )}
+          {delivery.trackingNumber && (
+            <div className="flex justify-between"><span className="text-gray-500">Tracking #</span><span className="font-mono text-xs font-medium">{delivery.trackingNumber}</span></div>
+          )}
+          <div className="flex justify-between"><span className="text-gray-500">Created</span><span>{format(new Date(delivery.createdAt), "MMM d, yyyy HH:mm")}</span></div>
+          <div className="flex justify-between"><span className="text-gray-500">Last Updated</span><span>{format(new Date(delivery.updatedAt), "MMM d, yyyy HH:mm")}</span></div>
         </div>
+      </div>
 
-        <div className="space-y-4">
-          <h4 className="font-semibold text-gray-900 border-b pb-2">Timing</h4>
-          <div className="space-y-3 text-sm">
-            {delivery.estimatedPickupAt && (
-              <div className="flex justify-between"><span className="text-gray-500">Est. Pickup</span><span>{format(new Date(delivery.estimatedPickupAt), "MMM d, HH:mm")}</span></div>
-            )}
-            {delivery.actualPickupAt && (
-              <div className="flex justify-between text-amber-700"><span className="text-gray-500">Actual Pickup</span><span className="font-medium">{format(new Date(delivery.actualPickupAt), "MMM d, HH:mm")}</span></div>
-            )}
-            {delivery.estimatedDeliveryAt && (
-              <div className="flex justify-between"><span className="text-gray-500">Est. Delivery</span><span>{format(new Date(delivery.estimatedDeliveryAt), "MMM d, HH:mm")}</span></div>
-            )}
-            {delivery.actualDeliveryAt && (
-              <div className="flex justify-between text-emerald-700"><span className="text-gray-500">Actual Delivery</span><span className="font-medium">{format(new Date(delivery.actualDeliveryAt), "MMM d, HH:mm")}</span></div>
-            )}
-          </div>
+      <div className="space-y-4">
+        <h4 className="font-semibold text-gray-900 border-b pb-2">Timing</h4>
+        <div className="space-y-3 text-sm">
+          {delivery.estimatedPickupAt && (
+            <div className="flex justify-between"><span className="text-gray-500">Est. Pickup</span><span>{format(new Date(delivery.estimatedPickupAt), "MMM d, HH:mm")}</span></div>
+          )}
+          {delivery.actualPickupAt && (
+            <div className="flex justify-between text-amber-700"><span className="text-gray-500">Actual Pickup</span><span className="font-medium">{format(new Date(delivery.actualPickupAt), "MMM d, HH:mm")}</span></div>
+          )}
+          {delivery.estimatedDeliveryAt && (
+            <div className="flex justify-between"><span className="text-gray-500">Est. Delivery</span><span>{format(new Date(delivery.estimatedDeliveryAt), "MMM d, HH:mm")}</span></div>
+          )}
+          {delivery.actualDeliveryAt && (
+            <div className="flex justify-between text-emerald-700"><span className="text-gray-500">Actual Delivery</span><span className="font-medium">{format(new Date(delivery.actualDeliveryAt), "MMM d, HH:mm")}</span></div>
+          )}
         </div>
       </div>
 
@@ -273,7 +263,7 @@ export function DeliveryDetailModal({
       {(delivery.riderName || delivery.riderPhone) && (
         <div className="space-y-4">
           <h4 className="font-semibold text-gray-900 border-b pb-2">Rider Information</h4>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-50 rounded-xl p-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-gray-50 rounded-xl p-4">
             {delivery.riderName && (
               <div>
                 <p className="text-sm text-gray-500">Name</p>
@@ -298,70 +288,110 @@ export function DeliveryDetailModal({
         </div>
       )}
 
-      {(delivery.trackingUrl || delivery.riderTrackingUrl) && (
-        <div className="flex justify-end gap-4">
-          {delivery.riderTrackingUrl && (
-            <a
-              href={delivery.riderTrackingUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 text-emerald-600 hover:underline text-sm"
-            >
-              <Map className="w-4 h-4" />
-              Live Rider Tracking
-            </a>
-          )}
-          {delivery.trackingUrl && (
-            <a
-              href={delivery.trackingUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 text-indigo-600 hover:underline text-sm"
-            >
-              <ExternalLink className="w-4 h-4" />
-              View on {delivery.provider} Tracking
-            </a>
-          )}
-        </div>
-      )}
     </TabsContent>
   );
 
-  const renderMapTab = () => (
-    <TabsContent value="map" className="space-y-4">
-      <div className="aspect-video bg-gray-100 rounded-xl flex items-center justify-center">
-        <div className="text-center text-gray-500">
-          <Map className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-          <p>Map view coming soon</p>
-          <p className="text-sm">Integration with Google Maps / Mapbox</p>
-        </div>
-      </div>
-      {delivery.riderName && delivery.webhookPayload && (
-        <div className="bg-gray-50 rounded-xl p-4 text-sm">
-          <h5 className="font-medium mb-2">Last Known Location</h5>
-          <pre className="overflow-auto max-h-40">{JSON.stringify(delivery.webhookPayload, null, 2)}</pre>
-        </div>
-      )}
-    </TabsContent>
-  );
+  const renderMapTab = () => {
+    const trackingUrl = delivery.trackingUrl;
+    const payload = delivery.webhookPayload as Record<string, unknown> | undefined;
+
+    return (
+      <TabsContent value="map" className="space-y-4 mt-4">
+        {trackingUrl ? (
+          <a
+            href={trackingUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 transition-colors"
+          >
+            <ExternalLink className="w-4 h-4" />
+            Track on {delivery.provider}
+          </a>
+        ) : (
+          <div className="aspect-video bg-gray-100 rounded-xl flex items-center justify-center border border-dashed border-gray-300">
+            <div className="text-center text-gray-500">
+              <Map className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+              <p className="font-medium">No tracking link available</p>
+              <p className="text-sm mt-1">Tracking URL will appear once a courier is assigned</p>
+            </div>
+          </div>
+        )}
+
+        {payload && Object.keys(payload).length > 0 && (
+          <div className="bg-gray-50 rounded-xl p-4">
+            <h5 className="font-medium text-gray-900 mb-3">Provider Webhook Data</h5>
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              {payload.status && (
+                <div>
+                  <span className="text-gray-500">Status</span>
+                  <p className="font-medium">{String(payload.status)}</p>
+                </div>
+              )}
+              {payload.order_status && (
+                <div>
+                  <span className="text-gray-500">Order Status</span>
+                  <p className="font-medium">{String(payload.order_status)}</p>
+                </div>
+              )}
+              {payload.courier_name && (
+                <div>
+                  <span className="text-gray-500">Courier</span>
+                  <p className="font-medium">{String(payload.courier_name)}</p>
+                </div>
+              )}
+              {payload.courier_phone && (
+                <div>
+                  <span className="text-gray-500">Courier Phone</span>
+                  <p className="font-medium">{String(payload.courier_phone)}</p>
+                </div>
+              )}
+              {payload.status_updated_at && (
+                <div>
+                  <span className="text-gray-500">Last Update</span>
+                  <p className="font-medium">{String(payload.status_updated_at)}</p>
+                </div>
+              )}
+              {payload.estimated_pickup_time && (
+                <div>
+                  <span className="text-gray-500">Est. Pickup</span>
+                  <p className="font-medium">{String(payload.estimated_pickup_time)}</p>
+                </div>
+              )}
+              {payload.estimated_delivery_time && (
+                <div>
+                  <span className="text-gray-500">Est. Delivery</span>
+                  <p className="font-medium">{String(payload.estimated_delivery_time)}</p>
+                </div>
+              )}
+            </div>
+
+            <details className="mt-4">
+              <summary className="text-xs text-gray-500 cursor-pointer hover:text-gray-700">Raw JSON</summary>
+              <pre className="mt-2 text-xs bg-white rounded-lg p-3 overflow-auto max-h-48 border border-gray-200">
+                {JSON.stringify(payload, null, 2)}
+              </pre>
+            </details>
+          </div>
+        )}
+      </TabsContent>
+    );
+  };
 
   return (
     <>
-      <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-4xl max-h-[90vh] p-0">
-          <DialogHeader className="p-4 border-b bg-gray-50">
-            <div className="flex items-center justify-between">
-              <DialogTitle className="text-lg font-semibold text-gray-900 flex items-center gap-3">
-                Delivery Details
-                <DeliveryStatusBadge status={delivery.status as any} size="md" />
-              </DialogTitle>
-              <Button variant="ghost" size="icon" onClick={onClose}>
-                <X className="w-5 h-5 text-gray-500" />
-              </Button>
-            </div>
-          </DialogHeader>
+      <Drawer open={isOpen} onOpenChange={onClose}>
+        <DrawerHeader className="border-b">
+          <div className="flex items-center justify-between w-full">
+            <DrawerTitle className="flex items-center gap-3">
+              Delivery Details
+              <DeliveryStatusBadge status={delivery.status as any} size="md" />
+            </DrawerTitle>
+            <DrawerClose onClick={onClose} />
+          </div>
+        </DrawerHeader>
 
-          <div className="p-4 space-y-6 overflow-y-auto max-h-[calc(90vh-200px)]">
+        <DrawerContent>
+          <div className="space-y-6">
             {delivery.status === "PROVIDER_ASSIGNMENT_FAILED" && (
               <div className="flex items-start gap-3 rounded-xl border border-rose-200 bg-rose-50 p-4">
                 <AlertCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
@@ -398,13 +428,15 @@ export function DeliveryDetailModal({
               {renderMapTab()}
             </Tabs>
           </div>
+        </DrawerContent>
 
-          <DialogFooter className="p-4 border-t bg-gray-50 gap-3">
+        <DrawerFooter className="border-t px-6 py-3">
+          <div className="flex items-center gap-2">
             {canUpdate && onUpdateStatus && (
-              <div className="flex-1 flex items-center gap-3">
+              <>
                 <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                  <SelectTrigger className="w-full max-w-xs">
-                    <SelectValue placeholder="Update Status" />
+                  <SelectTrigger className="w-[160px] h-8 text-xs">
+                    <SelectValue placeholder="Status" />
                   </SelectTrigger>
                   <SelectContent>
                     {STATUS_ORDER
@@ -417,41 +449,44 @@ export function DeliveryDetailModal({
                   </SelectContent>
                 </Select>
                 <Input
-                  placeholder="Remarks (optional)"
+                  placeholder="Remarks"
                   value={remarks}
                   onChange={(e) => setRemarks(e.target.value)}
-                  className="w-full max-w-md"
+                  className="flex-1 h-8 text-xs min-w-0"
                 />
                 <Button
+                  size="sm"
                   onClick={() => selectedStatus && handleStatusUpdate(selectedStatus)}
                   disabled={!selectedStatus || isUpdating}
+                  className="h-8 shrink-0"
                 >
-                  {isUpdating ? "Updating..." : "Update Status"}
+                  {isUpdating ? "Updating..." : "Update"}
                 </Button>
-              </div>
+                <div className="w-px h-5 bg-gray-200 shrink-0" />
+              </>
             )}
-
             <Button
               variant="outline"
+              size="sm"
               onClick={() => onRefresh?.()}
               disabled={!onRefresh || isUpdating}
-              className="gap-2"
+              className="h-8 gap-1 text-xs shrink-0"
             >
-              <RefreshCw className={`w-4 h-4 ${isUpdating ? "animate-spin" : ""}`} />
-              Refresh Status
+              <RefreshCw className={`w-3 h-3 ${isUpdating ? "animate-spin" : ""}`} />
+              Refresh
             </Button>
-
             <Button
               variant="outline"
+              size="sm"
               onClick={() => setShowCancelDialog(true)}
               disabled={!canUpdate || isUpdating}
-              className="text-red-600 hover:bg-red-50"
+              className="h-8 text-xs text-red-600 hover:bg-red-50 shrink-0"
             >
-              Cancel Delivery
+              Cancel
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </div>
+        </DrawerFooter>
+      </Drawer>
 
       <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
         <DialogContent className="max-w-md">
