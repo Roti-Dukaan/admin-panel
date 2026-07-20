@@ -10,12 +10,13 @@ import {
   type SortingState,
 } from "@tanstack/react-table";
 import { ArrowUpDown, ArrowUp, ArrowDown, Eye, Copy, Download } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { usePaymentStore } from "../hooks/usePayments";
 import { PaymentStatusBadge } from "./PaymentStatusBadge";
 import type { Payment, PaymentMethodType } from "../types/payment";
 import { PAYMENT_METHOD_CONFIG } from "../types/payment";
 import { toast } from "sonner";
+import { ordersApi } from "@/lib/api/orders.api";
+import { InvoiceCard } from "@/features/orders/components/InvoiceCard";
 
 function formatDateTime(ts: number) {
   return new Date(ts).toLocaleDateString('en-IN', {
@@ -37,9 +38,9 @@ function getMethodLabel(method: PaymentMethodType) {
 
 export function PaymentsTable() {
   const getFilteredPayments = usePaymentStore((s) => s.getFilteredPayments);
+  const openPaymentDrawer = usePaymentStore((s) => s.openPaymentDrawer);
   const payments = useMemo(() => getFilteredPayments(), [getFilteredPayments]);
   const [sorting, setSorting] = useState<SortingState>([]);
-  const router = useRouter();
 
   const columns = useMemo<ColumnDef<Payment>[]>(
     () => [
@@ -154,7 +155,7 @@ export function PaymentsTable() {
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  router.push(`/admin/payments/${p.id}`);
+                  openPaymentDrawer(p);
                 }}
                 className="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
               >
@@ -164,10 +165,19 @@ export function PaymentsTable() {
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  toast.success("Receipt download started (placeholder)");
+                  ordersApi
+                    .getInvoice(p.orderId)
+                    .then((view) => {
+                      if (view.invoice?.downloadUrl) {
+                        window.open(view.invoice.downloadUrl, "_blank", "noopener,noreferrer");
+                      } else {
+                        toast.error("Invoice not available yet");
+                      }
+                    })
+                    .catch(() => toast.error("Could not fetch invoice"));
                 }}
                 className="inline-flex items-center rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-gray-500 hover:bg-gray-50 transition-colors"
-                title="Download Receipt"
+                title="Download Invoice"
               >
                 <Download className="h-3 w-3" />
               </button>
@@ -187,7 +197,7 @@ export function PaymentsTable() {
         },
       },
     ],
-    [router]
+    [openPaymentDrawer]
   );
 
   const table = useReactTable({
@@ -234,7 +244,7 @@ export function PaymentsTable() {
                 <tr
                   key={row.id}
                   className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors cursor-pointer"
-                  onClick={() => router.push(`/admin/payments/${row.original.id}`)}
+                  onClick={() => openPaymentDrawer(row.original)}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <td key={cell.id} className="px-4 py-3">

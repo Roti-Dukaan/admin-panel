@@ -12,6 +12,7 @@ import { PaymentMethodChart } from "@/features/payments/components/PaymentMethod
 import { CodDashboard } from "@/features/payments/components/CodDashboard";
 import { CodTable } from "@/features/payments/components/CodTable";
 import { FailedPayments } from "@/features/payments/components/FailedPayments";
+import { PaymentDrawer } from "@/features/payments/components/PaymentDrawer";
 import { usePaymentStore } from "@/features/payments/hooks/usePayments";
 import { PAYMENT_STATUS_CONFIG, PAYMENT_METHOD_CONFIG } from "@/features/payments/types/payment";
 import { toast } from "sonner";
@@ -67,9 +68,10 @@ export default function PaymentsPage() {
       }));
     } else {
       const payments = state.getFilteredPayments();
-      headers = ["Payment ID", "Order ID", "Customer", "Phone", "Amount", "Method", "Status", "Gateway", "Transaction Time"];
+      headers = ["Payment ID", "ID", "Order ID", "Customer", "Phone", "Amount", "Method", "Status", "Gateway", "Transaction Time"];
       rows = payments.map((p) => ({
         "Payment ID": p.paymentId,
+        "ID": p.id,
         "Order ID": p.orderId,
         "Customer": p.customerName,
         "Phone": p.customerPhone,
@@ -216,6 +218,7 @@ export default function PaymentsPage() {
           </AnimatePresence>
         </div>
       </div>
+      <PaymentDrawer />
     </div>
   );
 }

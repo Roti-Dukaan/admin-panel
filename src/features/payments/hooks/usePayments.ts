@@ -30,10 +30,15 @@ interface PaymentStore {
   filters: PaymentFilters;
   loading: boolean;
   error: string | null;
+  drawerOpen: boolean;
+  selectedPayment: Payment | null;
 
   setFilters: (filters: Partial<PaymentFilters>) => void;
   clearFilters: () => void;
   refresh: () => Promise<void>;
+
+  openPaymentDrawer: (payment: Payment) => void;
+  closePaymentDrawer: () => void;
 
   getFilteredPayments: () => Payment[];
   getPaymentById: (id: string) => Payment | undefined;
@@ -117,10 +122,16 @@ export const usePaymentStore = create<PaymentStore>((set, get) => ({
   filters: { ...initialFilters },
   loading: false,
   error: null,
+  drawerOpen: false,
+  selectedPayment: null,
 
   setFilters: (newFilters) => set((state) => ({ filters: { ...state.filters, ...newFilters } })),
 
   clearFilters: () => set({ filters: { ...initialFilters } }),
+
+  openPaymentDrawer: (payment) => set({ drawerOpen: true, selectedPayment: payment }),
+
+  closePaymentDrawer: () => set({ drawerOpen: false, selectedPayment: null }),
 
   refresh: async () => {
     set({ loading: true, error: null });
