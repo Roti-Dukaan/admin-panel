@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { LayoutDashboard, TrendingUp, CalendarDays, BarChart3, FileText, Bell } from "lucide-react";
 import { OpsDashboardTab } from "@/features/subscriptions/components/ops/OpsDashboardTab";
 import { OpsForecastTab } from "@/features/subscriptions/components/ops/OpsForecastTab";
 import { OpsCalendarTab } from "@/features/subscriptions/components/ops/OpsCalendarTab";
@@ -30,12 +31,12 @@ export default function SubscriptionOperationsPage() {
 
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList className="flex flex-wrap gap-1">
-          <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-          <TabsTrigger value="forecast">Forecast</TabsTrigger>
-          <TabsTrigger value="calendar">Calendar</TabsTrigger>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
-          <TabsTrigger value="reports">Reports</TabsTrigger>
-          <TabsTrigger value="alerts">Alerts</TabsTrigger>
+          <TabsTrigger value="dashboard" className="gap-1.5"><LayoutDashboard className="h-4 w-4" />Dashboard</TabsTrigger>
+          <TabsTrigger value="forecast" className="gap-1.5"><TrendingUp className="h-4 w-4" />Forecast</TabsTrigger>
+          <TabsTrigger value="calendar" className="gap-1.5"><CalendarDays className="h-4 w-4" />Calendar</TabsTrigger>
+          <TabsTrigger value="analytics" className="gap-1.5"><BarChart3 className="h-4 w-4" />Analytics</TabsTrigger>
+          <TabsTrigger value="reports" className="gap-1.5"><FileText className="h-4 w-4" />Reports</TabsTrigger>
+          <TabsTrigger value="alerts" className="gap-1.5"><Bell className="h-4 w-4" />Alerts</TabsTrigger>
         </TabsList>
 
         <div className="mt-4">

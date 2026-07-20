@@ -1,15 +1,45 @@
 "use client";
 
+import { Wheat, Salad, Drumstick, ListChecks } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import type { ProductionPlan } from "../types";
+
+function SummaryTile({
+  icon: Icon,
+  value,
+  label,
+  tint,
+}: {
+  icon: React.ElementType;
+  value: number;
+  label: string;
+  tint: "amber" | "emerald" | "rose";
+}) {
+  const tintMap = {
+    amber: "bg-amber-50 text-amber-600 ring-amber-100",
+    emerald: "bg-emerald-50 text-emerald-600 ring-emerald-100",
+    rose: "bg-rose-50 text-rose-600 ring-rose-100",
+  } as const;
+  return (
+    <Card>
+      <CardContent className="flex items-center gap-3 p-4">
+        <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ring-1 ${tintMap[tint]}`}>
+          <Icon className="h-5 w-5" />
+        </span>
+        <div>
+          <div className="text-xl font-bold leading-none text-foreground">{value}</div>
+          <div className="mt-1 text-xs text-muted-foreground">{label}</div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 export function FoodSummary({ plan }: { plan?: ProductionPlan }) {
   if (!plan) {
     return <p className="text-sm text-muted-foreground">Loading food summary…</p>;
   }
 
-  // Aggregate quantities per food item across all slots.
   const map = new Map<string, { foodName: string; category: string | null; isVeg: boolean | null; qty: number }>();
   (["breakfast", "lunch", "dinner"] as const).forEach((slot) => {
     for (const it of plan.bySlot[slot]) {
@@ -32,52 +62,46 @@ export function FoodSummary({ plan }: { plan?: ProductionPlan }) {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-        <Card>
-          <CardContent className="pt-5">
-            <div className="text-2xl font-bold">{rotis}</div>
-            <div className="text-sm text-muted-foreground">Total Rotis</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-5">
-            <div className="text-2xl font-bold">{plan.summary.vegMeals}</div>
-            <div className="text-sm text-muted-foreground">Veg Meals</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-5">
-            <div className="text-2xl font-bold">{plan.summary.nonVegMeals}</div>
-            <div className="text-sm text-muted-foreground">Non-Veg Meals</div>
-          </CardContent>
-        </Card>
+        <SummaryTile icon={Wheat} value={rotis} label="Total Rotis" tint="amber" />
+        <SummaryTile icon={Salad} value={plan.summary.vegMeals} label="Veg Meals" tint="emerald" />
+        <SummaryTile icon={Drumstick} value={plan.summary.nonVegMeals} label="Non-Veg Meals" tint="rose" />
       </div>
 
       <Card>
-        <CardHeader className="pb-2">
+        <CardHeader className="flex flex-row items-center gap-2 border-b border-border pb-3">
+          <ListChecks className="h-4 w-4 text-teal-600" />
           <CardTitle className="text-base">Food Consumption (aggregated)</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-left text-muted-foreground">
-                  <th className="py-2 pr-4 font-medium">Food Item</th>
-                  <th className="py-2 pr-4 font-medium">Category</th>
-                  <th className="py-2 pr-4 font-medium">Type</th>
-                  <th className="py-2 pr-4 font-medium text-right">Quantity</th>
+                <tr className="text-left text-xs uppercase tracking-wide text-muted-foreground">
+                  <th className="px-4 py-2.5 font-medium">Food Item</th>
+                  <th className="px-4 py-2.5 font-medium">Category</th>
+                  <th className="px-4 py-2.5 font-medium">Type</th>
+                  <th className="px-4 py-2.5 text-right font-medium">Quantity</th>
                 </tr>
               </thead>
               <tbody>
                 {rows.map((r, i) => (
-                  <tr key={`${r.foodName}-${i}`} className="border-t">
-                    <td className="py-2 pr-4 font-medium">{r.foodName}</td>
-                    <td className="py-2 pr-4 text-muted-foreground">{r.category ?? "—"}</td>
-                    <td className="py-2 pr-4">
-                      <Badge className={r.isVeg === null ? "bg-gray-100 text-gray-600" : r.isVeg ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"}>
-                        {r.isVeg === null ? "—" : r.isVeg ? "Veg" : "Non-Veg"}
-                      </Badge>
+                  <tr key={`${r.foodName}-${i}`} className="border-t border-border/60 last:border-0 hover:bg-muted/40">
+                    <td className="px-4 py-2.5 font-medium text-foreground">{r.foodName}</td>
+                    <td className="px-4 py-2.5 text-muted-foreground">{r.category ?? "—"}</td>
+                    <td className="px-4 py-2.5">
+                      {r.isVeg === null ? (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      ) : r.isVeg ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 ring-1 ring-emerald-100">
+                          Veg
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-xs font-medium text-rose-700 ring-1 ring-rose-100">
+                          Non-Veg
+                        </span>
+                      )}
                     </td>
-                    <td className="py-2 pr-4 text-right font-semibold">{r.qty}</td>
+                    <td className="px-4 py-2.5 text-right font-semibold text-foreground">{r.qty}</td>
                   </tr>
                 ))}
               </tbody>

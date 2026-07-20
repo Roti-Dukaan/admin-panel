@@ -41,10 +41,10 @@ export function SubscriptionsTable({ subscriptions, loading, onSelect }: Subscri
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+    <div className="overflow-hidden rounded-xl border border-border bg-card">
       <Table>
         <TableHeader>
-          <TableRow className="bg-gray-50/80">
+          <TableRow className="bg-muted/50 hover:bg-muted/50">
             <TableHead>Customer</TableHead>
             <TableHead>Plan</TableHead>
             <TableHead>Frequency</TableHead>
@@ -62,27 +62,27 @@ export function SubscriptionsTable({ subscriptions, loading, onSelect }: Subscri
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.02 }}
               onClick={() => onSelect(sub)}
-              className="cursor-pointer border-b transition-colors hover:bg-orange-50/40"
+              className="cursor-pointer border-b border-border/60 transition-colors hover:bg-teal-50/50"
             >
               <TableCell>
                 <div className="flex items-center gap-2">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-orange-100 text-orange-600">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-teal-100 text-teal-700">
                     <User className="h-4 w-4" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-gray-900">
+                    <p className="text-sm font-semibold text-foreground">
                       {sub.customer?.fullName || sub.customer?.name || "Customer"}
                     </p>
-                    <p className="text-xs text-gray-400">{sub.customer?.phone || "—"}</p>
+                    <p className="text-xs text-muted-foreground">{sub.customer?.phone || "—"}</p>
                   </div>
                 </div>
               </TableCell>
               <TableCell>
-                <p className="text-sm font-medium text-gray-800">{sub.planName}</p>
-                <p className="text-xs text-gray-400">Auto-renew {sub.autoRenew ? "on" : "off"}</p>
+                <p className="text-sm font-medium text-foreground">{sub.planName}</p>
+                <p className="text-xs text-muted-foreground">Auto-renew {sub.autoRenew ? "on" : "off"}</p>
               </TableCell>
               <TableCell>
-                <span className="inline-flex items-center gap-1 rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700">
+                <span className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-1 text-xs font-medium text-foreground">
                   {FREQUENCY_LABELS[sub.frequency]}
                 </span>
               </TableCell>
@@ -90,26 +90,26 @@ export function SubscriptionsTable({ subscriptions, loading, onSelect }: Subscri
                 <SubscriptionStatusBadge status={sub.status} />
               </TableCell>
               <TableCell>
-                <div className="flex items-center gap-1.5 text-sm text-gray-600">
-                  <CalendarDays className="h-3.5 w-3.5 text-gray-400" />
+                <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                  <CalendarDays className="h-3.5 w-3.5 text-muted-foreground/70" />
                   {formatDate(sub.nextOccurrenceDate)}
                 </div>
               </TableCell>
               <TableCell>
-                <div className="flex flex-col gap-0.5 text-xs text-gray-500">
+                <div className="flex flex-col gap-0.5 text-xs text-muted-foreground">
                   <span className="flex items-center gap-1">
-                    <Clock className="h-3 w-3 text-gray-400" />
+                    <Clock className="h-3 w-3 text-muted-foreground/70" />
                     {sub.deliverySlot?.name || "—"}
                   </span>
                   <span className="flex items-center gap-1">
-                    <MapPin className="h-3 w-3 text-gray-400" />
+                    <MapPin className="h-3 w-3 text-muted-foreground/70" />
                     {sub.address
                       ? [sub.address.city, sub.address.pincode].filter(Boolean).join(", ") || "Address"
                       : "—"}
                   </span>
                 </div>
               </TableCell>
-              <TableCell className="text-right text-sm font-medium text-gray-700">{sub.quantity}</TableCell>
+              <TableCell className="text-right text-sm font-semibold text-foreground">{sub.quantity}</TableCell>
             </motion.tr>
           ))}
         </TableBody>

@@ -162,8 +162,8 @@ export function SubscriptionDrawer() {
                   onClick={() => setTab(t.key)}
                   className={`inline-flex items-center gap-1.5 border-b-2 px-3 py-2 text-sm font-medium transition-colors ${
                     tab === t.key
-                      ? "border-orange-500 text-orange-600"
-                      : "border-transparent text-gray-500 hover:text-gray-800"
+                      ? "border-primary text-primary"
+                      : "border-transparent text-muted-foreground hover:text-foreground"
                   }`}
                 >
                   <t.icon className="h-4 w-4" />
@@ -481,10 +481,10 @@ function TimelineTab({
     return <div className="py-10 text-center text-sm text-gray-400">No timeline entries.</div>;
   }
   return (
-    <div className="relative space-y-4 border-l border-gray-200 pl-5">
-      {timeline.map((t) => (
-        <div key={t.id} className="relative">
-          <span className="absolute -left-[1.4rem] top-1 h-2.5 w-2.5 rounded-full bg-orange-400 ring-4 ring-orange-50" />
+      <div className="relative space-y-4 border-l border-border pl-5">
+        {timeline.map((t) => (
+          <div key={t.id} className="relative">
+            <span className="absolute -left-[1.4rem] top-1 h-2.5 w-2.5 rounded-full bg-primary ring-4 ring-teal-50" />
           <p className="text-sm font-medium text-gray-800">{t.title}</p>
           {t.description && <p className="text-xs text-gray-500">{t.description}</p>}
           <p className="text-[11px] text-gray-400">
@@ -506,12 +506,12 @@ function InfoCard({
   value: string;
 }) {
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-3">
-      <div className="flex items-center gap-1.5 text-xs text-gray-400">
+    <div className="rounded-xl border border-border bg-card p-3">
+      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
         <Icon className="h-3.5 w-3.5" />
         {label}
       </div>
-      <p className="mt-1 text-sm font-semibold text-gray-800">{value}</p>
+      <p className="mt-1 text-sm font-semibold text-foreground">{value}</p>
     </div>
   );
 }

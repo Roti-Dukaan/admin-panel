@@ -21,7 +21,7 @@ export function Header({ title, subtitle, titleNode, dateFilter, actions, showSe
 
   return (
     <header className={cn("sticky top-0 z-30 flex h-16 items-center justify-between border-b border-gray-100 bg-white/80 backdrop-blur-xl px-6", className)}>
-      <div className="flex items-center gap-4">
+      <div className="flex min-w-0 items-center gap-4">
         <button
           onClick={() => setMobileOpen(true)}
           className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 lg:hidden"
@@ -33,21 +33,21 @@ export function Header({ title, subtitle, titleNode, dateFilter, actions, showSe
           <div className="min-w-0">{titleNode}</div>
         ) : (
           title && (
-            <div>
-              <h1 className="text-lg font-semibold text-gray-900">{title}</h1>
-              {subtitle && <p className="text-sm text-gray-500">{subtitle}</p>}
+            <div className="min-w-0">
+              <h1 className="truncate text-lg font-semibold text-gray-900">{title}</h1>
+              {subtitle && <p className="truncate text-sm text-gray-500">{subtitle}</p>}
             </div>
           )
         )}
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center justify-end gap-3">
         {dateFilter}
         {actions}
 
         {/* Search */}
         {showSearch && (
-          <div className={cn("relative transition-all duration-200", searchFocused ? "w-64" : "w-44")}>
+          <div className={cn("relative transition-all duration-200", searchFocused ? "w-56" : "w-40")}>
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
             <input
               type="text"

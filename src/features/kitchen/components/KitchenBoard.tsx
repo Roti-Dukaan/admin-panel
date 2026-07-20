@@ -175,7 +175,7 @@ const isLoading = query.isLoading;
 
 <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <SlotSelector slots={slotOptions} value={slot} onChange={setSlot} />
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="flex flex-wrap items-center gap-3 lg:flex-1 lg:justify-end">
           <KitchenStatusSelector />
           <SearchBar value={search} onChange={setSearch} />
           <QuickFilters

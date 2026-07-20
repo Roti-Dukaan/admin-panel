@@ -34,7 +34,7 @@ export function ForecastPanel() {
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="rounded-lg border border-gray-300 py-2 pl-9 pr-3 text-sm text-gray-700 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
+              className="rounded-lg border border-border bg-background py-2 pl-9 pr-3 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
             />
           </div>
           <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
@@ -48,7 +48,7 @@ export function ForecastPanel() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
-              <ChefHat className="h-5 w-5 text-orange-500" /> Kitchen Forecast
+              <ChefHat className="h-5 w-5 text-teal-600" /> Kitchen Forecast
             </CardTitle>
           </CardHeader>
           <CardContent>

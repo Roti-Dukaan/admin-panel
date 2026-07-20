@@ -47,7 +47,7 @@ export default function SubscriptionsPage() {
         actions={
           <button
             onClick={() => refetch()}
-            className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
+            className="inline-flex items-center gap-2 rounded-xl border border-border bg-white px-4 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
           >
             <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
             Refresh
@@ -69,18 +69,18 @@ export default function SubscriptionsPage() {
                 value={filters.search}
                 onChange={(e) => setFilters({ search: e.target.value })}
                 placeholder="Search by customer or plan..."
-                className="h-10 w-full rounded-xl border border-gray-200 bg-white pl-9 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-300"
+                className="h-10 w-full rounded-xl border border-border bg-white pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30"
               />
             </div>
-            <div className="flex gap-1.5">
+            <div className="flex flex-wrap gap-1.5">
               {STATUS_FILTERS.map((status) => (
                 <button
                   key={status.key}
                   onClick={() => setFilters({ status: status.key })}
                   className={`rounded-xl px-3.5 py-2 text-xs font-semibold transition-all ${
                     filters.status === status.key
-                      ? "bg-gray-900 text-white"
-                      : "border border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "border border-border bg-white text-muted-foreground hover:bg-muted"
                   }`}
                 >
                   {status.label}
@@ -109,17 +109,17 @@ export default function SubscriptionsPage() {
             <button
               disabled={filters.page <= 1}
               onClick={() => setFilters({ page: filters.page - 1 })}
-              className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-600 disabled:opacity-40"
+              className="rounded-xl border border-border bg-white px-4 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-muted disabled:opacity-40"
             >
               Previous
             </button>
-            <span className="text-sm text-gray-500">
+            <span className="text-sm text-muted-foreground">
               Page {data.page} of {data.totalPages}
             </span>
             <button
               disabled={filters.page >= data.totalPages}
               onClick={() => setFilters({ page: filters.page + 1 })}
-              className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-600 disabled:opacity-40"
+              className="rounded-xl border border-border bg-white px-4 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-muted disabled:opacity-40"
             >
               Next
             </button>

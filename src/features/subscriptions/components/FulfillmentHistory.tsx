@@ -33,9 +33,9 @@ export function FulfillmentHistory() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-base">
-          <History className="h-5 w-5 text-orange-500" /> Fulfillment Run History
-        </CardTitle>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <History className="h-5 w-5 text-teal-600" /> Fulfillment Run History
+          </CardTitle>
       </CardHeader>
       <CardContent>
         {isLoading ? (
@@ -47,8 +47,8 @@ export function FulfillmentHistory() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-200 text-left text-[11px] uppercase tracking-wide text-gray-400">
+               <thead>
+                <tr className="border-b border-border text-left text-[11px] uppercase tracking-wide text-muted-foreground">
                   <th className="px-2 py-2">Target Date</th>
                   <th className="px-2 py-2">Status</th>
                   <th className="px-2 py-2">Scanned</th>
@@ -62,7 +62,7 @@ export function FulfillmentHistory() {
               </thead>
               <tbody>
                 {jobs.map((job: FulfillmentJob) => (
-                  <tr key={job.id} className="border-b border-gray-100 last:border-0">
+                  <tr key={job.id} className="border-b border-border/60 transition-colors last:border-0 hover:bg-muted/40">
                     <td className="px-2 py-2 font-medium text-gray-800">
                       {new Date(job.targetDate).toLocaleDateString("en-IN")}
                     </td>
