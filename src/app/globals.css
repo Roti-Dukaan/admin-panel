@@ -10,7 +10,7 @@
   --color-card-foreground: #111827;
   --color-popover: #ffffff;
   --color-popover-foreground: #111827;
-  --color-primary: #14b8a6;
+  --color-primary: #D97706;
   --color-primary-foreground: #ffffff;
   --color-secondary: #f59e0b;
   --color-secondary-foreground: #111827;
@@ -22,9 +22,22 @@
   --color-destructive-foreground: #ffffff;
   --color-border: #e5e7eb;
   --color-input: #e5e7eb;
-  --color-ring: #14b8a6;
+  --color-ring: #D97706;
 
   --radius: 0.5rem;
+
+  /* Brand orange — anchored to the logo color (#D97706) so every
+     orange-* utility renders the same brand amber across the app. */
+  --color-orange-50: #FEF6EC;
+  --color-orange-100: #FDE9CF;
+  --color-orange-200: #FBD49B;
+  --color-orange-300: #F8B85E;
+  --color-orange-400: #F4A032;
+  --color-orange-500: #D97706;
+  --color-orange-600: #B45309;
+  --color-orange-700: #92400E;
+  --color-orange-800: #7C2D12;
+  --color-orange-900: #5C1F0A;
 }
 
 @layer base {
