@@ -6,11 +6,18 @@ export type SubscriptionStatus =
   | "EXPIRED"
   | "FAILED";
 
-export type SubscriptionFrequency = "DAILY" | "ALTERNATE" | "WEEKLY" | "MONTHLY" | "CUSTOM";
+export type SubscriptionFrequency =
+  | "DAILY"
+  | "ALTERNATE_DAYS"
+  | "WEEKLY"
+  | "MONTHLY"
+  | "CUSTOM_DAYS"
+  | "FLEXIBLE";
 
 export type SubscriptionOccurrenceStatus =
   | "SCHEDULED"
   | "PROCESSED"
+  | "GENERATED"
   | "SKIPPED"
   | "PAUSED"
   | "VACATION"
@@ -62,15 +69,29 @@ export interface SubscriptionEntity {
   pausedAt: string | null;
   pausedReason: string | null;
   resumeAt: string | null;
+  resumedAt: string | null;
+  totalPausedDays: number;
   vacationStart: string | null;
   vacationEnd: string | null;
+  vacationReason: string | null;
+  vacationDays: number;
+  skippedDays: number;
   nextOccurrenceDate: string | null;
+  nextGenerationDate: string | null;
+  lastGeneratedDate: string | null;
+  originalStartDate: string | null;
+  originalEndDate: string | null;
+  effectiveEndDate: string | null;
+  pausedDays: number;
   occurrencesGenerated: number;
   skippedCount: number;
   deliverySlotId: string | null;
   addressId: string | null;
   quantity: number;
   autoRenew: boolean;
+  billingStatus: string;
+  notes: string | null;
+  createdByAdminId: string | null;
   cancelReason: string | null;
   cancelledAt: string | null;
   createdAt: string;
@@ -130,6 +151,23 @@ export interface SubscriptionFilters {
   limit: number;
 }
 
+export interface CreateSubscriptionAdminDto {
+  customerId: string;
+  planId?: string;
+  startDate: string;
+  deliveryAddressId: string;
+  deliverySlotId: string;
+  quantity: number;
+  frequency: SubscriptionFrequency;
+  activeDays?: number[];
+  monthlyDays?: number[];
+  customDays?: number[];
+  mealSelection?: string[];
+  autoRenew?: boolean;
+  paymentMethod?: "ONLINE" | "COD";
+  notes?: string;
+}
+
 export interface SubscriptionAnalyticsOverview {
   totalActive: number;
   totalPaused: number;
@@ -182,15 +220,30 @@ export interface DeliveryForecast {
 export interface FulfillmentResult {
   targetDate: string;
   jobId: string;
+  mealSlot?: string;
   subscriptionsScanned: number;
   occurrencesPlanned: number;
   ordersCreated: number;
-  ordersFailed: number;
-  inventoryReserved: number;
-  kitchenForecastId: string | null;
-  deliveryForecastId: string | null;
-  durationMs: number;
-  errors: string[];
+  deliveriesCreated: number;
+  skipped: number;
+  failed: number;
+}
+
+export interface FulfillmentJob {
+  id: string;
+  targetDate: string;
+  windowStart: string;
+  windowEnd: string;
+  status: string;
+  subscriptionsScanned: number;
+  occurrencesPlanned: number;
+  ordersCreated: number;
+  deliveriesCreated: number;
+  skipped: number;
+  failed: number;
+  triggeredBy: string;
+  startedAt: string;
+  finishedAt: string | null;
 }
 
 export const SUBSCRIPTION_STATUS_CONFIG: Record<
@@ -211,6 +264,7 @@ export const OCCURRENCE_STATUS_CONFIG: Record<
 > = {
   SCHEDULED: { label: "Scheduled", variant: "pending" },
   PROCESSED: { label: "Processed", variant: "success" },
+  GENERATED: { label: "Generated", variant: "info" },
   SKIPPED: { label: "Skipped", variant: "secondary" },
   PAUSED: { label: "Paused", variant: "warning" },
   VACATION: { label: "Vacation", variant: "info" },
@@ -220,8 +274,99 @@ export const OCCURRENCE_STATUS_CONFIG: Record<
 
 export const FREQUENCY_LABELS: Record<SubscriptionFrequency, string> = {
   DAILY: "Daily",
-  ALTERNATE: "Alternate Day",
+  ALTERNATE_DAYS: "Alternate Day",
   WEEKLY: "Weekly",
   MONTHLY: "Monthly",
-  CUSTOM: "Custom",
+  CUSTOM_DAYS: "Custom Days",
+  FLEXIBLE: "Flexible",
 };
+
+// ── Subscription Operations Dashboard types ──
+export interface SubscriptionOpsDashboard {
+  total: number;
+  active: number;
+  paused: number;
+  onVacation: number;
+  cancelled: number;
+  expired: number;
+  expiringToday: number;
+  expiringThisWeek: number;
+  renewalsDue: number;
+  todayOrders: number;
+  tomorrowOrders: number;
+  thisWeekForecast: {
+    totalMeals: number;
+    byDay: { date: string; totalMeals: number; expectedDeliveries: number; utilizationPct: number }[];
+  };
+}
+
+export interface KitchenOpsForecast {
+  date: string;
+  totalMeals: number;
+  mealsBySlot: Record<string, number>;
+  expectedDeliveries: number;
+  kitchenCapacity: number;
+  utilizationPct: number;
+  meals: {
+    totalRotis: number;
+    vegMeals: number;
+    nonVegMeals: number;
+    specialMeals: number;
+    bySlot: Record<string, { total: number; veg: number; nonVeg: number; special: number; rotis: number }>;
+  };
+}
+
+export interface DeliveryOpsForecast {
+  date: string;
+  totalDeliveries: number;
+  byProvider: Record<string, number>;
+  bySlot: Record<string, number>;
+  byZone: Record<string, number>;
+  byPincode: Record<string, number>;
+  capacityPct: number;
+}
+
+export interface SubscriptionOpsCalendarDay {
+  date: string;
+  newSubscriptions: number;
+  expiring: number;
+  paused: number;
+  vacation: number;
+  renewals: number;
+  skipped: number;
+  kitchenLoad: number;
+}
+
+export interface SubscriptionOpsCalendar {
+  year: number;
+  month: number;
+  days: SubscriptionOpsCalendarDay[];
+}
+
+export interface SubscriptionOpsAnalytics {
+  growth: { date: string; count: number }[];
+  cancellations: { date: string; count: number }[];
+  pauseRate: number;
+  vacationRate: number;
+  churnRate: number;
+  renewalRate: number;
+  retentionRate: number;
+  avgSubscriptionDurationDays: number;
+  mealsDelivered: number;
+  revenue: number;
+}
+
+export interface AdminAlert {
+  id: string;
+  type: string;
+  severity: string;
+  title: string;
+  message: string;
+  source?: string;
+  refId?: string;
+  isRead: boolean;
+  isResolved: boolean;
+  metadata?: any;
+  createdAt: string;
+  resolvedAt?: string;
+}

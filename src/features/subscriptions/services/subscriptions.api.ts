@@ -10,6 +10,13 @@ import type {
   KitchenForecast,
   DeliveryForecast,
   FulfillmentResult,
+  FulfillmentJob,
+  SubscriptionOpsDashboard,
+  KitchenOpsForecast,
+  DeliveryOpsForecast,
+  SubscriptionOpsCalendar,
+  SubscriptionOpsAnalytics,
+  AdminAlert,
 } from "../types/subscription";
 
 function normalizePage<T>(res: any): PaginatedResponse<T> {
@@ -57,11 +64,58 @@ export const subscriptionsApi = {
     return (data?.data ?? data) as SubscriptionEntity;
   },
 
-  async runFulfillment(targetDate?: string, triggeredBy = "ADMIN") {
+  async pause(id: string, reason?: string) {
+    const { data } = await apiClient.post(`/admin/subscriptions/${id}/pause`, { reason });
+    return (data?.data ?? data) as SubscriptionEntity;
+  },
+
+  async resume(id: string) {
+    const { data } = await apiClient.post(`/admin/subscriptions/${id}/resume`, {});
+    return (data?.data ?? data) as SubscriptionEntity;
+  },
+
+  async startVacation(id: string, startDate: string, endDate: string, reason?: string) {
+    const { data } = await apiClient.post(`/admin/subscriptions/${id}/vacation`, {
+      startDate,
+      endDate,
+      reason,
+    });
+    return (data?.data ?? data) as SubscriptionEntity;
+  },
+
+  async endVacation(id: string) {
+    const { data } = await apiClient.post(`/admin/subscriptions/${id}/vacation/end`, {});
+    return (data?.data ?? data) as SubscriptionEntity;
+  },
+
+  async skip(id: string, occurrenceDate: string) {
+    const { data } = await apiClient.post(`/admin/subscriptions/${id}/skip`, { occurrenceDate });
+    return (data?.data ?? data) as SubscriptionEntity;
+  },
+
+  async runFulfillment(targetDate?: string, triggeredBy = "ADMIN", mealSlot?: string) {
     const { data } = await apiClient.post("/admin/subscriptions/fulfillment/run", {
       targetDate,
       triggeredBy,
+      mealSlot,
     });
+    return (data?.data ?? data) as FulfillmentResult;
+  },
+
+  async listFulfillmentJobs(page = 1, limit = 20) {
+    const { data } = await apiClient.get("/admin/subscriptions/fulfillment/jobs", {
+      params: { page: String(page), limit: String(limit) },
+    });
+    return {
+      items: (data?.data ?? []) as FulfillmentJob[],
+      total: data?.total ?? 0,
+      page: data?.page ?? page,
+      limit: data?.limit ?? limit,
+    };
+  },
+
+  async retryFulfillmentJob(id: string) {
+    const { data } = await apiClient.post(`/admin/subscriptions/fulfillment/jobs/${id}/retry`);
     return (data?.data ?? data) as FulfillmentResult;
   },
 
@@ -97,5 +151,57 @@ export const subscriptionsApi = {
       kitchen: KitchenForecast | null;
       delivery: DeliveryForecast | null;
     };
+  },
+
+  // ── Subscription Operations ──
+  async getOpsDashboard() {
+    const { data } = await apiClient.get("/admin/subscription-operations/dashboard");
+    return (data?.data ?? data) as SubscriptionOpsDashboard;
+  },
+  async getOpsKitchenForecast(date?: string) {
+    const params: Record<string, string> = {};
+    if (date) params.date = date;
+    const { data } = await apiClient.get("/admin/subscription-operations/kitchen-forecast", { params });
+    return (data?.data ?? data) as KitchenOpsForecast;
+  },
+  async getOpsKitchenForecastRange(from: string, to: string) {
+    const { data } = await apiClient.get("/admin/subscription-operations/kitchen-forecast/range", {
+      params: { from, to },
+    });
+    return (data?.data ?? data) as KitchenOpsForecast[];
+  },
+  async getOpsDeliveryForecast(date?: string) {
+    const params: Record<string, string> = {};
+    if (date) params.date = date;
+    const { data } = await apiClient.get("/admin/subscription-operations/delivery-forecast", { params });
+    return (data?.data ?? data) as DeliveryOpsForecast;
+  },
+  async getOpsCalendar(year: number, month: number) {
+    const { data } = await apiClient.get("/admin/subscription-operations/calendar", { params: { year, month } });
+    return (data?.data ?? data) as SubscriptionOpsCalendar;
+  },
+  async getOpsAnalytics(days = 30) {
+    const { data } = await apiClient.get("/admin/subscription-operations/analytics", { params: { days } });
+    return (data?.data ?? data) as SubscriptionOpsAnalytics;
+  },
+  async getOpsAlerts(resolved?: boolean) {
+    const params: Record<string, string> = {};
+    if (resolved !== undefined) params.resolved = String(resolved);
+    const { data } = await apiClient.get("/admin/subscription-operations/alerts", { params });
+    return (data?.data ?? data) as AdminAlert[];
+  },
+  async detectOpsAlerts() {
+    const { data } = await apiClient.post("/admin/subscription-operations/alerts/detect");
+    return (data?.data ?? data) as AdminAlert[];
+  },
+  async resolveOpsAlert(id: string) {
+    const { data } = await apiClient.patch(`/admin/subscription-operations/alerts/${id}/resolve`);
+    return (data?.data ?? data) as AdminAlert;
+  },
+  async exportOpsReport(opts: { type: string; format: "csv" | "excel" | "pdf"; dateFrom?: string; dateTo?: string }) {
+    const { data } = await apiClient.post("/admin/subscription-operations/reports/export", opts, {
+      responseType: "blob",
+    });
+    return data as Blob;
   },
 };

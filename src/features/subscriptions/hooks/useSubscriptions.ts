@@ -1,6 +1,8 @@
 import { create } from "zustand";
+import React from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { subscriptionsApi } from "../services/subscriptions.api";
+import { connectRealtime, disconnectRealtime, onRealtime } from "@/lib/realtime/socket";
 import type {
   SubscriptionEntity,
   SubscriptionFilters,
@@ -121,14 +123,178 @@ export function useCancelSubscription() {
   });
 }
 
+function useLifecycleMutation(
+  fn: (params: { id: string; reason?: string; startDate?: string; endDate?: string; occurrenceDate?: string }) => Promise<SubscriptionEntity>,
+) {
+  const queryClient = useQueryClient();
+  const setSelected = useSubscriptionsStore((s) => s.setSelectedSubscription);
+  return useMutation({
+    mutationFn: fn,
+    onSuccess: (data) => {
+      setSelected(data);
+      queryClient.invalidateQueries({ queryKey: ["admin-subscriptions"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-subscriptions-dashboard"] });
+    },
+  });
+}
+
+export function usePauseSubscription() {
+  return useLifecycleMutation(({ id, reason }) => subscriptionsApi.pause(id, reason));
+}
+
+export function useResumeSubscription() {
+  return useLifecycleMutation(({ id }) => subscriptionsApi.resume(id));
+}
+
+export function useStartVacation() {
+  return useLifecycleMutation(({ id, startDate, endDate, reason }) =>
+    subscriptionsApi.startVacation(id, startDate!, endDate!, reason),
+  );
+}
+
+export function useEndVacation() {
+  return useLifecycleMutation(({ id }) => subscriptionsApi.endVacation(id));
+}
+
+export function useSkipDelivery() {
+  return useLifecycleMutation(({ id, occurrenceDate }) => subscriptionsApi.skip(id, occurrenceDate!));
+}
+
 export function useRunFulfillment() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ targetDate, triggeredBy }: { targetDate?: string; triggeredBy?: string }) =>
-      subscriptionsApi.runFulfillment(targetDate, triggeredBy),
+    mutationFn: ({
+      targetDate,
+      triggeredBy,
+      mealSlot,
+    }: {
+      targetDate?: string;
+      triggeredBy?: string;
+      mealSlot?: string;
+    }) => subscriptionsApi.runFulfillment(targetDate, triggeredBy, mealSlot),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-subscriptions"] });
       queryClient.invalidateQueries({ queryKey: ["admin-subscriptions-forecast"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-subscriptions-fulfillment-jobs"] });
     },
   });
+}
+
+export function useFulfillmentJobs(page = 1, limit = 20) {
+  return useQuery({
+    queryKey: ["admin-subscriptions-fulfillment-jobs", page, limit],
+    queryFn: () => subscriptionsApi.listFulfillmentJobs(page, limit),
+    staleTime: 15_000,
+  });
+}
+
+export function useRetryFulfillmentJob() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => subscriptionsApi.retryFulfillmentJob(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-subscriptions-fulfillment-jobs"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-subscriptions"] });
+    },
+  });
+}
+
+// ── Subscription Operations ──
+export function useOpsDashboard() {
+  return useQuery({
+    queryKey: ["admin-ops-dashboard"],
+    queryFn: () => subscriptionsApi.getOpsDashboard(),
+    staleTime: 20_000,
+    refetchInterval: 30_000,
+  });
+}
+
+export function useOpsKitchenForecast(date?: string) {
+  return useQuery({
+    queryKey: ["admin-ops-kitchen", date],
+    queryFn: () => subscriptionsApi.getOpsKitchenForecast(date),
+    staleTime: 20_000,
+    refetchInterval: 30_000,
+  });
+}
+
+export function useOpsKitchenRange(from: string, to: string) {
+  return useQuery({
+    queryKey: ["admin-ops-kitchen-range", from, to],
+    queryFn: () => subscriptionsApi.getOpsKitchenForecastRange(from, to),
+    staleTime: 60_000,
+  });
+}
+
+export function useOpsDeliveryForecast(date?: string) {
+  return useQuery({
+    queryKey: ["admin-ops-delivery", date],
+    queryFn: () => subscriptionsApi.getOpsDeliveryForecast(date),
+    staleTime: 20_000,
+    refetchInterval: 30_000,
+  });
+}
+
+export function useOpsCalendar(year: number, month: number) {
+  return useQuery({
+    queryKey: ["admin-ops-calendar", year, month],
+    queryFn: () => subscriptionsApi.getOpsCalendar(year, month),
+    staleTime: 60_000,
+  });
+}
+
+export function useOpsAnalytics(days = 30) {
+  return useQuery({
+    queryKey: ["admin-ops-analytics", days],
+    queryFn: () => subscriptionsApi.getOpsAnalytics(days),
+    staleTime: 60_000,
+  });
+}
+
+export function useOpsAlerts(resolved?: boolean) {
+  return useQuery({
+    queryKey: ["admin-ops-alerts", resolved],
+    queryFn: () => subscriptionsApi.getOpsAlerts(resolved),
+    staleTime: 15_000,
+    refetchInterval: 30_000,
+  });
+}
+
+export function useDetectOpsAlerts() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => subscriptionsApi.detectOpsAlerts(),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-ops-alerts"] }),
+  });
+}
+
+export function useResolveOpsAlert() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => subscriptionsApi.resolveOpsAlert(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-ops-alerts"] }),
+  });
+}
+
+/** Live updates: connect to the admin:subscriptions room and invalidate caches. */
+export function useOpsRealtime() {
+  const queryClient = useQueryClient();
+  React.useEffect(() => {
+    const socket = connectRealtime();
+    socket.emit("subscribe", "admin:subscriptions");
+    const offUpdate = onRealtime("admin:subscription_ops_update", () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-ops-dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-ops-kitchen"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-ops-delivery"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-ops-calendar"] });
+    });
+    const offAlert = onRealtime("admin:subscription_alert", () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-ops-alerts"] });
+    });
+    return () => {
+      offUpdate();
+      offAlert();
+      disconnectRealtime();
+    };
+  }, [queryClient]);
 }

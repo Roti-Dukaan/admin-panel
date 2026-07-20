@@ -56,7 +56,20 @@ export function PaymentsTable() {
           </button>
         ),
         cell: ({ row }) => (
-          <span className="text-xs font-mono text-gray-700">{row.original.paymentId}</span>
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs font-mono text-gray-700">{row.original.paymentId}</span>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                navigator.clipboard.writeText(row.original.paymentId);
+                toast.success("Payment ID copied!");
+              }}
+              className="inline-flex items-center rounded-md border border-gray-200 bg-white px-1.5 py-1 text-gray-400 hover:bg-gray-50 hover:text-gray-600 transition-colors"
+              title="Copy Payment ID"
+            >
+              <Copy className="h-3 w-3" />
+            </button>
+          </div>
         ),
       },
       {
@@ -180,17 +193,6 @@ export function PaymentsTable() {
                 title="Download Invoice"
               >
                 <Download className="h-3 w-3" />
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigator.clipboard.writeText(p.paymentId);
-                  toast.success("Payment ID copied!");
-                }}
-                className="inline-flex items-center rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-gray-500 hover:bg-gray-50 transition-colors"
-                title="Copy Payment ID"
-              >
-                <Copy className="h-3 w-3" />
               </button>
             </div>
           );

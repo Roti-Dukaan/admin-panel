@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation"
 import { Sidebar } from "@/components/sidebar/Sidebar"
 import { cn } from "@/lib/utils"
 
-const SIDEBAR_ROUTES = ["/dashboard", "/orders", "/kitchen", "/deliveries", "/menu", "/customers", "/subscription-plans", "/delivery-slots", "/reports", "/settings", "/admin", "/audit-logs"]
+const SIDEBAR_ROUTES = ["/dashboard", "/orders", "/kitchen", "/kitchen-production", "/deliveries", "/menu", "/customers", "/subscription-plans", "/subscriptions", "/subscription-operations", "/delivery-slots", "/reports", "/settings", "/admin", "/audit-logs"]
 
 interface SidebarContextValue {
   mobileOpen: boolean

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Play, Loader2, CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
+import { Play, Loader2, CheckCircle2, XCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -59,24 +59,10 @@ export function FulfillmentRunner() {
               <Mini label="Scanned" value={result.subscriptionsScanned} />
               <Mini label="Planned" value={result.occurrencesPlanned} />
               <Mini label="Orders" value={result.ordersCreated} />
-              <Mini label="Failed" value={result.ordersFailed} />
-              <Mini label="Reserved" value={result.inventoryReserved} />
-              <Mini label="Duration" value={`${result.durationMs}ms`} />
-              <Mini label="Kitchen FC" value={result.kitchenForecastId ? "✓" : "—"} />
-              <Mini label="Delivery FC" value={result.deliveryForecastId ? "✓" : "—"} />
+              <Mini label="Deliveries" value={result.deliveriesCreated} />
+              <Mini label="Skipped" value={result.skipped} />
+              <Mini label="Failed" value={result.failed} />
             </div>
-            {result.errors && result.errors.length > 0 && (
-              <div className="mt-3 rounded-lg bg-red-50 p-3">
-                <div className="flex items-center gap-1.5 text-xs font-semibold text-red-600">
-                  <AlertTriangle className="h-3.5 w-3.5" /> {result.errors.length} error(s)
-                </div>
-                <ul className="mt-1 list-inside list-disc text-[11px] text-red-500">
-                  {result.errors.slice(0, 5).map((e, i) => (
-                    <li key={i}>{e}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
           </div>
         )}
       </CardContent>

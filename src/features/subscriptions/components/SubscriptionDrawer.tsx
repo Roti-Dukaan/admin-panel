@@ -18,7 +18,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SubscriptionStatusBadge, OccurrenceStatusBadge } from "./StatusBadge";
-import { useSubscriptionsStore, useCancelSubscription } from "../hooks/useSubscriptions";
+import { useSubscriptionsStore, useCancelSubscription, usePauseSubscription, useResumeSubscription, useStartVacation, useEndVacation, useSkipDelivery } from "../hooks/useSubscriptions";
 import {
   FREQUENCY_LABELS,
   type SubscriptionEntity,
@@ -60,6 +60,11 @@ export function SubscriptionDrawer() {
   const loadOccurrences = useSubscriptionsStore((s) => s.loadOccurrences);
   const loadTimeline = useSubscriptionsStore((s) => s.loadTimeline);
   const cancel = useCancelSubscription();
+  const pause = usePauseSubscription();
+  const resume = useResumeSubscription();
+  const startVacation = useStartVacation();
+  const endVacation = useEndVacation();
+  const skip = useSkipDelivery();
 
   const [tab, setTab] = useState<Tab>("overview");
 
@@ -80,6 +85,48 @@ export function SubscriptionDrawer() {
     if (!sub) return;
     if (!confirm("Cancel this subscription? This will stop all future deliveries.")) return;
     await cancel.mutateAsync({ id: sub.id, reason: "Cancelled by admin" });
+  };
+
+  const handlePause = async () => {
+    if (!sub) return;
+    const reason = window.prompt("Reason for pausing (optional):");
+    if (reason === null) return;
+    await pause.mutateAsync({ id: sub.id, reason: reason || undefined });
+  };
+
+  const handleResume = async () => {
+    if (!sub) return;
+    await resume.mutateAsync({ id: sub.id });
+  };
+
+  const [vacationOpen, setVacationOpen] = useState(false);
+  const [vacStart, setVacStart] = useState("");
+  const [vacEnd, setVacEnd] = useState("");
+  const [vacReason, setVacReason] = useState("");
+
+  const handleStartVacation = async () => {
+    if (!sub) return;
+    if (!vacStart || !vacEnd) {
+      alert("Please select both a start and end date.");
+      return;
+    }
+    await startVacation.mutateAsync({ id: sub.id, startDate: vacStart, endDate: vacEnd, reason: vacReason || undefined });
+    setVacationOpen(false);
+    setVacStart("");
+    setVacEnd("");
+    setVacReason("");
+  };
+
+  const handleEndVacation = async () => {
+    if (!sub) return;
+    await endVacation.mutateAsync({ id: sub.id });
+  };
+
+  const handleSkip = async () => {
+    if (!sub) return;
+    const date = window.prompt("Enter the delivery date to skip (YYYY-MM-DD):");
+    if (!date) return;
+    await skip.mutateAsync({ id: sub.id, occurrenceDate: date });
   };
 
   return (
@@ -126,7 +173,34 @@ export function SubscriptionDrawer() {
             </div>
 
             <div className="mt-4">
-              {tab === "overview" && <OverviewTab sub={sub} onCancel={handleCancel} cancelling={cancel.isPending} />}
+              {tab === "overview" && (
+                <OverviewTab
+                  sub={sub}
+                  onCancel={handleCancel}
+                  cancelling={cancel.isPending}
+                  onPause={handlePause}
+                  onResume={handleResume}
+                  onStartVacation={() => setVacationOpen(true)}
+                  onEndVacation={handleEndVacation}
+                  onSkip={handleSkip}
+                  pausing={pause.isPending}
+                  resuming={resume.isPending}
+                  vacationing={startVacation.isPending}
+                  endingVacation={endVacation.isPending}
+                  skipping={skip.isPending}
+                  vacationModal={{
+                    open: vacationOpen,
+                    start: vacStart,
+                    end: vacEnd,
+                    reason: vacReason,
+                    setStart: setVacStart,
+                    setEnd: setVacEnd,
+                    setReason: setVacReason,
+                    onClose: () => setVacationOpen(false),
+                    onSubmit: handleStartVacation,
+                  }}
+                />
+              )}
               {tab === "occurrences" && (
                 <OccurrencesTab occurrences={occurrences} loading={loadingOccurrences} />
               )}
@@ -143,22 +217,160 @@ function OverviewTab({
   sub,
   onCancel,
   cancelling,
+  onPause,
+  onResume,
+  onStartVacation,
+  onEndVacation,
+  onSkip,
+  pausing,
+  resuming,
+  vacationing,
+  endingVacation,
+  skipping,
+  vacationModal,
 }: {
   sub: SubscriptionEntity;
   onCancel: () => void;
   cancelling: boolean;
+  onPause: () => void;
+  onResume: () => void;
+  onStartVacation: () => void;
+  onEndVacation: () => void;
+  onSkip: () => void;
+  pausing: boolean;
+  resuming: boolean;
+  vacationing: boolean;
+  endingVacation: boolean;
+  skipping: boolean;
+  vacationModal: {
+    open: boolean;
+    start: string;
+    end: string;
+    reason: string;
+    setStart: (v: string) => void;
+    setEnd: (v: string) => void;
+    setReason: (v: string) => void;
+    onClose: () => void;
+    onSubmit: () => void;
+  };
 }) {
   const meals = (sub.meals as any)?.slots ?? [];
+
+  const canPause = sub.status === "ACTIVE" || sub.status === "ON_VACATION";
+  const canResume = sub.status === "PAUSED";
+  const canVacation = sub.status === "ACTIVE" || sub.status === "PAUSED";
+  const canEndVacation = sub.status === "ON_VACATION";
+  const canSkip = sub.status === "ACTIVE" || sub.status === "PAUSED" || sub.status === "ON_VACATION";
+
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3">
         <InfoCard icon={CalendarDays} label="Start Date" value={formatDate(sub.startDate)} />
         <InfoCard icon={CalendarDays} label="End Date" value={formatDate(sub.endDate)} />
+        <InfoCard icon={CalendarDays} label="Effective End (auto-extended)" value={formatDate(sub.effectiveEndDate)} />
         <InfoCard icon={Clock} label="Next Delivery" value={formatDate(sub.nextOccurrenceDate)} />
         <InfoCard icon={RefreshCw} label="Occurrences Generated" value={String(sub.occurrencesGenerated)} />
         <InfoCard icon={Ban} label="Skipped Count" value={String(sub.skippedCount)} />
+        <InfoCard icon={Clock} label="Total Paused Days" value={String(sub.totalPausedDays ?? 0)} />
+        <InfoCard icon={CalendarRange} label="Vacation Days" value={String(sub.vacationDays ?? 0)} />
+        <InfoCard icon={Ban} label="Skipped Days (extended)" value={String(sub.skippedDays ?? 0)} />
+        <InfoCard icon={RefreshCw} label="Last Generated" value={formatDate(sub.lastGeneratedDate)} />
+        <InfoCard icon={Clock} label="Next Generation" value={formatDate(sub.nextGenerationDate)} />
         <InfoCard icon={Package} label="Quantity" value={String(sub.quantity)} />
       </div>
+
+      <div className="flex flex-wrap gap-2 rounded-xl border border-gray-200 bg-gray-50/60 p-3">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onPause}
+          disabled={!canPause || pausing}
+          className="border-amber-200 text-amber-700 hover:bg-amber-50"
+        >
+          {pausing ? "Pausing…" : "Pause"}
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onResume}
+          disabled={!canResume || resuming}
+          className="border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+        >
+          {resuming ? "Resuming…" : "Resume"}
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onStartVacation}
+          disabled={!canVacation || vacationing}
+          className="border-sky-200 text-sky-700 hover:bg-sky-50"
+        >
+          {vacationing ? "Saving…" : "Start Vacation"}
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onEndVacation}
+          disabled={!canEndVacation || endingVacation}
+          className="border-sky-200 text-sky-700 hover:bg-sky-50"
+        >
+          {endingVacation ? "Ending…" : "End Vacation"}
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onSkip}
+          disabled={!canSkip || skipping}
+          className="border-gray-300 text-gray-700 hover:bg-gray-50"
+        >
+          {skipping ? "Skipping…" : "Skip Delivery"}
+        </Button>
+      </div>
+
+      {vacationModal.open && (
+        <div className="rounded-xl border border-sky-200 bg-sky-50/60 p-4 space-y-3">
+          <p className="text-sm font-semibold text-sky-800">Start Vacation Mode</p>
+          <div className="grid grid-cols-2 gap-3">
+            <label className="text-xs text-gray-500">
+              Start Date
+              <input
+                type="date"
+                value={vacationModal.start}
+                onChange={(e) => vacationModal.setStart(e.target.value)}
+                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+              />
+            </label>
+            <label className="text-xs text-gray-500">
+              End Date
+              <input
+                type="date"
+                value={vacationModal.end}
+                onChange={(e) => vacationModal.setEnd(e.target.value)}
+                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+              />
+            </label>
+          </div>
+          <label className="block text-xs text-gray-500">
+            Reason (optional)
+            <input
+              type="text"
+              value={vacationModal.reason}
+              onChange={(e) => vacationModal.setReason(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+              placeholder="e.g. Travelling"
+            />
+          </label>
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" size="sm" onClick={vacationModal.onClose}>
+              Cancel
+            </Button>
+            <Button size="sm" onClick={vacationModal.onSubmit} disabled={vacationing}>
+              Save Vacation
+            </Button>
+          </div>
+        </div>
+      )}
+
 
       <div className="rounded-xl border border-gray-200 bg-gray-50/60 p-4">
         <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Meals</p>
@@ -191,12 +403,19 @@ function OverviewTab({
           <div className="mt-3 flex items-center gap-2 rounded-lg bg-sky-50 px-3 py-2 text-xs text-sky-700">
             <CalendarRange className="h-3.5 w-3.5" />
             Vacation: {formatDate(sub.vacationStart)} → {formatDate(sub.vacationEnd)}
+            {sub.vacationReason ? ` · ${sub.vacationReason}` : ""}
           </div>
         )}
         {sub.pausedReason && (
           <div className="mt-3 flex items-center gap-2 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700">
             <AlertTriangle className="h-3.5 w-3.5" />
             Paused: {sub.pausedReason}
+          </div>
+        )}
+        {sub.effectiveEndDate && sub.originalEndDate && sub.effectiveEndDate !== sub.originalEndDate && (
+          <div className="mt-3 flex items-center gap-2 rounded-lg bg-emerald-50 px-3 py-2 text-xs text-emerald-700">
+            <RefreshCw className="h-3.5 w-3.5" />
+            Auto-extended to {formatDate(sub.effectiveEndDate)} (original {formatDate(sub.originalEndDate)})
           </div>
         )}
       </div>

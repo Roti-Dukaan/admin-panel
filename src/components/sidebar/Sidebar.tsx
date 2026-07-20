@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   ShoppingBag,
   ChefHat,
+  ClipboardList,
   Clock3,
   UtensilsCrossed,
   Truck,
@@ -17,6 +18,7 @@ import {
   ShieldCheck,
   Settings,
   FileClock,
+  Activity,
 } from "lucide-react"
 import { useSidebar } from "./hooks/useSidebar"
 import { SidebarGroup } from "./SidebarGroup"
@@ -40,6 +42,7 @@ const navGroups: NavGroup[] = [
     items: [
       { label: "Orders", href: "/orders", icon: ShoppingBag },
       { label: "Kitchen", href: "/kitchen", icon: ChefHat },
+      { label: "Kitchen Production", href: "/kitchen-production", icon: ClipboardList },
       { label: "Deliveries", href: "/deliveries", icon: Truck },
       { label: "Delivery Slots", href: "/delivery-slots", icon: Clock3 },
     ],
@@ -57,6 +60,8 @@ const navGroups: NavGroup[] = [
     items: [
       { label: "Customers", href: "/customers", icon: Users },
       { label: "Subscription Plans", href: "/subscription-plans", icon: CalendarDays },
+      { label: "Subscriptions", href: "/subscriptions", icon: CreditCard },
+      { label: "Subscription Ops", href: "/subscription-operations", icon: Activity },
     ],
   },
   {
