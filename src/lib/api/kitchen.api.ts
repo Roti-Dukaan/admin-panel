@@ -179,6 +179,13 @@ export interface KitchenOrderQuery {
   sortOrder?: "asc" | "desc";
 }
 
+export interface KitchenStageUpdateResponse {
+  ticketId: string;
+  orderId: string;
+  stage: KitchenStage;
+  occurredAt: string;
+}
+
 function unwrap<T>(promise: Promise<{ data: { success: boolean; data: T } }>): Promise<T> {
   return promise.then((res) => res.data.data);
 }
@@ -214,11 +221,11 @@ export const kitchenApi = {
     ),
 
   /** PATCH /admin/kitchen/orders/:id/preparing — PENDING → PREPARING. */
-  markPreparing: (id: string): Promise<KitchenOrderDetail> =>
+  markPreparing: (id: string): Promise<KitchenStageUpdateResponse> =>
     unwrap(apiClient.patch(`/admin/kitchen/orders/${id}/preparing`)),
 
   /** PATCH /admin/kitchen/orders/:id/ready — PREPARING → READY_FOR_PICKUP. */
-  markReady: (id: string): Promise<KitchenOrderDetail> =>
+  markReady: (id: string): Promise<KitchenStageUpdateResponse> =>
     unwrap(apiClient.patch(`/admin/kitchen/orders/${id}/ready`)),
 
   /** GET /admin/kitchen/status — current kitchen operational status. */

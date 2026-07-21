@@ -227,7 +227,6 @@ export function useKitchenRealtime(options?: {
           return { ...old, items: old.items.filter((it) => it.orderId !== payload.orderId) };
         });
       }
-      qc.invalidateQueries({ queryKey: KITCHEN_DETAIL_QUERY_KEY });
     });
 
     const offUpdated = onRealtime(REALTIME_EVENTS.KITCHEN_TICKET_UPDATED, (raw) => {
@@ -253,7 +252,6 @@ export function useKitchenRealtime(options?: {
           ),
         };
       });
-      qc.invalidateQueries({ queryKey: KITCHEN_DETAIL_QUERY_KEY });
     });
 
     return () => {
