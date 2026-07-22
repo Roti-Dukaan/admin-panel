@@ -19,6 +19,11 @@ import {
   Settings,
   FileClock,
   Activity,
+  Building2,
+  MapPin,
+  Store,
+  ToggleLeft,
+  Package,
 } from "lucide-react"
 import { useSidebar } from "./hooks/useSidebar"
 import { SidebarGroup } from "./SidebarGroup"
@@ -28,57 +33,76 @@ import { SidebarCollapseButton } from "./SidebarCollapseButton"
 import type { NavGroup } from "./types"
 import { useOrdersStore } from "@/features/orders/hooks/useOrders"
 
+
 const navGroups: NavGroup[] = [
   {
     id: "overview",
     title: "Overview",
+    roles: ['OWNER', 'ADMIN', 'BRANCH_MANAGER'],
     items: [
-      { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+      { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard, roles: ['OWNER', 'ADMIN', 'BRANCH_MANAGER'] },
     ],
   },
   {
     id: "operations",
     title: "Operations",
+    roles: ['OWNER', 'ADMIN', 'BRANCH_MANAGER'],
     items: [
-      { label: "Orders", href: "/orders", icon: ShoppingBag },
-      { label: "Kitchen", href: "/kitchen", icon: ChefHat },
-      { label: "Kitchen Production", href: "/kitchen-production", icon: ClipboardList },
-      { label: "Deliveries", href: "/deliveries", icon: Truck },
-      { label: "Delivery Slots", href: "/delivery-slots", icon: Clock3 },
+      { label: "Orders", href: "/orders", icon: ShoppingBag, roles: ['OWNER', 'ADMIN', 'BRANCH_MANAGER'] },
+      { label: "Kitchen", href: "/kitchen", icon: ChefHat, roles: ['OWNER', 'ADMIN', 'BRANCH_MANAGER'] },
+      { label: "Kitchen Production", href: "/kitchen-production", icon: ClipboardList, roles: ['OWNER', 'ADMIN'] },
+      { label: "Deliveries", href: "/deliveries", icon: Truck, roles: ['OWNER', 'ADMIN', 'BRANCH_MANAGER'] },
+      { label: "Delivery Slots", href: "/delivery-slots", icon: Clock3, roles: ['OWNER', 'ADMIN'] },
+      { label: "Inventory & Availability", href: "/branch-inventory", icon: Package, roles: ['BRANCH_MANAGER'] },
     ],
   },
   {
     id: "menu",
     title: "Menu Management",
+    roles: ['OWNER', 'ADMIN', 'BRANCH_MANAGER'],
     items: [
-      { label: "Menu Items", href: "/menu", icon: UtensilsCrossed },
+      { label: "Menu Items", href: "/menu", icon: UtensilsCrossed, roles: ['OWNER', 'ADMIN'] },
+      { label: "Availability Overview", href: "/admin/branch-menu-availability", icon: ToggleLeft, roles: ['OWNER', 'ADMIN'] },
     ],
   },
   {
     id: "customers",
     title: "Customers",
+    roles: ['OWNER', 'ADMIN'],
     items: [
-      { label: "Customers", href: "/customers", icon: Users },
-      { label: "Subscription Plans", href: "/subscription-plans", icon: CalendarDays },
-      { label: "Subscriptions", href: "/subscriptions", icon: CreditCard },
-      { label: "Subscription Ops", href: "/subscription-operations", icon: Activity },
+      { label: "Customers", href: "/customers", icon: Users, roles: ['OWNER', 'ADMIN'] },
+      { label: "Subscription Plans", href: "/subscription-plans", icon: CalendarDays, roles: ['OWNER', 'ADMIN'] },
+      { label: "Subscriptions", href: "/subscriptions", icon: CreditCard, roles: ['OWNER', 'ADMIN'] },
+      { label: "Subscription Ops", href: "/subscription-operations", icon: Activity, roles: ['OWNER', 'ADMIN'] },
+    ],
+  },
+  {
+    id: "master-data",
+    title: "Master Data",
+    roles: ['OWNER', 'ADMIN'],
+    items: [
+      { label: "Cities", href: "/cities", icon: Building2, roles: ['OWNER', 'ADMIN'] },
+      { label: "Areas", href: "/areas", icon: MapPin, roles: ['OWNER', 'ADMIN'] },
+      { label: "Branches", href: "/branches", icon: Store, roles: ['OWNER', 'ADMIN'] },
     ],
   },
   {
     id: "finance",
     title: "Finance",
+    roles: ['OWNER', 'ADMIN'],
     items: [
-      { label: "Payments", href: "/admin/payments", icon: CreditCard },
-      { label: "Reports & Analytics", href: "/reports", icon: BarChart3 },
+      { label: "Payments", href: "/admin/payments", icon: CreditCard, roles: ['OWNER', 'ADMIN'] },
+      { label: "Reports & Analytics", href: "/reports", icon: BarChart3, roles: ['OWNER', 'ADMIN'] },
     ],
   },
   {
     id: "system",
     title: "System",
+    roles: ['OWNER', 'ADMIN'],
     items: [
-      { label: "Roles & Permissions", href: "/admin/roles", icon: ShieldCheck },
-      { label: "Settings", href: "/settings", icon: Settings },
-      { label: "Audit Logs", href: "/audit-logs", icon: FileClock },
+      { label: "Roles & Permissions", href: "/admin/roles", icon: ShieldCheck, roles: ['OWNER', 'ADMIN'] },
+      { label: "Settings", href: "/settings", icon: Settings, roles: ['OWNER', 'ADMIN'] },
+      { label: "Audit Logs", href: "/audit-logs", icon: FileClock, roles: ['OWNER', 'ADMIN'] },
     ],
   },
 ]
@@ -207,7 +231,7 @@ export function Sidebar({ collapsed = false, onToggle, mobileOpen = false, onMob
             </div>
 
       <nav className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-4 space-y-1 scrollbar-thin" role="navigation" aria-label="Sidebar navigation">
-              {navGroups.map((group) => (
+        {navGroups.map((group) => (
                 <SidebarGroup
                   key={group.id}
                   id={group.id}

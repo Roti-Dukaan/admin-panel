@@ -6,6 +6,12 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { Button } from "@/components/ui/button"
 import { useOrdersStore } from "../hooks/useOrders"
 import type { OrderFilters as OrderFiltersType, OrderStatus, PaymentMethod, PaymentStatus, OrderType } from "../types/order"
+import { branchesApi } from "@/lib/api/master-data/branches.api"
+import { citiesApi } from "@/lib/api/master-data/cities.api"
+import { areasApi } from "@/lib/api/master-data/areas.api"
+import type { Branch } from "@/lib/api/master-data/branches.api"
+import type { City } from "@/lib/api/master-data/cities.api"
+import type { Area } from "@/lib/api/master-data/areas.api"
 import { Search, X } from "lucide-react"
 
 const statusOptions = [
@@ -47,6 +53,15 @@ const orderTypeOptions = [
 
 export function OrderFilters() {
   const { filters, setFilters } = useOrdersStore()
+  const [branches, setBranches] = React.useState<Branch[]>([])
+  const [cities, setCities] = React.useState<City[]>([])
+  const [areas, setAreas] = React.useState<Area[]>([])
+
+  React.useEffect(() => {
+    branchesApi.list().then((res) => setBranches(res.data ?? [])).catch(() => {})
+    citiesApi.list().then((res) => setCities(res.data ?? [])).catch(() => {})
+    areasApi.list().then((res) => setAreas(res.data ?? [])).catch(() => {})
+  }, [])
 
   const hasActiveFilters =
     filters.dateFilter !== "all" ||
@@ -54,7 +69,10 @@ export function OrderFilters() {
     filters.paymentMethod !== "all" ||
     filters.paymentStatus !== "all" ||
     filters.orderType !== "all" ||
-    filters.search !== ""
+    filters.search !== "" ||
+    filters.branchId !== "" ||
+    filters.cityId !== "" ||
+    filters.areaId !== ""
 
   const clearFilters = () => {
     setFilters({
@@ -66,6 +84,9 @@ export function OrderFilters() {
       paymentStatus: "all",
       orderType: "all",
       search: "",
+      branchId: "",
+      cityId: "",
+      areaId: "",
     })
   }
 
@@ -137,6 +158,48 @@ export function OrderFilters() {
             Clear
           </Button>
         )}
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="w-[200px]">
+          <Select value={filters.branchId} onValueChange={(v) => setFilters({ branchId: v })}>
+            <SelectTrigger>
+              <SelectValue placeholder="All Branches" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">All Branches</SelectItem>
+              {branches.map((b) => (
+                <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="w-[180px]">
+          <Select value={filters.cityId} onValueChange={(v) => setFilters({ cityId: v })}>
+            <SelectTrigger>
+              <SelectValue placeholder="All Cities" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">All Cities</SelectItem>
+              {cities.map((c) => (
+                <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="w-[180px]">
+          <Select value={filters.areaId} onValueChange={(v) => setFilters({ areaId: v })}>
+            <SelectTrigger>
+              <SelectValue placeholder="All Areas" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">All Areas</SelectItem>
+              {areas.map((a) => (
+                <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
     </div>
   )

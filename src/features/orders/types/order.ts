@@ -116,6 +116,9 @@ export interface OrderFilters {
   paymentStatus: PaymentStatus | "all"
   orderType: OrderType | "all"
   search: string
+  branchId: string
+  cityId: string
+  areaId: string
 }
 
 export interface PaginatedResponse<T> {

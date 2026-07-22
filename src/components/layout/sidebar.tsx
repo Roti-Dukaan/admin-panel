@@ -4,6 +4,7 @@ import * as React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
+import { useAdminAuthStore } from "@/features/admin-auth/store/admin-auth-store"
 import {
   LayoutDashboard,
   ShoppingBag,
@@ -20,6 +21,7 @@ import {
   Wallet,
   Settings,
   Truck,
+  Store,
 } from "lucide-react"
 
 interface NavItem {
@@ -27,6 +29,7 @@ interface NavItem {
   href: string
   icon: React.ElementType
   badge?: string
+  roles?: string[]
 }
 
 const navItems: NavItem[] = [
@@ -34,14 +37,14 @@ const navItems: NavItem[] = [
   { label: "Orders", href: "/orders", icon: ShoppingBag, badge: "3" },
   { label: "Kitchen", href: "/kitchen", icon: UtensilsCrossed },
   { label: "Deliveries", href: "/deliveries", icon: Truck },
-  { label: "Menu Items", href: "/menu", icon: ClipboardList },
-  { label: "Customers", href: "/customers", icon: Users },
-  { label: "Subscription Plans", href: "/subscription-plans", icon: CreditCard },
-  { label: "Delivery Slots", href: "/delivery-slots", icon: Clock },
-  { label: "Reports & Analytics", href: "/reports", icon: BarChart3 },
-  { label: "Payments", href: "/admin/payments", icon: Wallet },
-  { label: "Roles & Permissions", href: "/admin/roles", icon: Shield },
-  { label: "Settings", href: "/settings", icon: Settings },
+  { label: "Menu Items", href: "/menu", icon: ClipboardList, roles: ['OWNER', 'ADMIN'] },
+  { label: "Customers", href: "/customers", icon: Users, roles: ['OWNER', 'ADMIN'] },
+  { label: "Subscription Plans", href: "/subscription-plans", icon: CreditCard, roles: ['OWNER', 'ADMIN'] },
+  { label: "Delivery Slots", href: "/delivery-slots", icon: Clock, roles: ['OWNER', 'ADMIN'] },
+  { label: "Reports & Analytics", href: "/reports", icon: BarChart3, roles: ['OWNER', 'ADMIN'] },
+  { label: "Payments", href: "/admin/payments", icon: Wallet, roles: ['OWNER', 'ADMIN'] },
+  { label: "Roles & Permissions", href: "/admin/roles", icon: Shield, roles: ['OWNER', 'ADMIN'] },
+  { label: "Settings", href: "/settings", icon: Settings, roles: ['OWNER', 'ADMIN'] },
 ]
 
 interface SidebarProps {
@@ -51,6 +54,15 @@ interface SidebarProps {
 
 export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
   const pathname = usePathname()
+  const user = useAdminAuthStore((s) => s.user)
+  const userRoles = user?.roles ?? []
+  const isBranchManager = userRoles.includes('BRANCH_MANAGER')
+  const isOwnerOrAdmin = userRoles.some((r) => r === 'OWNER' || r === 'ADMIN')
+
+  const visibleNavItems = navItems.filter((item) => {
+    if (!item.roles) return true
+    return item.roles.some((r) => userRoles.includes(r))
+  })
 
   return (
     <aside
@@ -72,7 +84,9 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
             </div>
             <div className="flex flex-col">
               <span className="text-[15px] font-bold text-gray-900 leading-tight">Roti Dukaan</span>
-              <span className="text-[10px] font-medium text-gray-400 uppercase tracking-wider">Admin</span>
+              <span className="text-[10px] font-medium text-gray-400 uppercase tracking-wider">
+                {isBranchManager ? 'Branch Manager' : 'Admin'}
+              </span>
             </div>
           </Link>
         ) : (
@@ -84,6 +98,12 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
             />
           </div>
         )}
+        {!collapsed && isBranchManager && (
+          <div className="ml-auto flex items-center gap-1 rounded-full bg-orange-50 px-2.5 py-1 text-[10px] font-medium text-orange-600">
+            <Store className="h-3 w-3" />
+            Branch
+          </div>
+        )}
       </div>
 
       {/* Navigation */}
@@ -93,7 +113,7 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
             Main Menu
           </span>
         </div>
-        {navItems.map((item) => {
+        {visibleNavItems.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
           return (
             <Link

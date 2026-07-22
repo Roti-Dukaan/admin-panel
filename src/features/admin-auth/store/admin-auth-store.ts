@@ -8,6 +8,7 @@ export interface AdminUser {
   name: string | null;
   roles: string[];
   permissions: string[];
+  branchId?: string | null;
 }
 
 interface AdminAuthState {

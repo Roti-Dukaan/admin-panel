@@ -41,6 +41,9 @@ const defaultFilters: OrderFilters = {
   paymentStatus: "all",
   orderType: "all",
   search: "",
+  branchId: "",
+  cityId: "",
+  areaId: "",
 };
 
 export const useOrdersStore = create<OrderStore>((set, get) => ({
@@ -99,6 +102,9 @@ export const useOrdersStore = create<OrderStore>((set, get) => ({
         dateFilter: filters.dateFilter,
         customStartDate: filters.customStartDate,
         customEndDate: filters.customEndDate,
+        branchId: filters.branchId || undefined,
+        cityId: filters.cityId || undefined,
+        areaId: filters.areaId || undefined,
       });
       set({
         orders: data.items as Order[],

@@ -12,6 +12,9 @@ interface OrderListParams {
   dateFilter?: string
   customStartDate?: string
   customEndDate?: string
+  branchId?: string
+  cityId?: string
+  areaId?: string
 }
 
 /** Compute [from, to] ISO instants (UTC) for a date preset, reckoned in IST. */
@@ -73,6 +76,9 @@ export const ordersApi = {
     if (params.paymentStatus && params.paymentStatus !== "all") queryParams.set("paymentStatus", params.paymentStatus);
     if (params.orderType && params.orderType !== "all") queryParams.set("orderType", params.orderType);
     if (params.search) queryParams.set("search", params.search);
+    if (params.branchId) queryParams.set("branchId", params.branchId);
+    if (params.cityId) queryParams.set("cityId", params.cityId);
+    if (params.areaId) queryParams.set("areaId", params.areaId);
 
     const { dateFrom, dateTo } = resolveDateRange(
       params.dateFilter,

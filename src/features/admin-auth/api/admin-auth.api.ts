@@ -9,6 +9,7 @@ export interface AdminLoginResponse {
     name: string | null;
     roles: string[];
     permissions: string[];
+    branchId?: string | null;
   };
 }
 
@@ -18,6 +19,7 @@ export interface CurrentAdminResponse {
   name: string | null;
   roles: string[];
   permissions: string[];
+  branchId?: string | null;
 }
 
 export const adminAuthApi = {
