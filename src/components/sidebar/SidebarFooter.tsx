@@ -1,10 +1,13 @@
 "use client"
 
 import * as React from "react"
-import { LogOut, User, KeyRound, ChevronUp } from "lucide-react"
+import { User, LogOut, Repeat2 } from "lucide-react"
 import { Avatar } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
 import { AnimatePresence, motion } from "motion/react"
+import { useAdminAuthStore } from "@/features/admin-auth/store/admin-auth-store"
+import { useRouter } from "next/navigation"
+import { ChevronUp } from "lucide-react"
 
 interface SidebarFooterProps {
   collapsed?: boolean
@@ -13,6 +16,13 @@ interface SidebarFooterProps {
 export function SidebarFooter({ collapsed = false }: SidebarFooterProps) {
   const [open, setOpen] = React.useState(false)
   const ref = React.useRef<HTMLDivElement>(null)
+  const logout = useAdminAuthStore((s) => s.logout)
+  const router = useRouter()
+
+  const handleLogout = () => {
+    logout()
+    router.replace('/login')
+  }
 
   React.useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -20,8 +30,8 @@ export function SidebarFooter({ collapsed = false }: SidebarFooterProps) {
         setOpen(false)
       }
     }
-    document.addEventListener("mousedown", handleClickOutside)
-    return () => document.removeEventListener("mousedown", handleClickOutside)
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
   return (
@@ -66,11 +76,14 @@ export function SidebarFooter({ collapsed = false }: SidebarFooterProps) {
               Profile
             </button>
             <button className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors">
-              <KeyRound className="h-4 w-4 text-gray-400" />
+              <Repeat2 className="h-4 w-4 text-gray-400" />
               Change Password
             </button>
             <div className="my-1 h-px bg-gray-100" />
-            <button className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] text-red-600 hover:bg-red-50 transition-colors">
+            <button
+              className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] text-red-600 hover:bg-red-50 transition-colors"
+              onClick={handleLogout}
+            >
               <LogOut className="h-4 w-4" />
               Logout
             </button>

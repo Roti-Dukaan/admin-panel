@@ -1,14 +1,33 @@
+"use client"
+
+import * as React from "react"
+import { useRouter } from "next/navigation"
+import { useAdminAuthStore } from "@/features/admin-auth/store/admin-auth-store"
+
 export default function HomePage() {
-  return (
-    <div className="flex flex-col items-center justify-center min-h-screen">
-      <p className="text-lg text-center">
-        <a href="/login" className="inline-flex items-center justify-center rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
-          Go to Login
-        </a>
-      </p>
-      <p className="mt-2 text-sm text-gray-500">
-        Please log in to access the admin panel
-      </p>
-    </div>
-  );
+  const router = useRouter()
+  const [checking, setChecking] = React.useState(true)
+
+  React.useEffect(() => {
+    useAdminAuthStore.persist.rehydrate()
+    const state = useAdminAuthStore.getState()
+
+    if (state.isAuthenticated) {
+      const workspace = state.workspace || (state.role === 'BRANCH_MANAGER' ? 'BRANCH_MANAGER' : 'SUPER_ADMIN')
+      router.replace(workspace === 'BRANCH_MANAGER' ? '/branch/dashboard' : '/dashboard')
+    } else {
+      router.replace('/login')
+    }
+    setChecking(false)
+  }, [router])
+
+  if (checking) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <p className="text-sm text-gray-500">Loading...</p>
+      </div>
+    )
+  }
+
+  return null
 }

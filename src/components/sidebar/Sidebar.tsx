@@ -3,6 +3,7 @@
 import * as React from "react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
+import { useCachedStoreSelector } from "@/utils/store-utils"
 import {
   LayoutDashboard,
   ShoppingBag,
@@ -32,9 +33,11 @@ import { SidebarFooter } from "./SidebarFooter"
 import { SidebarCollapseButton } from "./SidebarCollapseButton"
 import type { NavGroup } from "./types"
 import { useOrdersStore } from "@/features/orders/hooks/useOrders"
+import { useAdminAuthStore } from "@/features/admin-auth/store/admin-auth-store"
+import { BRANCH_MANAGER_NAVIGATION } from "@/config/navigation"
 
 
-const navGroups: NavGroup[] = [
+const MAIN_ADMIN_NAV_GROUPS: NavGroup[] = [
   {
     id: "overview",
     title: "Overview",
@@ -118,6 +121,35 @@ export function Sidebar({ collapsed = false, onToggle, mobileOpen = false, onMob
   const { isGroupExpanded, toggleGroup } = useSidebar()
   const statistics = useOrdersStore((s) => s.statistics)
   const kitchenLiveOrders = (statistics?.preparing ?? 0) + (statistics?.packed ?? 0)
+  const userRoles = useCachedStoreSelector(useAdminAuthStore, (s) => s.user?.roles ?? [])
+  const isBranchManager = userRoles.includes('BRANCH_MANAGER')
+
+  const visibleNavGroups = isBranchManager
+    ? [{
+      id: "branch",
+      title: "Branch",
+      items: BRANCH_MANAGER_NAVIGATION.map((item) => ({
+        label: item.label,
+        href: item.href,
+        icon: item.icon,
+        badge: item.href === "/branch/kitchen" ? kitchenLiveOrders : undefined,
+        disabled: false,
+      })),
+    }]
+    : MAIN_ADMIN_NAV_GROUPS
+      .filter((group) => !group.roles || group.roles.some((r) => userRoles.includes(r)))
+      .map((group) => ({
+        ...group,
+        items: group.items.filter((item) => !item.roles || item.roles.some((r) => userRoles.includes(r))),
+      }))
+      .filter((group) => group.items.length > 0)
+      .map((group) => ({
+        ...group,
+        items: group.items.map((item) => ({
+          ...item,
+          badge: item.href === "/kitchen" ? kitchenLiveOrders : undefined,
+        })),
+      }))
 
   const sidebarContent = (
     <>
@@ -130,7 +162,9 @@ export function Sidebar({ collapsed = false, onToggle, mobileOpen = false, onMob
             </div>
             <div className="flex flex-col">
               <span className="text-[15px] font-bold text-gray-900 leading-tight">Roti Dukaan</span>
-              <span className="text-[10px] font-medium text-gray-400 uppercase tracking-wider">Admin</span>
+              <span className="text-[10px] font-medium text-gray-400 uppercase tracking-wider">
+              {userRoles.includes('BRANCH_MANAGER') ? 'Branch Manager' : 'Admin'}
+            </span>
             </div>
           </Link>
         ) : (
@@ -142,7 +176,7 @@ export function Sidebar({ collapsed = false, onToggle, mobileOpen = false, onMob
 
       {/* Navigation */}
             <nav className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-4 space-y-1 scrollbar-thin" role="navigation" aria-label="Sidebar navigation">
-        {navGroups.map((group) => (
+        {visibleNavGroups.map((group) => (
           <SidebarGroup
             key={group.id}
             id={group.id}
@@ -159,7 +193,7 @@ export function Sidebar({ collapsed = false, onToggle, mobileOpen = false, onMob
                 icon={item.icon}
                 badge={item.href === "/kitchen" ? kitchenLiveOrders : undefined}
                 collapsed={collapsed}
-                disabled={item.disabled}
+                disabled={('disabled' in item) ? item.disabled : false}
               />
             ))}
           </SidebarGroup>
@@ -216,7 +250,9 @@ export function Sidebar({ collapsed = false, onToggle, mobileOpen = false, onMob
                 </div>
                 <div className="flex flex-col">
                   <span className="text-[15px] font-bold text-gray-900 leading-tight">Roti Dukaan</span>
-                  <span className="text-[10px] font-medium text-gray-400 uppercase tracking-wider">Admin</span>
+                  <span className="text-[10px] font-medium text-gray-400 uppercase tracking-wider">
+              {userRoles.includes('BRANCH_MANAGER') ? 'Branch Manager' : 'Admin'}
+            </span>
                 </div>
               </Link>
               <button
@@ -231,7 +267,7 @@ export function Sidebar({ collapsed = false, onToggle, mobileOpen = false, onMob
             </div>
 
       <nav className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-4 space-y-1 scrollbar-thin" role="navigation" aria-label="Sidebar navigation">
-        {navGroups.map((group) => (
+        {visibleNavGroups.map((group) => (
                 <SidebarGroup
                   key={group.id}
                   id={group.id}
@@ -248,7 +284,7 @@ export function Sidebar({ collapsed = false, onToggle, mobileOpen = false, onMob
                       icon={item.icon}
                       badge={item.href === "/kitchen" ? kitchenLiveOrders : undefined}
                       collapsed={false}
-                      disabled={item.disabled}
+                disabled={('disabled' in item) ? item.disabled : false}
                     />
                   ))}
                 </SidebarGroup>

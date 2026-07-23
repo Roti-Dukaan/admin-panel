@@ -5,24 +5,8 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { useAdminAuthStore } from "@/features/admin-auth/store/admin-auth-store"
-import {
-  LayoutDashboard,
-  ShoppingBag,
-  Users,
-  UtensilsCrossed,
-  LogOut,
-  ChevronLeft,
-  ChevronRight,
-  ClipboardList,
-  CreditCard,
-  Clock,
-  Shield,
-  BarChart3,
-  Wallet,
-  Settings,
-  Truck,
-  Store,
-} from "lucide-react"
+import { Settings2, FileText } from "lucide-react"
+import { LayoutDashboard, ShoppingBag, Users, UtensilsCrossed, LogOut, ChevronLeft, ChevronRight, ClipboardList, CreditCard, Clock, Shield, BarChart3, Wallet, Settings, Truck, Store } from "lucide-react"
 
 interface NavItem {
   label: string
@@ -30,6 +14,7 @@ interface NavItem {
   icon: React.ElementType
   badge?: string
   roles?: string[]
+  disabled?: boolean
 }
 
 const navItems: NavItem[] = [
@@ -55,14 +40,27 @@ interface SidebarProps {
 export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
   const pathname = usePathname()
   const user = useAdminAuthStore((s) => s.user)
-  const userRoles = user?.roles ?? []
+  const userRoles = React.useMemo(() => user?.roles ?? [], [user])
   const isBranchManager = userRoles.includes('BRANCH_MANAGER')
   const isOwnerOrAdmin = userRoles.some((r) => r === 'OWNER' || r === 'ADMIN')
 
-  const visibleNavItems = navItems.filter((item) => {
-    if (!item.roles) return true
-    return item.roles.some((r) => userRoles.includes(r))
-  })
+  const branchPaths = React.useMemo(() => [
+    '/branch/dashboard', '/branch/orders', '/branch/kitchen', '/branch/production',
+    '/branch/inventory', '/branch/delivery', '/branch/customers', '/branch/reports', '/branch/profile'
+  ], [])
+
+  const visibleNavItems = React.useMemo(() => {
+    if (isBranchManager) {
+      return navItems.filter((item) => {
+        if (!item.href) return false
+        return branchPaths.some(path => item.href.startsWith(path))
+      })
+    }
+    return navItems.filter((item) => {
+      if (!item.roles) return true
+      return item.roles.some((r) => userRoles.includes(r))
+    })
+  }, [isBranchManager, branchPaths, userRoles])
 
   return (
     <aside

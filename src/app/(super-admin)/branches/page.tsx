@@ -24,7 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Store, Plus, Search, Loader2, AlertCircle, MapPin } from "lucide-react"
-import DeliverySettingsDialog from "./DeliverySettingsDialog"
+import DeliverySettingsDialog from "./branches/DeliverySettingsDialog"
 import { toast } from "sonner"
 
 const ITEMS_PER_PAGE = 20

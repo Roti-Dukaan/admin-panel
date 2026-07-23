@@ -4,6 +4,7 @@ import { ToasterProvider } from "@/components/providers/toaster-provider"
 import { SidebarProvider } from "@/components/layout/sidebar-provider"
 import QueryProvider from "@/components/providers/query-provider"
 import { AdminAuthGuard } from "@/features/admin-auth/components/AdminAuthGuard"
+import { WorkspaceProvider } from "@/contexts/WorkspaceContext"
 import "./globals.css"
 
 export const metadata: Metadata = {
@@ -21,9 +22,11 @@ export default function RootLayout({
 <body suppressHydrationWarning>
          <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
           <QueryProvider>
-            <SidebarProvider>
-              <AdminAuthGuard>{children}</AdminAuthGuard>
-            </SidebarProvider>
+            <WorkspaceProvider>
+              <SidebarProvider>
+                <AdminAuthGuard>{children}</AdminAuthGuard>
+              </SidebarProvider>
+            </WorkspaceProvider>
           </QueryProvider>
           <ToasterProvider />
         </ThemeProvider>

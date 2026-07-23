@@ -58,8 +58,21 @@ export function useAdminLogin() {
         result.accessToken,
         result.refreshToken,
       )
+
+      const isBranchManager = result.admin.roles?.includes('BRANCH_MANAGER')
+      const workspace = isBranchManager ? 'BRANCH_MANAGER' : 'SUPER_ADMIN'
+      const role = result.admin.roles?.[0] || 'SUPER_ADMIN'
+
+      if (typeof window !== 'undefined') {
+        document.cookie = `workspace=${workspace}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`
+        document.cookie = `user-role=${role}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`
+        if (result.admin.branchId) {
+          document.cookie = `branch-id=${result.admin.branchId}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`
+        }
+      }
+
       toast.success("Login successful!")
-      router.push("/dashboard")
+      router.push(isBranchManager ? '/branch/dashboard' : '/dashboard')
     } catch (err: any) {
       const message = err?.response?.data?.message || "Invalid OTP"
       toast.error(message)

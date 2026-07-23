@@ -3,6 +3,7 @@
 import * as React from "react"
 import { usePathname, useRouter } from "next/navigation"
 import { useAdminAuthStore } from "../store/admin-auth-store"
+import { WorkspaceContext } from "@/contexts/WorkspaceContext"
 
 const PUBLIC_PATHS = ["/login"]
 
@@ -22,25 +23,41 @@ export function AdminAuthGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
   const [allowed, setAllowed] = React.useState<boolean | null>(null)
+  const { workspace, setWorkspace, role, setRole, branchId, setBranchId, permissions, set: setStoreState } = useAdminAuthStore()
 
-  const isPublic = PUBLIC_PATHS.includes(pathname) || pathname === "/"
+  const isPublic = PUBLIC_PATHS.includes(pathname) || pathname === '/'
 
   React.useEffect(() => {
     useAdminAuthStore.persist.rehydrate()
-    const authed = hasAdminSession()
+    const state = useAdminAuthStore.getState()
 
-    if (!authed && !isPublic) {
-      router.replace("/login")
+    if (state.workspace && !document.cookie.includes('workspace=')) {
+      document.cookie = `workspace=${state.workspace}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`
+    }
+    if (state.role && !document.cookie.includes('user-role=')) {
+      document.cookie = `user-role=${state.role}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`
+    }
+    if (state.branchId && !document.cookie.includes('branch-id=')) {
+      document.cookie = `branch-id=${state.branchId}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`
+    }
+
+    const authed = hasAdminSession()
+    const currentWorkspace = state.workspace || (state.role === 'BRANCH_MANAGER' ? 'BRANCH_MANAGER' : 'SUPER_ADMIN')
+
+    if (!authed && !PUBLIC_PATHS.includes(pathname) && pathname !== '/') {
+      router.replace('/login')
       setAllowed(false)
       return
     }
-    if (authed && (pathname === "/login" || pathname === "/")) {
-      router.replace("/dashboard")
+
+    if (authed && (pathname === '/login' || pathname === '/')) {
+      router.replace(currentWorkspace === 'BRANCH_MANAGER' ? '/branch/dashboard' : '/dashboard')
       setAllowed(false)
       return
     }
+
     setAllowed(true)
-  }, [pathname, router, isPublic])
+  }, [pathname, router])
 
   if (isPublic) return <>{children}</>
   if (allowed !== true) return null
