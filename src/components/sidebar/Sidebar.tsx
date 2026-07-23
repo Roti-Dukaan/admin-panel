@@ -2,8 +2,8 @@
 
 import * as React from "react"
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { useCachedStoreSelector } from "@/utils/store-utils"
 import {
   LayoutDashboard,
   ShoppingBag,
@@ -33,79 +33,79 @@ import { SidebarFooter } from "./SidebarFooter"
 import { SidebarCollapseButton } from "./SidebarCollapseButton"
 import type { NavGroup } from "./types"
 import { useOrdersStore } from "@/features/orders/hooks/useOrders"
-import { useAdminAuthStore } from "@/features/admin-auth/store/admin-auth-store"
 import { BRANCH_MANAGER_NAVIGATION } from "@/config/navigation"
+import { useWorkspace } from "@/contexts/WorkspaceContext"
 
 
 const MAIN_ADMIN_NAV_GROUPS: NavGroup[] = [
   {
     id: "overview",
     title: "Overview",
-    roles: ['OWNER', 'ADMIN', 'BRANCH_MANAGER'],
+    roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN', 'BRANCH_MANAGER'],
     items: [
-      { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard, roles: ['OWNER', 'ADMIN', 'BRANCH_MANAGER'] },
+      { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN', 'BRANCH_MANAGER'] },
     ],
   },
   {
     id: "operations",
     title: "Operations",
-    roles: ['OWNER', 'ADMIN', 'BRANCH_MANAGER'],
+    roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN', 'BRANCH_MANAGER'],
     items: [
-      { label: "Orders", href: "/orders", icon: ShoppingBag, roles: ['OWNER', 'ADMIN', 'BRANCH_MANAGER'] },
-      { label: "Kitchen", href: "/kitchen", icon: ChefHat, roles: ['OWNER', 'ADMIN', 'BRANCH_MANAGER'] },
-      { label: "Kitchen Production", href: "/kitchen-production", icon: ClipboardList, roles: ['OWNER', 'ADMIN'] },
-      { label: "Deliveries", href: "/deliveries", icon: Truck, roles: ['OWNER', 'ADMIN', 'BRANCH_MANAGER'] },
-      { label: "Delivery Slots", href: "/delivery-slots", icon: Clock3, roles: ['OWNER', 'ADMIN'] },
+      { label: "Orders", href: "/orders", icon: ShoppingBag, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN', 'BRANCH_MANAGER'] },
+      { label: "Kitchen", href: "/kitchen", icon: ChefHat, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN', 'BRANCH_MANAGER'] },
+      { label: "Kitchen Production", href: "/kitchen-production", icon: ClipboardList, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
+      { label: "Deliveries", href: "/deliveries", icon: Truck, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN', 'BRANCH_MANAGER'] },
+      { label: "Delivery Slots", href: "/delivery-slots", icon: Clock3, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
       { label: "Inventory & Availability", href: "/branch-inventory", icon: Package, roles: ['BRANCH_MANAGER'] },
     ],
   },
   {
     id: "menu",
     title: "Menu Management",
-    roles: ['OWNER', 'ADMIN', 'BRANCH_MANAGER'],
+    roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN', 'BRANCH_MANAGER'],
     items: [
-      { label: "Menu Items", href: "/menu", icon: UtensilsCrossed, roles: ['OWNER', 'ADMIN'] },
-      { label: "Availability Overview", href: "/admin/branch-menu-availability", icon: ToggleLeft, roles: ['OWNER', 'ADMIN'] },
+      { label: "Menu Items", href: "/menu", icon: UtensilsCrossed, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
+      { label: "Availability Overview", href: "/admin/branch-menu-availability", icon: ToggleLeft, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
     ],
   },
   {
     id: "customers",
     title: "Customers",
-    roles: ['OWNER', 'ADMIN'],
+    roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'],
     items: [
-      { label: "Customers", href: "/customers", icon: Users, roles: ['OWNER', 'ADMIN'] },
-      { label: "Subscription Plans", href: "/subscription-plans", icon: CalendarDays, roles: ['OWNER', 'ADMIN'] },
-      { label: "Subscriptions", href: "/subscriptions", icon: CreditCard, roles: ['OWNER', 'ADMIN'] },
-      { label: "Subscription Ops", href: "/subscription-operations", icon: Activity, roles: ['OWNER', 'ADMIN'] },
+      { label: "Customers", href: "/customers", icon: Users, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
+      { label: "Subscription Plans", href: "/subscription-plans", icon: CalendarDays, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
+      { label: "Subscriptions", href: "/subscriptions", icon: CreditCard, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
+      { label: "Subscription Ops", href: "/subscription-operations", icon: Activity, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
     ],
   },
   {
     id: "master-data",
     title: "Master Data",
-    roles: ['OWNER', 'ADMIN'],
+    roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'],
     items: [
-      { label: "Cities", href: "/cities", icon: Building2, roles: ['OWNER', 'ADMIN'] },
-      { label: "Areas", href: "/areas", icon: MapPin, roles: ['OWNER', 'ADMIN'] },
-      { label: "Branches", href: "/branches", icon: Store, roles: ['OWNER', 'ADMIN'] },
+      { label: "Cities", href: "/cities", icon: Building2, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
+      { label: "Areas", href: "/areas", icon: MapPin, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
+      { label: "Branches", href: "/branches", icon: Store, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
     ],
   },
   {
     id: "finance",
     title: "Finance",
-    roles: ['OWNER', 'ADMIN'],
+    roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'],
     items: [
-      { label: "Payments", href: "/admin/payments", icon: CreditCard, roles: ['OWNER', 'ADMIN'] },
-      { label: "Reports & Analytics", href: "/reports", icon: BarChart3, roles: ['OWNER', 'ADMIN'] },
+      { label: "Payments", href: "/admin/payments", icon: CreditCard, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
+      { label: "Reports & Analytics", href: "/reports", icon: BarChart3, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
     ],
   },
   {
     id: "system",
     title: "System",
-    roles: ['OWNER', 'ADMIN'],
+    roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'],
     items: [
-      { label: "Roles & Permissions", href: "/admin/roles", icon: ShieldCheck, roles: ['OWNER', 'ADMIN'] },
-      { label: "Settings", href: "/settings", icon: Settings, roles: ['OWNER', 'ADMIN'] },
-      { label: "Audit Logs", href: "/audit-logs", icon: FileClock, roles: ['OWNER', 'ADMIN'] },
+      { label: "Roles & Permissions", href: "/admin/roles", icon: ShieldCheck, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
+      { label: "Settings", href: "/settings", icon: Settings, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
+      { label: "Audit Logs", href: "/audit-logs", icon: FileClock, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
     ],
   },
 ]
@@ -118,11 +118,11 @@ interface SidebarProps {
 }
 
 export function Sidebar({ collapsed = false, onToggle, mobileOpen = false, onMobileClose }: SidebarProps) {
+  const pathname = usePathname()
   const { isGroupExpanded, toggleGroup } = useSidebar()
+  const { isBranchManager } = useWorkspace()
   const statistics = useOrdersStore((s) => s.statistics)
   const kitchenLiveOrders = (statistics?.preparing ?? 0) + (statistics?.packed ?? 0)
-  const userRoles = useCachedStoreSelector(useAdminAuthStore, (s) => s.user?.roles ?? [])
-  const isBranchManager = userRoles.includes('BRANCH_MANAGER')
 
   const visibleNavGroups = isBranchManager
     ? [{
@@ -136,14 +136,7 @@ export function Sidebar({ collapsed = false, onToggle, mobileOpen = false, onMob
         disabled: false,
       })),
     }]
-    : MAIN_ADMIN_NAV_GROUPS
-      .filter((group) => !group.roles || group.roles.some((r) => userRoles.includes(r)))
-      .map((group) => ({
-        ...group,
-        items: group.items.filter((item) => !item.roles || item.roles.some((r) => userRoles.includes(r))),
-      }))
-      .filter((group) => group.items.length > 0)
-      .map((group) => ({
+    : MAIN_ADMIN_NAV_GROUPS.map((group) => ({
         ...group,
         items: group.items.map((item) => ({
           ...item,
@@ -163,7 +156,7 @@ export function Sidebar({ collapsed = false, onToggle, mobileOpen = false, onMob
             <div className="flex flex-col">
               <span className="text-[15px] font-bold text-gray-900 leading-tight">Roti Dukaan</span>
               <span className="text-[10px] font-medium text-gray-400 uppercase tracking-wider">
-              {userRoles.includes('BRANCH_MANAGER') ? 'Branch Manager' : 'Admin'}
+              {isBranchManager ? 'Branch Manager' : 'Admin'}
             </span>
             </div>
           </Link>
@@ -251,7 +244,7 @@ export function Sidebar({ collapsed = false, onToggle, mobileOpen = false, onMob
                 <div className="flex flex-col">
                   <span className="text-[15px] font-bold text-gray-900 leading-tight">Roti Dukaan</span>
                   <span className="text-[10px] font-medium text-gray-400 uppercase tracking-wider">
-              {userRoles.includes('BRANCH_MANAGER') ? 'Branch Manager' : 'Admin'}
+              {isBranchManager ? 'Branch Manager' : 'Admin'}
             </span>
                 </div>
               </Link>

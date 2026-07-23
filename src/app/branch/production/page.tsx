@@ -1,5 +1,18 @@
-import BranchPlaceholderPage from "@/components/layout/branch-placeholder"
+"use client"
+
+import { Header } from "@/components/layout/header"
+import KitchenProductionPage from "@/features/kitchen/production/KitchenProductionPage"
 
 export default function BranchProductionPage() {
-  return <BranchPlaceholderPage title="Branch Production" description="Production planning for your branch" />
+  return (
+    <div className="min-h-screen bg-gray-50/50">
+      <Header
+        title="Production"
+        subtitle="Production planning for your branch."
+        showSearch={false}
+        actions={null}
+      />
+      <KitchenProductionPage />
+    </div>
+  )
 }

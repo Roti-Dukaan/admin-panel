@@ -1,5 +1,13 @@
-import BranchPlaceholderPage from "@/components/layout/branch-placeholder"
+"use client"
+
+import { Header } from "@/components/layout/header"
+import { DeliveryListPage } from "@/features/delivery/components/DeliveryListPage"
 
 export default function BranchDeliveryPage() {
-  return <BranchPlaceholderPage title="Branch Delivery" description="Delivery operations for your branch" />
+  return (
+    <div className="min-h-screen bg-gray-50/50">
+      <Header title="Deliveries" subtitle="Track and manage deliveries for your branch." />
+      <DeliveryListPage />
+    </div>
+  )
 }

@@ -33,7 +33,7 @@ export function SidebarProvider({ children }: { children: React.ReactNode }) {
   const showSidebar = SIDEBAR_ROUTES.some((route) => pathname === route || pathname.startsWith(route + "/"))
 
   if (!showSidebar) {
-    return <>{children}</>
+    return <SidebarContext.Provider value={{ mobileOpen, setMobileOpen }}>{children}</SidebarContext.Provider>
   }
 
   return (

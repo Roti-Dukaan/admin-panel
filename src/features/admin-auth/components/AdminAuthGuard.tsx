@@ -3,7 +3,6 @@
 import * as React from "react"
 import { usePathname, useRouter } from "next/navigation"
 import { useAdminAuthStore } from "../store/admin-auth-store"
-import { WorkspaceContext } from "@/contexts/WorkspaceContext"
 
 const PUBLIC_PATHS = ["/login"]
 
@@ -22,44 +21,49 @@ function hasAdminSession(): boolean {
 export function AdminAuthGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
-  const [allowed, setAllowed] = React.useState<boolean | null>(null)
-  const { workspace, setWorkspace, role, setRole, branchId, setBranchId, permissions, set: setStoreState } = useAdminAuthStore()
+  const [ready, setReady] = React.useState(false)
 
-  const isPublic = PUBLIC_PATHS.includes(pathname) || pathname === '/'
+  const isPublic = PUBLIC_PATHS.includes(pathname) || pathname === "/"
 
   React.useEffect(() => {
     useAdminAuthStore.persist.rehydrate()
     const state = useAdminAuthStore.getState()
 
-    if (state.workspace && !document.cookie.includes('workspace=')) {
+    if (state.workspace && !document.cookie.includes("workspace=")) {
       document.cookie = `workspace=${state.workspace}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`
     }
-    if (state.role && !document.cookie.includes('user-role=')) {
+    if (state.role && !document.cookie.includes("user-role=")) {
       document.cookie = `user-role=${state.role}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`
     }
-    if (state.branchId && !document.cookie.includes('branch-id=')) {
+    if (state.branchId && !document.cookie.includes("branch-id=")) {
       document.cookie = `branch-id=${state.branchId}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`
     }
 
     const authed = hasAdminSession()
-    const currentWorkspace = state.workspace || (state.role === 'BRANCH_MANAGER' ? 'BRANCH_MANAGER' : 'SUPER_ADMIN')
+    const currentWorkspace = state.workspace || (state.role === "BRANCH_MANAGER" ? "BRANCH_MANAGER" : "SUPER_ADMIN")
 
-    if (!authed && !PUBLIC_PATHS.includes(pathname) && pathname !== '/') {
-      router.replace('/login')
-      setAllowed(false)
+    if (!authed && !PUBLIC_PATHS.includes(pathname) && pathname !== "/") {
+      router.replace("/login")
+      setReady(false)
       return
     }
 
-    if (authed && (pathname === '/login' || pathname === '/')) {
-      router.replace(currentWorkspace === 'BRANCH_MANAGER' ? '/branch/dashboard' : '/dashboard')
-      setAllowed(false)
+    if (authed && (pathname === "/login" || pathname === "/")) {
+      router.replace(currentWorkspace === "BRANCH_MANAGER" ? "/branch/dashboard" : "/dashboard")
+      setReady(false)
       return
     }
 
-    setAllowed(true)
+    setReady(true)
   }, [pathname, router])
 
   if (isPublic) return <>{children}</>
-  if (allowed !== true) return null
+  if (!ready) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-orange-500 border-t-transparent" />
+      </div>
+    )
+  }
   return <>{children}</>
 }

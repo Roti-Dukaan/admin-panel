@@ -40,15 +40,43 @@
   --color-orange-900: #5C1F0A;
 }
 
+*,
+::before,
+::after {
+  box-sizing: border-box;
+}
+
 @layer base {
   html {
     scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   body {
+    margin: 0;
+    padding: 0;
     font-family: var(--font-sans);
     background-color: var(--color-background);
     color: var(--color-foreground);
+    min-height: 100vh;
+  }
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+    font-family: var(--font-sans);
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    min-height: 100vh;
   }
 }
 

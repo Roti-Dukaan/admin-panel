@@ -1,7 +1,6 @@
 "use client"
 
 import * as React from 'react'
-import { Header } from '@/components/layout/header'
 import { useWorkspace } from '@/contexts/WorkspaceContext'
 
 interface BranchPageProps {
@@ -19,7 +18,6 @@ export default function BranchPage({
   
   return (
     <div className="space-y-6">
-      <Header title={title} subtitle={description || "Branch workspace"} />
       {children}
     </div>
   )

@@ -76,7 +76,7 @@ export default function DashboardPage() {
   const isBranchManager = userRoles.includes('BRANCH_MANAGER')
   const isOwnerOrAdmin = userRoles.some((r) => r === 'OWNER' || r === 'ADMIN')
 
-  const { data: branchStats, isLoading: branchStatsLoading } = useBranchDashboard()
+  const { data: branchStats, isLoading: branchStatsLoading } = useBranchDashboard(isBranchManager)
 
   const liveStats = branchStats?.data
   const branchName = user?.branchId ? `Branch ${user.branchId.slice(0, 8)}` : ''
