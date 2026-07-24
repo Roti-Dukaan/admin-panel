@@ -204,11 +204,11 @@ export default function BranchesPage() {
         setMapCoords({ lat: latitude, lng: longitude })
 
         try {
-          if (window.google?.maps?.Geocoder) {
-            const geocoder = new window.google.maps.Geocoder()
+          if ((window as any).google?.maps?.Geocoder) {
+            const geocoder = new (window as any).google.maps.Geocoder()
             geocoder.geocode(
               { location: { lat: latitude, lng: longitude } },
-              (results, status) => {
+              (results: any, status: any) => {
                 if (status === "OK" && results?.length) {
                   const place = results[0]
                   let city = "", area = ""
@@ -216,16 +216,9 @@ export default function BranchesPage() {
                     const types = comp.types
                     if (types.includes("locality")) city = comp.long_name
                     else if (types.includes("sublocality") || types.includes("sublocality_level_1")) area = comp.long_name
-                    else if (types.includes("postal_code")) pincode = comp.long_name
                     else if (!city && types.includes("administrative_area_level_2")) city = comp.long_name
                     else if (!area && types.includes("neighborhood")) area = comp.long_name
                   }
-
-                  setForm((prev) => ({
-                    ...prev,
-                    formattedAddress: place.formatted_address,
-                    address: place.formatted_address,
-                  }))
 
                   if (city) {
                     const matchedCity = cities.find(
@@ -293,7 +286,7 @@ export default function BranchesPage() {
         await branchesApi.update(editingBranch.id, payload)
         toast.success("Branch updated successfully")
       } else {
-        await branchesApi.create(payload)
+        await branchesApi.create(payload as CreateBranchDTO)
         toast.success("Branch created successfully")
       }
       setDialogOpen(false)

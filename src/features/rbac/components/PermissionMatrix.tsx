@@ -61,14 +61,14 @@ export function PermissionMatrix({ permissions, onChange, readonly = false }: Pe
   return (
     <div className="space-y-3">
       {/* Header Row */}
-      <div className="sticky top-0 z-10 grid grid-cols-[240px_repeat(7,1fr)] gap-0 rounded-t-xl border border-gray-200/80 bg-gray-50 px-4 py-2.5">
-        <div className="text-[11px] font-bold uppercase tracking-wider text-gray-500">
+      <div className="sticky top-0 z-10 grid grid-cols-[280px_repeat(7,1fr)] gap-3 rounded-t-xl border border-gray-200/80 bg-gray-50 px-4 py-3">
+        <div className="text-xs font-bold uppercase tracking-wider text-gray-600">
           Module
         </div>
         {PERMISSION_ACTIONS.map((action) => (
           <div
             key={action.key}
-            className="text-center text-[11px] font-bold uppercase tracking-wider text-gray-500"
+            className="text-center text-xs font-bold uppercase tracking-wider text-gray-600"
           >
             {action.label}
           </div>
@@ -82,7 +82,7 @@ export function PermissionMatrix({ permissions, onChange, readonly = false }: Pe
           <div
             key={module.key}
             className={cn(
-              "grid grid-cols-[240px_repeat(7,1fr)] gap-0 border border-gray-200/80 bg-white px-4 py-3 transition-colors hover:bg-gray-50/50",
+              "grid grid-cols-[280px_repeat(7,1fr)] gap-3 border border-gray-200/80 bg-white px-4 py-3 transition-colors hover:bg-gray-50/50",
               count === 0 && "opacity-60"
             )}
           >

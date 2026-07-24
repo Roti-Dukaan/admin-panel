@@ -2,11 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "motion/react";
-import { MapPin, Plus, Edit, Trash2, Save, RefreshCw, Loader2 } from "lucide-react";
+import { MapPin, Plus, Edit, Trash2, Save, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { kitchenLocationApi, type KitchenLocation } from "@/lib/api/kitchen-location.api";
 
-interface DeliveryZoneTabProps {
+interface KitchenTabProps {
   saving: boolean;
 }
 
@@ -18,7 +18,7 @@ const DEFAULT_KITCHEN: Partial<KitchenLocation> = {
   isActive: true,
 };
 
-export function DeliveryZoneTab({ saving }: DeliveryZoneTabProps) {
+export function KitchenTab({ saving }: KitchenTabProps) {
   const [kitchens, setKitchens] = useState<KitchenLocation[]>([]);
   const [selectedKitchen, setSelectedKitchen] = useState<KitchenLocation | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -116,17 +116,10 @@ export function DeliveryZoneTab({ saving }: DeliveryZoneTabProps) {
     setIsEditing(false);
   };
 
-  const handleMapClick = (e: any) => {
-    if (!isEditing) return;
-    const { lat, lng } = e.latlng;
-    handleChange("latitude", lat);
-    handleChange("longitude", lng);
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold text-gray-900">Delivery Zone</h2>
+        <h2 className="text-xl font-semibold text-gray-900">Kitchen Locations</h2>
         <button
           onClick={handleAddNew}
           className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"

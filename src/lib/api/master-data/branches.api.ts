@@ -77,9 +77,6 @@ export interface UpdateBranchDTO {
 
 export interface UpdateDeliverySettingsDTO {
   deliveryRadiusKm?: number;
-  deliveryCharge?: number;
-  minimumOrderAmount?: number;
-  estimatedDeliveryTime?: number;
   allowScheduledOrders?: boolean;
   allowSubscriptions?: boolean;
 }

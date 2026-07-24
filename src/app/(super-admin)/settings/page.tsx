@@ -42,6 +42,7 @@ const tabs: { key: SettingsTab; label: string; icon: React.ElementType }[] = [
   { key: "tax", label: "Tax", icon: Receipt },
   { key: "payment", label: "Payment", icon: CreditCard },
   { key: "delivery", label: "Delivery", icon: Truck },
+  { key: "kitchen", label: "Kitchen", icon: Store },
   { key: "pincodes", label: "Pincodes", icon: MapPin },
   { key: "delivery-providers", label: "Delivery Providers", icon: Server },
 ];
@@ -166,7 +167,7 @@ export default function SettingsPage() {
             {activeTab === "tax" && <TaxTab saving={saving} onSubmit={updateTax} data={settings?.tax ?? null} />}
             {activeTab === "payment" && <PaymentTab saving={saving} onSubmit={updatePayment} data={settings?.payment ?? null} />}
 {activeTab === "delivery" && <DeliveryTab saving={saving} onSubmit={updateDelivery} data={settings?.delivery ?? null} />}
-              {activeTab === "delivery-zone" && <DeliveryZoneTab saving={saving} />}
+              {activeTab === "kitchen" && <KitchenTab saving={saving} />}
               {activeTab === "pincodes" && (
                 <PincodesTab
                   saving={saving}
@@ -626,9 +627,17 @@ function PincodesTab({
                       <td className="px-6 py-3 text-gray-600">{p.city || "—"}</td>
                       <td className="px-6 py-3 text-gray-600">{p.state || "—"}</td>
                       <td className="px-6 py-3">
-                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${p.isActive ? "bg-emerald-50 text-emerald-700" : "bg-gray-100 text-gray-500"}`}>
-                          {p.isActive ? "Active" : "Inactive"}
-                        </span>
+                        <button
+                          type="button"
+                          onClick={() => onUpdate(p.id, { isActive: !p.isActive })}
+                          style={{ backgroundColor: p.isActive ? '#f97316' : '#e5e7eb' }}
+                          className="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors"
+                        >
+                          <span
+                            style={{ transform: p.isActive ? 'translateX(24px)' : 'translateX(4px)' }}
+                            className="inline-block h-4 w-4 rounded-full bg-white shadow transition-transform"
+                          />
+                        </button>
                       </td>
                       <td className="px-6 py-3 text-right">
                         <div className="flex justify-end gap-1">
@@ -987,7 +996,7 @@ function DeliveryProvidersTab() {
               <thead>
                 <tr className="border-b border-gray-100 text-left">
                   <th className="px-6 py-3 text-xs font-bold uppercase tracking-wider text-gray-400">Provider</th>
-                  <th className="px-6 py-3 text-xs font-bold uppercase tracking-wider text-gray-400">Status</th>
+              <th className="px-6 py-3 text-xs font-bold uppercase tracking-wider text-gray-400">Active</th>
                   <th className="px-6 py-3 text-xs font-bold uppercase tracking-wider text-gray-400">Avg Response</th>
                   <th className="px-6 py-3 text-xs font-bold uppercase tracking-wider text-gray-400">Success Rate</th>
                   <th className="px-6 py-3 text-xs font-bold uppercase tracking-wider text-gray-400">Failed</th>

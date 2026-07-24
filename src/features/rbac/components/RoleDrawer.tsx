@@ -71,7 +71,7 @@ export function RoleDrawer() {
         className="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm"
         onClick={() => setDrawerOpen(false)}
       />
-      <div className="fixed right-0 top-0 z-50 h-full w-full max-w-2xl border-l border-gray-200 bg-white shadow-2xl flex flex-col">
+      <div className="fixed right-0 top-0 z-50 h-full w-full max-w-[55vw] border-l border-gray-200 bg-white shadow-2xl flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
           <div>
