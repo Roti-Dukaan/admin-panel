@@ -9,6 +9,7 @@ import {
   CreditCard,
   Truck,
   MapPin,
+  Store,
   Save,
   Loader2,
   Plus,
@@ -34,14 +35,13 @@ import { useDeliveryProviderStore } from "@/features/delivery-providers/hooks/us
 import type { SettingsTab, PincodeData, BusinessSettingsData, TaxConfigData, PaymentConfigData, DeliveryConfigData } from "@/features/settings/types/settings";
 import { PROVIDER_LABELS, STRATEGY_LABELS } from "@/features/delivery-providers/types/delivery-provider";
 import { Header } from "@/components/layout/header";
-import { DeliveryZoneTab } from "@/features/settings/components/DeliveryZoneTab";
+import { KitchenTab } from "@/features/settings/components/KitchenTab";
 
 const tabs: { key: SettingsTab; label: string; icon: React.ElementType }[] = [
   { key: "business", label: "Business", icon: Building2 },
   { key: "tax", label: "Tax", icon: Receipt },
   { key: "payment", label: "Payment", icon: CreditCard },
   { key: "delivery", label: "Delivery", icon: Truck },
-  { key: "delivery-zone", label: "Delivery Zone", icon: MapPin },
   { key: "pincodes", label: "Pincodes", icon: MapPin },
   { key: "delivery-providers", label: "Delivery Providers", icon: Server },
 ];

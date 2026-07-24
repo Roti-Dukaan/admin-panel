@@ -15,7 +15,7 @@ interface RoleStore {
   filters: RoleFilters;
   selectedRole: Role | null;
   drawerOpen: boolean;
-  drawerMode: 'view' | 'edit';
+  drawerMode: 'view' | 'edit' | 'create';
   cloneDialogOpen: boolean;
   cloneSourceRole: Role | null;
   deleteModalOpen: boolean;

@@ -52,11 +52,6 @@ export default function DeliverySettingsSidebar({
         setSettings(data)
         setForm({
           deliveryRadiusKm: data.deliveryRadiusKm,
-          deliveryCharge: data.deliveryCharge,
-          minimumOrderAmount: data.minimumOrderAmount,
-          estimatedDeliveryTime: data.estimatedDeliveryTime,
-          allowScheduledOrders: data.allowScheduledOrders,
-          allowSubscriptions: data.allowSubscriptions,
         })
       })
       .catch(() => toast.error("Failed to load delivery settings"))
@@ -115,7 +110,7 @@ export default function DeliverySettingsSidebar({
                 Delivery Settings — {branch?.name ?? '...'}
               </h2>
               <p className="text-sm text-gray-500">
-                {canEdit ? "Configure delivery radius, charges, and availability" : "View delivery configuration (read-only)"}
+                {canEdit ? "Configure delivery radius" : "View delivery configuration (read-only)"}
               </p>
             </div>
           </div>
@@ -145,8 +140,8 @@ export default function DeliverySettingsSidebar({
               />
 
               {/* Delivery Settings Form */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-gray-200 pt-4">
-                <div>
+              <div className="space-y-4 border-t border-gray-200 pt-4">
+                <div className="max-w-xs">
                   <Label className="text-sm font-medium text-gray-700">
                     Delivery Radius (km)
                   </Label>
@@ -165,56 +160,6 @@ export default function DeliverySettingsSidebar({
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-gray-400 mt-1">Maximum delivery distance from branch</p>
-                </div>
-
-                <div>
-                  <Label className="text-sm font-medium text-gray-700">
-                    Delivery Charge (₹)
-                  </Label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">₹</span>
-                    <Input
-                      type="number"
-                      min={0}
-                      value={form.deliveryCharge ?? settings.deliveryCharge ?? 0}
-                      onChange={(e) => setForm({ ...form, deliveryCharge: parseFloat(e.target.value) || 0 })}
-                      className="pl-7"
-                      disabled={!canEdit}
-                    />
-                  </div>
-                  <p className="text-xs text-gray-400 mt-1">Flat delivery fee charged to customers</p>
-                </div>
-
-                <div>
-                  <Label className="text-sm font-medium text-gray-700">
-                    Minimum Order (₹)
-                  </Label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">₹</span>
-                    <Input
-                      type="number"
-                      min={0}
-                      value={form.minimumOrderAmount ?? settings.minimumOrderAmount ?? 0}
-                      onChange={(e) => setForm({ ...form, minimumOrderAmount: parseFloat(e.target.value) || 0 })}
-                      className="pl-7"
-                      disabled={!canEdit}
-                    />
-                  </div>
-                  <p className="text-xs text-gray-400 mt-1">Minimum order value for delivery</p>
-                </div>
-
-                <div>
-                  <Label className="text-sm font-medium text-gray-700">
-                    Est. Delivery Time (min)
-                  </Label>
-                  <Input
-                    type="number"
-                    min={0}
-                    value={form.estimatedDeliveryTime ?? settings.estimatedDeliveryTime ?? 0}
-                    onChange={(e) => setForm({ ...form, estimatedDeliveryTime: parseInt(e.target.value) || 0 })}
-                    disabled={!canEdit}
-                  />
-                  <p className="text-xs text-gray-400 mt-1">Typical delivery time for this branch</p>
                 </div>
 
                 <div className="flex items-center gap-6 pt-2">

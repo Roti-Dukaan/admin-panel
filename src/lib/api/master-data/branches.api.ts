@@ -11,6 +11,9 @@ export interface Branch {
   phone?: string;
   email?: string;
   address?: string;
+  formattedAddress?: string;
+  placeId?: string;
+  pincode?: string;
   latitude: number;
   longitude: number;
   status: BranchStatus;
@@ -48,8 +51,10 @@ export interface CreateBranchDTO {
   phone?: string;
   email?: string;
   address?: string;
-  latitude: number;
-  longitude: number;
+  formattedAddress?: string;
+  placeId?: string;
+  pincode?: string;
+  deliveryRadiusKm?: number;
   status?: BranchStatus;
   isActive?: boolean;
 }
@@ -62,8 +67,10 @@ export interface UpdateBranchDTO {
   phone?: string;
   email?: string;
   address?: string;
-  latitude?: number;
-  longitude?: number;
+  formattedAddress?: string;
+  placeId?: string;
+  pincode?: string;
+  deliveryRadiusKm?: number;
   status?: BranchStatus;
   isActive?: boolean;
 }

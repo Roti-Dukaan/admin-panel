@@ -1,5 +1,7 @@
+'use client';
+
 import { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, Circle } from 'react-leaflet';
+import { MapContainer, TileLayer, Circle, Marker } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
@@ -49,25 +51,23 @@ export function DeliveryRadiusPreview({
   const coverage = getEstimatedCoverage();
 
   return (
-    <div className={`bg-white rounded-lg border border-gray-200 p-4 ${className}`}
-    style={{ height: '500px' }}
-    >
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-900">Delivery Coverage Preview</h3>
-        <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded">
+    <div className={`bg-white rounded-lg border border-gray-200 p-4 ${className}`}>
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-sm font-semibold text-gray-900">Delivery Coverage Preview</h3>
+        <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
           Radius: {radius} km
         </span>
       </div>
 
-      <div className="relative mb-4" style={{ height: '300px' }}>
+      <div className="relative mb-3" style={{ height: '200px' }}>
         <MapContainer
           center={center}
           zoom={12}
           style={{ height: '100%', width: '100%' }}
-          dragging={false}
-          zoomControl={false}
-          scrollWheelZoom={false}
-          doubleClickZoom={false}
+          dragging={true}
+          zoomControl={true}
+          scrollWheelZoom={true}
+          doubleClickZoom={true}
         >
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -89,26 +89,26 @@ export function DeliveryRadiusPreview({
         </MapContainer>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
-        <div className="bg-blue-50 rounded-lg p-3 text-center">
-          <div className="text-lg font-semibold text-blue-900">
+      <div className="grid grid-cols-3 gap-2">
+        <div className="bg-blue-50 rounded-lg p-2 text-center">
+          <div className="text-sm font-semibold text-blue-900">
             {coverage.area}
           </div>
-          <div className="text-xs text-blue-700">km² Area</div>
+          <div className="text-[10px] text-blue-700">km² Area</div>
         </div>
 
-        <div className="bg-green-50 rounded-lg p-3 text-center">
-          <div className="text-lg font-semibold text-green-900">
+        <div className="bg-green-50 rounded-lg p-2 text-center">
+          <div className="text-sm font-semibold text-green-900">
             {coverage.estimatedPeople.toLocaleString()}
           </div>
-          <div className="text-xs text-green-700">Est. Customers</div>
+          <div className="text-[10px] text-green-700">Est. Customers</div>
         </div>
 
-        <div className="bg-purple-50 rounded-lg p-3 text-center">
-          <div className="text-lg font-semibold text-purple-900">
+        <div className="bg-purple-50 rounded-lg p-2 text-center">
+          <div className="text-sm font-semibold text-purple-900">
             {coverage.estimatedOrders.toLocaleString()}
           </div>
-          <div className="text-xs text-purple-700">Est. Orders/day</div>
+          <div className="text-[10px] text-purple-700">Est. Orders/day</div>
         </div>
       </div>
     </div>
