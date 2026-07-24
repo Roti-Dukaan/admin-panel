@@ -14,7 +14,7 @@ import { StatusBadge } from "./StatusBadge"
 import { useOrdersStore } from "../hooks/useOrders"
 import type { Order, PaymentStatus, PaymentMethod } from "../types/order"
 import { PAYMENT_STATUS_CONFIG, PAYMENT_STATUS_LABELS, PAYMENT_METHOD_CONFIG } from "../types/order"
-import { Eye, RefreshCw, Printer, ChevronLeft, ChevronRight, Smartphone, Banknote } from "lucide-react"
+import { Eye, RefreshCw, Printer, ChevronLeft, ChevronRight, Smartphone, Banknote, CircleDollarSign } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 
@@ -45,6 +45,8 @@ function PaymentMethodBadge({ method }: { method: PaymentMethod }) {
         <Smartphone className="h-3 w-3" />
       ) : method === "cod" ? (
         <Banknote className="h-3 w-3" />
+      ) : method === "subscription" ? (
+        <CircleDollarSign className="h-3 w-3" />
       ) : null}
       {config.label}
     </span>
@@ -121,6 +123,7 @@ export function OrdersTable({ onViewDetails }: OrdersTableProps) {
               <TableHead>Total</TableHead>
               <TableHead>Payment Method</TableHead>
               <TableHead>Payment Status</TableHead>
+              <TableHead>Settlement Status</TableHead>
               <TableHead>Transaction ID</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Created</TableHead>
@@ -147,6 +150,30 @@ export function OrdersTable({ onViewDetails }: OrdersTableProps) {
                 <TableCell>
                   {order.payment ? (
                     <PaymentStatusBadge status={order.payment.status} />
+                  ) : (
+                    "—"
+                  )}
+                </TableCell>
+                <TableCell>
+                  {order.payment?.method === "cod" && order.payment?.cod ? (
+                    <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-semibold", 
+                      order.payment.cod.collectionStatus === "collected" ? "bg-green-100 text-green-800" :
+                      order.payment.cod.collectionStatus === "failed_collection" ? "bg-red-100 text-red-800" :
+                      "bg-amber-100 text-amber-800"
+                    )}>
+                      <span className={cn("h-1.5 w-1.5 rounded-full",
+                        order.payment.cod.collectionStatus === "collected" ? "bg-green-500" :
+                        order.payment.cod.collectionStatus === "failed_collection" ? "bg-red-500" :
+                        "bg-amber-500"
+                      )} />
+                      {order.payment.cod.collectionStatus === "collected" ? "Settled" :
+                       order.payment.cod.collectionStatus === "failed_collection" ? "Failed" : "Pending"}
+                    </span>
+                  ) : order.payment?.method === "online" ? (
+                    <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-semibold bg-emerald-100 text-emerald-800">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                      Paid
+                    </span>
                   ) : (
                     "—"
                   )}

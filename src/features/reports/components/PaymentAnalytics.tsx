@@ -9,10 +9,10 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from "recharts";
-import { Wallet } from "lucide-react";
+import { Wallet, CreditCard, Clock, CheckCircle, DollarSign } from "lucide-react";
 import { useReportsStore } from "../hooks/useReports";
 
-const COLORS = ["#22c55e", "#3b82f6", "#f59e0b", "#ef4444", "#a855f7"];
+const COLORS = ["#22c55e", "#3b82f6", "#f59e0b", "#ef4444", "#a855f7", "#6366f1", "#ec4899"];
 
 function formatCurrency(amount: number) {
   if (amount >= 100000) return `₹${(amount / 100000).toFixed(1)}L`;
@@ -28,6 +28,20 @@ function CustomTooltip({ active, payload }: any) {
       <p className="text-xs font-semibold text-gray-500">{data.name}</p>
       <p className="text-sm font-bold text-gray-900">{formatCurrency(data.value)}</p>
       <p className="text-[10px] text-gray-400">{((data.value / data.payload.total) * 100).toFixed(1)}%</p>
+    </div>
+  );
+}
+
+function StatCard({ label, value, icon: Icon, color, bgColor }: any) {
+  return (
+    <div className={`flex items-center gap-3 p-4 rounded-xl border ${bgColor}`}>
+      <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${color}`}>
+        <Icon className="h-5 w-5 text-white" />
+      </div>
+      <div>
+        <p className="text-xs text-gray-500">{label}</p>
+        <p className="text-sm font-bold text-gray-900">{formatCurrency(value)}</p>
+      </div>
     </div>
   );
 }
@@ -66,6 +80,38 @@ export function PaymentAnalytics() {
           <Wallet className="h-4 w-4 text-indigo-600" />
         </div>
         <h3 className="text-base font-bold text-gray-900">Payment Analytics</h3>
+      </div>
+
+      {/* COD Summary Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+        <StatCard
+          label="Pending Collection"
+          value={data.pendingCollectionAmount || 0}
+          icon={Clock}
+          color="bg-amber-500"
+          bgColor="border-amber-100 bg-amber-50"
+        />
+        <StatCard
+          label="Collected Today"
+          value={data.codCollected || 0}
+          icon={CheckCircle}
+          color="bg-emerald-500"
+          bgColor="border-emerald-100 bg-emerald-50"
+        />
+        <StatCard
+          label="COD Orders"
+          value={data.codOrders || 0}
+          icon={DollarSign}
+          color="bg-blue-500"
+          bgColor="border-blue-100 bg-blue-50"
+        />
+        <StatCard
+          label="Online Orders"
+          value={data.onlineOrders || 0}
+          icon={CreditCard}
+          color="bg-indigo-500"
+          bgColor="border-indigo-100 bg-indigo-50"
+        />
       </div>
 
       <div className="flex items-center gap-6">

@@ -81,6 +81,14 @@ export interface PaymentAnalyticsData {
   failed: number;
   refunded: number;
   total: number;
+
+  // COD-specific metrics
+  codPendingCollection: number;
+  codCollected: number;
+  codSettled: number;
+  codOrders: number;
+  onlineOrders: number;
+  pendingCollectionAmount: number;
 }
 
 export interface CustomerInsightData {
