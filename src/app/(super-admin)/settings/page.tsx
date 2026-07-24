@@ -9,7 +9,6 @@ import {
   CreditCard,
   Truck,
   MapPin,
-  Store,
   Save,
   Loader2,
   Plus,
@@ -36,7 +35,6 @@ import { useDeliveryProviderStore } from "@/features/delivery-providers/hooks/us
 import type { SettingsTab, PincodeData, BusinessSettingsData, TaxConfigData, PaymentConfigData, DeliveryConfigData } from "@/features/settings/types/settings";
 import { PROVIDER_LABELS, STRATEGY_LABELS } from "@/features/delivery-providers/types/delivery-provider";
 import { Header } from "@/components/layout/header";
-import { KitchenTab } from "@/features/settings/components/KitchenTab";
 import { EmailTab } from "@/features/settings/components/EmailTab";
 
 const tabs: { key: SettingsTab; label: string; icon: React.ElementType }[] = [
@@ -44,7 +42,6 @@ const tabs: { key: SettingsTab; label: string; icon: React.ElementType }[] = [
   { key: "tax", label: "Tax", icon: Receipt },
   { key: "payment", label: "Payment", icon: CreditCard },
   { key: "delivery", label: "Delivery", icon: Truck },
-  { key: "kitchen", label: "Kitchen", icon: Store },
   { key: "pincodes", label: "Pincodes", icon: MapPin },
   { key: "delivery-providers", label: "Delivery Providers", icon: Server },
   { key: "email", label: "Email", icon: Mail },
@@ -170,7 +167,6 @@ export default function SettingsPage() {
             {activeTab === "tax" && <TaxTab saving={saving} onSubmit={updateTax} data={settings?.tax ?? null} />}
             {activeTab === "payment" && <PaymentTab saving={saving} onSubmit={updatePayment} data={settings?.payment ?? null} />}
 {activeTab === "delivery" && <DeliveryTab saving={saving} onSubmit={updateDelivery} data={settings?.delivery ?? null} />}
-              {activeTab === "kitchen" && <KitchenTab saving={saving} />}
               {activeTab === "pincodes" && (
                 <PincodesTab
                   saving={saving}
