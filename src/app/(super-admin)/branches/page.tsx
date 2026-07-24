@@ -482,7 +482,9 @@ export default function BranchesPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Branch Code</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Branch Code <span className="text-red-500">*</span>
+                  </label>
                   <Input
                     value={form.code}
                     onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })}
@@ -550,9 +552,7 @@ export default function BranchesPage() {
                     <Input
                       value={form.formattedAddress}
                       onChange={(e) => setForm({ ...form, formattedAddress: e.target.value })}
-                      placeholder="Auto-populated from search"
-                      readOnly
-                      className="bg-gray-50 text-gray-600"
+                      placeholder="Full branch address"
                     />
                   </div>
                   <div>
@@ -689,7 +689,7 @@ export default function BranchesPage() {
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
             <Button
               onClick={handleSave}
-              disabled={saving || !form.name || !form.code || !form.cityId || !form.areaId || !form.formattedAddress}
+              disabled={saving || !form.name || !form.code || !form.cityId || !form.areaId}
             >
               {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               {editingBranch ? "Update" : "Create"}

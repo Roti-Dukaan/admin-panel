@@ -60,8 +60,8 @@ export interface CreateBranchDTO {
 }
 
 export interface UpdateBranchDTO {
-  name?: string;
-  code?: string;
+  name: string;
+  code: string;
   cityId?: string;
   areaId?: string;
   phone?: string;

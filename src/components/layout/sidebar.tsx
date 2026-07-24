@@ -46,7 +46,7 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
 
   const branchPaths = React.useMemo(() => [
     '/branch/dashboard', '/branch/orders', '/branch/kitchen', '/branch/production',
-    '/branch/inventory', '/branch/delivery', '/branch/customers', '/branch/reports', '/branch/profile'
+    '/branch/menu', '/branch/inventory', '/branch/delivery', '/branch/customers', '/branch/reports', '/branch/profile'
   ], [])
 
   const visibleNavItems = React.useMemo(() => {
