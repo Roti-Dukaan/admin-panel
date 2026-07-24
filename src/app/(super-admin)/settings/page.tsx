@@ -29,6 +29,7 @@ import {
   Zap,
   Eye,
   EyeOff,
+  Mail,
 } from "lucide-react";
 import { useSettingsStore } from "@/features/settings/hooks/useSettings";
 import { useDeliveryProviderStore } from "@/features/delivery-providers/hooks/useDeliveryProviders";
@@ -36,6 +37,7 @@ import type { SettingsTab, PincodeData, BusinessSettingsData, TaxConfigData, Pay
 import { PROVIDER_LABELS, STRATEGY_LABELS } from "@/features/delivery-providers/types/delivery-provider";
 import { Header } from "@/components/layout/header";
 import { KitchenTab } from "@/features/settings/components/KitchenTab";
+import { EmailTab } from "@/features/settings/components/EmailTab";
 
 const tabs: { key: SettingsTab; label: string; icon: React.ElementType }[] = [
   { key: "business", label: "Business", icon: Building2 },
@@ -45,6 +47,7 @@ const tabs: { key: SettingsTab; label: string; icon: React.ElementType }[] = [
   { key: "kitchen", label: "Kitchen", icon: Store },
   { key: "pincodes", label: "Pincodes", icon: MapPin },
   { key: "delivery-providers", label: "Delivery Providers", icon: Server },
+  { key: "email", label: "Email", icon: Mail },
 ];
 
 export default function SettingsPage() {
@@ -180,6 +183,7 @@ export default function SettingsPage() {
             {activeTab === "delivery-providers" && (
               <DeliveryProvidersTab />
             )}
+            {activeTab === "email" && <EmailTab saving={saving} />}
           </motion.div>
         )}
       </div>
