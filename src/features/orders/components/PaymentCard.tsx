@@ -14,8 +14,11 @@ import {
   Hash,
   ArrowDown,
   User,
+  Truck,
+  Zap,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useState } from "react"
 
 function formatCurrency(amount: number) {
   return new Intl.NumberFormat("en-IN", {
@@ -64,6 +67,11 @@ export function PaymentCard({ payment }: PaymentCardProps) {
   const statusConfig = PAYMENT_STATUS_CONFIG[payment.status]
   const isCod = payment.method === "cod"
   const isOnline = payment.method === "online"
+  const [deliveryFree, setDeliveryFree] = useState(false)
+
+  const handleDeliveryToggle = () => {
+    setDeliveryFree((prev) => !prev)
+  }
 
   return (
     <div className="space-y-4">
@@ -176,9 +184,31 @@ export function PaymentCard({ payment }: PaymentCardProps) {
               <span className="text-emerald-600">-{formatCurrency(payment.discount)}</span>
             </div>
           )}
-          <div className="flex justify-between text-sm">
+          <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">Delivery</span>
-            <span>{formatCurrency(payment.deliveryCharges)}</span>
+            <div className="flex items-center gap-2">
+              <span className={cn(
+                "font-mono text-sm",
+                deliveryFree ? "text-emerald-600" : ""
+              )}>
+                {deliveryFree ? "FREE" : formatCurrency(payment.deliveryCharges)}
+              </span>
+              <button
+                onClick={handleDeliveryToggle}
+                className={cn(
+                  "relative inline-flex h-6 w-11 items-center rounded-full transition-colors",
+                  deliveryFree ? "bg-emerald-500" : "bg-gray-200"
+                )}
+                aria-label={deliveryFree ? "Disable free delivery" : "Enable free delivery"}
+              >
+                <span
+                  className={cn(
+                    "inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform duration-200",
+                    deliveryFree ? "translate-x-6" : "translate-x-1"
+                  )}
+                />
+              </button>
+            </div>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">GST (5%)</span>
