@@ -1,4 +1,4 @@
-import { LayoutDashboard, ShoppingBag, UtensilsCrossed, Truck, ClipboardList, Users, CreditCard, Clock, BarChart3, Wallet, Settings, Shield, Store, Settings2, FileText, ToggleLeft } from "lucide-react"
+import { LayoutDashboard, ShoppingBag, UtensilsCrossed, Truck, ClipboardList, Users, CreditCard, Clock, BarChart3, Wallet, Settings, Shield, Store, Settings2, FileText, ToggleLeft, LifeBuoy } from "lucide-react"
 
 export type NavItem = {
   label: string
@@ -32,6 +32,7 @@ export const BRANCH_MANAGER_NAVIGATION: NavItem[] = [
   { label: "Inventory", href: "/branch/inventory", icon: Store, workspace: 'BRANCH_MANAGER' },
   { label: "Delivery", href: "/branch/delivery", icon: Truck, workspace: 'BRANCH_MANAGER' },
   { label: "Customers", href: "/branch/customers", icon: Users, workspace: 'BRANCH_MANAGER' },
+  { label: "Support", href: "/support", icon: LifeBuoy, workspace: 'BRANCH_MANAGER' },
   { label: "Reports", href: "/branch/reports", icon: BarChart3, workspace: 'BRANCH_MANAGER' },
   { label: "Profile", href: "/branch/profile", icon: FileText, workspace: 'BRANCH_MANAGER' },
 ]

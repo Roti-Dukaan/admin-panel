@@ -22,6 +22,7 @@ import {
   MapPin,
   Store,
   ToggleLeft,
+  LifeBuoy,
 } from "lucide-react"
 import { useSidebar } from "./hooks/useSidebar"
 import { SidebarGroup } from "./SidebarGroup"
@@ -52,6 +53,7 @@ const MAIN_ADMIN_NAV_GROUPS: NavGroup[] = [
       { label: "Deliveries", href: "/deliveries", icon: Truck, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN', 'BRANCH_MANAGER'] },
       { label: "Delivery Slots", href: "/delivery-slots", icon: Clock3, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
       { label: "Production Ops", href: "/subscription-operations", icon: Activity, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
+      { label: "Customer Support", href: "/support", icon: LifeBuoy, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN', 'BRANCH_MANAGER'] },
     ],
   },
   {
