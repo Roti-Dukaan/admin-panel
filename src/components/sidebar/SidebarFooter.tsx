@@ -51,7 +51,6 @@ export function SidebarFooter({ collapsed = false }: SidebarFooterProps) {
           <>
             <div className="flex flex-1 flex-col items-start">
               <span className="font-medium text-gray-900 leading-tight">Admin</span>
-              <span className="text-[11px] text-gray-900 leading-tight">Super Admin</span>
             </div>
             <ChevronUp
               className={cn(

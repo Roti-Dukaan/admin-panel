@@ -22,7 +22,6 @@ import {
   MapPin,
   Store,
   ToggleLeft,
-  Package,
 } from "lucide-react"
 import { useSidebar } from "./hooks/useSidebar"
 import { SidebarGroup } from "./SidebarGroup"
@@ -52,7 +51,6 @@ const MAIN_ADMIN_NAV_GROUPS: NavGroup[] = [
       { label: "Orders", href: "/orders", icon: ShoppingBag, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN', 'BRANCH_MANAGER'] },
       { label: "Deliveries", href: "/deliveries", icon: Truck, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN', 'BRANCH_MANAGER'] },
       { label: "Delivery Slots", href: "/delivery-slots", icon: Clock3, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
-      { label: "Inventory & Availability", href: "/branch-inventory", icon: Package, roles: ['BRANCH_MANAGER'] },
     ],
   },
   {
