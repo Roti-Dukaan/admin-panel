@@ -44,7 +44,10 @@ export function KitchenBoard() {
   const [slot, setSlot] = useState<string>("all");
   const [selected, setSelected] = useState<KitchenOrderView | null>(null);
 
-  const filters = { search, deliveryKind, payment, prepTime, slot };
+  const filters = useMemo(
+    () => ({ search, deliveryKind, payment, prepTime, slot }),
+    [search, deliveryKind, payment, prepTime, slot],
+  );
   const query = useKitchenOrders(filters);
   const orderIds = useMemo(() => (query.data?.items ?? []).map((i) => i.orderId), [query.data]);
   const detailMap = useKitchenDetailMap(orderIds);

@@ -3,7 +3,8 @@
 import * as React from "react"
 import { motion } from "motion/react"
 import { useBranchDashboard } from "../hooks/useBranchDashboard"
-import { Wallet, ShoppingBag, UtensilsCrossed, Circle, Clock, Truck, Package, Users, BarChart3 } from "lucide-react"
+import { KitchenStatusToggle } from "@/features/kitchen-operations/KitchenStatusToggle"
+import { Wallet, ShoppingBag, UtensilsCrossed, Clock, Truck, Package, Users, BarChart3 } from "lucide-react"
 
 interface StatCardProps {
   title: string
@@ -98,7 +99,7 @@ export function BranchDashboardPage() {
     )
   }
 
-  const stats = data?.data
+  const stats = data
 
   return (
     <div className="p-6 space-y-6">
@@ -106,7 +107,7 @@ export function BranchDashboardPage() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Today's Orders"
-          value={stats?.todayOrders ?? 0}
+          value={stats?.totalOrdersToday ?? 0}
           subtitle="All orders"
           icon={<ShoppingBag className="h-6 w-6" />}
           trend="+12%"
@@ -114,7 +115,7 @@ export function BranchDashboardPage() {
         />
         <StatCard
           title="Today's Revenue"
-          value={`₹${(stats?.todayRevenue ?? 0).toLocaleString()}`}
+          value={`₹${(stats?.totalRevenueToday ?? 0).toLocaleString()}`}
           subtitle="Total sales"
           icon={<Wallet className="h-6 w-6" />}
           trend="+8%"
@@ -122,18 +123,13 @@ export function BranchDashboardPage() {
         />
         <StatCard
           title="Live Tickets"
-          value={stats?.liveTickets ?? 0}
+          value={stats?.activeTickets ?? 0}
           subtitle="In kitchen"
           icon={<UtensilsCrossed className="h-6 w-6" />}
-          trend={stats?.liveTickets ? `${stats.liveTickets} active` : "No active tickets"}
+          trend={stats?.activeTickets ? `${stats.activeTickets} active` : "No active tickets"}
           trendUp={true}
         />
-        <StatCard
-          title="Kitchen Status"
-          value={stats?.kitchenOpen ? "OPEN" : "CLOSED"}
-          subtitle={stats?.kitchenOpen ? "Accepting orders" : "Closed for orders"}
-          icon={<Circle className={`h-6 w-6 ${stats?.kitchenOpen ? "text-green-500" : "text-red-500"}`} />}
-        />
+        <KitchenStatusToggle />
       </div>
 
       {/* Quick Actions */}

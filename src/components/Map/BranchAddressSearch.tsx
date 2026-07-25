@@ -27,7 +27,10 @@ export function BranchAddressSearch({
   const { isLoaded, error } = useGoogleMapsScript();
   const inputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+  const onPlaceSelectedRef = useRef(onPlaceSelected);
   const [value, setValue] = useState(defaultValue);
+
+  onPlaceSelectedRef.current = onPlaceSelected;
 
   useEffect(() => {
     setValue(defaultValue);
@@ -56,10 +59,10 @@ export function BranchAddressSearch({
       const lat = place.geometry.location.lat();
       const lng = place.geometry.location.lng();
       const components = place.address_components || [];
+      const formattedAddress = place.formatted_address || place.name || '';
 
       let city = '';
       let area = '';
-      let pincode = '';
 
       for (const comp of components) {
         const types = comp.types;
@@ -71,14 +74,17 @@ export function BranchAddressSearch({
           city = comp.long_name;
         } else if (!area && types.includes('neighborhood')) {
           area = comp.long_name;
+        } else if (!area && types.includes('sublocality_level_2')) {
+          area = comp.long_name;
         }
       }
 
-      onPlaceSelected({
+      setValue(formattedAddress);
+      onPlaceSelectedRef.current({
         latitude: lat,
         longitude: lng,
-        formattedAddress: '',
-        placeId: '',
+        formattedAddress,
+        placeId: place.place_id || '',
         city,
         area,
       });
@@ -87,9 +93,10 @@ export function BranchAddressSearch({
     return () => {
       if (autocompleteRef.current) {
         google.maps.event.clearInstanceListeners(autocompleteRef.current);
+        autocompleteRef.current = null;
       }
     };
-  }, [isLoaded, onPlaceSelected]);
+  }, [isLoaded]);
 
   if (error) {
     return (

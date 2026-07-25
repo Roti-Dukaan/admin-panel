@@ -11,13 +11,33 @@ import { toast } from "sonner";
 import { kitchenApi } from "@/lib/api/kitchen.api";
 import type { KitchenStage, KitchenOrderListResponse, KitchenOrderDetail } from "@/lib/api/kitchen.api";
 import type { KitchenOrderView, DeliveryKind, PaymentFilter, PrepTimeFilter } from "../types/kitchen";
-import { connectRealtime, disconnectRealtime, onRealtime } from "@/lib/realtime/socket";
-import { playChime, ensureNotificationPermission, showOrderNotification, unlockAudio } from "@/lib/realtime/notify";
-import { REALTIME_EVENTS, type KitchenTicketCreatedPayload, type KitchenTicketUpdatedPayload, type DeliveryUpdatedPayload } from "@/lib/realtime/events";
-
-const KITCHEN_QUERY_KEY = ["kitchen", "orders"] as const;
-const KITCHEN_DETAIL_QUERY_KEY = ["kitchen", "details"] as const;
-const AUTO_REFRESH_MS = 30_000;
+import {
+  connectRealtime,
+  disconnectRealtime,
+  onRealtime,
+  ensureRealtimeAuth,
+  getRealtimeSocket,
+} from "@/lib/realtime/socket";
+import {
+  mergeKitchenListResponses,
+  patchKitchenDetailMapStage,
+  patchKitchenListStage,
+} from "../utils/kitchen-cache";
+import {
+  KITCHEN_QUERY_KEY,
+  KITCHEN_DETAIL_QUERY_KEY,
+  handleBranchOrderNew,
+  handleKitchenTicketCreated,
+} from "../utils/kitchen-realtime-sync";
+import { ensureNotificationPermission, unlockAudio } from "@/lib/realtime/notify";
+import {
+  REALTIME_EVENTS,
+  type BranchOrderNewPayload,
+  type KitchenTicketCreatedPayload,
+} from "@/lib/realtime/events";
+import { useAdminAuthStore } from "@/features/admin-auth/store/admin-auth-store";
+const REALTIME_STALE_MS = 5_000;
+const FALLBACK_POLL_MS = 60_000;
 
 export interface KitchenFilterState {
   search: string;
@@ -27,10 +47,21 @@ export interface KitchenFilterState {
   slot: string | "all";
 }
 
-/** Kitchen queue list with search, sorting and 30s auto-refresh. */
+/** Primitive query-key suffix — avoids unstable object identity in query keys. */
+export function kitchenFiltersQueryKey(filters: KitchenFilterState) {
+  return [
+    filters.search,
+    filters.deliveryKind,
+    filters.payment,
+    filters.prepTime,
+    filters.slot,
+  ] as const;
+}
+
+/** Kitchen queue list with search, sorting and slow fallback poll (realtime is primary). */
 export function useKitchenOrders(filters: KitchenFilterState) {
   return useQuery({
-    queryKey: [KITCHEN_QUERY_KEY, filters],
+    queryKey: [...KITCHEN_QUERY_KEY, ...kitchenFiltersQueryKey(filters)],
     queryFn: () =>
       kitchenApi.listOrders({
         search: filters.search.trim() || undefined,
@@ -38,9 +69,15 @@ export function useKitchenOrders(filters: KitchenFilterState) {
         sortOrder: filters.prepTime === "oldest" ? "asc" : "desc",
         limit: 300,
       }),
-    staleTime: AUTO_REFRESH_MS,
-    refetchInterval: AUTO_REFRESH_MS,
+    staleTime: REALTIME_STALE_MS,
+    refetchInterval: FALLBACK_POLL_MS,
+    refetchIntervalInBackground: true,
     placeholderData: keepPreviousData,
+    structuralSharing: (oldData, newData) =>
+      mergeKitchenListResponses(
+        oldData as KitchenOrderListResponse | undefined,
+        newData as KitchenOrderListResponse,
+      ),
   });
 }
 
@@ -58,7 +95,7 @@ export function useKitchenDetailMap(orderIds: string[]) {
   return useQuery({
     queryKey: [...KITCHEN_DETAIL_QUERY_KEY, sortedIds] as const,
     queryFn: () => kitchenApi.batchGetOrderDetails(sortedIds),
-    staleTime: AUTO_REFRESH_MS,
+    staleTime: REALTIME_STALE_MS,
     enabled: sortedIds.length > 0,
     placeholderData: keepPreviousData,
   }).data ?? {};
@@ -70,7 +107,7 @@ export function useKitchenOrderDetail(id: string | null) {
     queryKey: ["kitchen", "detail", id],
     queryFn: () => kitchenApi.getOrderDetail(id!),
     enabled: !!id,
-    staleTime: AUTO_REFRESH_MS,
+    staleTime: REALTIME_STALE_MS,
   });
 }
 
@@ -93,22 +130,9 @@ export function useKitchenStageMutation() {
       const nextStatus: KitchenStage = action === "preparing" ? "PREPARING" : "READY_FOR_PICKUP";
       const stamp = new Date().toISOString();
 
-      qc.setQueriesData<KitchenOrderListResponse>({ queryKey: KITCHEN_QUERY_KEY }, (old) => {
-        if (!old) return old;
-        return {
-          ...old,
-          items: old.items.map((it) =>
-            it.orderId === id
-              ? {
-                  ...it,
-                  kitchenStatus: nextStatus,
-                  startedPreparingAt: action === "preparing" ? stamp : it.startedPreparingAt,
-                  readyAt: action === "ready" ? stamp : it.readyAt,
-                }
-              : it
-          ),
-        };
-      });
+      qc.setQueriesData<KitchenOrderListResponse>({ queryKey: KITCHEN_QUERY_KEY }, (old) =>
+        patchKitchenListStage(old, id, nextStatus, stamp),
+      );
 
       return { previous };
     },
@@ -118,151 +142,76 @@ export function useKitchenStageMutation() {
       toast.error("Could not update the order. Please try again.");
     },
 
-    onSuccess: (_data, { action, id }) => {
-      toast.success(action === "preparing" ? "Order moved to Preparing." : "Order marked Ready for Pickup.");
-      // Only refresh the affected order's detail (so its delivery/timeline
-      // reflect the new stage). The board cache is already patched optimistically,
-      // so we deliberately avoid invalidating the whole list/all details here —
-      // that caused a refetch storm that made cards feel slow to move.
-      qc.invalidateQueries({ queryKey: ["kitchen", "detail", id] });
+    onSuccess: (data) => {
+      qc.setQueriesData<KitchenOrderListResponse>({ queryKey: KITCHEN_QUERY_KEY }, (old) =>
+        patchKitchenListStage(old, data.orderId, data.stage, data.occurredAt),
+      );
+      qc.setQueriesData<Record<string, KitchenOrderDetail>>({ queryKey: KITCHEN_DETAIL_QUERY_KEY }, (old) =>
+        patchKitchenDetailMapStage(old, data),
+      );
+
+      toast.success(
+        data.stage === "PREPARING"
+          ? "Order moved to Preparing."
+          : "Order marked Ready for Pickup.",
+      );
+      qc.invalidateQueries({ queryKey: ["kitchen", "detail", data.orderId] });
     },
   });
 }
 
 /**
- * Live updates for the kitchen board over Socket.IO.
+ * Kitchen board socket lifecycle + cache sync fallback.
  *
- * - New tickets appear instantly (the list refetches) with a single chime + a
- *   browser notification (when the tab is hidden) that opens the order on click.
- * - Stage changes (PREPARING / READY_FOR_PICKUP) patch the board cache in place
- *   so cards glide between columns with no flicker/refetch.
- * - Events are de-duped by orderId + timestamp so retries / multi-tab setups
- *   never double-apply.
+ * BranchOrderAlertProvider also connects globally; this hook keeps the board
+ * live when that provider remounts late (auth rehydrate) or misses an event.
  */
 export function useKitchenRealtime(options?: {
   onNewOrder?: (payload: KitchenTicketCreatedPayload) => void;
 }) {
   const qc = useQueryClient();
+  const accessToken = useAdminAuthStore((s) => s.accessToken);
   const [connected, setConnected] = useState(false);
   const seen = useRef<Set<string>>(new Set());
   const onNewOrderRef = useRef(options?.onNewOrder);
   onNewOrderRef.current = options?.onNewOrder;
 
   useEffect(() => {
-    // Prime the audio + notification pipeline so the first new-order chime
-    // actually plays (browsers require a prior user gesture to unlock audio).
+    if (!accessToken) return;
+
     unlockAudio();
     ensureNotificationPermission();
+    connectRealtime();
+    ensureRealtimeAuth(accessToken);
 
-    const socket = connectRealtime();
+    const socket = getRealtimeSocket();
 
     const offConnect = onRealtime(REALTIME_EVENTS.CONNECT, () => setConnected(true));
     const offDisconnect = onRealtime(REALTIME_EVENTS.DISCONNECT, () => setConnected(false));
     setConnected(socket.connected);
 
-    const isNew = (key: string) => {
-      if (seen.current.has(key)) return false;
-      seen.current.add(key);
-      if (seen.current.size > 200) seen.current.clear();
-      return true;
-    };
+    const offBranchNew = onRealtime(REALTIME_EVENTS.BRANCH_ORDER_NEW, (raw) => {
+      handleBranchOrderNew(qc, raw as BranchOrderNewPayload);
+    });
 
     const offCreated = onRealtime(REALTIME_EVENTS.KITCHEN_TICKET_CREATED, (raw) => {
       const payload = raw as KitchenTicketCreatedPayload;
+      handleKitchenTicketCreated(qc, payload);
       const key = `${payload.orderId}:${payload.occurredAt}`;
-      if (!isNew(key)) return;
-
-      playChime();
-      ensureNotificationPermission();
-      if (typeof document !== "undefined" && document.hidden) {
-        showOrderNotification(
-          `New order ${payload.orderNumber}`,
-          "A new order just arrived in the kitchen.",
-          () => onNewOrderRef.current?.(payload),
-        );
-      }
-
-      // Optimistically insert a minimal card so it appears instantly without
-      // waiting for the full-list refetch. The refetch then fills in real data.
-      qc.setQueriesData<KitchenOrderListResponse>({ queryKey: KITCHEN_QUERY_KEY }, (old) => {
-        if (!old) return old;
-        // Prevent duplicate if the card is already present
-        if (old.items.some((it) => it.orderId === payload.orderId)) return old;
-        const minimalItem: KitchenOrderListResponse["items"][0] = {
-          orderId: payload.orderId,
-          ticketId: payload.ticketId,
-          ticketNumber: payload.ticketNumber,
-          orderNumber: payload.orderNumber,
-          kitchenStatus: "PENDING",
-          stageLabel: "New Orders",
-          priority: "NORMAL",
-          customer: null,
-          itemsCount: 0,
-          totalQuantity: 0,
-          deliveryType: "DELIVERY",
-          orderCreatedAt: payload.occurredAt,
-          timer: { elapsedMinutes: 0, preparingMinutes: null, readyDurationMinutes: null, isReady: false },
-        };
-        return { ...old, items: [minimalItem, ...old.items] };
-      });
-
-      // Trigger a background refetch to fill in full data
-      qc.invalidateQueries({ queryKey: KITCHEN_QUERY_KEY });
-      qc.invalidateQueries({ queryKey: KITCHEN_DETAIL_QUERY_KEY });
+      if (seen.current.has(key)) return;
+      seen.current.add(key);
+      if (seen.current.size > 200) seen.current.clear();
       onNewOrderRef.current?.(payload);
-    });
-
-    // Listen for delivery status changes (rider arriving, arrived, picked up,
-    // delivered, etc.). When a delivery reaches DELIVERED, the order has left
-    // production and must disappear from the live Kitchen Queue immediately —
-    // without a page refresh. We patch the list cache to drop that orderId; the
-    // card animates out (see KitchenColumn exit transition). The order itself is
-    // untouched and remains fully available in the Orders module.
-    const offDeliveryUpdated = onRealtime(REALTIME_EVENTS.KITCHEN_DELIVERY_UPDATED, (raw) => {
-      const payload = raw as DeliveryUpdatedPayload;
-      if (payload.status === "DELIVERED") {
-        qc.setQueriesData<KitchenOrderListResponse>({ queryKey: KITCHEN_QUERY_KEY }, (old) => {
-          if (!old) return old;
-          if (!old.items.some((it) => it.orderId === payload.orderId)) return old;
-          return { ...old, items: old.items.filter((it) => it.orderId !== payload.orderId) };
-        });
-      }
-    });
-
-    const offUpdated = onRealtime(REALTIME_EVENTS.KITCHEN_TICKET_UPDATED, (raw) => {
-      const payload = raw as KitchenTicketUpdatedPayload;
-      const key = `${payload.orderId}:${payload.occurredAt}`;
-      if (!isNew(key)) return;
-
-      const stamp = payload.occurredAt;
-      qc.setQueriesData<KitchenOrderListResponse>({ queryKey: KITCHEN_QUERY_KEY }, (old) => {
-        if (!old) return old;
-        return {
-          ...old,
-          items: old.items.map((it) =>
-            it.orderId === payload.orderId
-              ? {
-                  ...it,
-                  kitchenStatus: payload.stage,
-                  startedPreparingAt:
-                    payload.stage === "PREPARING" ? stamp : it.startedPreparingAt,
-                  readyAt: payload.stage === "READY_FOR_PICKUP" ? stamp : it.readyAt,
-                }
-              : it,
-          ),
-        };
-      });
     });
 
     return () => {
       offConnect();
       offDisconnect();
+      offBranchNew();
       offCreated();
-      offUpdated();
-      offDeliveryUpdated();
       disconnectRealtime();
     };
-  }, [qc]);
+  }, [accessToken, qc]);
 
   return { connected };
 }

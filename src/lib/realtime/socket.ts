@@ -16,6 +16,8 @@ function getToken(): string | null {
 
 let socket: Socket | null = null;
 let refCount = 0;
+/** Auth token applied on the last successful socket connection. */
+let connectedAuthToken: string | null = null;
 
 function ensureSocket(): Socket {
   if (!socket) {
@@ -37,9 +39,13 @@ function ensureSocket(): Socket {
       console.error("[Socket] Connection error:", err.message);
     });
     socket.on("connect", () => {
+      connectedAuthToken = getToken();
       console.log("[Socket] Connected:", socket?.id);
     });
     socket.on("disconnect", (reason) => {
+      if (reason === "io client disconnect") {
+        connectedAuthToken = null;
+      }
       console.log("[Socket] Disconnected:", reason);
     });
   }
@@ -54,8 +60,41 @@ function ensureSocket(): Socket {
 export function connectRealtime(): Socket {
   const s = ensureSocket();
   refCount += 1;
-  if (!s.connected) s.connect();
+  const token = getToken();
+  if (token && !s.connected) s.connect();
   return s;
+}
+
+/**
+ * Reconnect only when the auth token changed (login / refresh). Avoids tearing
+ * down an active socket on every hook mount — that caused persistent "Offline"
+ * on branch kitchen pages with multiple realtime consumers.
+ */
+export function reconnectRealtimeWithAuth(): void {
+  ensureRealtimeAuth(getToken());
+}
+
+/** Apply the latest auth token to the shared socket without redundant reconnects. */
+export function ensureRealtimeAuth(token: string | null): void {
+  if (!token) return;
+  const s = ensureSocket();
+  if (s.connected && connectedAuthToken === token) return;
+
+  connectedAuthToken = token;
+  if (s.connected) {
+    s.disconnect();
+  }
+  if (refCount > 0) {
+    s.connect();
+  }
+}
+
+/** Drop socket auth after logout. */
+export function resetRealtimeAuth(): void {
+  connectedAuthToken = null;
+  if (socket?.connected) {
+    socket.disconnect();
+  }
 }
 
 export function disconnectRealtime(): void {

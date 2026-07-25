@@ -44,9 +44,9 @@ const defaultFilters: OrderFilters = {
   paymentStatus: "all",
   orderType: "all",
   search: "",
-  branchId: "",
-  cityId: "",
-  areaId: "",
+  branchId: "all",
+  cityId: "all",
+  areaId: "all",
 }
 
 export function useBranchOrdersStore() {
@@ -108,9 +108,12 @@ export function useBranchOrdersStore() {
           dateFilter: filters.dateFilter,
           customStartDate: filters.customStartDate,
           customEndDate: filters.customEndDate,
-          branchId: filters.branchId || branchId || undefined,
-          cityId: filters.cityId || undefined,
-          areaId: filters.areaId || undefined,
+          branchId:
+            (filters.branchId && filters.branchId !== "all" ? filters.branchId : undefined) ||
+            branchId ||
+            undefined,
+          cityId: filters.cityId && filters.cityId !== "all" ? filters.cityId : undefined,
+          areaId: filters.areaId && filters.areaId !== "all" ? filters.areaId : undefined,
         })
         set({
           orders: data.items as Order[],

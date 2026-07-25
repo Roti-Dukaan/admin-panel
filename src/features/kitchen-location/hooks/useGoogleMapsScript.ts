@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { getGoogleMapsApiKey } from '@/lib/google-maps';
 
 let loaded = false;
 let loadPromise: Promise<void> | null = null;
@@ -6,7 +7,7 @@ let loadPromise: Promise<void> | null = null;
 function createScriptLoader(): Promise<void> {
   if (loadPromise) return loadPromise;
 
-  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+  const apiKey = getGoogleMapsApiKey();
   if (!apiKey) {
     return Promise.reject(new Error('Google Maps API key is not configured'));
   }
@@ -55,7 +56,7 @@ export function useGoogleMapsScript(): { isLoaded: boolean; error: string | null
       return;
     }
 
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+    const apiKey = getGoogleMapsApiKey();
     if (!apiKey) {
       setError('Google Maps API key is not configured');
       return;

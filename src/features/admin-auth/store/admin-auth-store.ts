@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { adminAuthApi } from '../api/admin-auth.api';
+import { reconnectRealtimeWithAuth, resetRealtimeAuth } from '@/lib/realtime/socket';
 import type { Workspace } from '@/contexts/WorkspaceContext';
 
 export interface AdminUser {
@@ -53,9 +54,11 @@ export const useAdminAuthStore = create<AdminAuthState>()(
           branchId: user.branchId || null,
           permissions: user.permissions || [],
         })
+        reconnectRealtimeWithAuth()
       },
 
-      logout: () =>
+      logout: () => {
+        resetRealtimeAuth()
         set({
           user: null,
           isAuthenticated: false,
@@ -65,9 +68,13 @@ export const useAdminAuthStore = create<AdminAuthState>()(
           role: null,
           branchId: null,
           permissions: [],
-        }),
+        })
+      },
 
-      setTokens: (accessToken, refreshToken) => set({ accessToken, refreshToken }),
+      setTokens: (accessToken, refreshToken) => {
+        set({ accessToken, refreshToken })
+        if (accessToken) reconnectRealtimeWithAuth()
+      },
 
       setUser: (user) => {
         const role = user?.roles?.[0] || null

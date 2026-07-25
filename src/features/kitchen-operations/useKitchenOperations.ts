@@ -24,11 +24,26 @@ export function useUpdateKitchenStatus() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (payload: UpdateKitchenOperationsPayload) => kitchenApi.updateKitchenStatus(payload),
+    onMutate: async (payload) => {
+      await queryClient.cancelQueries({ queryKey: KITCHEN_STATUS_QUERY_KEY });
+      const previous = queryClient.getQueryData<KitchenOperationsStatus>(KITCHEN_STATUS_QUERY_KEY);
+      if (previous) {
+        queryClient.setQueryData<KitchenOperationsStatus>(KITCHEN_STATUS_QUERY_KEY, {
+          ...previous,
+          status: payload.status,
+        });
+      }
+      return { previous };
+    },
     onSuccess: (data: KitchenOperationsStatus) => {
       queryClient.setQueryData(KITCHEN_STATUS_QUERY_KEY, data);
+      queryClient.invalidateQueries({ queryKey: ["branch-dashboard", "stats"] });
       toast.success("Kitchen status updated successfully");
     },
-    onError: (error: any) => {
+    onError: (error: any, _payload, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(KITCHEN_STATUS_QUERY_KEY, context.previous);
+      }
       const message =
         error?.response?.data?.message || error?.message || "Failed to update kitchen status";
       toast.error(message);

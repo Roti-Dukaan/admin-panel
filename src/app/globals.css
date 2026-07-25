@@ -180,3 +180,13 @@ aside nav {
   scrollbar-width: thin !important;
   scrollbar-color: #d1d5db transparent !important;
 }
+
+/* Google Places autocomplete dropdown — must sit above Radix Dialog (z-50) */
+.pac-container {
+  z-index: 10000 !important;
+  pointer-events: auto !important;
+}
+
+.pac-item {
+  cursor: pointer;
+}

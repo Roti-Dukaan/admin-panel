@@ -13,6 +13,9 @@ export const REALTIME_EVENTS = {
   ADMIN_ORDER_CREATED: "admin:order_created",
   ADMIN_ORDER_UPDATED: "admin:order_updated",
 
+  BRANCH_ORDER_NEW: "branch:order_new",
+  BRANCH_ORDER_UPDATED: "branch:order_updated",
+
   ADMIN_DELIVERY_UPDATED: "admin:delivery_updated",
   CUSTOMER_DELIVERY_UPDATED: "customer:delivery_updated",
   KITCHEN_DELIVERY_UPDATED: "kitchen:delivery_updated",
@@ -49,6 +52,22 @@ export interface AdminOrderCreatedPayload {
   orderNumber: string;
   status: string;
   occurredAt: string;
+  branchId?: string;
+  itemsSummary?: string;
+  itemCount?: number;
+  grandTotal?: number;
+}
+
+export interface BranchOrderNewPayload extends AdminOrderCreatedPayload {
+  branchId: string;
+  itemsSummary: string;
+  itemCount: number;
+  grandTotal: number;
+  paymentMethod?: string;
+}
+
+export interface BranchOrderUpdatedPayload extends AdminOrderUpdatedPayload {
+  branchId: string;
 }
 
 export interface AdminOrderUpdatedPayload {

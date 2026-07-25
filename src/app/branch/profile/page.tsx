@@ -46,6 +46,21 @@ export default function BranchProfilePage() {
           </div>
         </div>
 
+        <div className="mt-6 rounded-2xl border border-gray-200/80 bg-white p-6 shadow-sm">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900 mb-1">Branch Team</h2>
+              <p className="text-sm text-gray-500">Invite additional branch managers with the same access.</p>
+            </div>
+            <a
+              href="/branch/team"
+              className="rounded-lg border border-orange-200 bg-orange-50 px-4 py-2 text-sm font-medium text-orange-700 hover:bg-orange-100 transition-colors"
+            >
+              Manage Team
+            </a>
+          </div>
+        </div>
+
         {/* Branch Settings Card */}
         <div className="mt-6 rounded-2xl border border-gray-200/80 bg-white p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Branch Settings</h2>
