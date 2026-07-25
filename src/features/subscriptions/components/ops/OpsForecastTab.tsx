@@ -29,11 +29,13 @@ export function OpsForecastTab() {
 
   return (
     <Tabs value={tab} onValueChange={setTab}>
-      <TabsList>
-        <TabsTrigger value="kitchen">Kitchen Forecast</TabsTrigger>
-        <TabsTrigger value="delivery">Delivery Forecast</TabsTrigger>
-        <TabsTrigger value="week">7-Day Trend</TabsTrigger>
-      </TabsList>
+      <div className="rounded-xl border border-gray-200 bg-white p-1 shadow-sm">
+        <TabsList className="flex w-full gap-1 bg-transparent p-0">
+          <TabsTrigger value="kitchen" className="flex-1 rounded-lg py-2 text-sm font-medium text-gray-500 transition-all data-[state=active]:bg-orange-500 data-[state=active]:text-white data-[state=active]:shadow-md">Kitchen Forecast</TabsTrigger>
+          <TabsTrigger value="delivery" className="flex-1 rounded-lg py-2 text-sm font-medium text-gray-500 transition-all data-[state=active]:bg-orange-500 data-[state=active]:text-white data-[state=active]:shadow-md">Delivery Forecast</TabsTrigger>
+          <TabsTrigger value="week" className="flex-1 rounded-lg py-2 text-sm font-medium text-gray-500 transition-all data-[state=active]:bg-orange-500 data-[state=active]:text-white data-[state=active]:shadow-md">7-Day Trend</TabsTrigger>
+        </TabsList>
+      </div>
       <TabsContent value="kitchen">
         <KitchenForecast date={date} onDate={setDate} />
       </TabsContent>
