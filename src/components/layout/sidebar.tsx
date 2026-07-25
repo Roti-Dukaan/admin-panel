@@ -5,8 +5,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { useAdminAuthStore } from "@/features/admin-auth/store/admin-auth-store"
-import { Settings2, FileText } from "lucide-react"
-import { LayoutDashboard, ShoppingBag, Users, UtensilsCrossed, LogOut, ChevronLeft, ChevronRight, ClipboardList, CreditCard, Clock, Shield, BarChart3, Wallet, Settings, Truck, Store } from "lucide-react"
+import { LayoutDashboard, ShoppingBag, Users, UtensilsCrossed, LogOut, ChevronLeft, ChevronRight, ClipboardList, CreditCard, Shield, BarChart3, Wallet, Settings, Truck, Store } from "lucide-react"
 
 interface NavItem {
   label: string

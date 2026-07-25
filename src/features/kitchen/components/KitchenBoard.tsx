@@ -5,7 +5,6 @@ import { AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useKitchenOrders, useKitchenDetailMap, useKitchenStageMutation, useKitchenRealtime, applyKitchenFilters } from "../hooks/useKitchen";
 import { usePrepClock, elapsedSeconds } from "../hooks/usePrepClock";
-import { KitchenHeader } from "./KitchenHeader";
 import { KitchenStats, type KitchenStatsData } from "./KitchenStats";
 import { ProductionSummary, type ProductionItem } from "./ProductionSummary";
 import { SlotSelector } from "./SlotSelector";
@@ -169,8 +168,6 @@ const isLoading = query.isLoading;
 
   return (
     <div className="flex min-h-screen flex-col gap-5 bg-gray-50/50 p-6">
-      <KitchenHeader connected={realtime.connected} />
-
       <KitchenStats stats={stats} />
 
 <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">

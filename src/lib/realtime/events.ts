@@ -18,6 +18,18 @@ export const REALTIME_EVENTS = {
   KITCHEN_DELIVERY_UPDATED: "kitchen:delivery_updated",
 
   CUSTOMER_ORDER_UPDATED: "customer:order_updated",
+
+  // Subscription kitchen events
+  SUBSCRIPTION_ORDER_CREATED: "subscription:order_created",
+  SUBSCRIPTION_ORDER_UPDATED: "subscription:order_updated",
+  SUBSCRIPTION_BATCH_CREATED: "subscription:batch_created",
+  SUBSCRIPTION_DISPATCH_UPDATED: "subscription:dispatch_updated",
+  SUBSCRIPTION_BATCH_STATUS: "subscription:batch_status",
+
+  // Dispatch management events
+  ADMIN_DISPATCH_BATCH_CREATED: "admin:dispatch_batch_created",
+  ADMIN_DISPATCH_BATCH_UPDATED: "admin:dispatch_batch_updated",
+  ADMIN_DISPATCH_BATCH_STATUS: "admin:dispatch_batch_status",
 } as const;
 
 export interface KitchenTicketCreatedPayload {

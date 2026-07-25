@@ -1,4 +1,4 @@
-import { LayoutDashboard, ShoppingBag, UtensilsCrossed, Truck, ClipboardList, Users, CreditCard, Clock, BarChart3, Wallet, Settings, Shield, Store, Settings2, FileText, ToggleLeft, LifeBuoy } from "lucide-react"
+import { LayoutDashboard, ShoppingBag, UtensilsCrossed, Truck, ClipboardList, Users, CreditCard, Clock, BarChart3, Wallet, Settings, Shield, Store, Settings2, FileText, ToggleLeft, LifeBuoy, Package } from "lucide-react"
 
 export type NavItem = {
   label: string
@@ -17,6 +17,7 @@ export const SUPER_ADMIN_NAVIGATION: NavItem[] = [
   { label: "Customers", href: "/customers", icon: Users, roles: ['OWNER', 'ADMIN'] },
   { label: "Subscription Plans", href: "/subscription-plans", icon: CreditCard, roles: ['OWNER', 'ADMIN'] },
   { label: "Delivery Slots", href: "/delivery-slots", icon: Clock, roles: ['OWNER', 'ADMIN'] },
+  { label: "Dispatch Management", href: "/dispatch", icon: Package, roles: ['OWNER', 'ADMIN'] },
   { label: "Reports & Analytics", href: "/reports", icon: BarChart3, roles: ['OWNER', 'ADMIN'] },
   { label: "Payments", href: "/admin/payments", icon: Wallet, roles: ['OWNER', 'ADMIN'] },
   { label: "Roles & Permissions", href: "/admin/roles", icon: Shield, roles: ['OWNER', 'ADMIN'] },
@@ -31,6 +32,7 @@ export const BRANCH_MANAGER_NAVIGATION: NavItem[] = [
   { label: "Menu", href: "/branch/menu", icon: ToggleLeft, workspace: 'BRANCH_MANAGER' },
   { label: "Inventory", href: "/branch/inventory", icon: Store, workspace: 'BRANCH_MANAGER' },
   { label: "Delivery", href: "/branch/delivery", icon: Truck, workspace: 'BRANCH_MANAGER' },
+  { label: "Dispatch", href: "/branch/dispatch", icon: Package, workspace: 'BRANCH_MANAGER' },
   { label: "Customers", href: "/branch/customers", icon: Users, workspace: 'BRANCH_MANAGER' },
   { label: "Support", href: "/branch/support", icon: LifeBuoy, workspace: 'BRANCH_MANAGER' },
   { label: "Reports", href: "/branch/reports", icon: BarChart3, workspace: 'BRANCH_MANAGER' },
