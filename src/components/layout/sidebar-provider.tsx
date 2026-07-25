@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation"
 import { Sidebar } from "@/components/sidebar/Sidebar"
 import { cn } from "@/lib/utils"
 
-const SIDEBAR_ROUTES = ["/dashboard", "/orders", "/kitchen", "/kitchen-production", "/deliveries", "/menu", "/customers", "/subscription-plans", "/subscriptions", "/subscription-operations", "/delivery-slots", "/reports", "/settings", "/admin", "/audit-logs", "/branches", "/cities", "/areas", "/branch/dashboard", "/branch/orders", "/branch/kitchen", "/branch/production", "/branch/menu", "/branch/inventory", "/branch/delivery", "/branch/customers", "/branch/reports", "/branch/profile", "/branch-inventory", "/support"]
+const SIDEBAR_ROUTES = ["/dashboard", "/orders", "/kitchen", "/kitchen-production", "/deliveries", "/menu", "/customers", "/subscription-plans", "/subscriptions", "/subscription-operations", "/delivery-slots", "/reports", "/settings", "/admin", "/audit-logs", "/branches", "/cities", "/areas", "/branch/dashboard", "/branch/orders", "/branch/kitchen", "/branch/production", "/branch/menu", "/branch/inventory", "/branch/delivery", "/branch/customers", "/branch/reports", "/branch/profile", "/branch-inventory", "/support", "/branch/support"]
 
 interface SidebarContextValue {
   mobileOpen: boolean
