@@ -10,6 +10,7 @@ import { OpsCalendarTab } from "@/features/subscriptions/components/ops/OpsCalen
 import { OpsReportsTab } from "@/features/subscriptions/components/ops/OpsReportsTab";
 import { OpsAnalyticsTab } from "@/features/subscriptions/components/ops/OpsAnalyticsTab";
 import { AlertsTab } from "@/features/subscriptions/components/ops/AlertBanner";
+import { BranchSelector } from "@/features/subscriptions/components/ops/BranchSelector";
 import { useAdminAuthStore } from "@/features/admin-auth/store/admin-auth-store";
 import { useOpsRealtime } from "@/features/subscriptions/hooks/useSubscriptions";
 
@@ -37,6 +38,10 @@ export default function SubscriptionOperationsPage() {
       />
 
       <div className="p-6 space-y-6">
+        <div className="flex items-center justify-between">
+          <BranchSelector />
+        </div>
+
         <Tabs value={tab} onValueChange={setTab}>
           <div className="rounded-xl border border-gray-200 bg-white p-1 shadow-sm">
             <TabsList className="flex w-full gap-1 bg-transparent p-0">

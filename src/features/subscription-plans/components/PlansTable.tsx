@@ -205,16 +205,17 @@ export function PlansTable() {
       },
       {
         id: "actions",
-        header: "",
+        header: "Actions",
         cell: ({ row }) => {
           const plan = row.original;
           return (
             <div className="relative">
               <button
                 onClick={() => setOpenDropdown(openDropdown === plan.id ? null : plan.id)}
-                className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50 hover:text-gray-900 transition-colors"
               >
                 <MoreHorizontal className="h-4 w-4" />
+                Actions
               </button>
               {openDropdown === plan.id && (
                 <>
@@ -225,7 +226,7 @@ export function PlansTable() {
                   <motion.div
                     initial={{ opacity: 0, scale: 0.95, y: -4 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
-                    className="absolute right-0 top-full z-50 mt-1 w-48 rounded-xl border border-gray-200 bg-white py-1.5 shadow-lg"
+                    className="absolute right-0 top-full z-50 mt-1 w-52 rounded-xl border border-gray-200 bg-white py-1.5 shadow-lg"
                   >
                     <button
                       onClick={() => { openViewEditor(plan); setOpenDropdown(null); }}

@@ -12,14 +12,9 @@ import type { AvailabilityStatus } from "@/features/branch-menu-availability/typ
 
 export default function AdminBranchMenuAvailabilityPage() {
   const [selectedBranch, setSelectedBranch] = useState<BranchMenuSummary | null>(null);
-  const [branchSearch, setBranchSearch] = useState("");
   const { summaries, loading: summariesLoading, refresh: refreshSummaries } = useAdminAvailability();
   const { items, loading, filters, setFilters, refresh } = useAdminBranchAvailability(selectedBranch?.branchId ?? "");
   const [updating, setUpdating] = useState<string | null>(null);
-
-  const filteredBranches = summaries.filter((s) =>
-    s.branchName.toLowerCase().includes(branchSearch.toLowerCase())
-  );
 
   const handleStatusChange = async (item: BranchMenuAvailabilityItem, newStatus: AvailabilityStatus) => {
     setUpdating(item.id);
@@ -73,19 +68,8 @@ export default function AdminBranchMenuAvailabilityPage() {
                 <p className="text-sm">No branches found</p>
               </div>
             ) : (
-              <>
-                <div className="relative max-w-md">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                  <input
-                    type="text"
-                    value={branchSearch}
-                    onChange={(e) => setBranchSearch(e.target.value)}
-                    placeholder="Search branches..."
-                    className="h-9 w-full rounded-lg border border-gray-200 bg-white pl-9 pr-3 text-sm text-gray-700 placeholder:text-gray-400 focus:border-orange-300 focus:outline-none focus:ring-2 focus:ring-orange-100"
-                  />
-                </div>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                  {filteredBranches.map((s) => {
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {summaries.map((s) => {
                   const issues = s.outOfStock + s.disabled;
                   return (
                     <button
@@ -131,14 +115,7 @@ export default function AdminBranchMenuAvailabilityPage() {
                     </button>
                   );
                 })}
-                </div>
-                {filteredBranches.length === 0 && branchSearch && (
-                  <div className="flex flex-col items-center justify-center py-10 text-gray-400">
-                    <Search className="h-10 w-10 mb-3" />
-                    <p className="text-sm">No branches match &quot;{branchSearch}&quot;</p>
-                  </div>
-                )}
-              </>
+              </div>
             )}
           </>
         )}

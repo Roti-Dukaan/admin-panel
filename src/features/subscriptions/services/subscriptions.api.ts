@@ -154,51 +154,62 @@ export const subscriptionsApi = {
   },
 
   // ── Subscription Operations ──
-  async getOpsDashboard() {
-    const { data } = await apiClient.get("/admin/subscription-operations/dashboard");
+  async getOpsDashboard(branchId?: string) {
+    const params: Record<string, string> = {};
+    if (branchId) params.branchId = branchId;
+    const { data } = await apiClient.get("/admin/subscription-operations/dashboard", { params });
     return (data?.data ?? data) as SubscriptionOpsDashboard;
   },
-  async getOpsKitchenForecast(date?: string) {
+  async getOpsKitchenForecast(date?: string, branchId?: string) {
     const params: Record<string, string> = {};
     if (date) params.date = date;
+    if (branchId) params.branchId = branchId;
     const { data } = await apiClient.get("/admin/subscription-operations/kitchen-forecast", { params });
     return (data?.data ?? data) as KitchenOpsForecast;
   },
-  async getOpsKitchenForecastRange(from: string, to: string) {
-    const { data } = await apiClient.get("/admin/subscription-operations/kitchen-forecast/range", {
-      params: { from, to },
-    });
+  async getOpsKitchenForecastRange(from: string, to: string, branchId?: string) {
+    const params: Record<string, string> = { from, to };
+    if (branchId) params.branchId = branchId;
+    const { data } = await apiClient.get("/admin/subscription-operations/kitchen-forecast/range", { params });
     return (data?.data ?? data) as KitchenOpsForecast[];
   },
-  async getOpsDeliveryForecast(date?: string) {
+  async getOpsDeliveryForecast(date?: string, branchId?: string) {
     const params: Record<string, string> = {};
     if (date) params.date = date;
+    if (branchId) params.branchId = branchId;
     const { data } = await apiClient.get("/admin/subscription-operations/delivery-forecast", { params });
     return (data?.data ?? data) as DeliveryOpsForecast;
   },
-  async getOpsCalendar(year: number, month: number) {
-    const { data } = await apiClient.get("/admin/subscription-operations/calendar", { params: { year, month } });
+  async getOpsCalendar(year: number, month: number, branchId?: string) {
+    const params: Record<string, string> = { year: String(year), month: String(month) };
+    if (branchId) params.branchId = branchId;
+    const { data } = await apiClient.get("/admin/subscription-operations/calendar", { params });
     return (data?.data ?? data) as SubscriptionOpsCalendar;
   },
-  async getOpsAnalytics(days = 30) {
-    const { data } = await apiClient.get("/admin/subscription-operations/analytics", { params: { days } });
+  async getOpsAnalytics(days = 30, branchId?: string) {
+    const params: Record<string, string> = { days: String(days) };
+    if (branchId) params.branchId = branchId;
+    const { data } = await apiClient.get("/admin/subscription-operations/analytics", { params });
     return (data?.data ?? data) as SubscriptionOpsAnalytics;
   },
-  async getOpsAlerts(resolved?: boolean) {
+  async getOpsAlerts(resolved?: boolean, branchId?: string) {
     const params: Record<string, string> = {};
     if (resolved !== undefined) params.resolved = String(resolved);
+    if (branchId) params.branchId = branchId;
     const { data } = await apiClient.get("/admin/subscription-operations/alerts", { params });
     return (data?.data ?? data) as AdminAlert[];
   },
-  async detectOpsAlerts() {
-    const { data } = await apiClient.post("/admin/subscription-operations/alerts/detect");
+  async detectOpsAlerts(branchId?: string) {
+    const params: Record<string, string> = {};
+    if (branchId) params.branchId = branchId;
+    const { data } = await apiClient.post("/admin/subscription-operations/alerts/detect", undefined, { params });
     return (data?.data ?? data) as AdminAlert[];
   },
   async resolveOpsAlert(id: string) {
     const { data } = await apiClient.patch(`/admin/subscription-operations/alerts/${id}/resolve`);
     return (data?.data ?? data) as AdminAlert;
   },
-  async exportOpsReport(opts: { type: string; format: "csv" | "excel" | "pdf"; dateFrom?: string; dateTo?: string }) {
+  async exportOpsReport(opts: { type: string; format: "csv" | "excel" | "pdf"; dateFrom?: string; dateTo?: string; branchId?: string }) {
     const { data } = await apiClient.post("/admin/subscription-operations/reports/export", opts, {
       responseType: "blob",
     });

@@ -51,6 +51,7 @@ const MAIN_ADMIN_NAV_GROUPS: NavGroup[] = [
       { label: "Orders", href: "/orders", icon: ShoppingBag, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN', 'BRANCH_MANAGER'] },
       { label: "Deliveries", href: "/deliveries", icon: Truck, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN', 'BRANCH_MANAGER'] },
       { label: "Delivery Slots", href: "/delivery-slots", icon: Clock3, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
+      { label: "Production Ops", href: "/subscription-operations", icon: Activity, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
     ],
   },
   {
@@ -69,8 +70,7 @@ const MAIN_ADMIN_NAV_GROUPS: NavGroup[] = [
     items: [
       { label: "Customers", href: "/customers", icon: Users, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
       { label: "Subscription Plans", href: "/subscription-plans", icon: CalendarDays, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
-      { label: "Subscriptions", href: "/subscriptions", icon: CreditCard, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
-      { label: "Subscription Ops", href: "/subscription-operations", icon: Activity, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
+      { label: "Subscription Fulfillment", href: "/subscriptions", icon: CreditCard, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
     ],
   },
   {

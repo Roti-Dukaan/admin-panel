@@ -9,8 +9,6 @@ import {
   IndianRupee,
   Users,
   TrendingUp,
-  ArrowUpRight,
-  ArrowDownRight,
   Clock,
   CheckCircle2,
   Truck,
@@ -18,10 +16,8 @@ import {
   Package,
   MoreHorizontal,
   UtensilsCrossed,
-  AlertTriangle,
 } from "lucide-react"
 import Link from "next/link"
-import { KitchenOperationsCard } from "@/features/kitchen-operations/KitchenOperationsCard"
 import { useAdminAuthStore } from "@/features/admin-auth/store/admin-auth-store"
 import { useBranchDashboard } from "@/features/branch-dashboard/hooks/useBranchDashboard"
 
@@ -135,9 +131,6 @@ export default function DashboardPage() {
             </motion.div>
           ))}
         </div>
-
-        {/* Kitchen Operations */}
-        {!isBranchManager && <KitchenOperationsCard compact />}
 
         {isBranchManager ? (
           /* Branch Manager — operational Kanban summary */
