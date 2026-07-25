@@ -46,6 +46,10 @@ import {
   handleKitchenTicketUpdated,
   patchKitchenStageInCache,
 } from "@/features/kitchen/utils/kitchen-realtime-sync";
+import {
+  patchBranchDashboardOnNewOrder,
+  scheduleBranchDashboardRefresh,
+} from "@/features/branch-dashboard/utils/branch-dashboard-realtime-sync";
 import { useOrdersStore } from "../hooks/useOrders";
 import { normalizeOrderStatus } from "../utils/status";
 import { NewOrderAlertModal } from "./NewOrderAlertModal";
@@ -205,6 +209,7 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
         refreshTimer = null;
         void useOrdersStore.getState().fetchOrders();
         void useOrdersStore.getState().fetchStatistics();
+        scheduleBranchDashboardRefresh(qc);
       }, 400);
     };
 
@@ -218,6 +223,7 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
       // Cache sync FIRST and unconditionally — the kitchen board and orders
       // list must update even when the popup is deduped or sound is off.
       handleBranchOrderNew(qc, payload);
+      patchBranchDashboardOnNewOrder(qc, payload);
       scheduleOrdersRefresh();
       showAlertRef.current(payload);
     });
@@ -263,6 +269,7 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
       onNewOrder: (payload) => {
         // Another tab saw the order first — sync this tab's caches too.
         handleBranchOrderNew(qc, payload);
+        patchBranchDashboardOnNewOrder(qc, payload);
         scheduleOrdersRefresh();
         showAlertRef.current(payload, { broadcast: false });
       },
