@@ -12,7 +12,6 @@ export type NavItem = {
 export const SUPER_ADMIN_NAVIGATION: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "Orders", href: "/orders", icon: ShoppingBag },
-  { label: "Kitchen", href: "/kitchen", icon: UtensilsCrossed },
   { label: "Deliveries", href: "/deliveries", icon: Truck },
   { label: "Menu Items", href: "/menu", icon: ClipboardList, roles: ['OWNER', 'ADMIN'] },
   { label: "Customers", href: "/customers", icon: Users, roles: ['OWNER', 'ADMIN'] },

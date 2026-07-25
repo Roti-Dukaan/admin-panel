@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-const SUPER_ADMIN_PATHS = ['/dashboard', '/orders', '/kitchen', '/deliveries', '/menu', '/customers', '/subscription-plans', '/subscriptions', '/delivery-slots', '/reports', '/settings', '/areas', '/audit-logs', '/branches', '/cities', '/branch-inventory', '/kitchen-production', '/subscription-operations', '/admin']
+const SUPER_ADMIN_PATHS = ['/dashboard', '/orders', '/deliveries', '/menu', '/customers', '/subscription-plans', '/subscriptions', '/delivery-slots', '/reports', '/settings', '/areas', '/audit-logs', '/branches', '/cities', '/branch-inventory', '/subscription-operations', '/admin']
 const BRANCH_PATHS = ['/branch/dashboard', '/branch/orders', '/branch/kitchen', '/branch/production', '/branch/inventory', '/branch/delivery', '/branch/customers', '/branch/reports', '/branch/profile']
 
 function getWorkspaceFromCookie(request: NextRequest): 'SUPER_ADMIN' | 'BRANCH_MANAGER' | null {
@@ -63,7 +63,6 @@ export const config = {
   matcher: [
     '/dashboard/:path*',
     '/orders/:path*',
-    '/kitchen/:path*',
     '/deliveries/:path*',
     '/menu/:path*',
     '/customers/:path*',
@@ -77,7 +76,6 @@ export const config = {
     '/branches/:path*',
     '/cities/:path*',
     '/branch-inventory/:path*',
-    '/kitchen-production/:path*',
     '/subscription-operations/:path*',
     '/admin/:path*',
     '/branch/:path*',

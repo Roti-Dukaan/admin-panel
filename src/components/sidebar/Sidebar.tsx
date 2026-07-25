@@ -7,8 +7,6 @@ import { cn } from "@/lib/utils"
 import {
   LayoutDashboard,
   ShoppingBag,
-  ChefHat,
-  ClipboardList,
   Clock3,
   UtensilsCrossed,
   Truck,
@@ -52,8 +50,6 @@ const MAIN_ADMIN_NAV_GROUPS: NavGroup[] = [
     roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN', 'BRANCH_MANAGER'],
     items: [
       { label: "Orders", href: "/orders", icon: ShoppingBag, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN', 'BRANCH_MANAGER'] },
-      { label: "Kitchen", href: "/kitchen", icon: ChefHat, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN', 'BRANCH_MANAGER'] },
-      { label: "Kitchen Production", href: "/kitchen-production", icon: ClipboardList, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
       { label: "Deliveries", href: "/deliveries", icon: Truck, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN', 'BRANCH_MANAGER'] },
       { label: "Delivery Slots", href: "/delivery-slots", icon: Clock3, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
       { label: "Inventory & Availability", href: "/branch-inventory", icon: Package, roles: ['BRANCH_MANAGER'] },
@@ -136,13 +132,7 @@ export function Sidebar({ collapsed = false, onToggle, mobileOpen = false, onMob
         disabled: false,
       })),
     }]
-    : MAIN_ADMIN_NAV_GROUPS.map((group) => ({
-        ...group,
-        items: group.items.map((item) => ({
-          ...item,
-          badge: item.href === "/kitchen" ? kitchenLiveOrders : undefined,
-        })),
-      }))
+    : MAIN_ADMIN_NAV_GROUPS
 
   const sidebarContent = (
     <>
@@ -184,7 +174,7 @@ export function Sidebar({ collapsed = false, onToggle, mobileOpen = false, onMob
                 label={item.label}
                 href={item.href}
                 icon={item.icon}
-                badge={item.href === "/kitchen" ? kitchenLiveOrders : undefined}
+                badge={'badge' in item ? item.badge : undefined}
                 collapsed={collapsed}
                 disabled={('disabled' in item) ? item.disabled : false}
               />
@@ -275,7 +265,7 @@ export function Sidebar({ collapsed = false, onToggle, mobileOpen = false, onMob
                       label={item.label}
                       href={item.href}
                       icon={item.icon}
-                      badge={item.href === "/kitchen" ? kitchenLiveOrders : undefined}
+                      badge={'badge' in item ? item.badge : undefined}
                       collapsed={false}
                 disabled={('disabled' in item) ? item.disabled : false}
                     />
