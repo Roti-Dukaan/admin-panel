@@ -3,8 +3,7 @@ import { FoodItem, FoodItemFormData, MenuFilters, Availability, HealthTag, Categ
 import { categoryApi } from '@/lib/api/category.api';
 import { foodItemApi } from '@/lib/api/food.api';
 import type { ApiCategory, ApiFoodItem } from '@/lib/types/api';
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+import { API_BASE_URL } from '@/lib/env';
 
 // Backend returns image paths relative to the API server; resolve them to absolute URLs
 // so they load correctly from the admin (and any) frontend origin.

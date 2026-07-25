@@ -1,6 +1,5 @@
 import { io, type Socket } from "socket.io-client";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+import { API_BASE_URL } from "@/lib/env";
 
 function getToken(): string | null {
   if (typeof window === "undefined") return null;
@@ -21,7 +20,7 @@ let connectedAuthToken: string | null = null;
 
 function ensureSocket(): Socket {
   if (!socket) {
-    socket = io(API_BASE, {
+    socket = io(API_BASE_URL, {
       path: "/socket.io",
       withCredentials: true,
       transports: ["websocket", "polling"],
