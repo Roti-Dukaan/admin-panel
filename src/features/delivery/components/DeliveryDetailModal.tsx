@@ -24,7 +24,9 @@ const STATUS_ORDER = [
   "RIDER_ARRIVING",
   "PICKED_UP",
   "OUT_FOR_DELIVERY",
+  "NEAR_CUSTOMER",
   "DELIVERED",
+  "RETURNED",
   "FAILED",
   "CANCELLED",
 ] as const;
@@ -37,7 +39,9 @@ const TIMELINE_CONFIG: Record<string, { icon: React.ReactNode; color: string; bg
   RIDER_ARRIVING: { icon: <User className="w-4 h-4" />, color: "text-cyan-600", bgColor: "bg-cyan-100" },
   PICKED_UP: { icon: <Truck className="w-4 h-4" />, color: "text-purple-600", bgColor: "bg-purple-100" },
   OUT_FOR_DELIVERY: { icon: <Truck className="w-4 h-4" />, color: "text-indigo-600", bgColor: "bg-indigo-100" },
+  NEAR_CUSTOMER: { icon: <Truck className="w-4 h-4" />, color: "text-teal-600", bgColor: "bg-teal-100" },
   DELIVERED: { icon: <CheckCircle className="w-4 h-4" />, color: "text-emerald-600", bgColor: "bg-emerald-100" },
+  RETURNED: { icon: <AlertCircle className="w-4 h-4" />, color: "text-amber-600", bgColor: "bg-amber-100" },
   FAILED: { icon: <AlertCircle className="w-4 h-4" />, color: "text-red-600", bgColor: "bg-red-100" },
   CANCELLED: { icon: <X className="w-4 h-4" />, color: "text-gray-600", bgColor: "bg-gray-100" },
 };
@@ -113,12 +117,21 @@ export function DeliveryDetailModal({
       });
     }
 
-    if (delivery.status === "OUT_FOR_DELIVERY" || delivery.status === "DELIVERED") {
+    if (delivery.status === "OUT_FOR_DELIVERY" || delivery.status === "NEAR_CUSTOMER" || delivery.status === "DELIVERED") {
       entries.push({
         status: "OUT_FOR_DELIVERY",
         timestamp: delivery.updatedAt,
         label: "Out for Delivery",
         details: "Package is on the way to customer",
+      });
+    }
+
+    if (delivery.status === "NEAR_CUSTOMER" || delivery.status === "DELIVERED") {
+      entries.push({
+        status: "NEAR_CUSTOMER",
+        timestamp: delivery.updatedAt,
+        label: "Near Customer",
+        details: "Rider is near the delivery location",
       });
     }
 
@@ -149,6 +162,15 @@ export function DeliveryDetailModal({
       });
     }
 
+    if (delivery.status === "RETURNED") {
+      entries.push({
+        status: "RETURNED",
+        timestamp: delivery.updatedAt,
+        label: "Returned",
+        details: "Package was returned",
+      });
+    }
+
     return entries.filter((e) => STATUS_ORDER.includes(e.status as any));
   };
 
@@ -169,7 +191,7 @@ export function DeliveryDetailModal({
   };
 
   const nextStatus = STATUS_ORDER[Math.min(currentStatusIndex + 1, STATUS_ORDER.length - 1)];
-  const canUpdate = delivery.status !== "DELIVERED" && delivery.status !== "FAILED" && delivery.status !== "CANCELLED";
+  const canUpdate = delivery.status !== "DELIVERED" && delivery.status !== "FAILED" && delivery.status !== "CANCELLED" && delivery.status !== "RETURNED";
 
   const renderTimelineTab = () => (
     <TabsContent value="timeline" className="space-y-4 mt-4">

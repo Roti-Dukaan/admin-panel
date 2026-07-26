@@ -25,7 +25,7 @@ export function DispatchDashboardBoard() {
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-bold text-gray-900">Active Dispatches</h2>
         <Button
-          onClick={() => router.push("./batches")}
+          onClick={() => router.push("/dispatch/batches")}
           className="bg-orange-500 hover:bg-orange-600"
         >
           <PackagePlus className="mr-2 h-4 w-4" />

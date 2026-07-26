@@ -4,6 +4,7 @@ import type {
   DeliveryListEntity,
   DeliveryFilters,
   DeliveryStatistics,
+  DeliveryDashboard,
   DeliveryStatus,
 } from "../types/delivery";
 
@@ -12,6 +13,7 @@ export const deliveryApi = {
     const params = new URLSearchParams();
     if (filters.status && filters.status !== "all") params.append("status", filters.status);
     if (filters.provider && filters.provider !== "all") params.append("provider", filters.provider);
+    if (filters.deliveryType && filters.deliveryType !== "all") params.append("deliveryType", filters.deliveryType);
     if (filters.orderId) params.append("orderId", filters.orderId);
     if (filters.customerId) params.append("customerId", filters.customerId);
     if (filters.dateFrom) params.append("dateFrom", filters.dateFrom);
@@ -68,6 +70,11 @@ export const deliveryApi = {
 
   getStats: async (): Promise<DeliveryStatistics> => {
     const { data } = await apiClient.get<{ success: boolean; data: DeliveryStatistics }>("/admin/deliveries/stats");
+    return data.data;
+  },
+
+  getDashboard: async (): Promise<DeliveryDashboard> => {
+    const { data } = await apiClient.get<{ success: boolean; data: DeliveryDashboard }>("/admin/deliveries/dashboard");
     return data.data;
   },
 };
