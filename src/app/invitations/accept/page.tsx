@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "motion/react";
 import { Loader2, CheckCircle, AlertCircle, Mail, Lock, User } from "lucide-react";
@@ -308,8 +308,8 @@ function AcceptInvitationPageContent() {
           </div>
         </div>
       </div>
+    </div>
     );
-  }
 }
 
 export default function AcceptInvitationPage() {

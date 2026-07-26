@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Loader2, PackagePlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Header } from "@/components/layout/header";
-import { useCreateDispatchBatch, useDispatchBatches } from "../hooks/useDispatch";
+import { useCreateDispatchBatch, useDispatchBatches } from "@/features/dispatch/hooks/useDispatch";
 
 interface ReadyOrder {
   orderId: string;
