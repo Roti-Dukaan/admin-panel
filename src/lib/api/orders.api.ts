@@ -71,8 +71,8 @@ export const ordersApi = {
     const queryParams = new URLSearchParams();
     if (params.page) queryParams.set("page", String(params.page));
     if (params.limit) queryParams.set("limit", String(params.limit));
-    if (params.status && params.status !== "all") queryParams.set("status", params.status);
-    if (params.paymentMethod && params.paymentMethod !== "all") queryParams.set("paymentMethod", params.paymentMethod);
+    if (params.status && params.status !== "all") queryParams.set("status", params.status.toUpperCase().replace(/-/g, "_"));
+    if (params.paymentMethod && params.paymentMethod !== "all") queryParams.set("paymentMethod", params.paymentMethod.toUpperCase());
     if (params.paymentStatus && params.paymentStatus !== "all") queryParams.set("paymentStatus", params.paymentStatus);
     if (params.orderType && params.orderType !== "all") queryParams.set("orderType", params.orderType);
     if (params.search) queryParams.set("search", params.search);

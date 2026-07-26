@@ -58,9 +58,9 @@ export function OrderFilters() {
   const [areas, setAreas] = React.useState<Area[]>([])
 
   React.useEffect(() => {
-    branchesApi.list().then((res) => setBranches(res.data ?? [])).catch(() => {})
-    citiesApi.list().then((res) => setCities(res.data ?? [])).catch(() => {})
-    areasApi.list().then((res) => setAreas(res.data ?? [])).catch(() => {})
+    branchesApi.list().then((res) => setBranches(res.data.data?.items ?? [])).catch(() => {})
+    citiesApi.list().then((res) => setCities(res.data.data?.items ?? [])).catch(() => {})
+    areasApi.list().then((res) => setAreas(res.data.data?.items ?? [])).catch(() => {})
   }, [])
 
   const hasActiveFilters =

@@ -2,6 +2,7 @@
 
 import { create } from "zustand"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { toast } from "sonner"
 import type { Order, OrderStatistics, OrderFilters, OrderDatePreset, OrderStatus, PaymentStatus } from "../types/order"
 import { ordersApi } from "@/lib/api/orders.api"
 import { useWorkspace } from "@/contexts/WorkspaceContext"
@@ -84,10 +85,15 @@ export function useBranchOrdersStore() {
       get().fetchOrders()
     },
 
-    setPage: (page) => set((state) => ({ pagination: { ...state.pagination, page } })),
+    setPage: (page) => {
+      set((state) => ({ pagination: { ...state.pagination, page } }))
+      get().fetchOrders()
+    },
 
-    setPageSize: (pageSize) =>
-      set((state) => ({ pagination: { ...state.pagination, pageSize, page: 1 } })),
+    setPageSize: (pageSize) => {
+      set((state) => ({ pagination: { ...state.pagination, pageSize, page: 1 } }))
+      get().fetchOrders()
+    },
 
     setSelectedOrder: (order) => set({ selectedOrder: order }),
 
@@ -121,8 +127,10 @@ export function useBranchOrdersStore() {
           },
           loading: false,
         })
-      } catch (error) {
+      } catch (error: any) {
+        const message = error?.response?.data?.message || "Failed to fetch orders"
         console.error("Failed to fetch orders:", error)
+        toast.error(message)
         set({ loading: false })
       }
     },
@@ -132,8 +140,10 @@ export function useBranchOrdersStore() {
       try {
         const data = await ordersApi.getStats()
         set({ statistics: data as OrderStatistics, statisticsLoading: false })
-      } catch (error) {
+      } catch (error: any) {
+        const message = error?.response?.data?.message || "Failed to fetch statistics"
         console.error("Failed to fetch statistics:", error)
+        toast.error(message)
         set({ statisticsLoading: false })
       }
     },
