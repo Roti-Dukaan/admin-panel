@@ -14,7 +14,7 @@ import {
   CalendarDays,
   CreditCard,
   BarChart3,
-  ShieldCheck,
+  UserPlus,
   Settings,
   FileClock,
   Building2,
@@ -99,7 +99,7 @@ const MAIN_ADMIN_NAV_GROUPS: NavGroup[] = [
     title: "System",
     roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'],
     items: [
-      { label: "Roles & Permissions", href: "/admin/roles", icon: ShieldCheck, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
+      { label: "Team", href: "/admin/roles", icon: UserPlus, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
       { label: "Settings", href: "/settings", icon: Settings, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
       { label: "Audit Logs", href: "/audit-logs", icon: FileClock, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
     ],
