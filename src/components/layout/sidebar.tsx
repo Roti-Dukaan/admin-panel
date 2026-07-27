@@ -5,7 +5,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { useAdminAuthStore } from "@/features/admin-auth/store/admin-auth-store"
-import { LayoutDashboard, ShoppingBag, Users, UtensilsCrossed, LogOut, ChevronLeft, ChevronRight, ClipboardList, CreditCard, Shield, BarChart3, Wallet, Settings, Truck, Store } from "lucide-react"
+import { LayoutDashboard, ShoppingBag, Users, UtensilsCrossed, LogOut, ChevronLeft, ChevronRight, ClipboardList, CreditCard, Shield, BarChart3, Wallet, Settings, Truck, Store, FolderOpen, Clock } from "lucide-react"
 
 interface NavItem {
   label: string
@@ -29,6 +29,8 @@ const navItems: NavItem[] = [
   { label: "Payments", href: "/admin/payments", icon: Wallet, roles: ['OWNER', 'ADMIN'] },
   { label: "Roles & Permissions", href: "/admin/roles", icon: Shield, roles: ['OWNER', 'ADMIN'] },
   { label: "Settings", href: "/settings", icon: Settings, roles: ['OWNER', 'ADMIN'] },
+  { label: "CMS", href: "/cms", icon: FolderOpen, roles: ['SUPER_ADMIN', 'OWNER'] },
+  { label: "Homepage Banners", href: "/cms/banners", icon: ClipboardList, roles: ['SUPER_ADMIN', 'OWNER'] },
 ]
 
 interface SidebarProps {
