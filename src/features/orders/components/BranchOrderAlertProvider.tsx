@@ -28,6 +28,7 @@ import {
 import {
   enableOrderAlerts,
   ensureNotificationPermission,
+  ensureOrderRingPlaying,
   isOrderAlertsEnabled,
   onOrderAlertsEnabledChange,
   preloadOrderAudio,
@@ -65,6 +66,8 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
   const accessToken = useAdminAuthStore((s) => s.accessToken);
   // Newest alert first; older unhandled orders stay queued behind it.
   const [alerts, setAlerts] = useState<BranchOrderNewPayload[]>([]);
+  /** Orders that must keep ringing until Start Preparing (survives dismiss). */
+  const [ringingOrderIds, setRingingOrderIds] = useState<string[]>([]);
   const [soundBlocked, setSoundBlocked] = useState(false);
   const [alertsEnabled, setAlertsEnabled] = useState(false);
   const [enablingAlerts, setEnablingAlerts] = useState(false);
@@ -80,32 +83,40 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
     return onOrderAlertsEnabledChange(() => setAlertsEnabled(true));
   }, []);
 
-  /**
-   * Remove one order from the alert queue. The ring only stops when no
-   * alerted orders remain; otherwise the next queued order takes over.
-   */
-  const removeAlert = useCallback((orderId: string, broadcast = true) => {
-    setAlerts((prev) => {
-      if (!prev.some((a) => a.orderId === orderId)) return prev;
-      const next = prev.filter((a) => a.orderId !== orderId);
+  const addRingingOrder = useCallback((orderId: string) => {
+    setRingingOrderIds((prev) => (prev.includes(orderId) ? prev : [...prev, orderId]));
+  }, []);
+
+  const clearRingingOrder = useCallback((orderId: string) => {
+    setRingingOrderIds((prev) => {
+      const next = prev.filter((id) => id !== orderId);
       if (next.length === 0) {
         stopOrderRing();
         setSoundBlocked(false);
       }
       return next;
     });
+  }, []);
+
+  /** Remove order from the visible modal queue only (dismiss). */
+  const hideAlert = useCallback((orderId: string, broadcast = true) => {
+    setAlerts((prev) => prev.filter((a) => a.orderId !== orderId));
     if (broadcast) {
       broadcastDismissOrderAlert(orderId);
     }
   }, []);
 
-  const dismissAlert = useCallback(
-    (broadcast = true) => {
-      const orderId = alert?.orderId;
-      if (!orderId) return;
-      removeAlert(orderId, broadcast);
+  /** Fully resolve an order — stops ring when no ringing orders remain. */
+  const resolveOrder = useCallback(
+    (orderId: string, options?: { broadcast?: boolean }) => {
+      const broadcast = options?.broadcast ?? true;
+      setAlerts((prev) => prev.filter((a) => a.orderId !== orderId));
+      clearRingingOrder(orderId);
+      if (broadcast) {
+        broadcastDismissOrderAlert(orderId);
+      }
     },
-    [alert?.orderId, removeAlert],
+    [clearRingingOrder],
   );
 
   const handleEnableAlerts = useCallback(async () => {
@@ -148,6 +159,7 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
       }
 
       setAlerts((prev) => [payload, ...prev.filter((a) => a.orderId !== payload.orderId)]);
+      addRingingOrder(payload.orderId);
 
       void tryStartOrderRing().then((started) => {
         setSoundBlocked(!started);
@@ -170,14 +182,17 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
         broadcastNewOrderAlert(payload);
       }
     },
-    [branchId, router],
+    [branchId, router, addRingingOrder],
   );
 
   const showAlertRef = useRef(showAlert);
   showAlertRef.current = showAlert;
 
-  const removeAlertRef = useRef(removeAlert);
-  removeAlertRef.current = removeAlert;
+  const hideAlertRef = useRef(hideAlert);
+  hideAlertRef.current = hideAlert;
+
+  const resolveOrderRef = useRef(resolveOrder);
+  resolveOrderRef.current = resolveOrder;
 
   useEffect(() => {
     if (!isBranchManager || !isAuthenticated || !branchId || !accessToken) {
@@ -198,6 +213,7 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
     if (!isBranchManager || !isAuthenticated || !branchId || !accessToken) {
       stopOrderRing();
       setAlerts([]);
+      setRingingOrderIds([]);
       setSoundBlocked(false);
       return;
     }
@@ -220,6 +236,7 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
 
     const offBranch = onRealtime(REALTIME_EVENTS.BRANCH_ORDER_NEW, (raw) => {
       const payload = raw as BranchOrderNewPayload;
+      if (branchId && payload.branchId !== branchId) return;
       // Cache sync FIRST and unconditionally — the kitchen board and orders
       // list must update even when the popup is deduped or sound is off.
       handleBranchOrderNew(qc, payload);
@@ -231,10 +248,9 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
     const offBranchUpdated = onRealtime(REALTIME_EVENTS.BRANCH_ORDER_UPDATED, (raw) => {
       const payload = raw as BranchOrderUpdatedPayload;
       const nextStatus = normalizeOrderStatus(payload.status);
-      // Order handled elsewhere (other device/staff) — close its alert;
-      // ring stops automatically once no alerted orders remain.
+      // Order handled elsewhere (other device/staff) — close its alert and stop ring.
       if (!NEW_ORDER_STATUSES.has(nextStatus)) {
-        removeAlertRef.current(payload.orderId, false);
+        resolveOrderRef.current(payload.orderId, { broadcast: false });
       }
       useOrdersStore.setState((state) => ({
         orders: state.orders.map((order) =>
@@ -256,7 +272,7 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
     const offKitchenUpdated = onRealtime(REALTIME_EVENTS.KITCHEN_TICKET_UPDATED, (raw) => {
       const payload = raw as KitchenTicketUpdatedPayload;
       // Kitchen already started this order — its alert is no longer "new".
-      removeAlertRef.current(payload.orderId, false);
+      resolveOrderRef.current(payload.orderId, { broadcast: false });
       handleKitchenTicketUpdated(qc, payload);
       scheduleOrdersRefresh();
     });
@@ -273,7 +289,7 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
         scheduleOrdersRefresh();
         showAlertRef.current(payload, { broadcast: false });
       },
-      onDismissOrder: (orderId) => removeAlertRef.current(orderId, false),
+      onDismissOrder: (orderId) => hideAlertRef.current(orderId, false),
     });
 
     return () => {
@@ -288,7 +304,16 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
   }, [isBranchManager, isAuthenticated, branchId, accessToken, qc]);
 
   useEffect(() => {
-    if (!open || !soundBlocked || alertsEnabled) return;
+    if (ringingOrderIds.length === 0 || !alertsEnabled) return;
+    void tryStartOrderRing().then((started) => {
+      if (!started) setSoundBlocked(true);
+    });
+    const keepAlive = window.setInterval(ensureOrderRingPlaying, 2000);
+    return () => window.clearInterval(keepAlive);
+  }, [ringingOrderIds.length, alertsEnabled]);
+
+  useEffect(() => {
+    if (ringingOrderIds.length === 0 || !soundBlocked || alertsEnabled) return;
 
     const retrySound = () => {
       void enableOrderAlerts().then((enabled) => {
@@ -305,11 +330,20 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
       window.removeEventListener("pointerdown", retrySound);
       window.removeEventListener("keydown", retrySound);
     };
-  }, [open, soundBlocked, alertsEnabled]);
+  }, [ringingOrderIds.length, soundBlocked, alertsEnabled]);
+
+  const dismissAlert = useCallback(
+    (broadcast = true) => {
+      const orderId = alert?.orderId;
+      if (!orderId) return;
+      hideAlert(orderId, broadcast);
+    },
+    [alert?.orderId, hideAlert],
+  );
 
   const handleViewDetails = () => {
     if (!alert) return;
-    dismissAlert();
+    // Navigate without stopping the alert ring.
     router.push(`/branch/kitchen?orderId=${alert.orderId}`);
   };
 
@@ -320,7 +354,7 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
     stageMutation.mutate(
       { id: orderId, action: "preparing" },
       {
-        onSuccess: () => removeAlert(orderId),
+        onSuccess: () => resolveOrder(orderId),
       },
     );
   };

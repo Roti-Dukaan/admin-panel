@@ -260,7 +260,7 @@ export function NewOrderAlertModal({
                 variant="ghost"
                 className="flex-1 rounded-xl text-gray-500"
                 onClick={onDismiss}
-                aria-label="Dismiss alert and stop sound"
+                aria-label="Dismiss alert (sound continues until Start Preparing)"
               >
                 Dismiss
               </Button>

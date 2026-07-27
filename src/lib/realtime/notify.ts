@@ -78,6 +78,9 @@ export function onOrderAlertsEnabledChange(listener: () => void): () => void {
 }
 
 function playTestChime(howl: Howl): Promise<boolean> {
+  // Never interrupt an active order ring (e.g. incidental click while modal is open).
+  if (ringActive && howl.playing()) return Promise.resolve(true);
+
   return new Promise((resolve) => {
     let settled = false;
     const finish = (ok: boolean) => {
@@ -85,6 +88,8 @@ function playTestChime(howl: Howl): Promise<boolean> {
       settled = true;
       if (!ringActive) {
         howl.stop();
+      } else if (howl.playing()) {
+        howl.loop(true);
       }
       resolve(ok);
     };
@@ -94,6 +99,10 @@ function playTestChime(howl: Howl): Promise<boolean> {
 
     if (howl.state() === "unloaded") {
       howl.once("load", () => {
+        if (ringActive) {
+          finish(true);
+          return;
+        }
         howl.loop(false);
         howl.play();
         window.setTimeout(() => finish(true), 900);
@@ -119,6 +128,12 @@ export function unlockAudio(): void {
   const unlock = () => {
     Howler.autoUnlock = true;
     preloadOrderAudio();
+    if (isOrderAlertsEnabled() || ringActive) {
+      window.removeEventListener("pointerdown", unlock);
+      window.removeEventListener("keydown", unlock);
+      window.removeEventListener("touchstart", unlock);
+      return;
+    }
     const howl = getOrderRing();
     if (howl) {
       void playTestChime(howl).then((ok) => {
@@ -205,6 +220,15 @@ export async function startOrderRing(): Promise<boolean> {
 export function stopOrderRing(): void {
   ringActive = false;
   orderRing?.stop();
+}
+
+/** Re-start the loop if it was interrupted while alerts are still open. */
+export function ensureOrderRingPlaying(): void {
+  if (!ringActive || !isOrderAlertsEnabled()) return;
+  const howl = getOrderRing();
+  if (!howl || howl.playing()) return;
+  howl.loop(true);
+  howl.play();
 }
 
 /** Consolidated audio-manager surface for the order alert ring. */
