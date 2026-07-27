@@ -1,6 +1,12 @@
 import { create } from 'zustand';
 import { Customer, CustomerFilters, CustomerDatePreset } from '../types/customer';
 import { customerApi, type ApiCustomer, type ApiCustomerAddress } from '@/lib/api/customer.api';
+import { useAdminAuthStore } from '@/features/admin-auth/store/admin-auth-store';
+
+function getBranchScope(): string | undefined {
+  const { role, branchId } = useAdminAuthStore.getState();
+  return role === 'BRANCH_MANAGER' && branchId ? branchId : undefined;
+}
 
 interface CustomerStats {
   total: number;
@@ -27,6 +33,7 @@ interface CustomerStore {
   setPage: (page: number) => void;
   setSearch: (search: string) => void;
   setStatusFilter: (filter: CustomerFilters['status']) => void;
+  setBranchFilter: (branchId: string) => void;
   setDateRange: (preset: CustomerDatePreset, startDate?: string, endDate?: string) => void;
   clearFilters: () => void;
 
@@ -53,6 +60,8 @@ function mapCustomer(c: ApiCustomer): Customer {
     lastLoginAt: c.lastLoginAt,
     createdAt: c.createdAt,
     updatedAt: c.updatedAt,
+    branchId: c.branchId,
+    branch: c.branch,
   };
 }
 
@@ -62,6 +71,7 @@ const initialFilters: CustomerFilters = {
   datePreset: 'all',
   customStartDate: '',
   customEndDate: '',
+  branchId: 'all',
 };
 
 export const useCustomerStore = create<CustomerStore>((set, get) => ({
@@ -81,12 +91,17 @@ export const useCustomerStore = create<CustomerStore>((set, get) => ({
 
   fetchCustomers: async () => {
     const { filters, page, limit } = get();
+    const branchScope = getBranchScope();
     set({ loading: true, error: null });
     try {
       const params: Record<string, unknown> = { page, limit };
       if (filters.search) params.search = filters.search;
       if (filters.status === 'active') params.isActive = true;
       if (filters.status === 'inactive') params.isActive = false;
+      const branchId =
+        (filters.branchId && filters.branchId !== 'all' ? filters.branchId : undefined) ||
+        branchScope;
+      if (branchId) params.branchId = branchId;
 
       const res = await customerApi.list(params);
       const data = res.data;
@@ -114,6 +129,11 @@ export const useCustomerStore = create<CustomerStore>((set, get) => ({
 
   setStatusFilter: (status) => {
     set({ filters: { ...get().filters, status }, page: 1 });
+    get().fetchCustomers();
+  },
+
+  setBranchFilter: (branchId) => {
+    set({ filters: { ...get().filters, branchId }, page: 1 });
     get().fetchCustomers();
   },
 
@@ -155,6 +175,8 @@ export const useCustomerStore = create<CustomerStore>((set, get) => ({
           lastLoginAt: c.lastLoginAt,
           createdAt: c.createdAt,
           updatedAt: c.updatedAt,
+          branchId: c.branchId,
+          branch: c.branch,
         },
         loading: false,
       });

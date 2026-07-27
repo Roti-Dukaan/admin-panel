@@ -1,6 +1,12 @@
 import { apiClient } from './http';
 import type { ApiResponse, PaginatedData } from '../types/api';
 
+export interface ApiCustomerBranch {
+  id: string;
+  name: string;
+  code: string;
+}
+
 export interface ApiCustomer {
   id: string;
   email: string | null;
@@ -13,6 +19,8 @@ export interface ApiCustomer {
   lastLoginAt: string | null;
   createdAt: string;
   updatedAt: string;
+  branchId: string | null;
+  branch: ApiCustomerBranch | null;
 }
 
 export interface ApiCustomerDetail extends ApiCustomer {
@@ -50,6 +58,7 @@ export interface CustomerQueryParams {
   limit?: number;
   search?: string;
   isActive?: boolean;
+  branchId?: string;
 }
 
 export const customerApi = {
