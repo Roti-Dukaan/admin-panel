@@ -3,67 +3,81 @@
 import * as React from "react"
 import { usePathname, useRouter } from "next/navigation"
 import { useAdminAuthStore } from "../store/admin-auth-store"
+import {
+  isDeliveryBoyAllowedPath,
+  resolvePrimaryRole,
+  workspaceFromRole,
+} from "../utils/role-utils"
 
 const PUBLIC_PATHS = ["/login"]
 
-function hasAdminSession(): boolean {
-  if (typeof window === "undefined") return false
-  try {
-    const raw = localStorage.getItem("admin-auth")
-    if (!raw) return false
-    const parsed = JSON.parse(raw)
-    return !!parsed?.state?.isAuthenticated && !!parsed?.state?.accessToken
-  } catch {
-    return false
+function syncAuthCookies(state: ReturnType<typeof useAdminAuthStore.getState>) {
+  if (typeof document === "undefined") return
+
+  const role = state.role || resolvePrimaryRole(state.user?.roles ?? [])
+  const workspace = state.workspace || workspaceFromRole(role)
+
+  if (workspace) {
+    document.cookie = `workspace=${workspace}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`
+  }
+  if (role) {
+    document.cookie = `user-role=${role}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`
+  }
+  if (state.branchId) {
+    document.cookie = `branch-id=${state.branchId}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`
   }
 }
 
 export function AdminAuthGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
-  const [ready, setReady] = React.useState(false)
+  const isAuthenticated = useAdminAuthStore((s) => s.isAuthenticated)
+  const workspace = useAdminAuthStore((s) => s.workspace)
+  const role = useAdminAuthStore((s) => s.role)
 
   const isPublic = PUBLIC_PATHS.includes(pathname) || pathname === "/"
 
   React.useEffect(() => {
-    useAdminAuthStore.persist.rehydrate()
-    const state = useAdminAuthStore.getState()
+    syncAuthCookies(useAdminAuthStore.getState())
 
-    if (state.workspace && !document.cookie.includes("workspace=")) {
-      document.cookie = `workspace=${state.workspace}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`
-    }
-    if (state.role && !document.cookie.includes("user-role=")) {
-      document.cookie = `user-role=${state.role}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`
-    }
-    if (state.branchId && !document.cookie.includes("branch-id=")) {
-      document.cookie = `branch-id=${state.branchId}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`
-    }
+    const currentWorkspace =
+      workspace || workspaceFromRole(role) || 'SUPER_ADMIN'
 
-    const authed = hasAdminSession()
-    const currentWorkspace = state.workspace || (state.role === "BRANCH_MANAGER" ? "BRANCH_MANAGER" : "SUPER_ADMIN")
-
-    if (!authed && !PUBLIC_PATHS.includes(pathname) && pathname !== "/") {
+    if (!isAuthenticated && !isPublic) {
       router.replace("/login")
-      setReady(false)
       return
     }
 
-    if (authed && (pathname === "/login" || pathname === "/")) {
-      router.replace(currentWorkspace === "BRANCH_MANAGER" ? "/branch/dashboard" : "/dashboard")
-      setReady(false)
+    if (isAuthenticated && (pathname === "/login" || pathname === "/")) {
+      if (currentWorkspace === "DELIVERY_BOY") {
+        router.replace("/delivery")
+      } else if (currentWorkspace === "BRANCH_MANAGER") {
+        router.replace("/branch/dashboard")
+      } else {
+        router.replace("/dashboard")
+      }
       return
     }
 
-    setReady(true)
-  }, [pathname, router])
+    if (
+      isAuthenticated &&
+      currentWorkspace === "DELIVERY_BOY" &&
+      !isPublic &&
+      !isDeliveryBoyAllowedPath(pathname)
+    ) {
+      router.replace("/delivery")
+    }
+  }, [pathname, router, isAuthenticated, workspace, role, isPublic])
 
   if (isPublic) return <>{children}</>
-  if (!ready) {
+
+  if (!isAuthenticated) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex min-h-screen items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-orange-500 border-t-transparent" />
       </div>
     )
   }
+
   return <>{children}</>
 }

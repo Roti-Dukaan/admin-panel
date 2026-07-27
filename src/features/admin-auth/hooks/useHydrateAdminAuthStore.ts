@@ -3,6 +3,7 @@
 import * as React from "react"
 import { useAdminAuthStore } from "../store/admin-auth-store"
 import { usePathname } from "next/navigation"
+import { resolvePrimaryRole, workspaceFromRoles } from "../utils/role-utils"
 
 export function useHydrateAdminAuthStore() {
   const pathname = usePathname()
@@ -14,8 +15,8 @@ export function useHydrateAdminAuthStore() {
         if (isAuthenticated) {
           const store = useAdminAuthStore.getState()
           if (store.user?.roles) {
-            const role = store.user.roles[0] || null
-            const workspace = role === 'BRANCH_MANAGER' ? 'BRANCH_MANAGER' : 'SUPER_ADMIN'
+            const role = resolvePrimaryRole(store.user.roles)
+            const workspace = workspaceFromRoles(store.user.roles)
             if (store.role !== role || store.workspace !== workspace) {
               store.setUser(store.user)
             }

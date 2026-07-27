@@ -1,34 +1,41 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { kitchenSubscriptionsApi, type SubscriptionKitchenQuery } from "../services/kitchen-subscriptions.api";
-import type { SubscriptionOrderListResponse, SubscriptionKitchenStage, MealSlot } from "../types/kitchen-subscriptions";
-import { connectRealtime, disconnectRealtime, onRealtime } from "@/lib/realtime/socket";
-import { playChime, ensureNotificationPermission, unlockAudio } from "@/lib/realtime/notify";
+import {
+  kitchenSubscriptionsApi,
+  type SubscriptionKitchenQuery,
+} from "../services/kitchen-subscriptions.api";
+import type { SubscriptionPrepRow } from "../types/kitchen-subscriptions";
 
-const SUBSCRIPTIONS_QUERY_KEY = ["kitchen", "subscriptions"] as const;
-const SUBSCRIPTIONS_SUMMARY_KEY = ["kitchen", "subscriptions", "summary"] as const;
+const SUMMARY_KEY = ["branch", "subscription-kitchen", "summary"] as const;
+const PREP_LIST_KEY = ["branch", "subscription-kitchen", "prep-list"] as const;
+const DISPATCH_KEY = ["branch", "subscription-kitchen", "dispatch-ready"] as const;
 const AUTO_REFRESH_MS = 30_000;
 
-export interface SubscriptionFilterState {
+export interface SubscriptionPrepFilters {
+  date: string;
+  slotId: string;
   search: string;
-  mealSlot: MealSlot;
-  status: SubscriptionKitchenStage | "all";
 }
 
-/** Fetch today's subscription orders for the kitchen queue. */
-export function useSubscriptionOrders(filters: SubscriptionFilterState) {
+export function useSubscriptionKitchenSummary(date: string) {
   return useQuery({
-    queryKey: [SUBSCRIPTIONS_QUERY_KEY, filters],
+    queryKey: [...SUMMARY_KEY, date],
+    queryFn: () => kitchenSubscriptionsApi.getKitchenSummary({ date }),
+    staleTime: AUTO_REFRESH_MS,
+    refetchInterval: AUTO_REFRESH_MS,
+  });
+}
+
+export function useSubscriptionPrepList(filters: SubscriptionPrepFilters) {
+  return useQuery({
+    queryKey: [...PREP_LIST_KEY, filters],
     queryFn: () =>
-      kitchenSubscriptionsApi.listOrders({
+      kitchenSubscriptionsApi.getPrepList({
+        date: filters.date,
+        slotId: filters.slotId === "all" ? undefined : filters.slotId,
         search: filters.search.trim() || undefined,
-        mealSlot: filters.mealSlot,
-        status: filters.status === "all" ? undefined : filters.status,
-        limit: 200,
-        sortOrder: "asc",
       }),
     staleTime: AUTO_REFRESH_MS,
     refetchInterval: AUTO_REFRESH_MS,
@@ -36,48 +43,59 @@ export function useSubscriptionOrders(filters: SubscriptionFilterState) {
   });
 }
 
-/** Fetch production summary. */
-export function useSubscriptionSummary() {
+export function useSubscriptionDispatchReady(date: string, enabled = false) {
   return useQuery({
-    queryKey: SUBSCRIPTIONS_SUMMARY_KEY,
-    queryFn: () => kitchenSubscriptionsApi.getSummary(),
-    staleTime: AUTO_REFRESH_MS,
-    refetchInterval: AUTO_REFRESH_MS,
-  });
-}
-
-/** Full order detail for the drawer. */
-export function useSubscriptionOrderDetail(id: string | null) {
-  return useQuery({
-    queryKey: ["kitchen", "subscription-detail", id],
-    queryFn: () => kitchenSubscriptionsApi.getOrderDetail(id!),
-    enabled: !!id,
+    queryKey: [...DISPATCH_KEY, date],
+    queryFn: () => kitchenSubscriptionsApi.getDispatchReady({ date }),
+    enabled,
     staleTime: AUTO_REFRESH_MS,
   });
 }
 
-/** Optimistic ready-for-dispatch mutation. */
-export function useSubscriptionStageMutation() {
+type StatusAction = "prep" | "pack" | "dispatch";
+
+export function useSubscriptionStatusMutation() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, remark }: { id: string; remark?: string }) =>
-      kitchenSubscriptionsApi.markReadyForDispatch(id, remark),
+    mutationFn: ({ id, action }: { id: string; action: StatusAction }) => {
+      if (action === "prep") return kitchenSubscriptionsApi.markPrepStatus(id);
+      if (action === "pack") return kitchenSubscriptionsApi.markPackingStatus(id);
+      return kitchenSubscriptionsApi.markDispatchStatus(id);
+    },
 
-    onMutate: async ({ id }) => {
-      await qc.cancelQueries({ queryKey: SUBSCRIPTIONS_QUERY_KEY });
-      const previous = qc.getQueriesData<SubscriptionOrderListResponse>({ queryKey: SUBSCRIPTIONS_QUERY_KEY });
+    onMutate: async ({ id, action }) => {
+      await qc.cancelQueries({ queryKey: PREP_LIST_KEY });
+      const previous = qc.getQueriesData<SubscriptionPrepRow[]>({ queryKey: PREP_LIST_KEY });
 
-      qc.setQueriesData<SubscriptionOrderListResponse>({ queryKey: SUBSCRIPTIONS_QUERY_KEY }, (old) => {
+      qc.setQueriesData<SubscriptionPrepRow[]>({ queryKey: PREP_LIST_KEY }, (old) => {
         if (!old) return old;
-        return {
-          ...old,
-          items: old.items.map((it) =>
-            it.orderId === id
-              ? { ...it, stage: "READY_FOR_DISPATCH" as SubscriptionKitchenStage }
-              : it
-          ),
-        };
+        return old.map((row) => {
+          if (row.id !== id) return row;
+          if (action === "prep") {
+            return {
+              ...row,
+              prepStatus: "PREPARING" as const,
+              packingStatus: "IN_PROGRESS" as const,
+              status: "IN_KITCHEN",
+            };
+          }
+          if (action === "pack") {
+            return {
+              ...row,
+              prepStatus: "PACKED" as const,
+              packingStatus: "PACKED" as const,
+              dispatchStatus: "READY" as const,
+              status: "PACKED",
+            };
+          }
+          return {
+            ...row,
+            prepStatus: "READY" as const,
+            dispatchStatus: "HANDED_OVER" as const,
+            status: "OUT_FOR_DELIVERY",
+          };
+        });
       });
 
       return { previous };
@@ -85,82 +103,35 @@ export function useSubscriptionStageMutation() {
 
     onError: (_err, _vars, context) => {
       context?.previous?.forEach(([key, value]) => qc.setQueryData(key, value));
-      toast.error("Could not update the order. Please try again.");
+      toast.error("Could not update subscription delivery status.");
     },
 
-    onSuccess: () => {
-      toast.success("Order marked Ready for Dispatch.");
+    onSuccess: (_data, vars) => {
+      const label =
+        vars.action === "prep"
+          ? "Started prep"
+          : vars.action === "pack"
+            ? "Marked packed"
+            : "Handed over for dispatch";
+      toast.success(label);
+      qc.invalidateQueries({ queryKey: SUMMARY_KEY });
+      qc.invalidateQueries({ queryKey: DISPATCH_KEY });
     },
   });
 }
 
-/** Real-time updates for subscription kitchen orders. */
-export function useSubscriptionRealtime(options?: {
-  onNewOrder?: (payload: { orderId: string; orderNumber: string; mealSlot: string }) => void;
-}) {
-  const qc = useQueryClient();
-  const [connected, setConnected] = useState(false);
-  const seen = useRef<Set<string>>(new Set());
-  const onNewOrderRef = useRef(options?.onNewOrder);
-  onNewOrderRef.current = options?.onNewOrder;
-
-  useEffect(() => {
-    unlockAudio();
-    ensureNotificationPermission();
-
-    const socket = connectRealtime();
-
-    const offConnect = onRealtime("connect", () => setConnected(true));
-    const offDisconnect = onRealtime("disconnect", () => setConnected(false));
-    setConnected(socket.connected);
-
-    const isNew = (key: string) => {
-      if (seen.current.has(key)) return false;
-      seen.current.add(key);
-      if (seen.current.size > 200) seen.current.clear();
-      return true;
-    };
-
-    const offCreated = onRealtime("subscription:order_created", (raw) => {
-      const payload = raw as { orderId: string; orderNumber: string; mealSlot: string; occurredAt: string };
-      const key = `${payload.orderId}:${payload.occurredAt}`;
-      if (!isNew(key)) return;
-
-      playChime();
-      if (typeof document !== "undefined" && document.hidden) {
-        ensureNotificationPermission();
-      }
-
-      qc.invalidateQueries({ queryKey: SUBSCRIPTIONS_QUERY_KEY });
-      onNewOrderRef.current?.(payload);
-    });
-
-    const offUpdated = onRealtime("subscription:order_updated", (raw) => {
-      const payload = raw as { orderId: string; status: string; occurredAt: string };
-      const key = `${payload.orderId}:${payload.occurredAt}`;
-      if (!isNew(key)) return;
-
-      qc.setQueriesData<SubscriptionOrderListResponse>({ queryKey: SUBSCRIPTIONS_QUERY_KEY }, (old) => {
-        if (!old) return old;
-        return {
-          ...old,
-          items: old.items.map((it) =>
-            it.orderId === payload.orderId
-              ? { ...it, stage: payload.status as SubscriptionKitchenStage }
-              : it
-          ),
-        };
-      });
-    });
-
-    return () => {
-      offConnect();
-      offDisconnect();
-      offCreated();
-      offUpdated();
-      disconnectRealtime();
-    };
-  }, [qc]);
-
-  return { connected };
+/** Lightweight hook for combined kitchen load card on live orders tab. */
+export function useTodaySubscriptionLoad(date: string) {
+  return useQuery({
+    queryKey: [...SUMMARY_KEY, date, "load-card"],
+    queryFn: () => kitchenSubscriptionsApi.getKitchenSummary({ date }),
+    staleTime: AUTO_REFRESH_MS,
+    select: (data) => ({
+      totalDeliveries: data.totalDeliveries,
+      totalRotis: data.totalRotis,
+      totalPacks: data.totalPacks,
+    }),
+  });
 }
+
+export type { SubscriptionKitchenQuery };

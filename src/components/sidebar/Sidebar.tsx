@@ -32,7 +32,7 @@ import { SidebarFooter } from "./SidebarFooter"
 import { SidebarCollapseButton } from "./SidebarCollapseButton"
 import type { NavGroup } from "./types"
 import { useOrdersStore } from "@/features/orders/hooks/useOrders"
-import { BRANCH_MANAGER_NAVIGATION } from "@/config/navigation"
+import { BRANCH_MANAGER_NAVIGATION, getNavigationForWorkspace } from "@/config/navigation"
 import { useWorkspace } from "@/contexts/WorkspaceContext"
 
 
@@ -125,11 +125,22 @@ interface SidebarProps {
 export function Sidebar({ collapsed = false, onToggle, mobileOpen = false, onMobileClose }: SidebarProps) {
   const pathname = usePathname()
   const { isGroupExpanded, toggleGroup } = useSidebar()
-  const { isBranchManager } = useWorkspace()
+  const { isBranchManager, isDeliveryBoy } = useWorkspace()
   const statistics = useOrdersStore((s) => s.statistics)
   const kitchenLiveOrders = (statistics?.preparing ?? 0) + (statistics?.packed ?? 0)
 
-  const visibleNavGroups = isBranchManager
+  const visibleNavGroups = isDeliveryBoy
+    ? [{
+      id: "delivery",
+      title: "Delivery",
+      items: getNavigationForWorkspace('DELIVERY_BOY').map((item) => ({
+        label: item.label,
+        href: item.href,
+        icon: item.icon,
+        disabled: false,
+      })),
+    }]
+    : isBranchManager
     ? [{
       id: "branch",
       title: "Branch",
@@ -143,24 +154,27 @@ export function Sidebar({ collapsed = false, onToggle, mobileOpen = false, onMob
     }]
     : MAIN_ADMIN_NAV_GROUPS
 
+  const homeHref = isDeliveryBoy ? '/delivery' : isBranchManager ? '/branch/dashboard' : '/dashboard'
+  const workspaceLabel = isDeliveryBoy ? 'Delivery' : isBranchManager ? 'Branch Manager' : 'Admin'
+
   const sidebarContent = (
     <>
       {/* Logo */}
       <div className={cn("flex h-16 items-center border-b border-gray-100 px-5", collapsed && "justify-center px-0")}>
         {!collapsed ? (
-          <Link href="/dashboard" className="flex items-center gap-2.5 group">
+          <Link href={homeHref} className="flex items-center gap-2.5 group">
             <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full ring-2 ring-orange-500/20 group-hover:ring-orange-500/40 transition-all">
               <img src="/roti_dukaan_logo.jpg" alt="Roti Dukaan" className="h-full w-full object-cover" />
             </div>
             <div className="flex flex-col">
               <span className="text-[15px] font-bold text-gray-900 leading-tight">Roti Dukaan</span>
               <span className="text-[10px] font-medium text-gray-400 uppercase tracking-wider">
-              {isBranchManager ? 'Branch Manager' : 'Admin'}
+              {workspaceLabel}
             </span>
             </div>
           </Link>
         ) : (
-          <Link href="/dashboard" className="h-9 w-9 shrink-0 overflow-hidden rounded-full ring-2 ring-orange-500/20 hover:ring-orange-500/40 transition-all">
+          <Link href={homeHref} className="h-9 w-9 shrink-0 overflow-hidden rounded-full ring-2 ring-orange-500/20 hover:ring-orange-500/40 transition-all">
             <img src="/roti_dukaan_logo.jpg" alt="Roti Dukaan" className="h-full w-full object-cover" />
           </Link>
         )}
@@ -236,14 +250,14 @@ export function Sidebar({ collapsed = false, onToggle, mobileOpen = false, onMob
             aria-label="Mobile sidebar"
           >
             <div className="flex h-16 items-center justify-between border-b border-gray-100 px-5">
-              <Link href="/dashboard" className="flex items-center gap-2.5" onClick={onMobileClose}>
+              <Link href={homeHref} className="flex items-center gap-2.5" onClick={onMobileClose}>
                 <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full ring-2 ring-orange-500/20">
                   <img src="/roti_dukaan_logo.jpg" alt="Roti Dukaan" className="h-full w-full object-cover" />
                 </div>
                 <div className="flex flex-col">
                   <span className="text-[15px] font-bold text-gray-900 leading-tight">Roti Dukaan</span>
                   <span className="text-[10px] font-medium text-gray-400 uppercase tracking-wider">
-              {isBranchManager ? 'Branch Manager' : 'Admin'}
+              {workspaceLabel}
             </span>
                 </div>
               </Link>

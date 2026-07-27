@@ -1,23 +1,26 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { AlertTriangle } from "lucide-react";
+import { format } from "date-fns";
+import { AlertTriangle, ArrowRight, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
-  useSubscriptionOrders,
-  useSubscriptionSummary,
-  useSubscriptionOrderDetail,
-  useSubscriptionStageMutation,
-  useSubscriptionRealtime,
-  type SubscriptionFilterState,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { SearchBar } from "@/features/kitchen/components/SearchBar";
+import {
+  useSubscriptionKitchenSummary,
+  useSubscriptionPrepList,
+  useSubscriptionStatusMutation,
 } from "../hooks/useKitchenSubscriptions";
-import { SubscriptionStats } from "./SubscriptionStats";
-import { SubscriptionSummary } from "./SubscriptionSummary";
-import { SubscriptionFilters } from "./SubscriptionFilters";
-import { SubscriptionSearchBar } from "./SubscriptionSearchBar";
-import { SubscriptionKanban } from "./SubscriptionKanban";
-import { SubscriptionOrderDrawer } from "./SubscriptionOrderDrawer";
-import type { SubscriptionOrderListItem, SubscriptionKitchenStage, MealSlot } from "../types/kitchen-subscriptions";
+import { SubscriptionStats, SubscriptionPrepSummary } from "./SubscriptionStats";
+import { SubscriptionPrepTable } from "./SubscriptionPrepTable";
+import { ROTI_TYPE_LABELS } from "../types/kitchen-subscriptions";
 
 function ErrorState({ onRetry }: { onRetry: () => void }) {
   return (
@@ -27,7 +30,7 @@ function ErrorState({ onRetry }: { onRetry: () => void }) {
       </div>
       <div>
         <p className="text-base font-semibold text-gray-800">Something went wrong</p>
-        <p className="text-sm text-gray-500">Could not load subscription orders.</p>
+        <p className="text-sm text-gray-500">Could not load subscription prep data.</p>
       </div>
       <Button type="button" onClick={onRetry} className="bg-orange-500 hover:bg-orange-600">
         Retry
@@ -37,84 +40,115 @@ function ErrorState({ onRetry }: { onRetry: () => void }) {
 }
 
 export function SubscriptionsBoard() {
+  const [date, setDate] = useState(() => format(new Date(), "yyyy-MM-dd"));
   const [search, setSearch] = useState("");
-  const [mealSlot, setMealSlot] = useState<MealSlot>("all");
-  const [status, setStatus] = useState<SubscriptionKitchenStage | "all">("all");
-  const [selectedOrder, setSelectedOrder] = useState<SubscriptionOrderListItem | null>(null);
+  const [slotId, setSlotId] = useState("all");
 
-  const filters: SubscriptionFilterState = { search, mealSlot, status };
-  const query = useSubscriptionOrders(filters);
-  const summaryQuery = useSubscriptionSummary();
-  const detailQuery = useSubscriptionOrderDetail(selectedOrder?.orderId ?? null);
-  const mutation = useSubscriptionStageMutation();
-  const realtime = useSubscriptionRealtime();
+  const filters = useMemo(() => ({ date, slotId, search }), [date, slotId, search]);
+  const summaryQuery = useSubscriptionKitchenSummary(date);
+  const prepQuery = useSubscriptionPrepList(filters);
+  const mutation = useSubscriptionStatusMutation();
 
-  const filtered = useMemo(() => query.data?.items ?? [], [query.data]);
+  const slotOptions = useMemo(() => {
+    const slots = summaryQuery.data?.bySlot ?? [];
+    return slots.map((slot) => ({ id: slot.slotId, name: slot.slotName }));
+  }, [summaryQuery.data]);
 
-  const byStage = useMemo(() => {
-    const map: Record<SubscriptionKitchenStage, SubscriptionOrderListItem[]> = {
-      PREPARING: [],
-      READY: [],
-      READY_FOR_DISPATCH: [],
+  const stats = useMemo(() => {
+    const counts = summaryQuery.data?.statusCounts;
+    return {
+      pending: counts?.pending ?? 0,
+      preparing: counts?.preparing ?? 0,
+      packed: counts?.packed ?? 0,
+      readyForDispatch: counts?.readyForDispatch ?? 0,
+      total: summaryQuery.data?.totalDeliveries ?? 0,
+      totalRotis: summaryQuery.data?.totalRotis ?? 0,
+      totalPacks: summaryQuery.data?.totalPacks ?? 0,
     };
-    for (const o of filtered) {
-      if (map[o.stage]) map[o.stage].push(o);
-    }
-    return map;
-  }, [filtered]);
+  }, [summaryQuery.data]);
 
-  const stats = useMemo(
-    () => ({
-      preparing: byStage.PREPARING.length,
-      ready: byStage.READY.length,
-      readyForDispatch: byStage.READY_FOR_DISPATCH.length,
-      total: filtered.length,
-    }),
-    [byStage, filtered]
-  );
-
-  const handleRefresh = () => query.refetch();
+  const handleRefresh = () => {
+    summaryQuery.refetch();
+    prepQuery.refetch();
+  };
 
   const updatingId = mutation.isPending
     ? (mutation.variables as { id: string } | undefined)?.id ?? null
     : null;
 
-  const handleAction = (orderId: string) => mutation.mutate({ id: orderId });
+  const handlePrint = () => {
+    window.print();
+  };
 
-  if (query.isError && !query.data) {
+  if ((prepQuery.isError || summaryQuery.isError) && !prepQuery.data && !summaryQuery.data) {
     return <ErrorState onRetry={handleRefresh} />;
   }
 
   return (
-    <div className="flex min-h-screen flex-col gap-5 bg-gray-50/50 p-6">
-      <SubscriptionStats stats={stats} />
-
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <SubscriptionSummary summary={summaryQuery.data} />
-        <div className="flex flex-wrap items-center gap-3 lg:flex-1 lg:justify-end">
-          <SubscriptionSearchBar value={search} onChange={setSearch} />
-          <SubscriptionFilters
-            mealSlot={mealSlot}
-            onMealSlot={setMealSlot}
-            status={status}
-            onStatus={setStatus}
+    <div className="flex min-h-screen flex-col gap-5 bg-gray-50/50 p-6 print:bg-white">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between print:hidden">
+        <div className="flex flex-wrap items-center gap-3">
+          <Input
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            className="h-10 w-auto"
+            aria-label="Prep date"
           />
+          <Select value={slotId} onValueChange={setSlotId}>
+            <SelectTrigger className="h-10 w-full sm:w-56" aria-label="Filter by delivery slot">
+              <SelectValue placeholder="All Slots" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Slots</SelectItem>
+              {slotOptions.map((slot) => (
+                <SelectItem key={slot.id} value={slot.id}>
+                  {slot.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <SearchBar value={search} onChange={setSearch} />
+          {stats.readyForDispatch > 0 && (
+            <Button
+              type="button"
+              variant="outline"
+              href="/branch/subscription-dispatch"
+              className="gap-1.5 border-indigo-200 text-indigo-700 hover:bg-indigo-50"
+            >
+              Dispatch Ready ({stats.readyForDispatch})
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          )}
+          <Button type="button" variant="outline" onClick={handlePrint} className="gap-1.5">
+            <Printer className="h-4 w-4" />
+            Print
+          </Button>
         </div>
       </div>
 
-      <SubscriptionKanban
-        byStage={byStage}
-        onOpen={setSelectedOrder}
-        onAction={handleAction}
-        updatingId={updatingId}
-        isLoading={query.isLoading}
-      />
+      <SubscriptionStats stats={stats} />
+      <SubscriptionPrepSummary summary={summaryQuery.data} />
 
-      <SubscriptionOrderDrawer
-        order={detailQuery.data ?? null}
-        onClose={() => setSelectedOrder(null)}
-        onMarkReady={handleAction}
-        isUpdating={mutation.isPending}
+      <div className="hidden print:block">
+        <h2 className="mb-2 text-lg font-bold">Subscription Prep — {date}</h2>
+        <p className="mb-4 text-sm text-gray-600">
+          {stats.total} deliveries · {stats.totalRotis} rotis ·{" "}
+          {(summaryQuery.data?.rotiTypeTotals ?? [])
+            .map((r) => `${ROTI_TYPE_LABELS[r.rotiType] ?? r.rotiType}: ${r.quantity}`)
+            .join(" · ")}
+        </p>
+      </div>
+
+      <SubscriptionPrepTable
+        rows={prepQuery.data ?? []}
+        onPrep={(id) => mutation.mutate({ id, action: "prep" })}
+        onPack={(id) => mutation.mutate({ id, action: "pack" })}
+        onDispatch={(id) => mutation.mutate({ id, action: "dispatch" })}
+        updatingId={updatingId}
+        isLoading={prepQuery.isLoading}
       />
     </div>
   );

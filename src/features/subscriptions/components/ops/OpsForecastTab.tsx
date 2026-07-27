@@ -9,6 +9,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { StatCard } from "./StatCard";
+import { KitchenRotiSummaryPanel } from "./KitchenRotiSummaryPanel";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend,
 } from "recharts";
@@ -89,6 +90,7 @@ function KitchenForecast({ date, onDate }: { date: string; onDate: (d: string) =
         <StatCard label="Non-Veg Meals" value={data.meals.nonVegMeals} tone="warning" />
         <StatCard label="Special Meals" value={data.meals.specialMeals} tone="info" />
       </div>
+      <KitchenRotiSummaryPanel date={date} />
     </div>
   );
 }
