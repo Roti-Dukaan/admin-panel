@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import * as React from "react"
 import { usePathname } from "next/navigation"
@@ -32,6 +32,7 @@ const SIDEBAR_ROUTES = [
   "/branch/menu",
   "/branch/inventory",
   "/branch/delivery",
+  "/branch/dispatch",
   "/branch/customers",
   "/branch/team",
   "/branch/reports",
@@ -39,6 +40,7 @@ const SIDEBAR_ROUTES = [
   "/branch-inventory",
   "/support",
   "/branch/support",
+  "/dispatch",
 ]
 
 function isSidebarRoute(pathname: string): boolean {

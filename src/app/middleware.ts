@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-const SUPER_ADMIN_PATHS = ['/dashboard', '/orders', '/deliveries', '/menu', '/customers', '/subscription-plans', '/subscriptions', '/delivery-slots', '/reports', '/settings', '/areas', '/audit-logs', '/branches', '/cities', '/branch-inventory', '/subscription-operations', '/admin', '/support']
-const BRANCH_PATHS = ['/branch/dashboard', '/branch/orders', '/branch/kitchen', '/branch/production', '/branch/menu', '/branch/inventory', '/branch/delivery', '/branch/customers', '/branch/team', '/branch/reports', '/branch/profile', '/branch/support']
+const SUPER_ADMIN_PATHS = ['/dashboard', '/orders', '/deliveries', '/menu', '/customers', '/subscription-plans', '/subscriptions', '/delivery-slots', '/dispatch', '/reports', '/settings', '/areas', '/audit-logs', '/branches', '/cities', '/branch-inventory', '/subscription-operations', '/admin', '/support']
+const BRANCH_PATHS = ['/branch/dashboard', '/branch/orders', '/branch/kitchen', '/branch/production', '/branch/menu', '/branch/inventory', '/branch/delivery', '/branch/dispatch', '/branch/customers', '/branch/team', '/branch/reports', '/branch/profile', '/branch/support']
 
 function getWorkspaceFromCookie(request: NextRequest): 'SUPER_ADMIN' | 'BRANCH_MANAGER' | null {
   const workspace = request.cookies.get('workspace')?.value
@@ -80,5 +80,6 @@ export const config = {
     '/admin/:path*',
     '/branch/:path*',
     '/support/:path*',
+    '/dispatch/:path*',
   ],
 }

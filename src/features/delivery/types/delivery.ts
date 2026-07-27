@@ -8,7 +8,9 @@ export type DeliveryStatus =
   | "AWAITING_PICKUP"
   | "PICKED_UP"
   | "OUT_FOR_DELIVERY"
+  | "NEAR_CUSTOMER"
   | "DELIVERED"
+  | "RETURNED"
   | "FAILED"
   | "CANCELLED";
 
@@ -18,7 +20,8 @@ export type DeliveryProvider =
   | "SHADOWFAX"
   | "SELF_DELIVERY"
   | "SHIPROCKET"
-  | "PORTER";
+  | "PORTER"
+  | "BORZO";
 
 export interface RiderInfo {
   name: string;
@@ -121,14 +124,17 @@ export interface DeliveryFilters {
 }
 
 export interface DeliveryStatistics {
-  total: number;
-  waitingForKitchen: number;
-  waitingForProvider: number;
-  providerAssigned: number;
-  riderArriving: number;
-  pickedUp: number;
-  outForDelivery: number;
-  delivered: number;
+  byStatus: { status: string; count: number }[];
+  byDeliveryType: { deliveryType: string; count: number }[];
+  totalDeliveries: number;
+  totalDeliveryRevenue: number;
+}
+
+export interface DeliveryDashboard {
+  pendingPickups: number;
+  assignedRiders: number;
+  inTransit: number;
+  deliveredToday: number;
   failed: number;
   cancelled: number;
 }
@@ -264,7 +270,9 @@ export const DELIVERY_STATUS_CONFIG: Record<DeliveryStatus, DeliveryStatusConfig
   AWAITING_PICKUP: { label: "Awaiting Pickup", color: "orange", bgClass: "bg-orange-100", textClass: "text-orange-800", dotClass: "bg-orange-500" },
   PICKED_UP: { label: "Picked Up", color: "purple", bgClass: "bg-purple-100", textClass: "text-purple-800", dotClass: "bg-purple-500" },
   OUT_FOR_DELIVERY: { label: "Out for Delivery", color: "indigo", bgClass: "bg-indigo-100", textClass: "text-indigo-800", dotClass: "bg-indigo-500" },
+  NEAR_CUSTOMER: { label: "Near Customer", color: "teal", bgClass: "bg-teal-100", textClass: "text-teal-800", dotClass: "bg-teal-500" },
   DELIVERED: { label: "Delivered", color: "green", bgClass: "bg-emerald-100", textClass: "text-emerald-800", dotClass: "bg-emerald-500" },
+  RETURNED: { label: "Returned", color: "amber", bgClass: "bg-amber-100", textClass: "text-amber-800", dotClass: "bg-amber-500" },
   FAILED: { label: "Failed", color: "red", bgClass: "bg-red-100", textClass: "text-red-800", dotClass: "bg-red-500" },
   CANCELLED: { label: "Cancelled", color: "gray", bgClass: "bg-gray-100", textClass: "text-gray-800", dotClass: "bg-gray-500" },
 };
@@ -279,6 +287,7 @@ export const DELIVERY_PROVIDER_LABELS: Record<DeliveryProvider, string> = {
   SELF_DELIVERY: "Self Delivery",
   SHIPROCKET: "Shiprocket",
   PORTER: "Porter",
+  BORZO: "Borzo",
 };
 
 export const DELIVERY_STATUS_ORDER: DeliveryStatus[] = [
@@ -291,7 +300,9 @@ export const DELIVERY_STATUS_ORDER: DeliveryStatus[] = [
   "AWAITING_PICKUP",
   "PICKED_UP",
   "OUT_FOR_DELIVERY",
+  "NEAR_CUSTOMER",
   "DELIVERED",
+  "RETURNED",
   "FAILED",
   "CANCELLED",
 ];
@@ -305,8 +316,10 @@ const DELIVERY_ALLOWED_TRANSITIONS: Record<DeliveryStatus, DeliveryStatus[]> = {
   RIDER_ARRIVED: ["AWAITING_PICKUP", "PICKED_UP", "CANCELLED"],
   AWAITING_PICKUP: ["PICKED_UP", "CANCELLED"],
   PICKED_UP: ["OUT_FOR_DELIVERY", "FAILED", "CANCELLED"],
-  OUT_FOR_DELIVERY: ["DELIVERED", "FAILED", "CANCELLED"],
+  OUT_FOR_DELIVERY: ["NEAR_CUSTOMER", "DELIVERED", "FAILED", "CANCELLED"],
+  NEAR_CUSTOMER: ["DELIVERED", "FAILED", "CANCELLED"],
   DELIVERED: [],
+  RETURNED: [],
   FAILED: ["WAITING_FOR_PROVIDER"],
   CANCELLED: [],
 };

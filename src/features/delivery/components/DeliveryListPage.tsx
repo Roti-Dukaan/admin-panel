@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { toast } from "sonner";
+import { DeliveryStats } from "./DeliveryStats";
 
 type AdminAddress = {
   addressLine1: string;
@@ -189,6 +190,8 @@ export function DeliveryListPage() {
 
   return (
     <div className="p-6 space-y-6">
+        <DeliveryStats />
+
         <div className="bg-white rounded-xl border border-gray-200 p-4">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1 max-w-xs">
@@ -214,7 +217,9 @@ export function DeliveryListPage() {
                   <SelectItem value="RIDER_ARRIVING">Rider Arriving</SelectItem>
                   <SelectItem value="PICKED_UP">Picked Up</SelectItem>
                   <SelectItem value="OUT_FOR_DELIVERY">Out for Delivery</SelectItem>
+                  <SelectItem value="NEAR_CUSTOMER">Near Customer</SelectItem>
                   <SelectItem value="DELIVERED">Delivered</SelectItem>
+                  <SelectItem value="RETURNED">Returned</SelectItem>
                   <SelectItem value="FAILED">Failed</SelectItem>
                   <SelectItem value="CANCELLED">Cancelled</SelectItem>
                 </SelectContent>
@@ -229,6 +234,7 @@ export function DeliveryListPage() {
                   <SelectItem value="SELF_DELIVERY">Self Delivery</SelectItem>
                   <SelectItem value="SHIPROCKET">Shiprocket</SelectItem>
                   <SelectItem value="PORTER">Porter</SelectItem>
+                  <SelectItem value="BORZO">Borzo</SelectItem>
                 </SelectContent>
               </Select>
               <Select value={filters.deliveryType || "all"} onValueChange={(v) => handleFilterChange("deliveryType", v)}>
