@@ -24,6 +24,7 @@ import {
   ToggleLeft,
   LifeBuoy,
   FolderOpen,
+  Wheat,
 } from "lucide-react"
 import { useSidebar } from "./hooks/useSidebar"
 import { SidebarGroup } from "./SidebarGroup"
@@ -63,6 +64,7 @@ const MAIN_ADMIN_NAV_GROUPS: NavGroup[] = [
     roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN', 'BRANCH_MANAGER'],
     items: [
       { label: "Menu Items", href: "/menu", icon: UtensilsCrossed, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
+      { label: "Subscription Menu", href: "/subscription-menu", icon: Wheat, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
       { label: "Availability Overview", href: "/admin/branch-menu-availability", icon: ToggleLeft, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
     ],
   },
