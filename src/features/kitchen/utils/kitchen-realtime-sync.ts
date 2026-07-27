@@ -177,7 +177,7 @@ export function refetchKitchenQueries(qc: QueryClient): void {
 let kitchenRefreshTimer: ReturnType<typeof setTimeout> | null = null;
 
 /** Debounced background enrich — list is already updated optimistically. */
-export function scheduleKitchenRefresh(qc: QueryClient, delayMs = 3000): void {
+export function scheduleKitchenRefresh(qc: QueryClient, delayMs = 2000): void {
   if (kitchenRefreshTimer) clearTimeout(kitchenRefreshTimer);
   kitchenRefreshTimer = setTimeout(() => {
     kitchenRefreshTimer = null;
@@ -187,8 +187,8 @@ export function scheduleKitchenRefresh(qc: QueryClient, delayMs = 3000): void {
 
 export function handleKitchenTicketCreated(qc: QueryClient, payload: KitchenTicketCreatedPayload): void {
   prependKitchenTicket(qc, payload);
-  // Ticket was just created — give the list API a moment before enriching.
-  scheduleKitchenRefresh(qc, 3000);
+  refetchKitchenQueries(qc);
+  scheduleKitchenRefresh(qc, 2000);
 }
 
 export function handleKitchenTicketUpdated(
@@ -202,9 +202,7 @@ export function handleKitchenTicketUpdated(
 
 export function handleBranchOrderNew(qc: QueryClient, payload: BranchOrderNewPayload): void {
   prependBranchOrderPlaceholder(qc, payload);
-  // Do NOT refetch here — the kitchen ticket often does not exist in the list
-  // API yet (createTicketFromOrder is async). An early refetch + merge was
-  // wiping the optimistic row; users then waited for the 30s poll interval.
+  refetchKitchenQueries(qc);
 }
 
 export function handleKitchenDeliveryUpdated(

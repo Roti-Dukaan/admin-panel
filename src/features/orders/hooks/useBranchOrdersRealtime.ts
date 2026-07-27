@@ -20,10 +20,12 @@ export function useBranchOrdersRealtime() {
     let timer: ReturnType<typeof setTimeout> | null = null;
 
     const scheduleRefresh = () => {
+      const store = useOrdersStore.getState();
+      void store.fetchOrders();
+      void store.fetchStatistics();
       if (timer) return;
       timer = setTimeout(() => {
         timer = null;
-        const store = useOrdersStore.getState();
         void store.fetchOrders();
         void store.fetchStatistics();
       }, 400);

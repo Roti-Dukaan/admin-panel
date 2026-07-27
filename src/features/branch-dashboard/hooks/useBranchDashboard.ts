@@ -1,8 +1,13 @@
 import { useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { onRealtime } from "@/lib/realtime/socket";
+import {
+  connectRealtime,
+  disconnectRealtime,
+  onRealtime,
+} from "@/lib/realtime/socket";
 import { REALTIME_EVENTS, type BranchOrderNewPayload, type BranchOrderUpdatedPayload } from "@/lib/realtime/events";
 import { branchIdsMatch } from "@/lib/realtime/branch-id";
+import { useRealtimeFallbackPollInterval } from "@/lib/realtime/useRealtimeFallbackPollInterval";
 import { useAdminAuthStore } from "@/features/admin-auth/store/admin-auth-store";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
 import { fetchBranchDashboardStats } from "../api/branch-dashboard.api";
@@ -29,9 +34,12 @@ export function useBranchDashboard(enabled = true) {
   const { branchId: workspaceBranchId, isBranchManager } = useWorkspace();
   const userBranchId = useAdminAuthStore((s) => s.user?.branchId ?? s.branchId);
   const branchId = workspaceBranchId ?? userBranchId;
+  const pollInterval = useRealtimeFallbackPollInterval(FALLBACK_POLL_MS);
 
   useEffect(() => {
     if (!enabled || !accessToken || !isBranchManager) return;
+
+    connectRealtime(accessToken);
 
     const offNew = onRealtime(REALTIME_EVENTS.BRANCH_ORDER_NEW, (raw) => {
       const payload = raw as BranchOrderNewPayload;
@@ -54,6 +62,7 @@ export function useBranchDashboard(enabled = true) {
       offNew();
       offUpdated();
       offKitchenCreated();
+      disconnectRealtime();
     };
   }, [enabled, accessToken, isBranchManager, branchId, qc]);
 
@@ -61,7 +70,7 @@ export function useBranchDashboard(enabled = true) {
     queryKey: BRANCH_DASHBOARD_STATS_KEY,
     queryFn: fetchBranchDashboardStats,
     staleTime: REALTIME_STALE_MS,
-    refetchInterval: enabled ? FALLBACK_POLL_MS : 0,
+    refetchInterval: enabled ? pollInterval : 0,
     refetchIntervalInBackground: true,
     enabled,
   });

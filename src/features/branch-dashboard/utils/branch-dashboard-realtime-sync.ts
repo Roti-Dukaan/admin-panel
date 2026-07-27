@@ -24,10 +24,17 @@ export function patchBranchDashboardOnNewOrder(qc: QueryClient, _payload: Branch
   }
 }
 
+/** Immediate refetch for active dashboard observers (socket event path). */
+export function refreshBranchDashboardNow(qc: QueryClient): void {
+  void qc.refetchQueries({ queryKey: BRANCH_DASHBOARD_STATS_KEY, type: "active" });
+}
+
 /** Debounced background refetch — list counts are patched optimistically first. */
 let dashboardRefreshTimer: ReturnType<typeof setTimeout> | null = null;
 
 export function scheduleBranchDashboardRefresh(qc: QueryClient, delayMs = 400): void {
+  refreshBranchDashboardNow(qc);
+
   if (dashboardRefreshTimer) return;
 
   dashboardRefreshTimer = setTimeout(() => {

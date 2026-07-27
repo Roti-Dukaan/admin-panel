@@ -30,6 +30,7 @@ import {
   handleKitchenTicketCreated,
 } from "../utils/kitchen-realtime-sync";
 import { ensureNotificationPermission, unlockAudio } from "@/lib/realtime/notify";
+import { useRealtimeFallbackPollInterval } from "@/lib/realtime/useRealtimeFallbackPollInterval";
 import {
   REALTIME_EVENTS,
   type BranchOrderNewPayload,
@@ -63,6 +64,8 @@ export function kitchenFiltersQueryKey(filters: KitchenFilterState) {
 
 /** Kitchen queue list with search, sorting and slow fallback poll (realtime is primary). */
 export function useKitchenOrders(filters: KitchenFilterState) {
+  const pollInterval = useRealtimeFallbackPollInterval(FALLBACK_POLL_MS);
+
   return useQuery({
     queryKey: [...KITCHEN_QUERY_KEY, ...kitchenFiltersQueryKey(filters)],
     queryFn: () =>
@@ -73,7 +76,7 @@ export function useKitchenOrders(filters: KitchenFilterState) {
         limit: 300,
       }),
     staleTime: REALTIME_STALE_MS,
-    refetchInterval: FALLBACK_POLL_MS,
+    refetchInterval: pollInterval,
     refetchIntervalInBackground: true,
     placeholderData: keepPreviousData,
     structuralSharing: (oldData, newData) =>

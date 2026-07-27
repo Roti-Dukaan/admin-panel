@@ -47,7 +47,7 @@ export function isOrderRinging(): boolean {
 
 /** Whether audio has been unlocked and can play without a user gesture. */
 export function canPlayOrderAlerts(): boolean {
-  return isOrderAlertsEnabled();
+  return isOrderAlertsEnabled() || ringActive;
 }
 
 /** Whether the manager explicitly enabled sound alerts (persists across visits). */
@@ -121,6 +121,12 @@ function playTestChime(howl: Howl): Promise<boolean> {
  * Wire one-time listeners so incidental clicks unlock Howler's audio context.
  * Prefer {@link enableOrderAlerts} for the explicit first-visit UX.
  */
+function removeAudioUnlockListeners(unlock: () => void): void {
+  window.removeEventListener("pointerdown", unlock);
+  window.removeEventListener("keydown", unlock);
+  window.removeEventListener("touchstart", unlock);
+}
+
 export function unlockAudio(): void {
   if (typeof window === "undefined" || audioUnlockBound) return;
   audioUnlockBound = true;
@@ -128,21 +134,35 @@ export function unlockAudio(): void {
   const unlock = () => {
     Howler.autoUnlock = true;
     preloadOrderAudio();
-    if (isOrderAlertsEnabled() || ringActive) {
-      window.removeEventListener("pointerdown", unlock);
-      window.removeEventListener("keydown", unlock);
-      window.removeEventListener("touchstart", unlock);
+
+    const finish = (ok: boolean) => {
+      if (ok) markOrderAlertsEnabled();
+      if (ok || !ringActive) {
+        removeAudioUnlockListeners(unlock);
+      }
+    };
+
+    if (isOrderAlertsEnabled()) {
+      if (ringActive) {
+        void startOrderRing().then(finish);
+      } else {
+        finish(true);
+      }
       return;
     }
-    const howl = getOrderRing();
-    if (howl) {
-      void playTestChime(howl).then((ok) => {
-        if (ok) markOrderAlertsEnabled();
-      });
+
+    if (ringActive) {
+      void startOrderRing().then(finish);
+      return;
     }
-    window.removeEventListener("pointerdown", unlock);
-    window.removeEventListener("keydown", unlock);
-    window.removeEventListener("touchstart", unlock);
+
+    const howl = getOrderRing();
+    if (!howl) {
+      removeAudioUnlockListeners(unlock);
+      return;
+    }
+
+    void playTestChime(howl).then(finish);
   };
 
   window.addEventListener("pointerdown", unlock);
@@ -175,32 +195,28 @@ export function playChime(): void {
   }, 400);
 }
 
-/** Start ring after alerts are enabled. */
+/** Start ring after alerts are enabled (legacy helper). */
 export async function tryStartOrderRing(): Promise<boolean> {
-  if (!isOrderAlertsEnabled()) return false;
   return startOrderRing();
 }
 
 /**
  * Start a looping alert until {@link stopOrderRing} is called.
- * If already ringing (second order), keeps playing uninterrupted.
+ * Marks the ring as active immediately so keep-alive can retry after autoplay blocks.
  */
 export async function startOrderRing(): Promise<boolean> {
-  if (!isOrderAlertsEnabled()) {
-    stopOrderRing();
-    return false;
-  }
+  ringActive = true;
 
   const howl = getOrderRing();
   if (!howl) return false;
-  if (ringActive && howl.playing()) return true;
+  if (howl.playing()) return true;
 
   return new Promise((resolve) => {
     const begin = () => {
       howl.loop(true);
-      howl.play();
-      ringActive = true;
-      resolve(true);
+      howl.volume(1);
+      const soundId = howl.play();
+      resolve(soundId !== undefined);
     };
 
     howl.once("playerror", () => resolve(false));
@@ -224,10 +240,11 @@ export function stopOrderRing(): void {
 
 /** Re-start the loop if it was interrupted while alerts are still open. */
 export function ensureOrderRingPlaying(): void {
-  if (!ringActive || !isOrderAlertsEnabled()) return;
+  if (!ringActive) return;
   const howl = getOrderRing();
   if (!howl || howl.playing()) return;
   howl.loop(true);
+  howl.volume(1);
   howl.play();
 }
 

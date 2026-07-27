@@ -34,8 +34,8 @@ import {
   onOrderAlertsEnabledChange,
   preloadOrderAudio,
   showOrderNotification,
+  startOrderRing,
   stopOrderRing,
-  tryStartOrderRing,
   unlockAudio,
 } from "@/lib/realtime/notify";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
@@ -47,6 +47,7 @@ import {
   handleKitchenTicketCreated,
   handleKitchenTicketUpdated,
   patchKitchenStageInCache,
+  refetchKitchenQueries,
 } from "@/features/kitchen/utils/kitchen-realtime-sync";
 import {
   patchBranchDashboardOnNewOrder,
@@ -132,7 +133,7 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
         setSoundBlocked(false);
         toast.success("Order sound alerts enabled");
         if (open) {
-          void tryStartOrderRing().then((started) => setSoundBlocked(!started));
+          void startOrderRing().then((started) => setSoundBlocked(!started));
         }
       } else {
         toast.error("Could not enable sound. Check your browser volume and try again.");
@@ -164,10 +165,10 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
       setAlerts((prev) => [payload, ...prev.filter((a) => a.orderId !== payload.orderId)]);
       addRingingOrder(payload.orderId);
 
-      void tryStartOrderRing().then((started) => {
+      void startOrderRing().then((started) => {
         setSoundBlocked(!started);
         if (!started) {
-          toast.info("New order received — click Enable Sound to hear the alert.", {
+          toast.info("New order received — tap anywhere on the page to enable the alert sound.", {
             duration: 10000,
           });
         }
@@ -223,12 +224,14 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
 
     let refreshTimer: ReturnType<typeof setTimeout> | null = null;
     const scheduleOrdersRefresh = () => {
+      refetchKitchenQueries(qc);
       if (refreshTimer) return;
       refreshTimer = setTimeout(() => {
         refreshTimer = null;
         void useOrdersStore.getState().fetchOrders();
         void useOrdersStore.getState().fetchStatistics();
         scheduleBranchDashboardRefresh(qc);
+        refetchKitchenQueries(qc);
       }, 400);
     };
 
@@ -307,33 +310,41 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
   }, [isBranchManager, isAuthenticated, branchId, accessToken, qc]);
 
   useEffect(() => {
-    if (ringingOrderIds.length === 0 || !alertsEnabled) return;
-    void tryStartOrderRing().then((started) => {
-      if (!started) setSoundBlocked(true);
+    if (ringingOrderIds.length === 0) return;
+
+    void startOrderRing().then((started) => {
+      setSoundBlocked(!started);
     });
-    const keepAlive = window.setInterval(ensureOrderRingPlaying, 2000);
+
+    const keepAlive = window.setInterval(ensureOrderRingPlaying, 1000);
     return () => window.clearInterval(keepAlive);
-  }, [ringingOrderIds.length, alertsEnabled]);
+  }, [ringingOrderIds.length]);
 
   useEffect(() => {
-    if (ringingOrderIds.length === 0 || !soundBlocked || alertsEnabled) return;
+    if (ringingOrderIds.length === 0 || !soundBlocked) return;
 
     const retrySound = () => {
-      void enableOrderAlerts().then((enabled) => {
-        if (enabled) {
+      void startOrderRing().then((started) => {
+        if (started) {
+          setSoundBlocked(false);
+          if (!isOrderAlertsEnabled()) {
+            // Persist unlock after a successful gesture-triggered ring.
+            void enableOrderAlerts();
+          }
           setAlertsEnabled(true);
-          void tryStartOrderRing().then((started) => setSoundBlocked(!started));
         }
       });
     };
 
     window.addEventListener("pointerdown", retrySound);
     window.addEventListener("keydown", retrySound);
+    window.addEventListener("touchstart", retrySound);
     return () => {
       window.removeEventListener("pointerdown", retrySound);
       window.removeEventListener("keydown", retrySound);
+      window.removeEventListener("touchstart", retrySound);
     };
-  }, [ringingOrderIds.length, soundBlocked, alertsEnabled]);
+  }, [ringingOrderIds.length, soundBlocked]);
 
   const dismissAlert = useCallback(
     (broadcast = true) => {
