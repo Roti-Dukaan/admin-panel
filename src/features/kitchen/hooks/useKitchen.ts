@@ -35,7 +35,10 @@ import {
   type BranchOrderNewPayload,
   type KitchenTicketCreatedPayload,
 } from "@/lib/realtime/events";
+import { branchIdsMatch } from "@/lib/realtime/branch-id";
 import { useAdminAuthStore } from "@/features/admin-auth/store/admin-auth-store";
+import { useWorkspace } from "@/contexts/WorkspaceContext";
+
 const REALTIME_STALE_MS = 5_000;
 const FALLBACK_POLL_MS = 60_000;
 
@@ -171,6 +174,9 @@ export function useKitchenRealtime(options?: {
 }) {
   const qc = useQueryClient();
   const accessToken = useAdminAuthStore((s) => s.accessToken);
+  const { branchId: workspaceBranchId, isBranchManager } = useWorkspace();
+  const userBranchId = useAdminAuthStore((s) => s.user?.branchId ?? s.branchId);
+  const branchId = workspaceBranchId ?? userBranchId;
   const [connected, setConnected] = useState(false);
   const seen = useRef<Set<string>>(new Set());
   const onNewOrderRef = useRef(options?.onNewOrder);
@@ -181,7 +187,7 @@ export function useKitchenRealtime(options?: {
 
     unlockAudio();
     ensureNotificationPermission();
-    connectRealtime();
+    connectRealtime(accessToken);
     ensureRealtimeAuth(accessToken);
 
     const socket = getRealtimeSocket();
@@ -191,7 +197,9 @@ export function useKitchenRealtime(options?: {
     setConnected(socket.connected);
 
     const offBranchNew = onRealtime(REALTIME_EVENTS.BRANCH_ORDER_NEW, (raw) => {
-      handleBranchOrderNew(qc, raw as BranchOrderNewPayload);
+      const payload = raw as BranchOrderNewPayload;
+      if (isBranchManager && !branchIdsMatch(branchId, payload.branchId)) return;
+      handleBranchOrderNew(qc, payload);
     });
 
     const offCreated = onRealtime(REALTIME_EVENTS.KITCHEN_TICKET_CREATED, (raw) => {
@@ -211,7 +219,7 @@ export function useKitchenRealtime(options?: {
       offCreated();
       disconnectRealtime();
     };
-  }, [accessToken, qc]);
+  }, [accessToken, branchId, isBranchManager, qc]);
 
   return { connected };
 }

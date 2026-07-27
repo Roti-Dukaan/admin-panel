@@ -17,15 +17,27 @@ let socket: Socket | null = null;
 let refCount = 0;
 /** Auth token applied on the last successful socket connection. */
 let connectedAuthToken: string | null = null;
+/** Latest token to send on the next handshake (store may lead localStorage briefly). */
+let pendingAuthToken: string | null = null;
+/** True while ensureRealtimeAuth intentionally disconnects to refresh credentials. */
+let refreshingAuth = false;
+
+function resolveAuthToken(explicit?: string | null): string | null {
+  return explicit ?? pendingAuthToken ?? getToken();
+}
 
 function ensureSocket(): Socket {
   if (!socket) {
-    socket = io(API_BASE_URL, {
+    if (!API_BASE_URL) {
+      console.error("[Socket] NEXT_PUBLIC_API_URL is not configured — realtime disabled.");
+    }
+
+    socket = io(API_BASE_URL || undefined, {
       path: "/socket.io",
       withCredentials: true,
       transports: ["websocket", "polling"],
       auth: () => {
-        const token = getToken();
+        const token = resolveAuthToken();
         return { token };
       },
       autoConnect: false,
@@ -38,11 +50,12 @@ function ensureSocket(): Socket {
       console.error("[Socket] Connection error:", err.message);
     });
     socket.on("connect", () => {
-      connectedAuthToken = getToken();
+      connectedAuthToken = resolveAuthToken();
       console.log("[Socket] Connected:", socket?.id);
     });
     socket.on("disconnect", (reason) => {
-      if (reason === "io client disconnect") {
+      // Do not wipe auth state when we deliberately disconnect to re-handshake.
+      if (reason === "io client disconnect" && !refreshingAuth) {
         connectedAuthToken = null;
       }
       console.log("[Socket] Disconnected:", reason);
@@ -51,16 +64,37 @@ function ensureSocket(): Socket {
   return socket;
 }
 
+function connectIfNeeded(token?: string | null): void {
+  const authToken = resolveAuthToken(token);
+  if (!authToken || !API_BASE_URL) return;
+
+  pendingAuthToken = authToken;
+  const s = ensureSocket();
+
+  if (s.connected && connectedAuthToken === authToken) return;
+
+  if (s.connected && connectedAuthToken !== authToken) {
+    refreshingAuth = true;
+    connectedAuthToken = authToken;
+    s.disconnect();
+    refreshingAuth = false;
+  }
+
+  if (!s.connected) {
+    s.connect();
+  }
+}
+
 /**
  * Reference-counted connection so multiple hooks (kitchen dashboard, orders
  * screen) can share a single socket without tearing it down under each other.
- * Returns a disconnect function to be called on unmount.
+ * Pass the store accessToken when available so the handshake does not rely on
+ * localStorage being ahead of zustand during login/hydration.
  */
-export function connectRealtime(): Socket {
+export function connectRealtime(token?: string | null): Socket {
   const s = ensureSocket();
   refCount += 1;
-  const token = getToken();
-  if (token && !s.connected) s.connect();
+  connectIfNeeded(token);
   return s;
 }
 
@@ -76,35 +110,39 @@ export function reconnectRealtimeWithAuth(): void {
 /** Apply the latest auth token to the shared socket without redundant reconnects. */
 export function ensureRealtimeAuth(token: string | null): void {
   if (!token) return;
-  const s = ensureSocket();
-  if (s.connected && connectedAuthToken === token) return;
+  pendingAuthToken = token;
 
-  connectedAuthToken = token;
-  if (s.connected) {
-    s.disconnect();
-  }
-  if (refCount > 0) {
-    s.connect();
-  }
+  if (refCount <= 0) return;
+
+  connectIfNeeded(token);
 }
 
 /** Drop socket auth after logout. */
 export function resetRealtimeAuth(): void {
+  pendingAuthToken = null;
   connectedAuthToken = null;
   if (socket?.connected) {
+    refreshingAuth = true;
     socket.disconnect();
+    refreshingAuth = false;
   }
 }
 
 export function disconnectRealtime(): void {
   refCount = Math.max(0, refCount - 1);
   if (refCount === 0 && socket?.connected) {
+    refreshingAuth = true;
     socket.disconnect();
+    refreshingAuth = false;
   }
 }
 
 export function getRealtimeSocket(): Socket {
   return ensureSocket();
+}
+
+export function isRealtimeConnected(): boolean {
+  return !!socket?.connected;
 }
 
 export type RealtimeEventHandler = (payload: unknown) => void;

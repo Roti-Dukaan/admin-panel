@@ -8,8 +8,7 @@ import { KitchenBoard } from "@/features/kitchen/components/KitchenBoard"
 import { SubscriptionsBoard } from "@/features/kitchen-subscriptions/components/SubscriptionsBoard"
 import { SubscriptionDispatchBoard } from "@/features/kitchen-subscriptions/components/SubscriptionDispatchBoard"
 import { usePrepClock } from "@/features/kitchen/hooks/usePrepClock"
-import { connectRealtime, disconnectRealtime, onRealtime } from "@/lib/realtime/socket"
-import { REALTIME_EVENTS } from "@/lib/realtime/events"
+import { useRealtimeConnectionStatus } from "@/lib/realtime/useRealtimeConnectionStatus"
 import { format } from "date-fns"
 import { Clock, Wifi, WifiOff } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -27,29 +26,9 @@ function parseKitchenTab(value: string | null): KitchenTab {
   return "live"
 }
 
-function useSocketConnection() {
-  const [connected, setConnected] = React.useState(false)
-
-  React.useEffect(() => {
-    const socket = connectRealtime()
-    setConnected(socket.connected)
-
-    const offConnect = onRealtime(REALTIME_EVENTS.CONNECT, () => setConnected(true))
-    const offDisconnect = onRealtime(REALTIME_EVENTS.DISCONNECT, () => setConnected(false))
-
-    return () => {
-      offConnect()
-      offDisconnect()
-      disconnectRealtime()
-    }
-  }, [])
-
-  return connected
-}
-
 function BranchKitchenPageContent() {
   const now = usePrepClock(true)
-  const connected = useSocketConnection()
+  const connected = useRealtimeConnectionStatus()
   const router = useRouter()
   const searchParams = useSearchParams()
   const [activeTab, setActiveTab] = React.useState<KitchenTab>(() => parseKitchenTab(searchParams.get("tab")))

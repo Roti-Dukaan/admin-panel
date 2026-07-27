@@ -6,6 +6,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Volume2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { branchIdsMatch, normalizeBranchId } from "@/lib/realtime/branch-id";
 import {
   connectRealtime,
   disconnectRealtime,
@@ -61,9 +62,11 @@ const NEW_ORDER_STATUSES = new Set(["pending-confirmation", "pending", "confirme
 export function BranchOrderAlertProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const qc = useQueryClient();
-  const { branchId, isBranchManager } = useWorkspace();
+  const { branchId: workspaceBranchId, isBranchManager } = useWorkspace();
   const isAuthenticated = useAdminAuthStore((s) => s.isAuthenticated);
   const accessToken = useAdminAuthStore((s) => s.accessToken);
+  const userBranchId = useAdminAuthStore((s) => s.user?.branchId ?? s.branchId);
+  const branchId = normalizeBranchId(workspaceBranchId ?? userBranchId);
   // Newest alert first; older unhandled orders stay queued behind it.
   const [alerts, setAlerts] = useState<BranchOrderNewPayload[]>([]);
   /** Orders that must keep ringing until Start Preparing (survives dismiss). */
@@ -146,7 +149,7 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
    */
   const showAlert = useCallback(
     (payload: BranchOrderNewPayload, options?: { broadcast?: boolean }) => {
-      if (!branchId || payload.branchId !== branchId) return;
+      if (!branchIdsMatch(branchId, payload.branchId)) return;
       if (seen.current.has(payload.orderId)) return;
       seen.current.add(payload.orderId);
       // Evict oldest entries instead of wiping the set, so recent orders
@@ -195,22 +198,22 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
   resolveOrderRef.current = resolveOrder;
 
   useEffect(() => {
-    if (!isBranchManager || !isAuthenticated || !branchId || !accessToken) {
+    if (!isBranchManager || !isAuthenticated || !accessToken) {
       return;
     }
 
     preloadOrderAudio();
     unlockAudio();
-    connectRealtime();
+    connectRealtime(accessToken);
     ensureRealtimeAuth(accessToken);
 
     return () => {
       disconnectRealtime();
     };
-  }, [isBranchManager, isAuthenticated, branchId, accessToken]);
+  }, [isBranchManager, isAuthenticated, accessToken]);
 
   useEffect(() => {
-    if (!isBranchManager || !isAuthenticated || !branchId || !accessToken) {
+    if (!isBranchManager || !isAuthenticated || !accessToken) {
       stopOrderRing();
       setAlerts([]);
       setRingingOrderIds([]);
@@ -236,7 +239,7 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
 
     const offBranch = onRealtime(REALTIME_EVENTS.BRANCH_ORDER_NEW, (raw) => {
       const payload = raw as BranchOrderNewPayload;
-      if (branchId && payload.branchId !== branchId) return;
+      if (!branchIdsMatch(branchId, payload.branchId)) return;
       // Cache sync FIRST and unconditionally — the kitchen board and orders
       // list must update even when the popup is deduped or sound is off.
       handleBranchOrderNew(qc, payload);
