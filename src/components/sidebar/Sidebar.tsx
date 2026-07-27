@@ -17,7 +17,6 @@ import {
   ShieldCheck,
   Settings,
   FileClock,
-  Activity,
   Building2,
   MapPin,
   Store,
@@ -54,7 +53,6 @@ const MAIN_ADMIN_NAV_GROUPS: NavGroup[] = [
       { label: "Orders", href: "/orders", icon: ShoppingBag, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN', 'BRANCH_MANAGER'] },
       { label: "Deliveries", href: "/deliveries", icon: Truck, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN', 'BRANCH_MANAGER'] },
       { label: "Delivery Slots", href: "/delivery-slots", icon: Clock3, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
-      { label: "Production Ops", href: "/subscription-operations", icon: Activity, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
       { label: "Customer Support", href: "/support", icon: LifeBuoy, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN', 'BRANCH_MANAGER'] },
     ],
   },
@@ -75,7 +73,6 @@ const MAIN_ADMIN_NAV_GROUPS: NavGroup[] = [
     items: [
       { label: "Customers", href: "/customers", icon: Users, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
       { label: "Subscription Plans", href: "/subscription-plans", icon: CalendarDays, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
-      { label: "Subscription Fulfillment", href: "/subscriptions", icon: CreditCard, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
     ],
   },
   {
