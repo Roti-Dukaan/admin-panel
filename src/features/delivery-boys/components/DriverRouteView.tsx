@@ -7,12 +7,15 @@ import {
   AlertTriangle,
   CheckCircle2,
   Loader2,
+  LogOut,
   MapPin,
   Navigation,
   Phone,
   XCircle,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { useAdminAuthStore } from "@/features/admin-auth/store/admin-auth-store";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { useDriverMutations, useDriverRoute } from "../hooks/useDeliveryBoys";
@@ -126,10 +129,17 @@ function StopCard({
 }
 
 export function DriverRouteView() {
+  const router = useRouter();
+  const logout = useAdminAuthStore((s) => s.logout);
   const [date, setDate] = React.useState(() => format(new Date(), "yyyy-MM-dd"));
   const [tab, setTab] = React.useState<Tab>("today");
   const routeQuery = useDriverRoute(date, tab);
   const { updateStatus } = useDriverMutations();
+
+  const handleLogout = () => {
+    logout();
+    router.replace("/login");
+  };
 
   const data = routeQuery.data;
   const progress = data?.progress ?? { assigned: 0, completed: 0, pending: 0, failed: 0 };
@@ -157,8 +167,22 @@ export function DriverRouteView() {
   return (
     <div className="mx-auto min-h-screen max-w-lg bg-gray-50 pb-8">
       <header className="sticky top-0 z-20 border-b border-gray-200 bg-white px-4 py-4 shadow-sm">
-        <h1 className="text-lg font-bold text-gray-900">My Route</h1>
-        <p className="text-xs text-gray-500">Subscription deliveries only</p>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h1 className="text-lg font-bold text-gray-900">My Route</h1>
+            <p className="text-xs text-gray-500">Subscription deliveries only</p>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="shrink-0 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+            onClick={handleLogout}
+          >
+            <LogOut className="mr-1 h-4 w-4" />
+            Logout
+          </Button>
+        </div>
         <Input
           type="date"
           value={date}
