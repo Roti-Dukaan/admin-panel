@@ -1,4 +1,4 @@
-import { LayoutDashboard, ShoppingBag, UtensilsCrossed, Truck, ClipboardList, Users, CreditCard, Clock, BarChart3, Wallet, Settings, Shield, Store, Settings2, FileText, ToggleLeft, LifeBuoy, UserPlus, Package } from "lucide-react"
+import { LayoutDashboard, ShoppingBag, UtensilsCrossed, Truck, ClipboardList, Users, CreditCard, Clock, BarChart3, Wallet, Settings, Shield, Store, Settings2, FileText, ToggleLeft, LifeBuoy, UserPlus, Package, FolderOpen } from "lucide-react"
 
 export type NavItem = {
   label: string
@@ -22,6 +22,7 @@ export const SUPER_ADMIN_NAVIGATION: NavItem[] = [
   { label: "Payments", href: "/admin/payments", icon: Wallet, roles: ['OWNER', 'ADMIN'] },
   { label: "Roles & Permissions", href: "/admin/roles", icon: Shield, roles: ['OWNER', 'ADMIN'] },
   { label: "Settings", href: "/settings", icon: Settings, roles: ['OWNER', 'ADMIN'] },
+  { label: "CMS", href: "/cms", icon: FolderOpen, roles: ['SUPER_ADMIN'] },
 ]
 
 export const BRANCH_MANAGER_NAVIGATION: NavItem[] = [

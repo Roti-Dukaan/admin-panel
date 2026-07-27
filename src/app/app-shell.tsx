@@ -41,6 +41,8 @@ const SIDEBAR_ROUTES = [
   "/support",
   "/branch/support",
   "/dispatch",
+  "/cms",
+  "/cms/banners",
 ]
 
 function isSidebarRoute(pathname: string): boolean {
@@ -85,7 +87,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     children
   )
 
-  // Global alert layer for branch managers - must not depend on sidebar routes.
   if (isBranchManager && isAuthenticated) {
     return <BranchOrderAlertProvider>{page}</BranchOrderAlertProvider>
   }

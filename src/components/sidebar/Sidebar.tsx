@@ -23,6 +23,7 @@ import {
   Store,
   ToggleLeft,
   LifeBuoy,
+  FolderOpen,
 } from "lucide-react"
 import { useSidebar } from "./hooks/useSidebar"
 import { SidebarGroup } from "./SidebarGroup"
@@ -102,6 +103,14 @@ const MAIN_ADMIN_NAV_GROUPS: NavGroup[] = [
       { label: "Roles & Permissions", href: "/admin/roles", icon: ShieldCheck, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
       { label: "Settings", href: "/settings", icon: Settings, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
       { label: "Audit Logs", href: "/audit-logs", icon: FileClock, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
+    ],
+  },
+  {
+    id: "cms",
+    title: "CMS",
+    roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'],
+    items: [
+      { label: "Homepage Banners", href: "/cms", icon: FolderOpen, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
     ],
   },
 ]
