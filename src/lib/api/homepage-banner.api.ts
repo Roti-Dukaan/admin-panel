@@ -84,7 +84,7 @@ export const homepageBannerApi = {
     if (desktopImage) payload.append('desktopImage', desktopImage);
     if (mobileImage) payload.append('mobileImage', mobileImage);
 
-    const { data } = await apiClient.patch(`/admin/homepage/banners/${id}`, payload, {
+    const { data } = await apiClient.put(`/admin/homepage/banners/${id}`, payload, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
     return data;
