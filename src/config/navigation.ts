@@ -1,4 +1,5 @@
-import { LayoutDashboard, ShoppingBag, UtensilsCrossed, Truck, ClipboardList, Users, CreditCard, Clock, BarChart3, Wallet, Settings, Shield, Store, Settings2, FileText, ToggleLeft, LifeBuoy, UserPlus, Package } from "lucide-react"`n
+import { LayoutDashboard, ShoppingBag, UtensilsCrossed, Truck, ClipboardList, Users, CreditCard, Clock, BarChart3, Wallet, Settings, Shield, Store, Settings2, FileText, ToggleLeft, LifeBuoy, UserPlus, Package } from "lucide-react"
+
 export type NavItem = {
   label: string
   href: string
