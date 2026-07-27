@@ -1,25 +1,39 @@
 /**
  * Clears .next when it contains production build artifacts or a broken CSS cache.
- * Runs automatically via npm "predev" — prevents blank admin panel after build+dev overlap.
+ * Runs automatically via npm "predev".
  */
 import fs from "fs";
 import path from "path";
+import { execSync } from "child_process";
+
+const DEV_PORT = Number(process.env.PORT || process.env.NEXT_DEV_PORT || 3002);
+
+function isDevPortInUse(port) {
+  try {
+    const out = execSync(`netstat -ano | findstr ":${port}" | findstr "LISTENING"`, {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    });
+    return out.trim().length > 0;
+  } catch {
+    return false;
+  }
+}
 
 const nextDir = path.join(process.cwd(), ".next");
 if (!fs.existsSync(nextDir)) process.exit(0);
 
 function rmNext(reason) {
-  console.warn(`[predev] ${reason} — clearing .next`);
+  if (isDevPortInUse(DEV_PORT)) {
+    console.warn(`[predev] ${reason} - port ${DEV_PORT} in use; skip clearing .next`);
+    console.warn("[predev] Stop dev first, then npm run dev:clean if cache is corrupt.");
+    process.exit(0);
+  }
+  console.warn(`[predev] ${reason} - clearing .next`);
   fs.rmSync(nextDir, { recursive: true, force: true });
 }
 
-const prodMarkers = [
-  "required-server-files.json",
-  "standalone",
-  "export",
-  "export-detail.json",
-];
-
+const prodMarkers = ["required-server-files.json", "standalone", "export", "export-detail.json"];
 for (const marker of prodMarkers) {
   if (fs.existsSync(path.join(nextDir, marker))) {
     rmNext(`Production build artifact "${marker}" found`);
@@ -38,12 +52,8 @@ if (fs.existsSync(buildId) && fs.existsSync(staticDir)) {
       else if (entry.name.endsWith(".css")) cssFiles.push(full);
     }
   };
-  try {
-    walk(staticDir);
-  } catch {
-    /* ignore */
-  }
+  try { walk(staticDir); } catch { /* ignore */ }
   if (cssFiles.length === 0) {
-    rmNext("BUILD_ID set but no CSS in .next/static (corrupted cache)");
+    rmNext("BUILD_ID set but no CSS in .next/static");
   }
 }
