@@ -3,9 +3,10 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "predev": "node scripts/ensure-dev-cache.mjs",
+    "predev": "node scripts/ensure-dev-cache.mjs && node scripts/ensure-order-alert-sound.mjs",
     "dev": "next dev -p 3002",
     "dev:clean": "node -e \"require('fs').rmSync('.next',{recursive:true,force:true})\" && next dev -p 3002",
+    "prebuild": "node scripts/ensure-order-alert-sound.mjs",
     "build": "next build",
     "start": "next start -p 3002"
   },
@@ -25,6 +26,7 @@
     "@types/leaflet": "^1.9.21",
     "axios": "^1.18.1",
     "date-fns": "^3.6.0",
+    "howler": "^2.2.4",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.546.0",
     "motion": "^12.23.24",
@@ -42,6 +44,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.14",
+    "@types/howler": "^2.2.13",
     "@types/node": "^22.14.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
