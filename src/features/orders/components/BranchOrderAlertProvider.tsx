@@ -198,19 +198,26 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
   const resolveOrderRef = useRef(resolveOrder);
   resolveOrderRef.current = resolveOrder;
 
+  // Own the shared socket lifecycle once per branch-manager session. Token
+  // refreshes are applied via ensureRealtimeAuth so we do not disconnect on
+  // every accessToken change (that dropped refCount and forced 60s polling).
   useEffect(() => {
-    if (!isBranchManager || !isAuthenticated || !accessToken) {
+    if (!isBranchManager || !isAuthenticated) {
       return;
     }
 
     preloadOrderAudio();
     unlockAudio();
     connectRealtime(accessToken);
-    ensureRealtimeAuth(accessToken);
 
     return () => {
       disconnectRealtime();
     };
+  }, [isBranchManager, isAuthenticated]);
+
+  useEffect(() => {
+    if (!isBranchManager || !isAuthenticated || !accessToken) return;
+    ensureRealtimeAuth(accessToken);
   }, [isBranchManager, isAuthenticated, accessToken]);
 
   useEffect(() => {

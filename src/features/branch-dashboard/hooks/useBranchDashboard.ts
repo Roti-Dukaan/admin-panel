@@ -1,10 +1,6 @@
 import { useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  connectRealtime,
-  disconnectRealtime,
-  onRealtime,
-} from "@/lib/realtime/socket";
+import { onRealtime } from "@/lib/realtime/socket";
 import { REALTIME_EVENTS, type BranchOrderNewPayload, type BranchOrderUpdatedPayload } from "@/lib/realtime/events";
 import { branchIdsMatch } from "@/lib/realtime/branch-id";
 import { useRealtimeFallbackPollInterval } from "@/lib/realtime/useRealtimeFallbackPollInterval";
@@ -39,8 +35,7 @@ export function useBranchDashboard(enabled = true) {
   useEffect(() => {
     if (!enabled || !accessToken || !isBranchManager) return;
 
-    connectRealtime(accessToken);
-
+    // Socket connect/auth is owned globally by BranchOrderAlertProvider.
     const offNew = onRealtime(REALTIME_EVENTS.BRANCH_ORDER_NEW, (raw) => {
       const payload = raw as BranchOrderNewPayload;
       if (!branchIdsMatch(branchId, payload.branchId)) return;
@@ -62,7 +57,6 @@ export function useBranchDashboard(enabled = true) {
       offNew();
       offUpdated();
       offKitchenCreated();
-      disconnectRealtime();
     };
   }, [enabled, accessToken, isBranchManager, branchId, qc]);
 

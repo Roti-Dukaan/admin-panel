@@ -11,13 +11,7 @@ import { toast } from "sonner";
 import { kitchenApi } from "@/lib/api/kitchen.api";
 import type { KitchenStage, KitchenOrderListResponse, KitchenOrderDetail } from "@/lib/api/kitchen.api";
 import type { KitchenOrderView, DeliveryKind, PaymentFilter, PrepTimeFilter } from "../types/kitchen";
-import {
-  connectRealtime,
-  disconnectRealtime,
-  onRealtime,
-  ensureRealtimeAuth,
-  getRealtimeSocket,
-} from "@/lib/realtime/socket";
+import { onRealtime, getRealtimeSocket } from "@/lib/realtime/socket";
 import {
   mergeKitchenListResponses,
   patchKitchenDetailMapStage,
@@ -190,9 +184,8 @@ export function useKitchenRealtime(options?: {
 
     unlockAudio();
     ensureNotificationPermission();
-    connectRealtime(accessToken);
-    ensureRealtimeAuth(accessToken);
 
+    // Connection lifecycle is owned globally by BranchOrderAlertProvider.
     const socket = getRealtimeSocket();
 
     const offConnect = onRealtime(REALTIME_EVENTS.CONNECT, () => setConnected(true));
@@ -220,7 +213,6 @@ export function useKitchenRealtime(options?: {
       offDisconnect();
       offBranchNew();
       offCreated();
-      disconnectRealtime();
     };
   }, [accessToken, branchId, isBranchManager, qc]);
 

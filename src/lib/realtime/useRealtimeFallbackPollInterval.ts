@@ -14,14 +14,17 @@ export function useRealtimeFallbackPollInterval(fallbackMs: number): number {
   );
 
   useEffect(() => {
-    setConnected(getRealtimeSocket().connected);
+    const sync = () => setConnected(getRealtimeSocket().connected);
+    sync();
 
-    const offConnect = onRealtime(REALTIME_EVENTS.CONNECT, () => setConnected(true));
+    const offConnect = onRealtime(REALTIME_EVENTS.CONNECT, sync);
     const offDisconnect = onRealtime(REALTIME_EVENTS.DISCONNECT, () => setConnected(false));
+    const offConnectError = onRealtime("connect_error", () => setConnected(false));
 
     return () => {
       offConnect();
       offDisconnect();
+      offConnectError();
     };
   }, []);
 
