@@ -1,4 +1,4 @@
-import { LayoutDashboard, ShoppingBag, UtensilsCrossed, Truck, ClipboardList, Users, CreditCard, Clock, BarChart3, Wallet, Settings, FileText, ToggleLeft, LifeBuoy, UserPlus, Package, FolderOpen, Bike, Send } from "lucide-react"
+import { LayoutDashboard, ShoppingBag, UtensilsCrossed, Truck, ClipboardList, Users, CreditCard, Clock, BarChart3, Wallet, Settings, FileText, ToggleLeft, LifeBuoy, UserPlus, Package, FolderOpen, Bike, Send, Shield } from "lucide-react"
 
 export type NavItem = {
   label: string
@@ -21,7 +21,8 @@ export const SUPER_ADMIN_NAVIGATION: NavItem[] = [
   { label: "Dispatch Management", href: "/dispatch", icon: Package, roles: ['OWNER', 'ADMIN'] },
   { label: "Reports & Analytics", href: "/reports", icon: BarChart3, roles: ['OWNER', 'ADMIN'] },
   { label: "Payments", href: "/admin/payments", icon: Wallet, roles: ['OWNER', 'ADMIN'] },
-  { label: "Team", href: "/admin/roles", icon: UserPlus, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
+  { label: "Team", href: "/admin/team", icon: UserPlus, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
+  { label: "Roles & Permissions", href: "/admin/roles", icon: Shield, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
   { label: "Settings", href: "/settings", icon: Settings, roles: ['OWNER', 'ADMIN'] },
   { label: "CMS", href: "/cms", icon: FolderOpen, roles: ['SUPER_ADMIN'] },
 ]

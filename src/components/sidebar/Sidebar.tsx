@@ -15,6 +15,7 @@ import {
   CreditCard,
   BarChart3,
   UserPlus,
+  Shield,
   Settings,
   FileClock,
   Building2,
@@ -99,7 +100,8 @@ const MAIN_ADMIN_NAV_GROUPS: NavGroup[] = [
     title: "System",
     roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'],
     items: [
-      { label: "Team", href: "/admin/roles", icon: UserPlus, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
+      { label: "Team", href: "/admin/team", icon: UserPlus, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
+      { label: "Roles & Permissions", href: "/admin/roles", icon: Shield, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
       { label: "Settings", href: "/settings", icon: Settings, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
       { label: "Audit Logs", href: "/audit-logs", icon: FileClock, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
     ],

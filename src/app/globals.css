@@ -190,3 +190,58 @@ aside nav {
 .pac-item {
   cursor: pointer;
 }
+
+/* Sonner toasts — Roti Dukaan brand palette */
+[data-sonner-toaster] {
+  font-family: var(--font-sans);
+}
+
+[data-sonner-toaster][data-sonner-theme='light'] {
+  --normal-bg: var(--color-card);
+  --normal-border: var(--color-border);
+  --normal-text: var(--color-foreground);
+  --border-radius: var(--radius);
+
+  --success-bg: #ecfdf5;
+  --success-border: #a7f3d0;
+  --success-text: #15803d;
+
+  --error-bg: #fef2f2;
+  --error-border: #fecaca;
+  --error-text: var(--color-destructive);
+
+  --warning-bg: var(--color-orange-100);
+  --warning-border: var(--color-orange-200);
+  --warning-text: var(--color-orange-700);
+
+  --info-bg: var(--color-orange-50);
+  --info-border: var(--color-orange-100);
+  --info-text: var(--color-primary);
+}
+
+[data-sonner-toaster][data-sonner-theme='dark'] {
+  --normal-bg: #111827;
+  --normal-border: #374151;
+  --normal-text: #f9fafb;
+  --border-radius: var(--radius);
+
+  --success-bg: #052e16;
+  --success-border: #166534;
+  --success-text: #86efac;
+
+  --error-bg: #450a0a;
+  --error-border: #991b1b;
+  --error-text: #fca5a5;
+
+  --warning-bg: #451a03;
+  --warning-border: var(--color-orange-800);
+  --warning-text: #fcd34d;
+
+  --info-bg: #451a03;
+  --info-border: var(--color-orange-700);
+  --info-text: var(--color-orange-200);
+}
+
+[data-sonner-toast][data-styled='true'] {
+  box-shadow: 0 4px 12px rgba(217, 119, 6, 0.08);
+}

@@ -28,10 +28,10 @@ export const deliveryBoysApi = {
   listAssignable: (params?: { date?: string; slotId?: string }): Promise<AssignableStaff[]> =>
     unwrap(apiClient.get("/delivery-boys/assignable", { params })),
 
-  listDispatchBoard: (date: string, slotId?: string): Promise<DriverDeliveryStop[]> =>
+  listDispatchBoard: (date: string, slotId?: string, branchId?: string): Promise<DriverDeliveryStop[]> =>
     unwrap(
       apiClient.get("/branch-manager/subscription-deliveries/dispatch-board", {
-        params: { date, slotId },
+        params: { date, slotId, branchId },
       }),
     ),
 
@@ -42,17 +42,17 @@ export const deliveryBoysApi = {
       }),
     ),
 
-  listUnassigned: (date: string, slotId?: string): Promise<DriverDeliveryStop[]> =>
+  listUnassigned: (date: string, slotId?: string, branchId?: string): Promise<DriverDeliveryStop[]> =>
     unwrap(
       apiClient.get("/branch-manager/subscription-deliveries/unassigned", {
-        params: { date, slotId },
+        params: { date, slotId, branchId },
       }),
     ),
 
-  listAssigned: (date: string, slotId?: string): Promise<DriverDeliveryStop[]> =>
+  listAssigned: (date: string, slotId?: string, branchId?: string): Promise<DriverDeliveryStop[]> =>
     unwrap(
       apiClient.get("/branch-manager/subscription-deliveries/assigned", {
-        params: { date, slotId },
+        params: { date, slotId, branchId },
       }),
     ),
 
