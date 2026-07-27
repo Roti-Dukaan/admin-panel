@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { PackagePlus, Loader2, PackageX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useDispatchBatches, useUpdateBatchStatus } from "../hooks/useDispatch";
+import { useDispatchRealtime } from "../hooks/useDispatchRealtime";
 import { DispatchStats } from "./DispatchStats";
 import { DispatchBatchCard } from "./DispatchBatchCard";
 import { DispatchBatchDrawer } from "./DispatchBatchDrawer";
@@ -17,6 +18,8 @@ export function DispatchDashboardBoard() {
   const detailQuery = useDispatchBatchDetail(selectedBatch?.id ?? null);
   const dashboardQuery = useDispatchDashboard();
   const batchesQuery = useDispatchBatches({ status: "all", limit: 50 });
+
+  useDispatchRealtime();
 
   return (
     <div className="flex min-h-screen flex-col gap-5 bg-gray-50/50 p-6">

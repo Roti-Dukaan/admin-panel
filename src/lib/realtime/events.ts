@@ -30,6 +30,9 @@ export const REALTIME_EVENTS = {
   ADMIN_DISPATCH_BATCH_CREATED: "admin:dispatch_batch_created",
   ADMIN_DISPATCH_BATCH_UPDATED: "admin:dispatch_batch_updated",
   ADMIN_DISPATCH_BATCH_STATUS: "admin:dispatch_batch_status",
+
+  // Dispatch batch auto-advancement from webhooks
+  ADMIN_DISPATCH_BATCH_STATUS_UPDATED: "admin:dispatch_batch_status_updated",
 } as const;
 
 export interface KitchenTicketCreatedPayload {

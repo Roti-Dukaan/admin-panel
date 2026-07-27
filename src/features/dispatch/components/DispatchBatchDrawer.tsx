@@ -1,15 +1,37 @@
 "use client";
 
 import { format } from "date-fns";
-import { Truck, Package, MapPin, X } from "lucide-react";
+import { Truck, Package, MapPin, X, CircleCheck, CircleX, Clock, Navigation } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DISPATCH_STATUS_META, type DispatchBatchDetail } from "../types/dispatch";
 import { cn } from "@/lib/utils";
+import { DELIVERY_STATUS_CONFIG } from "@/features/delivery/types/delivery";
 
 interface Props {
   batch: DispatchBatchDetail | null;
   onClose: () => void;
+}
+
+function deliveryStatusIcon(status: string | null) {
+  switch (status) {
+    case "DELIVERED":
+      return <CircleCheck className="h-4 w-4 text-emerald-500" />;
+    case "CANCELLED":
+    case "FAILED":
+      return <CircleX className="h-4 w-4 text-red-500" />;
+    case "OUT_FOR_DELIVERY":
+    case "IN_TRANSIT":
+      return <Navigation className="h-4 w-4 text-indigo-500" />;
+    case "PICKED_UP":
+      return <Truck className="h-4 w-4 text-amber-500" />;
+    case "ASSIGNED":
+    case "RIDER_ARRIVING":
+    case "RIDER_ARRIVED":
+      return <Clock className="h-4 w-4 text-violet-500" />;
+    default:
+      return <Clock className="h-4 w-4 text-gray-400" />;
+  }
 }
 
 export function DispatchBatchDrawer({ batch, onClose }: Props) {
@@ -71,31 +93,59 @@ export function DispatchBatchDrawer({ batch, onClose }: Props) {
 
           <h3 className="mt-6 text-sm font-semibold text-gray-900">Orders in Batch</h3>
           <div className="mt-3 space-y-2">
-            {batch.orders.map((order) => (
-              <div
-                key={order.orderId}
-                className="rounded-lg border border-gray-200 p-3"
-              >
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="font-medium text-gray-900">#{order.orderNumber}</p>
-                    <p className="text-xs text-gray-500">{order.customerName}</p>
-                    {order.address && (
-                      <p className="mt-1 flex items-center gap-1 text-xs text-gray-400">
-                        <MapPin className="h-3 w-3" />
-                        {order.address}
-                      </p>
-                    )}
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-semibold text-gray-900">₹{order.grandTotal.toFixed(2)}</p>
-                    {order.deliverySlotName && (
-                      <p className="text-xs text-gray-500">{order.deliverySlotName}</p>
-                    )}
+            {batch.orders.map((order) => {
+              const deliveryMeta = order.deliveryStatus
+                ? DELIVERY_STATUS_CONFIG[order.deliveryStatus as keyof typeof DELIVERY_STATUS_CONFIG]
+                : null;
+              return (
+                <div
+                  key={order.orderId}
+                  className="rounded-lg border border-gray-200 p-3"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium text-gray-900">#{order.orderNumber}</p>
+                        {deliveryMeta && (
+                          <Badge className={`${deliveryMeta.bgClass} ${deliveryMeta.color} border-0 text-[10px]`}>
+                            {deliveryMeta.label}
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-500">{order.customerName}</p>
+                      {order.address && (
+                        <p className="mt-1 flex items-center gap-1 text-xs text-gray-400">
+                          <MapPin className="h-3 w-3" />
+                          {order.address}
+                        </p>
+                      )}
+                      {order.deliveryStatus && (
+                        <div className="mt-1 flex items-center gap-1 text-xs text-gray-500">
+                          {deliveryStatusIcon(order.deliveryStatus)}
+                          <span>{order.deliveryStatus.replace(/_/g, " ")}</span>
+                          {order.trackingUrl && (
+                            <a
+                              href={order.trackingUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-indigo-600 hover:underline ml-2"
+                            >
+                              Track
+                            </a>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-semibold text-gray-900">₹{order.grandTotal.toFixed(2)}</p>
+                      {order.deliverySlotName && (
+                        <p className="text-xs text-gray-500">{order.deliverySlotName}</p>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>

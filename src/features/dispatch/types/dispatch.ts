@@ -43,6 +43,11 @@ export interface DispatchBatchDetail extends DispatchBatchListItem {
     deliverySlotName: string | null;
     grandTotal: number;
     status: string;
+    deliveryStatus: string | null;
+    providerShipmentId: string | null;
+    trackingUrl: string | null;
+    riderName: string | null;
+    riderPhone: string | null;
   }>;
 }
 
