@@ -13,9 +13,17 @@ interface StatCardProps {
   icon: React.ReactNode
   trend?: string
   trendUp?: boolean
+  trendSuffix?: string
 }
 
-function StatCard({ title, value, subtitle, icon, trend, trendUp = true }: StatCardProps) {
+function formatChangePercent(value: number | null | undefined): { trend?: string; trendUp?: boolean } {
+  if (value == null) return {}
+  const trendUp = value >= 0
+  const magnitude = Math.abs(value)
+  return { trend: `${trendUp ? "+" : ""}${trendUp ? magnitude : magnitude}%`, trendUp }
+}
+
+function StatCard({ title, value, subtitle, icon, trend, trendUp = true, trendSuffix = "vs yesterday" }: StatCardProps) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -31,14 +39,16 @@ function StatCard({ title, value, subtitle, icon, trend, trendUp = true }: StatC
         </div>
         <div className="rounded-xl p-3 bg-gray-50 text-gray-600">{icon}</div>
       </div>
-      {trend && (
+      {trend ? (
         <div className="mt-3 flex items-center gap-1 text-sm">
           <span className={trendUp ? "text-green-600" : "text-red-600"}>
             {trendUp ? "↑" : "↓"} {trend}
           </span>
-          <span className="text-gray-500">vs last period</span>
+          {trendSuffix && <span className="text-gray-500">{trendSuffix}</span>}
         </div>
-      )}
+      ) : trendSuffix ? (
+        <div className="mt-3 text-sm text-gray-400">{trendSuffix}</div>
+      ) : null}
     </motion.div>
   )
 }
@@ -100,6 +110,10 @@ export function BranchDashboardPage() {
   }
 
   const stats = data
+  const ordersTrend = formatChangePercent(stats?.ordersChangePercent)
+  const revenueTrend = formatChangePercent(stats?.revenueChangePercent)
+  const chartMax = stats?.maxRevenue ?? 0
+  const revenueTrendDays = stats?.revenueTrend ?? []
 
   return (
     <div className="p-6 space-y-6">
@@ -110,24 +124,22 @@ export function BranchDashboardPage() {
           value={stats?.totalOrdersToday ?? 0}
           subtitle="All orders"
           icon={<ShoppingBag className="h-6 w-6" />}
-          trend="+12%"
-          trendUp={true}
+          {...ordersTrend}
+          trendSuffix={ordersTrend.trend ? "vs yesterday" : "— vs yesterday"}
         />
         <StatCard
           title="Today's Revenue"
-          value={`₹${(stats?.totalRevenueToday ?? 0).toLocaleString()}`}
+          value={`₹${(stats?.totalRevenueToday ?? 0).toLocaleString("en-IN")}`}
           subtitle="Total sales"
           icon={<Wallet className="h-6 w-6" />}
-          trend="+8%"
-          trendUp={true}
+          {...revenueTrend}
+          trendSuffix={revenueTrend.trend ? "vs yesterday" : "— vs yesterday"}
         />
         <StatCard
           title="Live Tickets"
           value={stats?.activeTickets ?? 0}
           subtitle="In kitchen"
           icon={<UtensilsCrossed className="h-6 w-6" />}
-          trend={stats?.activeTickets ? `${stats.activeTickets} active` : "No active tickets"}
-          trendUp={true}
         />
         <KitchenStatusToggle />
       </div>
@@ -194,21 +206,30 @@ export function BranchDashboardPage() {
         </div>
       </div>
 
-      {/* Revenue Trend Placeholder */}
+      {/* Revenue Trend */}
       <div className="rounded-2xl border border-gray-100/80 bg-white p-5 shadow-sm">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Revenue Trend (7 Days)</h2>
-        <div className="h-64 flex items-end justify-around gap-2">
-          {(stats?.revenueTrend ?? []).map((day, i) => (
-            <div key={i} className="flex-1 flex flex-col items-center">
-              <div
-                className="w-full rounded-t bg-gradient-to-t from-orange-500 to-orange-400 transition-all hover:from-orange-600 hover:to-orange-500"
-                style={{ height: `${Math.max((day.revenue / (stats?.maxRevenue ?? 1)) * 100, 4)}%`, minHeight: "20px" }}
-              />
-              <p className="mt-2 text-xs text-gray-500">{day.day}</p>
-              <p className="text-xs font-medium text-gray-900">₹{day.revenue.toLocaleString()}</p>
-            </div>
-          ))}
-        </div>
+        {revenueTrendDays.length === 0 ? (
+          <div className="h-64 flex items-center justify-center text-sm text-gray-500">
+            No revenue data for the last 7 days
+          </div>
+        ) : (
+          <div className="h-64 flex items-end justify-around gap-2">
+            {revenueTrendDays.map((day) => (
+              <div key={day.date} className="flex-1 flex flex-col items-center">
+                <div
+                  className="w-full rounded-t bg-gradient-to-t from-orange-500 to-orange-400 transition-all hover:from-orange-600 hover:to-orange-500"
+                  style={{
+                    height: chartMax > 0 ? `${Math.max((day.revenue / chartMax) * 100, 4)}%` : "4%",
+                    minHeight: day.revenue > 0 ? "20px" : "4px",
+                  }}
+                />
+                <p className="mt-2 text-xs text-gray-500">{day.day}</p>
+                <p className="text-xs font-medium text-gray-900">₹{day.revenue.toLocaleString("en-IN")}</p>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )
