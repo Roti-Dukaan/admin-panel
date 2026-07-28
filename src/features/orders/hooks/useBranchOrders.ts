@@ -6,6 +6,7 @@ import { toast } from "sonner"
 import type { Order, OrderStatistics, OrderFilters, OrderDatePreset, OrderStatus, PaymentStatus } from "../types/order"
 import { ordersApi } from "@/lib/api/orders.api"
 import { useWorkspace } from "@/contexts/WorkspaceContext"
+import { normalizeOrder } from "../utils/normalize-order"
 
 interface BranchOrderStore {
   orders: Order[]
@@ -122,7 +123,7 @@ export function useBranchOrdersStore() {
           areaId: filters.areaId && filters.areaId !== "all" ? filters.areaId : undefined,
         })
         set({
-          orders: data.items as Order[],
+          orders: (data.items as Record<string, unknown>[]).map(normalizeOrder),
           pagination: {
             ...pagination,
             total: data.total,

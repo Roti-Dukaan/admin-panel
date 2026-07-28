@@ -4,25 +4,8 @@ import { toast } from "sonner";
 import type { Order, OrderStatistics, OrderFilters, OrderDatePreset, OrderStatus, PaymentStatus } from "../types/order";
 import { ordersApi } from "@/lib/api/orders.api";
 import { useAdminAuthStore } from "@/features/admin-auth/store/admin-auth-store";
-import { normalizeOrderStatus, toBackendOrderStatus } from "../utils/status";
-
-function normalizeOrder(order: Record<string, unknown>): Order {
-  const timeline = Array.isArray(order.timeline)
-    ? order.timeline.map((entry) => {
-        const e = entry as Record<string, unknown>;
-        return {
-          ...e,
-          status: normalizeOrderStatus(String(e.status ?? "")),
-        };
-      })
-    : [];
-
-  return {
-    ...(order as Order),
-    status: normalizeOrderStatus(String(order.status ?? "")),
-    timeline,
-  };
-}
+import { toBackendOrderStatus } from "../utils/status";
+import { normalizeOrder } from "../utils/normalize-order";
 
 function getBranchScope(): string | undefined {
   const { role, branchId } = useAdminAuthStore.getState();

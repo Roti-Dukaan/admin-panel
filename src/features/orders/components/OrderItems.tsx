@@ -2,11 +2,12 @@ import { cn } from "@/lib/utils"
 import type { OrderItem } from "../types/order"
 
 function formatCurrency(amount: number) {
+  const safe = Number.isFinite(amount) ? amount : 0
   return new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency: "INR",
     minimumFractionDigits: 0,
-  }).format(amount)
+  }).format(safe)
 }
 
 interface OrderItemsProps {
