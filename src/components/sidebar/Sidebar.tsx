@@ -25,6 +25,7 @@ import {
   LifeBuoy,
   FolderOpen,
   Wheat,
+  Ticket,
 } from "lucide-react"
 import { useSidebar } from "./hooks/useSidebar"
 import { SidebarGroup } from "./SidebarGroup"
@@ -92,6 +93,7 @@ const MAIN_ADMIN_NAV_GROUPS: NavGroup[] = [
     roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'],
     items: [
       { label: "Payments", href: "/admin/payments", icon: CreditCard, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
+      { label: "Coupons", href: "/coupons", icon: Ticket, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
       { label: "Reports & Analytics", href: "/reports", icon: BarChart3, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
     ],
   },
