@@ -294,7 +294,7 @@ export function CouponEditor({
             <div className="space-y-2">
               <Label>Applicable Branches (empty = all)</Label>
               <div className="max-h-32 space-y-2 overflow-y-auto rounded-lg border border-gray-200 p-3">
-                {branches.map((branch) => (
+                {(branches ?? []).map((branch) => (
                   <label key={branch.id} className="flex items-center gap-2 text-sm">
                     <input
                       type="checkbox"

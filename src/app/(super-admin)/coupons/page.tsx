@@ -32,8 +32,11 @@ export default function CouponsPage() {
   useEffect(() => {
     loadCoupons();
     branchesApi
-      .list()
-      .then((rows: { id: string; name: string }[]) => setBranches(rows))
+      .list({ limit: 100 })
+      .then((res) => {
+        const items = res.data?.data?.items ?? [];
+        setBranches(items.map((b) => ({ id: b.id, name: b.name })));
+      })
       .catch(() => setBranches([]));
   }, [loadCoupons]);
 
