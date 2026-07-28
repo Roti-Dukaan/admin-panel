@@ -5,7 +5,7 @@ import { User, LogOut, Repeat2 } from "lucide-react"
 import { Avatar } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
 import { AnimatePresence, motion } from "motion/react"
-import { useAdminAuthStore } from "@/features/admin-auth/store/admin-auth-store"
+import { useAdminAuthStore, type AdminUser } from "@/features/admin-auth/store/admin-auth-store"
 import { useRouter } from "next/navigation"
 import { ChevronUp } from "lucide-react"
 
@@ -13,11 +13,31 @@ interface SidebarFooterProps {
   collapsed?: boolean
 }
 
+function getDisplayName(user: AdminUser | null): string {
+  const name = user?.name?.trim()
+  if (name) return name
+  if (user?.email) return user.email.split("@")[0]
+  return "Admin"
+}
+
+function getInitials(name: string): string {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2)
+}
+
 export function SidebarFooter({ collapsed = false }: SidebarFooterProps) {
   const [open, setOpen] = React.useState(false)
   const ref = React.useRef<HTMLDivElement>(null)
+  const user = useAdminAuthStore((s) => s.user)
   const logout = useAdminAuthStore((s) => s.logout)
   const router = useRouter()
+  const displayName = getDisplayName(user)
+  const initials = getInitials(displayName)
 
   const handleLogout = () => {
     logout()
@@ -43,14 +63,14 @@ export function SidebarFooter({ collapsed = false }: SidebarFooterProps) {
           "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
           collapsed && "justify-center px-2"
         )}
-        aria-label="Admin menu"
+        aria-label={`${displayName} menu`}
         aria-expanded={open}
       >
-        <Avatar alt="Admin" size="sm" className="ring-2 ring-gray-100 shrink-0" />
+        <Avatar alt={displayName} fallback={initials} size="sm" className="ring-2 ring-gray-100 shrink-0" />
         {!collapsed && (
           <>
             <div className="flex flex-1 flex-col items-start">
-              <span className="font-medium text-gray-900 leading-tight">Admin</span>
+              <span className="font-medium text-gray-900 leading-tight truncate">{displayName}</span>
             </div>
             <ChevronUp
               className={cn(
