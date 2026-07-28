@@ -12,14 +12,36 @@ export function AvailabilityStatusBadge({ status, className }: { status: Availab
   );
 }
 
-export function StatusSelect({ value, onChange, className }: { value: AvailabilityStatus; onChange: (v: AvailabilityStatus) => void; className?: string }) {
+export function StatusSelect({
+  value,
+  onChange,
+  className,
+  excludeStatuses,
+}: {
+  value: AvailabilityStatus;
+  onChange: (v: AvailabilityStatus) => void;
+  className?: string;
+  excludeStatuses?: AvailabilityStatus[];
+}) {
+  const excluded = new Set(excludeStatuses ?? []);
+  const options = Object.entries(AVAILABILITY_STATUS_CONFIG).filter(
+    ([key]) => !excluded.has(key as AvailabilityStatus),
+  );
+
+  const showCurrentAsDisabled = excluded.has(value) && !options.some(([key]) => key === value);
+
   return (
     <select
       value={value}
       onChange={(e) => onChange(e.target.value as AvailabilityStatus)}
       className={cn('rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium focus:border-orange-300 focus:outline-none focus:ring-2 focus:ring-orange-100', className)}
     >
-      {Object.entries(AVAILABILITY_STATUS_CONFIG).map(([key, config]) => (
+      {showCurrentAsDisabled && (
+        <option value={value} disabled>
+          {AVAILABILITY_STATUS_CONFIG[value].label}
+        </option>
+      )}
+      {options.map(([key, config]) => (
         <option key={key} value={key}>{config.label}</option>
       ))}
     </select>
