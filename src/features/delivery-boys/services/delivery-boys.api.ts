@@ -12,6 +12,12 @@ function unwrap<T>(promise: Promise<{ data: { success: boolean; data: T } }>): P
   return promise.then((res) => res.data.data);
 }
 
+export type SubscriptionDeliveryApiScope = "branch" | "admin";
+
+function subscriptionDeliveriesBasePath(scope: SubscriptionDeliveryApiScope): string {
+  return scope === "admin" ? "/admin/subscription-deliveries" : "/branch-manager/subscription-deliveries";
+}
+
 export const deliveryBoysApi = {
   list: (params?: { branchId?: string; active?: boolean }): Promise<DeliveryBoy[]> =>
     unwrap(apiClient.get("/delivery-boys", { params })),
@@ -28,9 +34,14 @@ export const deliveryBoysApi = {
   listAssignable: (params?: { date?: string; slotId?: string }): Promise<AssignableStaff[]> =>
     unwrap(apiClient.get("/delivery-boys/assignable", { params })),
 
-  listDispatchBoard: (date: string, slotId?: string, branchId?: string): Promise<DriverDeliveryStop[]> =>
+  listDispatchBoard: (
+    date: string,
+    slotId?: string,
+    branchId?: string,
+    scope: SubscriptionDeliveryApiScope = "branch",
+  ): Promise<DriverDeliveryStop[]> =>
     unwrap(
-      apiClient.get("/branch-manager/subscription-deliveries/dispatch-board", {
+      apiClient.get(`${subscriptionDeliveriesBasePath(scope)}/dispatch-board`, {
         params: { date, slotId, branchId },
       }),
     ),
@@ -42,16 +53,26 @@ export const deliveryBoysApi = {
       }),
     ),
 
-  listUnassigned: (date: string, slotId?: string, branchId?: string): Promise<DriverDeliveryStop[]> =>
+  listUnassigned: (
+    date: string,
+    slotId?: string,
+    branchId?: string,
+    scope: SubscriptionDeliveryApiScope = "branch",
+  ): Promise<DriverDeliveryStop[]> =>
     unwrap(
-      apiClient.get("/branch-manager/subscription-deliveries/unassigned", {
+      apiClient.get(`${subscriptionDeliveriesBasePath(scope)}/unassigned`, {
         params: { date, slotId, branchId },
       }),
     ),
 
-  listAssigned: (date: string, slotId?: string, branchId?: string): Promise<DriverDeliveryStop[]> =>
+  listAssigned: (
+    date: string,
+    slotId?: string,
+    branchId?: string,
+    scope: SubscriptionDeliveryApiScope = "branch",
+  ): Promise<DriverDeliveryStop[]> =>
     unwrap(
-      apiClient.get("/branch-manager/subscription-deliveries/assigned", {
+      apiClient.get(`${subscriptionDeliveriesBasePath(scope)}/assigned`, {
         params: { date, slotId, branchId },
       }),
     ),

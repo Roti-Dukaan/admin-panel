@@ -31,6 +31,7 @@ export default function DeliveriesPage() {
           </TabsContent>
           <TabsContent value="subscriptions" className="mt-4 pb-6">
             <BranchSubscriptionDeliveriesTab
+              apiMode="admin"
               branchId={branchId}
               onBranchChange={setBranchId}
               showBranchFilter

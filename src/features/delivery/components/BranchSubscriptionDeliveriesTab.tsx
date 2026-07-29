@@ -13,8 +13,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { kitchenSubscriptionsApi } from "@/features/kitchen-subscriptions/services/kitchen-subscriptions.api";
-import { deliveryBoysApi } from "@/features/delivery-boys/services/delivery-boys.api";
+import { kitchenSubscriptionsApi, type SubscriptionKitchenApiScope } from "@/features/kitchen-subscriptions/services/kitchen-subscriptions.api";
+import { deliveryBoysApi, type SubscriptionDeliveryApiScope } from "@/features/delivery-boys/services/delivery-boys.api";
 import {
   DISPATCH_STATUS_LABELS,
   PREP_STATUS_LABELS,
@@ -81,14 +81,17 @@ function toTrackingRows(
 }
 
 export function BranchSubscriptionDeliveriesTab({
+  apiMode = "branch",
   branchId,
   onBranchChange,
   showBranchFilter = false,
 }: {
+  apiMode?: SubscriptionKitchenApiScope;
   branchId?: string;
   onBranchChange?: (branchId: string | undefined) => void;
   showBranchFilter?: boolean;
 } = {}) {
+  const deliveryScope: SubscriptionDeliveryApiScope = apiMode;
   const [date, setDate] = useState(() => format(new Date(), "yyyy-MM-dd"));
   const [slotId, setSlotId] = useState("all");
   const [search, setSearch] = useState("");
@@ -96,35 +99,38 @@ export function BranchSubscriptionDeliveriesTab({
   const resolvedSlotId = slotId === "all" ? undefined : slotId;
 
   const summaryQuery = useQuery({
-    queryKey: ["subscription-deliveries", "summary", date, branchId],
-    queryFn: () => kitchenSubscriptionsApi.getKitchenSummary({ date, branchId }),
+    queryKey: ["subscription-deliveries", "summary", apiMode, date, branchId],
+    queryFn: () => kitchenSubscriptionsApi.getKitchenSummary({ date, branchId }, apiMode),
   });
 
   const prepQuery = useQuery({
-    queryKey: ["subscription-deliveries", "prep-list", date, resolvedSlotId, search, branchId],
+    queryKey: ["subscription-deliveries", "prep-list", apiMode, date, resolvedSlotId, search, branchId],
     queryFn: () =>
-      kitchenSubscriptionsApi.getPrepList({
-        date,
-        slotId: resolvedSlotId,
-        search: search || undefined,
-        branchId,
-        includeCompleted: true,
-      }),
+      kitchenSubscriptionsApi.getPrepList(
+        {
+          date,
+          slotId: resolvedSlotId,
+          search: search || undefined,
+          branchId,
+          includeCompleted: true,
+        },
+        apiMode,
+      ),
   });
 
   const assignedQuery = useQuery({
-    queryKey: ["subscription-deliveries", "assigned", date, resolvedSlotId, branchId],
-    queryFn: () => deliveryBoysApi.listAssigned(date, resolvedSlotId, branchId),
+    queryKey: ["subscription-deliveries", "assigned", apiMode, date, resolvedSlotId, branchId],
+    queryFn: () => deliveryBoysApi.listAssigned(date, resolvedSlotId, branchId, deliveryScope),
   });
 
   const unassignedQuery = useQuery({
-    queryKey: ["subscription-deliveries", "unassigned", date, resolvedSlotId, branchId],
-    queryFn: () => deliveryBoysApi.listUnassigned(date, resolvedSlotId, branchId),
+    queryKey: ["subscription-deliveries", "unassigned", apiMode, date, resolvedSlotId, branchId],
+    queryFn: () => deliveryBoysApi.listUnassigned(date, resolvedSlotId, branchId, deliveryScope),
   });
 
   const dispatchBoardQuery = useQuery({
-    queryKey: ["subscription-deliveries", "dispatch-board", date, resolvedSlotId, branchId],
-    queryFn: () => deliveryBoysApi.listDispatchBoard(date, resolvedSlotId, branchId),
+    queryKey: ["subscription-deliveries", "dispatch-board", apiMode, date, resolvedSlotId, branchId],
+    queryFn: () => deliveryBoysApi.listDispatchBoard(date, resolvedSlotId, branchId, deliveryScope),
   });
 
   const slotOptions = useMemo(
@@ -141,17 +147,9 @@ export function BranchSubscriptionDeliveriesTab({
     return toTrackingRows(prepQuery.data ?? [], assigneeMap);
   }, [prepQuery.data, assignedQuery.data, unassignedQuery.data, dispatchBoardQuery.data]);
 
-  const loading =
-    prepQuery.isLoading ||
-    assignedQuery.isLoading ||
-    unassignedQuery.isLoading ||
-    dispatchBoardQuery.isLoading;
+  const loading = prepQuery.isLoading || summaryQuery.isLoading;
 
-  const hasError =
-    prepQuery.isError ||
-    assignedQuery.isError ||
-    unassignedQuery.isError ||
-    dispatchBoardQuery.isError;
+  const hasError = prepQuery.isError || summaryQuery.isError;
 
   return (
     <div className="space-y-6">

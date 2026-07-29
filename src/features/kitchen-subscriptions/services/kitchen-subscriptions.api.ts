@@ -17,30 +17,55 @@ export interface SubscriptionKitchenQuery {
   includeCompleted?: boolean;
 }
 
+export type SubscriptionKitchenApiScope = "branch" | "admin";
+
+function kitchenBasePath(scope: SubscriptionKitchenApiScope): string {
+  return scope === "admin" ? "/admin/subscriptions" : "/branch-manager/subscriptions";
+}
+
 export const kitchenSubscriptionsApi = {
-  getKitchenSummary: (query: Pick<SubscriptionKitchenQuery, "date" | "branchId">): Promise<SubscriptionKitchenSummary> =>
+  getKitchenSummary: (
+    query: Pick<SubscriptionKitchenQuery, "date" | "branchId">,
+    scope: SubscriptionKitchenApiScope = "branch",
+  ): Promise<SubscriptionKitchenSummary> =>
     unwrap(
-      apiClient.get("/branch-manager/subscriptions/kitchen-summary", {
-        params: { date: query.date, branchId: query.branchId },
-      }),
-    ),
-
-  getPrepList: (query: SubscriptionKitchenQuery): Promise<SubscriptionPrepRow[]> =>
-    unwrap(
-      apiClient.get("/branch-manager/subscriptions/prep-list", {
-        params: {
-          date: query.date,
-          branchId: query.branchId,
-          slotId: query.slotId,
-          search: query.search,
-          includeCompleted: query.includeCompleted,
+      apiClient.get(
+        scope === "admin"
+          ? `${kitchenBasePath(scope)}/kitchen/summary`
+          : `${kitchenBasePath(scope)}/kitchen-summary`,
+        {
+          params: { date: query.date, branchId: query.branchId },
         },
-      }),
+      ),
     ),
 
-  getDispatchReady: (query: Pick<SubscriptionKitchenQuery, "date" | "branchId">): Promise<SubscriptionDispatchRow[]> =>
+  getPrepList: (
+    query: SubscriptionKitchenQuery,
+    scope: SubscriptionKitchenApiScope = "branch",
+  ): Promise<SubscriptionPrepRow[]> =>
     unwrap(
-      apiClient.get("/branch-manager/subscriptions/dispatch-ready", {
+      apiClient.get(
+        scope === "admin"
+          ? `${kitchenBasePath(scope)}/kitchen/prep-list`
+          : `${kitchenBasePath(scope)}/prep-list`,
+        {
+          params: {
+            date: query.date,
+            branchId: query.branchId,
+            slotId: query.slotId,
+            search: query.search,
+            includeCompleted: query.includeCompleted,
+          },
+        },
+      ),
+    ),
+
+  getDispatchReady: (
+    query: Pick<SubscriptionKitchenQuery, "date" | "branchId">,
+    scope: SubscriptionKitchenApiScope = "branch",
+  ): Promise<SubscriptionDispatchRow[]> =>
+    unwrap(
+      apiClient.get(`${kitchenBasePath(scope)}/dispatch-ready`, {
         params: { date: query.date, branchId: query.branchId },
       }),
     ),
