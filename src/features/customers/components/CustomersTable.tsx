@@ -37,6 +37,7 @@ export function CustomersTable() {
   const setPage = useCustomerStore((s) => s.setPage);
   const openCustomer = useCustomerStore((s) => s.openCustomer);
   const fetchCustomers = useCustomerStore((s) => s.fetchCustomers);
+  const viewType = useCustomerStore((s) => s.filters.viewType);
   const [sorting, setSorting] = useState<SortingState>([]);
   const { isSuperAdmin } = useWorkspace();
 
@@ -87,6 +88,23 @@ export function CustomersTable() {
                   </span>
                 );
               },
+            } satisfies ColumnDef<Customer>,
+          ]
+        : []),
+      ...(viewType === "subscription"
+        ? [
+            {
+              accessorKey: "subscriptionPlanName",
+              header: () => (
+                <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400">
+                  Subscription
+                </span>
+              ),
+              cell: ({ row }: { row: { original: Customer } }) => (
+                <span className="text-sm font-medium text-gray-900">
+                  {row.original.subscriptionPlanName || "—"}
+                </span>
+              ),
             } satisfies ColumnDef<Customer>,
           ]
         : []),
@@ -147,7 +165,7 @@ export function CustomersTable() {
         ),
       },
     ],
-    [openCustomer, isSuperAdmin]
+    [openCustomer, isSuperAdmin, viewType]
   );
 
   const table = useReactTable({
