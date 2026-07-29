@@ -7,6 +7,16 @@ export interface SubscriptionRotiItem {
   quantity: number;
 }
 
+export interface SubscriptionDeliveryDashboard {
+  pendingPrep: number;
+  assigned: number;
+  outForDelivery: number;
+  delivered: number;
+  failed: number;
+  cancelledSkipped: number;
+  generatedAt: string;
+}
+
 export interface SubscriptionKitchenSummary {
   date: string;
   branchId: string | null;

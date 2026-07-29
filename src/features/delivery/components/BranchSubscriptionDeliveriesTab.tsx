@@ -27,6 +27,7 @@ import {
 } from "@/features/kitchen-subscriptions/types/kitchen-subscriptions";
 import { cn } from "@/lib/utils";
 import { DeliveryBranchFilter } from "./DeliveryBranchFilter";
+import { SubscriptionDeliveryStats } from "./SubscriptionDeliveryStats";
 
 function dispatchLabel(status: string): { label: string; className: string } {
   if (DISPATCH_STATUS_LABELS[status]) return DISPATCH_STATUS_LABELS[status];
@@ -153,6 +154,14 @@ export function BranchSubscriptionDeliveriesTab({
 
   return (
     <div className="space-y-6">
+      <SubscriptionDeliveryStats
+        apiMode={apiMode}
+        date={date}
+        branchId={branchId}
+        slotId={resolvedSlotId}
+        search={search}
+      />
+
       <div className="bg-white rounded-xl border border-gray-200 p-4">
         <div className="flex flex-col sm:flex-row gap-4">
           <Input

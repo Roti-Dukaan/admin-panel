@@ -3,6 +3,7 @@ import type {
   SubscriptionKitchenSummary,
   SubscriptionPrepRow,
   SubscriptionDispatchRow,
+  SubscriptionDeliveryDashboard,
 } from "../types/kitchen-subscriptions";
 
 function unwrap<T>(promise: Promise<{ data: { success: boolean; data: T } }>): Promise<T> {
@@ -55,6 +56,26 @@ export const kitchenSubscriptionsApi = {
             slotId: query.slotId,
             search: query.search,
             includeCompleted: query.includeCompleted,
+          },
+        },
+      ),
+    ),
+
+  getDeliveryDashboard: (
+    query: SubscriptionKitchenQuery,
+    scope: SubscriptionKitchenApiScope = "branch",
+  ): Promise<SubscriptionDeliveryDashboard> =>
+    unwrap(
+      apiClient.get(
+        scope === "admin"
+          ? `${kitchenBasePath(scope)}/kitchen/delivery-dashboard`
+          : `${kitchenBasePath(scope)}/delivery-dashboard`,
+        {
+          params: {
+            date: query.date,
+            branchId: query.branchId,
+            slotId: query.slotId,
+            search: query.search,
           },
         },
       ),
