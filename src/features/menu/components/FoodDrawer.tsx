@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { useForm } from "react-hook-form";
 import { X, Save } from "lucide-react";
 import { useMenuStore } from "../hooks/useMenu";
-import { AVAILABILITY_CONFIG, CUSTOMER_LABEL_CONFIG, FoodCategory, Availability, CustomerLabel, HealthTag } from "../types/menu";
+import { AVAILABILITY_CONFIG, CUSTOMER_LABEL_CONFIG, FoodCategory, Availability, CustomerLabel, HealthTag, FoodType } from "../types/menu";
 import { FoodImageUploader } from "./FoodImageUploader";
 import { HealthTagSelector } from "./HealthTagSelector";
 import { FoodPreview } from "./FoodPreview";
@@ -26,7 +26,7 @@ interface FormData {
   healthTags: HealthTag[];
   customerLabels: CustomerLabel[];
   availability: Availability;
-  isVegetarian: boolean;
+  foodType: FoodType;
   isFeatured: boolean;
   displayOnWebsite: boolean;
   bestPairedWith: string[];
@@ -99,7 +99,7 @@ export function FoodDrawer() {
       healthTags: [],
       customerLabels: [],
       availability: "available",
-      isVegetarian: true,
+      foodType: "VEG",
       isFeatured: false,
       displayOnWebsite: true,
       bestPairedWith: [],
@@ -128,7 +128,7 @@ export function FoodDrawer() {
         healthTags: selectedFood.healthTags,
         customerLabels: selectedFood.customerLabels,
         availability: selectedFood.availability,
-        isVegetarian: selectedFood.isVegetarian,
+        foodType: selectedFood.foodType,
         isFeatured: selectedFood.isFeatured,
         displayOnWebsite: selectedFood.displayOnWebsite,
         bestPairedWith: selectedFood.bestPairedWith,
@@ -138,7 +138,7 @@ export function FoodDrawer() {
         name: "", description: "", shortDescription: "", category: categories[0]?.name || "",
         price: 0, preparationTime: 15, calories: 0, protein: 0, carbs: 0, fats: 0,
         servingSize: "1 bowl", healthTags: [], customerLabels: [], availability: "available",
-        isVegetarian: true, isFeatured: false, displayOnWebsite: true, bestPairedWith: [],
+        foodType: "VEG", isFeatured: false, displayOnWebsite: true, bestPairedWith: [],
       });
     }
   }, [selectedFood, isEdit, isView, reset]);
@@ -312,8 +312,18 @@ export function FoodDrawer() {
                     </Select>
                   </Field>
 
+                  <Field label="Food Type">
+                    <Select
+                      {...register("foodType")}
+                      disabled={isView}
+                    >
+                      <option value="VEG">Veg</option>
+                      <option value="NON_VEG">Non-Veg</option>
+                      <option value="EGG">Egg</option>
+                    </Select>
+                  </Field>
+
                   <div className="space-y-4">
-                    <Checkbox label="Vegetarian" checked={watch("isVegetarian")} onChange={(v) => setValue("isVegetarian", v)} />
                     <Checkbox label="Featured" checked={watch("isFeatured")} onChange={(v) => setValue("isFeatured", v)} />
                     <Checkbox label="Display on Website" checked={watch("displayOnWebsite")} onChange={(v) => setValue("displayOnWebsite", v)} />
                   </div>

@@ -1,7 +1,7 @@
 "use client";
 
-import { Star, Clock, Leaf } from "lucide-react";
-import { HEALTH_TAG_CONFIG, CUSTOMER_LABEL_CONFIG, CustomerLabel, HealthTag } from "../types/menu";
+import { Star, Clock } from "lucide-react";
+import { HEALTH_TAG_CONFIG, CUSTOMER_LABEL_CONFIG, CustomerLabel, HealthTag, FoodType } from "../types/menu";
 import { useMenuStore } from "../hooks/useMenu";
 
 interface FoodPreviewProps {
@@ -11,7 +11,7 @@ interface FoodPreviewProps {
     category?: string;
     shortDescription?: string;
     isFeatured?: boolean;
-    isVegetarian?: boolean;
+    foodType?: FoodType;
     preparationTime?: number;
     healthTags?: HealthTag[];
     customerLabels?: CustomerLabel[];
@@ -88,9 +88,15 @@ export function FoodPreview({ food }: FoodPreviewProps) {
               <Clock className="h-3 w-3" /> {food.preparationTime} min
             </span>
           )}
-          {food.isVegetarian && (
-            <span className="inline-flex items-center gap-0.5 text-[11px] text-emerald-600">
-              <Leaf className="h-3 w-3" /> Veg
+          {food.foodType && (
+            <span className={`inline-flex items-center gap-0.5 text-[11px] font-semibold ${
+              food.foodType === "VEG"
+                ? "text-emerald-600"
+                : food.foodType === "EGG"
+                ? "text-orange-600"
+                : "text-red-700"
+            }`}>
+              {food.foodType === "VEG" ? "Veg" : food.foodType === "EGG" ? "Egg" : "Non-Veg"}
             </span>
           )}
         </div>
