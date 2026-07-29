@@ -14,6 +14,7 @@ export interface SubscriptionKitchenQuery {
   branchId?: string;
   slotId?: string;
   search?: string;
+  includeCompleted?: boolean;
 }
 
 export const kitchenSubscriptionsApi = {
@@ -32,6 +33,7 @@ export const kitchenSubscriptionsApi = {
           branchId: query.branchId,
           slotId: query.slotId,
           search: query.search,
+          includeCompleted: query.includeCompleted,
         },
       }),
     ),

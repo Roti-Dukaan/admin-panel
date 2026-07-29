@@ -108,6 +108,7 @@ export function BranchSubscriptionDeliveriesTab({
         slotId: resolvedSlotId,
         search: search || undefined,
         branchId,
+        includeCompleted: true,
       }),
   });
 
