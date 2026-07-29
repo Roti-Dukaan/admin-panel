@@ -24,6 +24,8 @@ export interface Customer {
 
 export type CustomerDatePreset = "today" | "yesterday" | "7d" | "30d" | "this-month" | "custom" | "all"
 
+export type CustomerViewType = 'all' | 'subscription';
+
 export interface CustomerFilters {
   search: string;
   status: CustomerStatus | 'all';
@@ -31,6 +33,7 @@ export interface CustomerFilters {
   customStartDate: string;
   customEndDate: string;
   branchId: string;
+  viewType: CustomerViewType;
 }
 
 export const CUSTOMER_STATUS_CONFIG: Record<CustomerStatus, { label: string; color: string; bgColor: string }> = {

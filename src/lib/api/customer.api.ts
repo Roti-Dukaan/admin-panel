@@ -59,10 +59,21 @@ export interface CustomerQueryParams {
   search?: string;
   isActive?: boolean;
   branchId?: string;
+  hasSubscription?: boolean;
+}
+
+export interface CustomerListStats {
+  total: number;
+  active: number;
+  inactive: number;
+}
+
+export interface CustomerListData extends PaginatedData<ApiCustomer> {
+  stats?: CustomerListStats;
 }
 
 export const customerApi = {
-  async list(params?: CustomerQueryParams): Promise<ApiResponse<PaginatedData<ApiCustomer>>> {
+  async list(params?: CustomerQueryParams): Promise<ApiResponse<CustomerListData>> {
     const { data } = await apiClient.get('/admin/customers', { params });
     return data;
   },

@@ -6,6 +6,7 @@ import { DateRangeFilter, type DateRangeValue } from "@/components/shared/DateRa
 import { CustomersStats } from "@/features/customers/components/CustomersStats";
 import { CustomersFilters } from "@/features/customers/components/CustomersFilters";
 import { CustomersTable } from "@/features/customers/components/CustomersTable";
+import { CustomersViewTabs } from "@/features/customers/components/CustomersViewTabs";
 import { CustomerProfile } from "@/features/customers/components/CustomerProfile";
 import { useCustomerStore } from "@/features/customers/hooks/useCustomers";
 import type { CustomerDatePreset } from "@/features/customers/types/customer";
@@ -43,7 +44,9 @@ export default function CustomersPage() {
         }
       />
 
-      <div className="p-6 space-y-6">
+      <div className="px-6 pt-4 pb-6 space-y-6">
+        <CustomersViewTabs />
+
         {/* Stats */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}

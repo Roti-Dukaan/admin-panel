@@ -20,6 +20,7 @@ interface CustomerStore {
   page: number;
   limit: number;
   totalPages: number;
+  stats: CustomerStats;
   filters: CustomerFilters;
   selectedCustomer: Customer | null;
   drawerOpen: boolean;
@@ -34,6 +35,7 @@ interface CustomerStore {
   setSearch: (search: string) => void;
   setStatusFilter: (filter: CustomerFilters['status']) => void;
   setBranchFilter: (branchId: string) => void;
+  setViewType: (viewType: CustomerFilters['viewType']) => void;
   setDateRange: (preset: CustomerDatePreset, startDate?: string, endDate?: string) => void;
   clearFilters: () => void;
 
@@ -43,8 +45,6 @@ interface CustomerStore {
   openCustomer: (id: string) => Promise<void>;
   fetchCustomerAddresses: (customerId: string) => Promise<void>;
   toggleCustomerStatus: (id: string) => Promise<void>;
-
-  getStats: () => CustomerStats;
 }
 
 function mapCustomer(c: ApiCustomer): Customer {
@@ -72,7 +72,10 @@ const initialFilters: CustomerFilters = {
   customStartDate: '',
   customEndDate: '',
   branchId: 'all',
+  viewType: 'all',
 };
+
+const initialStats: CustomerStats = { total: 0, active: 0, inactive: 0 };
 
 export const useCustomerStore = create<CustomerStore>((set, get) => ({
   customers: [],
@@ -80,6 +83,7 @@ export const useCustomerStore = create<CustomerStore>((set, get) => ({
   page: 1,
   limit: 20,
   totalPages: 0,
+  stats: { ...initialStats },
   filters: { ...initialFilters },
   selectedCustomer: null,
   drawerOpen: false,
@@ -102,6 +106,7 @@ export const useCustomerStore = create<CustomerStore>((set, get) => ({
         (filters.branchId && filters.branchId !== 'all' ? filters.branchId : undefined) ||
         branchScope;
       if (branchId) params.branchId = branchId;
+      if (filters.viewType === 'subscription') params.hasSubscription = true;
 
       const res = await customerApi.list(params);
       const data = res.data;
@@ -109,6 +114,11 @@ export const useCustomerStore = create<CustomerStore>((set, get) => ({
         customers: data.items.map(mapCustomer),
         total: data.total,
         totalPages: data.totalPages,
+        stats: data.stats ?? {
+          total: data.total,
+          active: data.items.filter((c) => c.isActive).length,
+          inactive: data.items.filter((c) => !c.isActive).length,
+        },
         loading: false,
       });
     } catch (err: unknown) {
@@ -137,6 +147,11 @@ export const useCustomerStore = create<CustomerStore>((set, get) => ({
     get().fetchCustomers();
   },
 
+  setViewType: (viewType) => {
+    set({ filters: { ...get().filters, viewType }, page: 1 });
+    get().fetchCustomers();
+  },
+
   setDateRange: (preset, startDate = '', endDate = '') => {
     set({
       filters: {
@@ -151,7 +166,8 @@ export const useCustomerStore = create<CustomerStore>((set, get) => ({
   },
 
   clearFilters: () => {
-    set({ filters: { ...initialFilters }, page: 1 });
+    const { viewType } = get().filters;
+    set({ filters: { ...initialFilters, viewType }, page: 1 });
     get().fetchCustomers();
   },
 
@@ -213,18 +229,14 @@ export const useCustomerStore = create<CustomerStore>((set, get) => ({
         customers: get().customers.map((c) =>
           c.id === id ? { ...c, isActive: !c.isActive } : c
         ),
+        stats: {
+          ...get().stats,
+          active: get().stats.active + (customer.isActive ? -1 : 1),
+          inactive: get().stats.inactive + (customer.isActive ? 1 : -1),
+        },
       });
     } catch {
       // ignore
     }
-  },
-
-  getStats: () => {
-    const { customers } = get();
-    return {
-      total: customers.length,
-      active: customers.filter((c) => c.isActive).length,
-      inactive: customers.filter((c) => !c.isActive).length,
-    };
   },
 }));
