@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
 import { useDriverMutations, useDriverRoute } from "../hooks/useDeliveryBoys";
 import type { DriverDeliveryStop } from "../types/delivery-boys";
 import { DISPATCH_STATUS_LABELS } from "../types/delivery-boys";
+import { RealtimeDriverStops } from "@/features/realtime-dispatch/components/RealtimeDriverStops";
 
 type Tab = "today" | "completed" | "failed";
 
@@ -170,7 +171,7 @@ export function DriverRouteView() {
         <div className="flex items-start justify-between gap-3">
           <div>
             <h1 className="text-lg font-bold text-gray-900">My Route</h1>
-            <p className="text-xs text-gray-500">Subscription deliveries only</p>
+            <p className="text-xs text-gray-500">Subscription + realtime deliveries</p>
           </div>
           <Button
             type="button"
@@ -228,6 +229,7 @@ export function DriverRouteView() {
       </div>
 
       <div className="space-y-3 p-4">
+        <RealtimeDriverStops tab={tab} />
         {routeQuery.isLoading ? (
           <div className="flex justify-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
