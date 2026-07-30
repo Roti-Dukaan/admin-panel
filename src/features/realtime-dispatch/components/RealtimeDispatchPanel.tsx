@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Bike, Loader2, Package, RefreshCw, Truck, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -41,6 +42,7 @@ function DispatchCard({
   assignees: AssignableStaff[];
   onRefresh: () => void;
 }) {
+  const queryClient = useQueryClient();
   const [busy, setBusy] = useState(false);
   const [selectedBoy, setSelectedBoy] = useState("");
 
@@ -50,8 +52,14 @@ function DispatchCard({
       await fn();
       toast.success(msg);
       onRefresh();
-    } catch {
-      toast.error("Action failed");
+      queryClient.invalidateQueries({ queryKey: ["realtime-driver"] });
+      queryClient.invalidateQueries({ queryKey: ["driver-route"] });
+    } catch (err: unknown) {
+      const message =
+        err && typeof err === "object" && "response" in err
+          ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
+          : undefined;
+      toast.error(message || "Action failed");
     } finally {
       setBusy(false);
     }

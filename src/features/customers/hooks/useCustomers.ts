@@ -62,6 +62,7 @@ function mapCustomer(c: ApiCustomer): Customer {
     updatedAt: c.updatedAt,
     branchId: c.branchId,
     branch: c.branch,
+    subscriptionPlanName: c.subscriptionPlanName ?? null,
   };
 }
 
@@ -193,6 +194,7 @@ export const useCustomerStore = create<CustomerStore>((set, get) => ({
           updatedAt: c.updatedAt,
           branchId: c.branchId,
           branch: c.branch,
+          subscriptionPlanName: c.subscriptionPlanName ?? null,
         },
         loading: false,
       });
