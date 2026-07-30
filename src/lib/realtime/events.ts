@@ -13,11 +13,29 @@ export const REALTIME_EVENTS = {
   ADMIN_ORDER_CREATED: "admin:order_created",
   ADMIN_ORDER_UPDATED: "admin:order_updated",
 
+  BRANCH_ORDER_NEW: "branch:order_new",
+  BRANCH_ORDER_UPDATED: "branch:order_updated",
+
   ADMIN_DELIVERY_UPDATED: "admin:delivery_updated",
   CUSTOMER_DELIVERY_UPDATED: "customer:delivery_updated",
   KITCHEN_DELIVERY_UPDATED: "kitchen:delivery_updated",
 
   CUSTOMER_ORDER_UPDATED: "customer:order_updated",
+
+  // Subscription kitchen events
+  SUBSCRIPTION_ORDER_CREATED: "subscription:order_created",
+  SUBSCRIPTION_ORDER_UPDATED: "subscription:order_updated",
+  SUBSCRIPTION_BATCH_CREATED: "subscription:batch_created",
+  SUBSCRIPTION_DISPATCH_UPDATED: "subscription:dispatch_updated",
+  SUBSCRIPTION_BATCH_STATUS: "subscription:batch_status",
+
+  // Dispatch management events
+  ADMIN_DISPATCH_BATCH_CREATED: "admin:dispatch_batch_created",
+  ADMIN_DISPATCH_BATCH_UPDATED: "admin:dispatch_batch_updated",
+  ADMIN_DISPATCH_BATCH_STATUS: "admin:dispatch_batch_status",
+
+  // Dispatch batch auto-advancement from webhooks
+  ADMIN_DISPATCH_BATCH_STATUS_UPDATED: "admin:dispatch_batch_status_updated",
 } as const;
 
 export interface KitchenTicketCreatedPayload {
@@ -49,6 +67,22 @@ export interface AdminOrderCreatedPayload {
   orderNumber: string;
   status: string;
   occurredAt: string;
+  branchId?: string;
+  itemsSummary?: string;
+  itemCount?: number;
+  grandTotal?: number;
+}
+
+export interface BranchOrderNewPayload extends AdminOrderCreatedPayload {
+  branchId: string;
+  itemsSummary: string;
+  itemCount: number;
+  grandTotal: number;
+  paymentMethod?: string;
+}
+
+export interface BranchOrderUpdatedPayload extends AdminOrderUpdatedPayload {
+  branchId: string;
 }
 
 export interface AdminOrderUpdatedPayload {

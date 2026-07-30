@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
 import { subscriptionsApi } from "@/features/subscriptions/services/subscriptions.api";
+import { useOpsBranchStore } from "@/features/subscriptions/hooks/useOpsBranch";
 
 const REPORTS = [
   { value: "daily_production", label: "Daily Production Report" },
@@ -23,11 +24,12 @@ export function OpsReportsTab() {
   const [dateFrom, setDateFrom] = useState(new Date(Date.now() - 30 * 86_400_000).toISOString().slice(0, 10));
   const [dateTo, setDateTo] = useState(new Date().toISOString().slice(0, 10));
   const [loading, setLoading] = useState(false);
+  const branchId = useOpsBranchStore((s) => s.selectedBranchId);
 
   const run = async () => {
     setLoading(true);
     try {
-      const blob = await subscriptionsApi.exportOpsReport({ type, format, dateFrom, dateTo });
+      const blob = await subscriptionsApi.exportOpsReport({ type, format, dateFrom, dateTo, branchId: branchId ?? undefined });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       const ext = format === "excel" ? "xlsx" : format;

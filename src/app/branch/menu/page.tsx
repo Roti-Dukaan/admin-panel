@@ -5,27 +5,60 @@ import { Header } from "@/components/layout/header"
 import { useManagerAvailability } from "@/features/branch-menu-availability/hooks/useBranchMenuAvailability"
 import { SummaryCards } from "@/features/branch-menu-availability/components/SummaryCards"
 import { AvailabilityTable } from "@/features/branch-menu-availability/components/AvailabilityTable"
+import { OutOfStockReasonDialog } from "@/features/branch-menu-availability/components/OutOfStockReasonDialog"
 import { branchMenuAvailabilityApi } from "@/lib/api/branch-menu-availability.api"
 import { RefreshCw, Search } from "lucide-react"
 import type { BranchMenuAvailabilityItem } from "@/lib/api/branch-menu-availability.api"
 import type { AvailabilityStatus } from "@/features/branch-menu-availability/types/branch-menu-availability"
+
+const MANAGER_ACTION_STATUSES: AvailabilityStatus[] = ["DISABLED"]
 
 export default function BranchMenuPage() {
   const { items, summary, loading, refresh } = useManagerAvailability()
   const [updating, setUpdating] = useState<string | null>(null)
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState<AvailabilityStatus | "">("")
+  const [reasonDialog, setReasonDialog] = useState<{
+    item: BranchMenuAvailabilityItem
+  } | null>(null)
 
-  const handleStatusChange = async (item: BranchMenuAvailabilityItem, newStatus: AvailabilityStatus) => {
+  const saveStatus = async (
+    item: BranchMenuAvailabilityItem,
+    newStatus: AvailabilityStatus,
+    reason?: string,
+  ) => {
     setUpdating(item.id)
     try {
-      await branchMenuAvailabilityApi.managerUpdate(item.foodItemId, { status: newStatus })
+      await branchMenuAvailabilityApi.managerUpdate(item.foodItemId, {
+        status: newStatus,
+        ...(newStatus === "AVAILABLE" ? { reason: "" } : reason ? { reason } : {}),
+      })
       refresh()
     } catch {
       // handled
     } finally {
       setUpdating(null)
     }
+  }
+
+  const handleStatusChange = async (
+    item: BranchMenuAvailabilityItem,
+    newStatus: AvailabilityStatus,
+  ) => {
+    if (newStatus === item.status) return
+
+    if (newStatus === "OUT_OF_STOCK") {
+      setReasonDialog({ item })
+      return
+    }
+
+    await saveStatus(item, newStatus)
+  }
+
+  const handleReasonConfirm = async (reason: string) => {
+    if (!reasonDialog) return
+    await saveStatus(reasonDialog.item, "OUT_OF_STOCK", reason)
+    setReasonDialog(null)
   }
 
   const filteredItems = items.filter((i) => {
@@ -57,7 +90,7 @@ export default function BranchMenuPage() {
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
           <p className="font-medium">Branch Manager — Availability Only</p>
           <p className="mt-1 text-amber-700">
-            You can mark items as Out of Stock or Disabled for your branch. To add, edit, or remove menu items, contact a Super Admin.
+            You can mark items as Out of Stock (with a reason) or Available for your branch. To add, edit, or remove menu items, contact a Super Admin.
           </p>
         </div>
 
@@ -80,16 +113,24 @@ export default function BranchMenuPage() {
             <option value="">All Status</option>
             <option value="AVAILABLE">Available</option>
             <option value="OUT_OF_STOCK">Out of Stock</option>
-            <option value="DISABLED">Disabled</option>
           </select>
         </div>
 
         <AvailabilityTable
           items={filteredItems}
           loading={loading}
+          excludeActionStatuses={MANAGER_ACTION_STATUSES}
           onStatusChange={handleStatusChange}
         />
       </div>
+
+      <OutOfStockReasonDialog
+        open={reasonDialog !== null}
+        itemName={reasonDialog?.item.foodItem?.name ?? "this item"}
+        loading={reasonDialog ? updating === reasonDialog.item.id : false}
+        onConfirm={handleReasonConfirm}
+        onCancel={() => setReasonDialog(null)}
+      />
     </div>
   )
 }

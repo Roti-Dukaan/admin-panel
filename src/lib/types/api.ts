@@ -12,6 +12,23 @@ export interface PaginatedData<T> {
   totalPages: number;
 }
 
+export interface ApiHomepageBanner {
+  id: string;
+  title: string;
+  subtitle: string | null;
+  desktopImageUrl: string | null;
+  mobileImageUrl: string | null;
+  redirectType: 'NONE' | 'CATEGORY' | 'PRODUCT' | 'SUBSCRIPTION' | 'EXTERNAL_URL';
+  redirectValue: string | null;
+  displayOrder: number;
+  isActive: boolean;
+  startDate: string | null;
+  endDate: string | null;
+  createdBy: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ApiCategory {
   id: string;
   name: string;
@@ -41,6 +58,7 @@ export interface ApiFoodItem {
   imageUrl: string | null;
   gallery: string[];
   isVeg: boolean;
+  foodType?: 'VEG' | 'NON_VEG' | 'EGG';
   isFeatured: boolean;
   isAvailable: boolean;
   isSubscriptionAvailable: boolean;

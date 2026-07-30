@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect, useCallback, useRef } from "react"
-import { branchesApi, type Branch, type CreateBranchDTO, type UpdateBranchDTO, type BranchStatus } from "@/lib/api/master-data/branches.api"
+import { useState, useEffect, useCallback } from "react"
+import { branchesApi, type Branch, type CreateBranchDTO, type UpdateBranchDTO, type BranchStatus, type LatLngPoint } from "@/lib/api/master-data/branches.api"
 import { citiesApi, type City } from "@/lib/api/master-data/cities.api"
 import { areasApi, type Area } from "@/lib/api/master-data/areas.api"
 import { Button } from "@/components/ui/button"
@@ -26,9 +26,11 @@ import { BranchAddressSearch, type PlaceResult } from "@/components/Map/BranchAd
 import dynamic from "next/dynamic"
 import DeliverySettingsDialog from "./branches/DeliverySettingsDialog"
 import { toast } from "sonner"
+import { DEFAULT_MAP_CENTER, hasValidMapCoords, parseDeliveryPolygon, toMapCoords } from "@/lib/geo-utils"
+import { reverseGeocode } from "@/lib/google-maps"
 
-const DeliveryRadiusPreview = dynamic(
-  () => import("@/components/Map/DeliveryRadiusPreview").then((m) => m.DeliveryRadiusPreview),
+const DeliveryPolygonPicker = dynamic(
+  () => import("@/components/Map/DeliveryPolygonPicker").then((m) => m.DeliveryPolygonPicker),
   { ssr: false }
 )
 
@@ -47,23 +49,24 @@ interface BranchFormData {
   name: string
   code: string
   phone: string
-  email: string
+  managerName: string
+  managerEmail: string
   address: string
   formattedAddress: string
   placeId: string
   cityId: string
   areaId: string
   pincode: string
-  deliveryRadiusKm: number
+  deliveryPolygon: LatLngPoint[]
   status: BranchStatus
   isActive: boolean
 }
 
 const EMPTY_FORM: BranchFormData = {
-  name: "", code: "", phone: "", email: "",
+  name: "", code: "", phone: "", managerName: "", managerEmail: "",
   address: "", formattedAddress: "", placeId: "",
   cityId: "", areaId: "", pincode: "",
-  deliveryRadiusKm: 5,
+  deliveryPolygon: [],
   status: "OPEN", isActive: true,
 }
 
@@ -74,7 +77,7 @@ export default function BranchesPage() {
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState("")
-  const [statusFilter, setStatusFilter] = useState("")
+  const [statusFilter, setStatusFilter] = useState("all")
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -93,8 +96,8 @@ export default function BranchesPage() {
     setLoading(true)
     setError(null)
     try {
-      const params: any = { search, page, limit: ITEMS_PER_PAGE }
-      if (statusFilter) params.status = statusFilter
+      const params: Record<string, unknown> = { search, page, limit: ITEMS_PER_PAGE }
+      if (statusFilter && statusFilter !== "all") params.status = statusFilter
       const response = await branchesApi.list(params)
       setBranches(response.data.data.items)
       setTotal(response.data.data.total)
@@ -144,28 +147,36 @@ export default function BranchesPage() {
 
   const openEditDialog = (branch: Branch) => {
     setEditingBranch(branch)
+    const manager = branch.branchManager || branch.admins?.[0]
     setForm({
       name: branch.name,
       code: branch.code,
       phone: branch.phone || "",
-      email: branch.email || "",
+      managerName: manager?.name || "",
+      managerEmail: manager?.email || "",
       address: branch.address || "",
       formattedAddress: branch.formattedAddress || "",
       placeId: branch.placeId || "",
       cityId: branch.cityId,
       areaId: branch.areaId,
       pincode: branch.pincode || "",
-      deliveryRadiusKm: branch.deliveryRadiusKm || 5,
+      deliveryPolygon: parseDeliveryPolygon(branch.deliveryPolygon),
       status: branch.status,
       isActive: branch.isActive,
     })
-    setMapCoords({ lat: branch.latitude, lng: branch.longitude })
+    setMapCoords(toMapCoords(branch.latitude, branch.longitude))
     if (branch.cityId) fetchAreas(branch.cityId)
     setDialogOpen(true)
   }
 
   const handlePlaceSelected = (place: PlaceResult) => {
-    setMapCoords({ lat: place.latitude, lng: place.longitude })
+    setMapCoords(toMapCoords(place.latitude, place.longitude))
+
+    setForm((prev) => ({
+      ...prev,
+      formattedAddress: place.formattedAddress || prev.formattedAddress,
+      placeId: place.placeId || prev.placeId,
+    }))
 
     if (place.city) {
       const matchedCity = cities.find(
@@ -192,108 +203,129 @@ export default function BranchesPage() {
     }
   }
 
-  const handleUseCurrentLocation = () => {
+  const handleUseCurrentLocation = async () => {
     if (!navigator.geolocation) {
       toast.error("Geolocation is not supported by your browser")
       return
     }
+
     setIsLocating(true)
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const { latitude, longitude } = position.coords
-        setMapCoords({ lat: latitude, lng: longitude })
+    try {
+      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 10000,
+        })
+      })
 
-        try {
-          if ((window as any).google?.maps?.Geocoder) {
-            const geocoder = new (window as any).google.maps.Geocoder()
-            geocoder.geocode(
-              { location: { lat: latitude, lng: longitude } },
-              (results: any, status: any) => {
-                if (status === "OK" && results?.length) {
-                  const place = results[0]
-                  let city = "", area = ""
-                  for (const comp of place.address_components) {
-                    const types = comp.types
-                    if (types.includes("locality")) city = comp.long_name
-                    else if (types.includes("sublocality") || types.includes("sublocality_level_1")) area = comp.long_name
-                    else if (!city && types.includes("administrative_area_level_2")) city = comp.long_name
-                    else if (!area && types.includes("neighborhood")) area = comp.long_name
-                  }
+      const { latitude, longitude } = position.coords
 
-                  if (city) {
-                    const matchedCity = cities.find(
-                      (c) => c.name.toLowerCase() === city.toLowerCase()
-                    )
-                    if (matchedCity) {
-                      setForm((prev) => ({ ...prev, cityId: matchedCity.id }))
-                      fetchAreas(matchedCity.id)
-                      if (area) {
-                        setTimeout(() => {
-                          setAreas((current) => {
-                            const matchedArea = current.find(
-                              (a) => a.name.toLowerCase() === area.toLowerCase()
-                            )
-                            if (matchedArea) {
-                              setForm((prev) => ({ ...prev, areaId: matchedArea.id }))
-                            }
-                            return current
-                          })
-                        }, 300)
-                      }
-                    }
-                  }
-                }
-                setIsLocating(false)
-              }
-            )
-          } else {
-            setIsLocating(false)
-            toast.success("Location detected from browser GPS")
-          }
-        } catch {
-          setIsLocating(false)
-          toast.success("Location detected from browser GPS")
-        }
-      },
-      (err) => {
-        setIsLocating(false)
-        toast.error("Failed to get current location: " + err.message)
-      },
-      { enableHighAccuracy: true, timeout: 10000 },
-    )
+      try {
+        const place = await reverseGeocode(latitude, longitude)
+        handlePlaceSelected({
+          latitude,
+          longitude,
+          formattedAddress: place.formattedAddress,
+          placeId: place.placeId,
+          city: place.city,
+          area: place.area,
+        })
+        toast.success("Current location applied")
+      } catch {
+        handlePlaceSelected({
+          latitude,
+          longitude,
+          formattedAddress: `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`,
+          placeId: "",
+          city: "",
+          area: "",
+        })
+        toast.warning("Location detected but address lookup failed")
+      }
+    } catch (err: unknown) {
+      const geoErr = err as GeolocationPositionError
+      if (geoErr.code === 1) {
+        toast.error("Location permission denied. Please allow location access in your browser settings.")
+      } else if (geoErr.code === 2) {
+        toast.error("Unable to detect your location. Please ensure GPS is enabled.")
+      } else if (geoErr.code === 3) {
+        toast.error("Location request timed out. Please try again.")
+      } else {
+        toast.error(geoErr.message || "Failed to get current location")
+      }
+    } finally {
+      setIsLocating(false)
+    }
   }
 
   const handleSave = async () => {
+    if (form.deliveryPolygon.length < 3) {
+      toast.error("Draw a delivery polygon with at least 3 points on the map")
+      return
+    }
+
+    const hasManagerEmail = !!form.managerEmail.trim()
+    const hasManagerName = !!form.managerName.trim()
+    if (hasManagerEmail !== hasManagerName) {
+      toast.error("Please provide both Manager Name and Branch Manager Email")
+      return
+    }
+
     setSaving(true)
     try {
       const payload: CreateBranchDTO | UpdateBranchDTO = {
         name: form.name,
         code: form.code,
         phone: form.phone || undefined,
-        email: form.email || undefined,
         address: form.address || undefined,
         formattedAddress: form.formattedAddress || undefined,
         placeId: form.placeId || undefined,
         pincode: form.pincode || undefined,
         cityId: form.cityId,
         areaId: form.areaId,
-        deliveryRadiusKm: form.deliveryRadiusKm,
+        deliveryPolygon: form.deliveryPolygon,
         status: form.status,
         isActive: form.isActive,
       }
 
       if (editingBranch) {
-        await branchesApi.update(editingBranch.id, payload)
-        toast.success("Branch updated successfully")
+        const updatePayload: UpdateBranchDTO = {
+          ...payload,
+          managerName: form.managerName.trim() || undefined,
+          managerEmail: form.managerEmail.trim() || undefined,
+        }
+        const response = await branchesApi.update(editingBranch.id, updatePayload)
+        const managerAccess = response.data.data.managerAccess
+        if (managerAccess?.action === "invited") {
+          toast.success("Branch updated. New manager invitation sent by email.")
+        } else if (managerAccess?.action === "assigned") {
+          toast.success("Branch updated. Manager access granted to existing account.")
+        } else if (managerAccess?.action === "updated") {
+          toast.success("Branch updated. Manager details saved.")
+        } else {
+          toast.success("Branch updated successfully")
+        }
       } else {
-        await branchesApi.create(payload as CreateBranchDTO)
-        toast.success("Branch created successfully")
+        const createPayload: CreateBranchDTO = {
+          ...payload,
+          managerName: form.managerName.trim() || undefined,
+          managerEmail: form.managerEmail.trim() || undefined,
+        }
+        const response = await branchesApi.create(createPayload)
+        const managerAccess = response.data.data.managerAccess
+        if (managerAccess?.action === "invited") {
+          toast.success("Branch created. Manager invitation sent by email.")
+        } else if (managerAccess?.action === "assigned") {
+          toast.success("Branch created. Manager access granted to existing account.")
+        } else {
+          toast.success("Branch created successfully")
+        }
       }
       setDialogOpen(false)
       resetForm()
       fetchBranches()
-    } catch (err: any) {
-      const message = err.response?.data?.message || "Failed to save branch"
+    } catch (err: unknown) {
+      const message = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || "Failed to save branch"
       toast.error(message)
     } finally {
       setSaving(false)
@@ -309,19 +341,23 @@ export default function BranchesPage() {
       setDeleteDialogOpen(false)
       setDeletingBranch(null)
       fetchBranches()
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || "Failed to archive branch")
+    } catch (err: unknown) {
+      const message = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || "Failed to archive branch"
+      toast.error(message)
     } finally {
       setSaving(false)
     }
   }
 
   const getCityName = (cityId: string) => cities.find(c => c.id === cityId)?.name || cityId
-  const getAreaName = (areaId: string) => areas.find(a => a.id === areaId)?.name || areaId
+  const getAreaName = (areaId: string, branch: Branch) => branch.area?.name || areas.find(a => a.id === areaId)?.name || areaId
   const getManagerName = (branch: Branch) =>
-    branch.admins && branch.admins.length > 0 ? branch.admins[0].name || branch.admins[0].email : "—"
+    branch.branchManager?.name ||
+    branch.branchManager?.email ||
+    (branch.admins && branch.admins.length > 0 ? branch.admins[0].name || branch.admins[0].email : "—")
 
-  const showMap = mapCoords !== null
+  const mapCenter = mapCoords ?? DEFAULT_MAP_CENTER
+  const hasBranchLocation = mapCoords !== null && hasValidMapCoords(mapCoords.lat, mapCoords.lng)
 
   return (
     <div className="space-y-6 p-6">
@@ -356,7 +392,7 @@ export default function BranchesPage() {
                 <SelectValue placeholder="All Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Status</SelectItem>
+                <SelectItem value="all">All Status</SelectItem>
                 {Object.entries(STATUS_CONFIG).map(([key, config]) => (
                   <SelectItem key={key} value={key}>{config.label}</SelectItem>
                 ))}
@@ -379,7 +415,7 @@ export default function BranchesPage() {
             <div className="flex flex-col items-center justify-center py-12 text-gray-500">
               <Store className="h-8 w-8 mb-2" />
               <p>No branches found</p>
-              {(search || statusFilter) && <p className="text-sm">Try adjusting your filters</p>}
+              {(search || (statusFilter && statusFilter !== "all")) && <p className="text-sm">Try adjusting your filters</p>}
             </div>
           ) : (
             <>
@@ -405,7 +441,7 @@ export default function BranchesPage() {
                           </div>
                         </td>
                         <td className="py-3 pr-4 text-gray-600">{getCityName(branch.cityId)}</td>
-                        <td className="py-3 pr-4 text-gray-600">{branch.area?.name || getAreaName(branch.areaId)}</td>
+                        <td className="py-3 pr-4 text-gray-600">{getAreaName(branch.areaId, branch)}</td>
                         <td className="py-3 pr-4 text-gray-600">{getManagerName(branch)}</td>
                         <td className="py-3 pr-4">
                           <Badge variant={STATUS_CONFIG[branch.status].variant}>
@@ -456,7 +492,6 @@ export default function BranchesPage() {
         </CardContent>
       </Card>
 
-      {/* Create/Edit Branch Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -464,7 +499,6 @@ export default function BranchesPage() {
           </DialogHeader>
 
           <div className="space-y-6">
-            {/* Section 1: Kitchen Information */}
             <div className="bg-white rounded-lg border border-gray-200 p-5">
               <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
                 <Store className="h-4 w-4 text-orange-500" />
@@ -500,17 +534,30 @@ export default function BranchesPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Manager Name</label>
                   <Input
-                    value={form.email}
-                    onChange={(e) => setForm({ ...form, email: e.target.value })}
-                    placeholder="kitchen@rotidukaan.com"
+                    value={form.managerName}
+                    onChange={(e) => setForm({ ...form, managerName: e.target.value })}
+                    placeholder="e.g., Rahul Sharma"
                   />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Branch Manager Email</label>
+                  <Input
+                    type="email"
+                    value={form.managerEmail}
+                    onChange={(e) => setForm({ ...form, managerEmail: e.target.value })}
+                    placeholder="manager@rotidukaan.com"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">
+                    {editingBranch
+                      ? "Changing the email will reassign manager access or send a new invitation"
+                      : "An invitation email will be sent to set up branch manager access"}
+                  </p>
                 </div>
               </div>
             </div>
 
-            {/* Section 2: Branch Location */}
             <div className="bg-white rounded-lg border border-gray-200 p-5">
               <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
                 <MapPin className="h-4 w-4 text-orange-500" />
@@ -598,59 +645,36 @@ export default function BranchesPage() {
                     </Select>
                   </div>
                 </div>
-
               </div>
             </div>
 
-            {/* Section 3: Service Area */}
             <div className="bg-white rounded-lg border border-gray-200 p-5">
-              <h3 className="text-base font-semibold text-gray-900 mb-4">Service Area</h3>
-              <div className="max-w-xs">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Delivery Radius
-                </label>
-                <div className="relative">
-                  <Input
-                    type="number"
-                    min={1}
-                    max={25}
-                    step={1}
-                    value={form.deliveryRadiusKm}
-                    onChange={(e) => setForm({ ...form, deliveryRadiusKm: Math.min(25, Math.max(1, parseInt(e.target.value) || 1)) })}
-                    className="pr-12"
-                  />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-400 pointer-events-none">
-                    KM
-                  </span>
-                </div>
-                <p className="text-xs text-gray-400 mt-1">
-                  Customers inside this radius will be able to place orders from this kitchen.
+              <h3 className="text-base font-semibold text-gray-900 mb-2">Service Area</h3>
+              <p className="text-sm text-gray-500 mb-4">
+                Draw the delivery zone on the map below. Customers inside this polygon can order from this kitchen.
+              </p>
+              {editingBranch?.deliveryRadiusKm && form.deliveryPolygon.length === 0 && (
+                <p className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                  This branch currently uses a legacy {editingBranch.deliveryRadiusKm} km radius. Draw a polygon to replace it.
                 </p>
-              </div>
-            </div>
-
-            {/* Section 4: Coverage Preview */}
-            <div className="bg-white rounded-lg border border-gray-200 p-5">
-              <h3 className="text-base font-semibold text-gray-900 mb-4">Coverage Preview</h3>
-              {showMap && mapCoords ? (
-                <DeliveryRadiusPreview
-                  latitude={mapCoords.lat}
-                  longitude={mapCoords.lng}
-                  radius={form.deliveryRadiusKm}
-                  name={form.name || 'Kitchen'}
-                  className=""
-                />
-              ) : (
-                <div className="flex items-center justify-center h-[200px] bg-gray-50 rounded-lg border border-dashed border-gray-300">
-                  <div className="text-center text-gray-400">
-                    <MapPin className="h-8 w-8 mx-auto mb-2" />
-                    <p className="text-sm">Select an address to see the map preview</p>
-                  </div>
-                </div>
               )}
             </div>
 
-            {/* Section 5: Kitchen Status */}
+            <div className="bg-white rounded-lg border border-gray-200 p-5">
+              <h3 className="text-base font-semibold text-gray-900 mb-4">Coverage Map</h3>
+              {!hasBranchLocation && (
+                <p className="mb-3 text-xs text-gray-500">
+                  Search an address or use current location to pin the kitchen. Map starts at Hyderabad until a location is selected.
+                </p>
+              )}
+              <DeliveryPolygonPicker
+                latitude={mapCenter.lat}
+                longitude={mapCenter.lng}
+                value={form.deliveryPolygon}
+                onChange={(deliveryPolygon) => setForm((prev) => ({ ...prev, deliveryPolygon }))}
+              />
+            </div>
+
             <div className="bg-white rounded-lg border border-gray-200 p-5">
               <h3 className="text-base font-semibold text-gray-900 mb-4">Kitchen Status</h3>
               <div className="flex items-center gap-6">
@@ -689,7 +713,7 @@ export default function BranchesPage() {
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
             <Button
               onClick={handleSave}
-              disabled={saving || !form.name || !form.code || !form.cityId || !form.areaId}
+              disabled={saving || !form.name || !form.code || !form.cityId || !form.areaId || form.deliveryPolygon.length < 3}
             >
               {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               {editingBranch ? "Update" : "Create"}

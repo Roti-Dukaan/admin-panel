@@ -3,6 +3,7 @@ import React from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { subscriptionsApi } from "../services/subscriptions.api";
 import { connectRealtime, disconnectRealtime, onRealtime } from "@/lib/realtime/socket";
+import { useOpsBranchStore } from "./useOpsBranch";
 import type {
   SubscriptionEntity,
   SubscriptionFilters,
@@ -201,60 +202,67 @@ export function useRetryFulfillmentJob() {
 
 // ── Subscription Operations ──
 export function useOpsDashboard() {
+  const branchId = useOpsBranchStore((s) => s.selectedBranchId);
   return useQuery({
-    queryKey: ["admin-ops-dashboard"],
-    queryFn: () => subscriptionsApi.getOpsDashboard(),
+    queryKey: ["admin-ops-dashboard", branchId],
+    queryFn: () => subscriptionsApi.getOpsDashboard(branchId ?? undefined),
     staleTime: 20_000,
     refetchInterval: 30_000,
   });
 }
 
 export function useOpsKitchenForecast(date?: string) {
+  const branchId = useOpsBranchStore((s) => s.selectedBranchId);
   return useQuery({
-    queryKey: ["admin-ops-kitchen", date],
-    queryFn: () => subscriptionsApi.getOpsKitchenForecast(date),
+    queryKey: ["admin-ops-kitchen", date, branchId],
+    queryFn: () => subscriptionsApi.getOpsKitchenForecast(date, branchId ?? undefined),
     staleTime: 20_000,
     refetchInterval: 30_000,
   });
 }
 
 export function useOpsKitchenRange(from: string, to: string) {
+  const branchId = useOpsBranchStore((s) => s.selectedBranchId);
   return useQuery({
-    queryKey: ["admin-ops-kitchen-range", from, to],
-    queryFn: () => subscriptionsApi.getOpsKitchenForecastRange(from, to),
+    queryKey: ["admin-ops-kitchen-range", from, to, branchId],
+    queryFn: () => subscriptionsApi.getOpsKitchenForecastRange(from, to, branchId ?? undefined),
     staleTime: 60_000,
   });
 }
 
 export function useOpsDeliveryForecast(date?: string) {
+  const branchId = useOpsBranchStore((s) => s.selectedBranchId);
   return useQuery({
-    queryKey: ["admin-ops-delivery", date],
-    queryFn: () => subscriptionsApi.getOpsDeliveryForecast(date),
+    queryKey: ["admin-ops-delivery", date, branchId],
+    queryFn: () => subscriptionsApi.getOpsDeliveryForecast(date, branchId ?? undefined),
     staleTime: 20_000,
     refetchInterval: 30_000,
   });
 }
 
 export function useOpsCalendar(year: number, month: number) {
+  const branchId = useOpsBranchStore((s) => s.selectedBranchId);
   return useQuery({
-    queryKey: ["admin-ops-calendar", year, month],
-    queryFn: () => subscriptionsApi.getOpsCalendar(year, month),
+    queryKey: ["admin-ops-calendar", year, month, branchId],
+    queryFn: () => subscriptionsApi.getOpsCalendar(year, month, branchId ?? undefined),
     staleTime: 60_000,
   });
 }
 
 export function useOpsAnalytics(days = 30) {
+  const branchId = useOpsBranchStore((s) => s.selectedBranchId);
   return useQuery({
-    queryKey: ["admin-ops-analytics", days],
-    queryFn: () => subscriptionsApi.getOpsAnalytics(days),
+    queryKey: ["admin-ops-analytics", days, branchId],
+    queryFn: () => subscriptionsApi.getOpsAnalytics(days, branchId ?? undefined),
     staleTime: 60_000,
   });
 }
 
 export function useOpsAlerts(resolved?: boolean) {
+  const branchId = useOpsBranchStore((s) => s.selectedBranchId);
   return useQuery({
-    queryKey: ["admin-ops-alerts", resolved],
-    queryFn: () => subscriptionsApi.getOpsAlerts(resolved),
+    queryKey: ["admin-ops-alerts", resolved, branchId],
+    queryFn: () => subscriptionsApi.getOpsAlerts(resolved, branchId ?? undefined),
     staleTime: 15_000,
     refetchInterval: 30_000,
   });
@@ -262,8 +270,9 @@ export function useOpsAlerts(resolved?: boolean) {
 
 export function useDetectOpsAlerts() {
   const queryClient = useQueryClient();
+  const branchId = useOpsBranchStore((s) => s.selectedBranchId);
   return useMutation({
-    mutationFn: () => subscriptionsApi.detectOpsAlerts(),
+    mutationFn: () => subscriptionsApi.detectOpsAlerts(branchId ?? undefined),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-ops-alerts"] }),
   });
 }

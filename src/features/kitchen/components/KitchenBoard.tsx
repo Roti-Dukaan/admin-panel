@@ -5,7 +5,6 @@ import { AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useKitchenOrders, useKitchenDetailMap, useKitchenStageMutation, useKitchenRealtime, applyKitchenFilters } from "../hooks/useKitchen";
 import { usePrepClock, elapsedSeconds } from "../hooks/usePrepClock";
-import { KitchenHeader } from "./KitchenHeader";
 import { KitchenStats, type KitchenStatsData } from "./KitchenStats";
 import { ProductionSummary, type ProductionItem } from "./ProductionSummary";
 import { SlotSelector } from "./SlotSelector";
@@ -15,6 +14,7 @@ import { KitchenStatusSelector } from "@/features/kitchen-operations/KitchenStat
 import { KitchenKanban } from "./KitchenKanban";
 import { KitchenAlerts, type KitchenAlert } from "./KitchenAlerts";
 import { KitchenOrderDrawer } from "./KitchenOrderDrawer";
+import { SubscriptionLoadCard } from "./SubscriptionLoadCard";
 import { STAGES } from "../types/kitchen";
 import type { KitchenOrderView, KitchenStage, DeliveryKind, PaymentFilter, PrepTimeFilter } from "../types/kitchen";
 
@@ -44,7 +44,10 @@ export function KitchenBoard() {
   const [slot, setSlot] = useState<string>("all");
   const [selected, setSelected] = useState<KitchenOrderView | null>(null);
 
-  const filters = { search, deliveryKind, payment, prepTime, slot };
+  const filters = useMemo(
+    () => ({ search, deliveryKind, payment, prepTime, slot }),
+    [search, deliveryKind, payment, prepTime, slot],
+  );
   const query = useKitchenOrders(filters);
   const orderIds = useMemo(() => (query.data?.items ?? []).map((i) => i.orderId), [query.data]);
   const detailMap = useKitchenDetailMap(orderIds);
@@ -169,9 +172,8 @@ const isLoading = query.isLoading;
 
   return (
     <div className="flex min-h-screen flex-col gap-5 bg-gray-50/50 p-6">
-      <KitchenHeader connected={realtime.connected} />
-
       <KitchenStats stats={stats} />
+      <SubscriptionLoadCard />
 
 <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <SlotSelector slots={slotOptions} value={slot} onChange={setSlot} />

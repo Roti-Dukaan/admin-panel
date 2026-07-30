@@ -12,7 +12,9 @@ const STATUS_CONFIG: Record<DeliveryStatus, { label: string; bgClass: string; te
   AWAITING_PICKUP: { label: "Awaiting Pickup", bgClass: "bg-orange-100", textClass: "text-orange-800", dotClass: "bg-orange-500" },
   PICKED_UP: { label: "Picked Up", bgClass: "bg-purple-100", textClass: "text-purple-800", dotClass: "bg-purple-500" },
   OUT_FOR_DELIVERY: { label: "Out for Delivery", bgClass: "bg-indigo-100", textClass: "text-indigo-800", dotClass: "bg-indigo-500" },
+  NEAR_CUSTOMER: { label: "Near Customer", bgClass: "bg-teal-100", textClass: "text-teal-800", dotClass: "bg-teal-500" },
   DELIVERED: { label: "Delivered", bgClass: "bg-emerald-100", textClass: "text-emerald-800", dotClass: "bg-emerald-500" },
+  RETURNED: { label: "Returned", bgClass: "bg-amber-100", textClass: "text-amber-800", dotClass: "bg-amber-500" },
   FAILED: { label: "Failed", bgClass: "bg-red-100", textClass: "text-red-800", dotClass: "bg-red-500" },
   CANCELLED: { label: "Cancelled", bgClass: "bg-gray-100", textClass: "text-gray-800", dotClass: "bg-gray-500" },
 };
@@ -22,6 +24,7 @@ const PROVIDER_CONFIG: Record<DeliveryProvider, { label: string; bgClass: string
   SELF_DELIVERY: { label: "Self Delivery", bgClass: "bg-green-100", textClass: "text-green-800" },
   SHIPROCKET: { label: "Shiprocket", bgClass: "bg-blue-100", textClass: "text-blue-800" },
   PORTER: { label: "Porter", bgClass: "bg-purple-100", textClass: "text-purple-800" },
+  BORZO: { label: "Borzo", bgClass: "bg-yellow-100", textClass: "text-yellow-800" },
 };
 
 type BadgeSize = "sm" | "md" | "lg";

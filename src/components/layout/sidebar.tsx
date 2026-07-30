@@ -5,8 +5,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { useAdminAuthStore } from "@/features/admin-auth/store/admin-auth-store"
-import { Settings2, FileText } from "lucide-react"
-import { LayoutDashboard, ShoppingBag, Users, UtensilsCrossed, LogOut, ChevronLeft, ChevronRight, ClipboardList, CreditCard, Clock, Shield, BarChart3, Wallet, Settings, Truck, Store } from "lucide-react"
+import { LayoutDashboard, ShoppingBag, Users, UtensilsCrossed, LogOut, ChevronLeft, ChevronRight, ClipboardList, CreditCard, BarChart3, Wallet, Settings, Truck, Store, FolderOpen, Clock, UserPlus, Shield } from "lucide-react"
 
 interface NavItem {
   label: string
@@ -23,13 +22,17 @@ const navItems: NavItem[] = [
   { label: "Kitchen", href: "/kitchen", icon: UtensilsCrossed },
   { label: "Deliveries", href: "/deliveries", icon: Truck },
   { label: "Menu Items", href: "/menu", icon: ClipboardList, roles: ['OWNER', 'ADMIN'] },
+  { label: "Subscription Menu", href: "/subscription-menu", icon: UtensilsCrossed, roles: ['OWNER', 'ADMIN'] },
   { label: "Customers", href: "/customers", icon: Users, roles: ['OWNER', 'ADMIN'] },
   { label: "Subscription Plans", href: "/subscription-plans", icon: CreditCard, roles: ['OWNER', 'ADMIN'] },
   { label: "Delivery Slots", href: "/delivery-slots", icon: Clock, roles: ['OWNER', 'ADMIN'] },
   { label: "Reports & Analytics", href: "/reports", icon: BarChart3, roles: ['OWNER', 'ADMIN'] },
   { label: "Payments", href: "/admin/payments", icon: Wallet, roles: ['OWNER', 'ADMIN'] },
-  { label: "Roles & Permissions", href: "/admin/roles", icon: Shield, roles: ['OWNER', 'ADMIN'] },
+  { label: "Team", href: "/admin/team", icon: UserPlus, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
+  { label: "Roles & Permissions", href: "/admin/roles", icon: Shield, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
   { label: "Settings", href: "/settings", icon: Settings, roles: ['OWNER', 'ADMIN'] },
+  { label: "CMS", href: "/cms", icon: FolderOpen, roles: ['SUPER_ADMIN', 'OWNER'] },
+  { label: "Homepage Banners", href: "/cms/banners", icon: ClipboardList, roles: ['SUPER_ADMIN', 'OWNER'] },
 ]
 
 interface SidebarProps {
@@ -46,7 +49,7 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
 
   const branchPaths = React.useMemo(() => [
     '/branch/dashboard', '/branch/orders', '/branch/kitchen', '/branch/production',
-    '/branch/menu', '/branch/inventory', '/branch/delivery', '/branch/customers', '/branch/reports', '/branch/profile'
+    '/branch/menu', '/branch/inventory', '/branch/delivery', '/branch/customers', '/branch/team', '/branch/reports', '/branch/profile'
   ], [])
 
   const visibleNavItems = React.useMemo(() => {

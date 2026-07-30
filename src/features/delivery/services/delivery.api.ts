@@ -4,6 +4,7 @@ import type {
   DeliveryListEntity,
   DeliveryFilters,
   DeliveryStatistics,
+  DeliveryDashboard,
   DeliveryStatus,
 } from "../types/delivery";
 
@@ -12,11 +13,13 @@ export const deliveryApi = {
     const params = new URLSearchParams();
     if (filters.status && filters.status !== "all") params.append("status", filters.status);
     if (filters.provider && filters.provider !== "all") params.append("provider", filters.provider);
+    if (filters.deliveryType && filters.deliveryType !== "all") params.append("deliveryType", filters.deliveryType);
     if (filters.orderId) params.append("orderId", filters.orderId);
     if (filters.customerId) params.append("customerId", filters.customerId);
     if (filters.dateFrom) params.append("dateFrom", filters.dateFrom);
     if (filters.dateTo) params.append("dateTo", filters.dateTo);
     if (filters.search) params.append("search", filters.search);
+    if (filters.branchId) params.append("branchId", filters.branchId);
     params.append("page", (filters.page || 1).toString());
     params.append("limit", (filters.limit || 10).toString());
 
@@ -66,8 +69,21 @@ export const deliveryApi = {
     return data.data;
   },
 
-  getStats: async (): Promise<DeliveryStatistics> => {
-    const { data } = await apiClient.get<{ success: boolean; data: DeliveryStatistics }>("/admin/deliveries/stats");
+  getStats: async (branchId?: string): Promise<DeliveryStatistics> => {
+    const params = branchId ? { branchId } : undefined;
+    const { data } = await apiClient.get<{ success: boolean; data: DeliveryStatistics }>(
+      "/admin/deliveries/stats",
+      { params },
+    );
+    return data.data;
+  },
+
+  getDashboard: async (branchId?: string): Promise<DeliveryDashboard> => {
+    const params = branchId ? { branchId } : undefined;
+    const { data } = await apiClient.get<{ success: boolean; data: DeliveryDashboard }>(
+      "/admin/deliveries/dashboard",
+      { params },
+    );
     return data.data;
   },
 };

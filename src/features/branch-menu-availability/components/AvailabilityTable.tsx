@@ -7,10 +7,11 @@ interface AvailabilityTableProps {
   items: BranchMenuAvailabilityItem[];
   loading: boolean;
   showBranch?: boolean;
+  excludeActionStatuses?: AvailabilityStatus[];
   onStatusChange?: (item: BranchMenuAvailabilityItem, newStatus: AvailabilityStatus, reason?: string) => void;
 }
 
-export function AvailabilityTable({ items, loading, showBranch, onStatusChange }: AvailabilityTableProps) {
+export function AvailabilityTable({ items, loading, showBranch, excludeActionStatuses, onStatusChange }: AvailabilityTableProps) {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
@@ -82,6 +83,7 @@ export function AvailabilityTable({ items, loading, showBranch, onStatusChange }
                 <td className="px-4 py-3">
                   <StatusSelect
                     value={item.status as AvailabilityStatus}
+                    excludeStatuses={excludeActionStatuses}
                     onChange={(newStatus) => onStatusChange(item, newStatus)}
                   />
                 </td>

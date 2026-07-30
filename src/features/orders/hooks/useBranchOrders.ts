@@ -2,9 +2,11 @@
 
 import { create } from "zustand"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { toast } from "sonner"
 import type { Order, OrderStatistics, OrderFilters, OrderDatePreset, OrderStatus, PaymentStatus } from "../types/order"
 import { ordersApi } from "@/lib/api/orders.api"
 import { useWorkspace } from "@/contexts/WorkspaceContext"
+import { normalizeOrder } from "../utils/normalize-order"
 
 interface BranchOrderStore {
   orders: Order[]
@@ -44,9 +46,9 @@ const defaultFilters: OrderFilters = {
   paymentStatus: "all",
   orderType: "all",
   search: "",
-  branchId: "",
-  cityId: "",
-  areaId: "",
+  branchId: "all",
+  cityId: "all",
+  areaId: "all",
 }
 
 export function useBranchOrdersStore() {
@@ -84,10 +86,15 @@ export function useBranchOrdersStore() {
       get().fetchOrders()
     },
 
-    setPage: (page) => set((state) => ({ pagination: { ...state.pagination, page } })),
+    setPage: (page) => {
+      set((state) => ({ pagination: { ...state.pagination, page } }))
+      get().fetchOrders()
+    },
 
-    setPageSize: (pageSize) =>
-      set((state) => ({ pagination: { ...state.pagination, pageSize, page: 1 } })),
+    setPageSize: (pageSize) => {
+      set((state) => ({ pagination: { ...state.pagination, pageSize, page: 1 } }))
+      get().fetchOrders()
+    },
 
     setSelectedOrder: (order) => set({ selectedOrder: order }),
 
@@ -108,12 +115,15 @@ export function useBranchOrdersStore() {
           dateFilter: filters.dateFilter,
           customStartDate: filters.customStartDate,
           customEndDate: filters.customEndDate,
-          branchId: filters.branchId || branchId || undefined,
-          cityId: filters.cityId || undefined,
-          areaId: filters.areaId || undefined,
+          branchId:
+            (filters.branchId && filters.branchId !== "all" ? filters.branchId : undefined) ||
+            branchId ||
+            undefined,
+          cityId: filters.cityId && filters.cityId !== "all" ? filters.cityId : undefined,
+          areaId: filters.areaId && filters.areaId !== "all" ? filters.areaId : undefined,
         })
         set({
-          orders: data.items as Order[],
+          orders: (data.items as Record<string, unknown>[]).map(normalizeOrder),
           pagination: {
             ...pagination,
             total: data.total,
@@ -121,8 +131,10 @@ export function useBranchOrdersStore() {
           },
           loading: false,
         })
-      } catch (error) {
+      } catch (error: any) {
+        const message = error?.response?.data?.message || "Failed to fetch orders"
         console.error("Failed to fetch orders:", error)
+        toast.error(message)
         set({ loading: false })
       }
     },
@@ -132,8 +144,10 @@ export function useBranchOrdersStore() {
       try {
         const data = await ordersApi.getStats()
         set({ statistics: data as OrderStatistics, statisticsLoading: false })
-      } catch (error) {
+      } catch (error: any) {
+        const message = error?.response?.data?.message || "Failed to fetch statistics"
         console.error("Failed to fetch statistics:", error)
+        toast.error(message)
         set({ statisticsLoading: false })
       }
     },

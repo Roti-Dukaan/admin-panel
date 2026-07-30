@@ -7,12 +7,15 @@ import type { Delivery, DeliveryFilters, DeliveryStatus, DeliveryProvider } from
 import { DeliveryStatusBadge, DeliveryProviderBadge, DeliveryTypeBadge } from "./DeliveryStatusBadge";
 import { DeliveryDetailModal } from "./DeliveryDetailModal";
 import { deliveryApi } from "../services/delivery.api";
+import { branchDeliveryApi } from "../services/branch-delivery.api";
 import { useDeliveriesRealtime } from "../hooks/useDeliveriesRealtime";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { toast } from "sonner";
+import { DeliveryStats } from "./DeliveryStats";
+import { DeliveryBranchFilter } from "./DeliveryBranchFilter";
 
 type AdminAddress = {
   addressLine1: string;
@@ -43,7 +46,22 @@ function customerPhone(delivery: Delivery): string {
   return delivery.order?.customer?.phone ?? "—";
 }
 
-export function DeliveryListPage() {
+export function DeliveryListPage({
+  apiMode = "admin",
+  branchId: controlledBranchId,
+  onBranchChange,
+  showBranchFilter = false,
+}: {
+  apiMode?: "admin" | "branch";
+  branchId?: string;
+  onBranchChange?: (branchId: string | undefined) => void;
+  showBranchFilter?: boolean;
+}) {
+  const api = apiMode === "branch" ? branchDeliveryApi : deliveryApi;
+  const readOnly = apiMode === "branch";
+  const [internalBranchId, setInternalBranchId] = useState<string | undefined>();
+  const branchId = controlledBranchId ?? internalBranchId;
+  const handleBranchChange = onBranchChange ?? setInternalBranchId;
   const [deliveries, setDeliveries] = useState<Delivery[]>([]);
   const [selectedDelivery, setSelectedDelivery] = useState<Delivery | null>(null);
   const [loading, setLoading] = useState(false);
@@ -54,6 +72,7 @@ export function DeliveryListPage() {
     search: "",
     page: 1,
     limit: 10,
+    branchId,
   });
   const [pagination, setPagination] = useState({
     total: 0,
@@ -63,10 +82,14 @@ export function DeliveryListPage() {
   });
   const [showModal, setShowModal] = useState(false);
 
+  useEffect(() => {
+    setFilters((prev) => (prev.branchId === branchId ? prev : { ...prev, branchId, page: 1 }));
+  }, [branchId]);
+
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await deliveryApi.list(filters);
+      const data = await api.list(filters);
       setDeliveries(data.items);
       setPagination({
         total: data.total,
@@ -88,7 +111,7 @@ export function DeliveryListPage() {
           setSelectedDelivery(match);
           setShowModal(true);
         } else {
-          const detail = await deliveryApi.getById(deepLinkId);
+          const detail = await api.getById(deepLinkId);
           setSelectedDelivery(detail);
           setShowModal(true);
         }
@@ -99,7 +122,7 @@ export function DeliveryListPage() {
     } finally {
       setLoading(false);
     }
-  }, [filters]);
+  }, [filters, api]);
 
   useEffect(() => {
     fetchData();
@@ -189,6 +212,8 @@ export function DeliveryListPage() {
 
   return (
     <div className="p-6 space-y-6">
+        <DeliveryStats apiMode={apiMode} branchId={branchId} />
+
         <div className="bg-white rounded-xl border border-gray-200 p-4">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1 max-w-xs">
@@ -201,6 +226,12 @@ export function DeliveryListPage() {
               />
             </div>
             <div className="flex flex-wrap gap-3">
+              {showBranchFilter && (
+                <DeliveryBranchFilter
+                  value={branchId}
+                  onChange={handleBranchChange}
+                />
+              )}
               <Select value={filters.status || "all"} onValueChange={(v) => handleFilterChange("status", v)}>
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="All Statuses" />
@@ -214,7 +245,9 @@ export function DeliveryListPage() {
                   <SelectItem value="RIDER_ARRIVING">Rider Arriving</SelectItem>
                   <SelectItem value="PICKED_UP">Picked Up</SelectItem>
                   <SelectItem value="OUT_FOR_DELIVERY">Out for Delivery</SelectItem>
+                  <SelectItem value="NEAR_CUSTOMER">Near Customer</SelectItem>
                   <SelectItem value="DELIVERED">Delivered</SelectItem>
+                  <SelectItem value="RETURNED">Returned</SelectItem>
                   <SelectItem value="FAILED">Failed</SelectItem>
                   <SelectItem value="CANCELLED">Cancelled</SelectItem>
                 </SelectContent>
@@ -229,6 +262,7 @@ export function DeliveryListPage() {
                   <SelectItem value="SELF_DELIVERY">Self Delivery</SelectItem>
                   <SelectItem value="SHIPROCKET">Shiprocket</SelectItem>
                   <SelectItem value="PORTER">Porter</SelectItem>
+                  <SelectItem value="BORZO">Borzo</SelectItem>
                 </SelectContent>
               </Select>
               <Select value={filters.deliveryType || "all"} onValueChange={(v) => handleFilterChange("deliveryType", v)}>
@@ -396,10 +430,10 @@ export function DeliveryListPage() {
         delivery={selectedDelivery}
         isOpen={showModal}
         onClose={() => { setShowModal(false); setSelectedDelivery(null); }}
-        onUpdateStatus={handleStatusUpdate}
-        onCancel={handleCancel}
-        onRefresh={handleRefreshDelivery}
-        onRetry={handleRetryDelivery}
+        onUpdateStatus={readOnly ? undefined : handleStatusUpdate}
+        onCancel={readOnly ? undefined : handleCancel}
+        onRefresh={readOnly ? undefined : handleRefreshDelivery}
+        onRetry={readOnly ? undefined : handleRetryDelivery}
         isUpdating={!!updatingId}
       />
     </div>

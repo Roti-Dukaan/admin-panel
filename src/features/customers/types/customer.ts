@@ -1,5 +1,11 @@
 export type CustomerStatus = 'active' | 'inactive';
 
+export interface CustomerBranch {
+  id: string;
+  name: string;
+  code: string;
+}
+
 export interface Customer {
   id: string;
   name: string;
@@ -12,9 +18,13 @@ export interface Customer {
   lastLoginAt: string | null;
   createdAt: string;
   updatedAt: string;
+  branchId: string | null;
+  branch: CustomerBranch | null;
 }
 
 export type CustomerDatePreset = "today" | "yesterday" | "7d" | "30d" | "this-month" | "custom" | "all"
+
+export type CustomerViewType = 'all' | 'subscription';
 
 export interface CustomerFilters {
   search: string;
@@ -22,6 +32,8 @@ export interface CustomerFilters {
   datePreset: CustomerDatePreset;
   customStartDate: string;
   customEndDate: string;
+  branchId: string;
+  viewType: CustomerViewType;
 }
 
 export const CUSTOMER_STATUS_CONFIG: Record<CustomerStatus, { label: string; color: string; bgColor: string }> = {

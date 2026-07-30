@@ -1,24 +1,23 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { branchesApi, type Branch, type DeliverySettings, type UpdateDeliverySettingsDTO } from "@/lib/api/master-data/branches.api"
+import {
+  branchesApi,
+  type Branch,
+  type DeliverySettings,
+  type UpdateDeliverySettingsDTO,
+  type LatLngPoint,
+} from "@/lib/api/master-data/branches.api"
 import { useAdminAuthStore } from "@/features/admin-auth/store/admin-auth-store"
 import { Button } from "@/components/ui/button"
-
 import { Label } from "@/components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { Loader2, MapPin, X } from "lucide-react"
 import { toast } from "sonner"
 import dynamic from "next/dynamic"
+import { parseDeliveryPolygon, toMapCoords, DEFAULT_MAP_CENTER } from "@/lib/geo-utils"
 
-const DeliveryRadiusPreview = dynamic(
-  () => import("@/components/Map/DeliveryRadiusPreview").then((m) => m.DeliveryRadiusPreview),
+const DeliveryPolygonPicker = dynamic(
+  () => import("@/components/Map/DeliveryPolygonPicker").then((m) => m.DeliveryPolygonPicker),
   { ssr: false }
 )
 
@@ -40,6 +39,10 @@ export default function DeliverySettingsSidebar({
   const [saving, setSaving] = useState(false)
   const [settings, setSettings] = useState<DeliverySettings | null>(null)
   const [form, setForm] = useState<UpdateDeliverySettingsDTO>({})
+  const [deliveryPolygon, setDeliveryPolygon] = useState<LatLngPoint[]>([])
+  const mapCenter = settings
+    ? toMapCoords(settings.latitude, settings.longitude)
+    : null
 
   useEffect(() => {
     if (!open || !branch) return
@@ -50,8 +53,10 @@ export default function DeliverySettingsSidebar({
         const data = res.data.data
         setSettings(data)
         setForm({
-          deliveryRadiusKm: data.deliveryRadiusKm,
+          allowScheduledOrders: data.allowScheduledOrders,
+          allowSubscriptions: data.allowSubscriptions,
         })
+        setDeliveryPolygon(parseDeliveryPolygon(data.deliveryPolygon))
       })
       .catch(() => toast.error("Failed to load delivery settings"))
       .finally(() => setLoading(false))
@@ -59,9 +64,17 @@ export default function DeliverySettingsSidebar({
 
   const handleSave = async () => {
     if (!branch) return
+    if (deliveryPolygon.length < 3) {
+      toast.error("Draw a delivery polygon with at least 3 points")
+      return
+    }
+
     setSaving(true)
     try {
-      await branchesApi.updateDeliverySettings(branch.id, form)
+      await branchesApi.updateDeliverySettings(branch.id, {
+        ...form,
+        deliveryPolygon,
+      })
       toast.success("Delivery settings updated successfully")
       onOpenChange(false)
     } catch (err: any) {
@@ -72,20 +85,8 @@ export default function DeliverySettingsSidebar({
     }
   }
 
-  const radiusOptions = [
-    { value: "1", label: "1 km" },
-    { value: "2", label: "2 km" },
-    { value: "3", label: "3 km" },
-    { value: "5", label: "5 km" },
-    { value: "8", label: "8 km" },
-    { value: "10", label: "10 km" },
-    { value: "15", label: "15 km" },
-    { value: "20", label: "20 km" },
-  ]
-
   return (
     <>
-      {/* Backdrop */}
       {open && (
         <div
           className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm"
@@ -93,23 +94,21 @@ export default function DeliverySettingsSidebar({
         />
       )}
 
-      {/* Sidebar panel */}
       <div
         className={`fixed right-0 top-0 z-50 h-full border-l border-gray-200 bg-white shadow-xl transition-all duration-300 ease-in-out flex flex-col ${
           open ? "translate-x-0" : "translate-x-full"
         }`}
         style={{ width: "60vw", maxWidth: "900px" }}
       >
-        {/* Header */}
         <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4 shrink-0">
           <div className="flex items-center gap-2">
             <MapPin className="h-5 w-5 text-orange-500" />
             <div>
               <h2 className="text-lg font-semibold text-gray-900">
-                Delivery Settings — {branch?.name ?? '...'}
+                Delivery Settings — {branch?.name ?? "..."}
               </h2>
               <p className="text-sm text-gray-500">
-                {canEdit ? "Configure delivery radius" : "View delivery configuration (read-only)"}
+                {canEdit ? "Configure delivery polygon" : "View delivery configuration (read-only)"}
               </p>
             </div>
           </div>
@@ -118,7 +117,6 @@ export default function DeliverySettingsSidebar({
           </Button>
         </div>
 
-        {/* Content */}
         <div className="flex-1 overflow-y-auto p-6">
           {loading ? (
             <div className="flex items-center justify-center py-12">
@@ -130,37 +128,26 @@ export default function DeliverySettingsSidebar({
             </div>
           ) : (
             <div className="space-y-6">
-              {/* Map Preview */}
-              <DeliveryRadiusPreview
-                latitude={settings.latitude}
-                longitude={settings.longitude}
-                radius={form.deliveryRadiusKm ?? settings.deliveryRadiusKm ?? 5}
-                name={branch?.name ?? ''}
-              />
+              {settings.deliveryRadiusKm && deliveryPolygon.length === 0 && (
+                <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                  This branch currently uses a legacy {settings.deliveryRadiusKm} km radius. Draw a polygon below to replace it.
+                </p>
+              )}
 
-              {/* Delivery Settings Form */}
+              <div>
+                <Label className="text-sm font-medium text-gray-700 mb-2 block">
+                  Delivery Service Area
+                </Label>
+                <DeliveryPolygonPicker
+                  latitude={mapCenter?.lat ?? DEFAULT_MAP_CENTER.lat}
+                  longitude={mapCenter?.lng ?? DEFAULT_MAP_CENTER.lng}
+                  value={deliveryPolygon}
+                  onChange={setDeliveryPolygon}
+                  disabled={!canEdit}
+                />
+              </div>
+
               <div className="space-y-4 border-t border-gray-200 pt-4">
-                <div className="max-w-xs">
-                  <Label className="text-sm font-medium text-gray-700">
-                    Delivery Radius (km)
-                  </Label>
-                  <Select
-                    value={String(form.deliveryRadiusKm ?? settings.deliveryRadiusKm ?? 5)}
-                    onValueChange={(v) => setForm({ ...form, deliveryRadiusKm: parseInt(v) })}
-                    disabled={!canEdit}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {radiusOptions.map((opt) => (
-                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-gray-400 mt-1">Maximum delivery distance from branch</p>
-                </div>
-
                 <div className="flex items-center gap-6 pt-2">
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
@@ -188,13 +175,12 @@ export default function DeliverySettingsSidebar({
           )}
         </div>
 
-        {/* Footer */}
         {canEdit && (
           <div className="border-t border-gray-100 px-6 py-4 flex items-center justify-end gap-3 shrink-0">
             <Button variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button onClick={handleSave} disabled={saving || loading}>
+            <Button onClick={handleSave} disabled={saving || loading || deliveryPolygon.length < 3}>
               {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Save Changes
             </Button>

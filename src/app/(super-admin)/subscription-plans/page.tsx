@@ -8,8 +8,7 @@ import {
   RefreshCw,
   CreditCard,
   CheckCircle,
-  FileEdit,
-  Star,
+  CircleOff,
   CalendarDays,
   CalendarRange,
   Search,
@@ -23,23 +22,25 @@ import { DeleteConfirmation } from "@/features/subscription-plans/components/Del
 const statCards = [
   { key: "total", label: "Total Plans", icon: CreditCard, color: "text-blue-600", bg: "bg-blue-50" },
   { key: "active", label: "Active Plans", icon: CheckCircle, color: "text-emerald-600", bg: "bg-emerald-50" },
-  { key: "draft", label: "Draft Plans", icon: FileEdit, color: "text-amber-600", bg: "bg-amber-50" },
-  { key: "featured", label: "Featured Plans", icon: Star, color: "text-violet-600", bg: "bg-violet-50" },
+  { key: "inactive", label: "Inactive Plans", icon: CircleOff, color: "text-amber-600", bg: "bg-amber-50" },
   { key: "weekly", label: "Weekly Plans", icon: CalendarDays, color: "text-orange-600", bg: "bg-orange-50" },
   { key: "monthly", label: "Monthly Plans", icon: CalendarRange, color: "text-rose-600", bg: "bg-rose-50" },
-];
+] as const;
 
 export default function SubscriptionPlansPage() {
   const plans = useSubscriptionPlanStore((s) => s.plans);
+  const loading = useSubscriptionPlanStore((s) => s.loading);
   const loadPlans = useSubscriptionPlanStore((s) => s.loadPlans);
-  const stats = useMemo(() => ({
-    total: plans.length,
-    active: plans.filter((p) => p.status === "published").length,
-    draft: plans.filter((p) => p.status === "draft").length,
-    featured: plans.filter((p) => p.isFeatured).length,
-    weekly: plans.filter((p) => p.delivery.deliveryDays.length >= 5).length,
-    monthly: plans.filter((p) => p.pricing.monthlyPrice > 0).length,
-  }), [plans]);
+  const stats = useMemo(
+    () => ({
+      total: plans.length,
+      active: plans.filter((p) => p.isActive).length,
+      inactive: plans.filter((p) => !p.isActive).length,
+      weekly: plans.filter((p) => p.type === "WEEKLY").length,
+      monthly: plans.filter((p) => p.type === "MONTHLY").length,
+    }),
+    [plans]
+  );
   const searchQuery = useSubscriptionPlanStore((s) => s.searchQuery);
   const setSearchQuery = useSubscriptionPlanStore((s) => s.setSearchQuery);
   const statusFilter = useSubscriptionPlanStore((s) => s.statusFilter);
@@ -68,7 +69,7 @@ export default function SubscriptionPlansPage() {
               onClick={() => loadPlans()}
               className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
             >
-              <RefreshCw className="h-4 w-4" />
+              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
               Refresh
             </button>
             <button
@@ -83,11 +84,10 @@ export default function SubscriptionPlansPage() {
       />
 
       <div className="p-6 space-y-6">
-        {/* Stats */}
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
           {statCards.map((card, i) => {
             const Icon = card.icon;
-            const value = stats[card.key as keyof typeof stats];
+            const value = stats[card.key];
             return (
               <motion.div
                 key={card.key}
@@ -110,7 +110,6 @@ export default function SubscriptionPlansPage() {
           })}
         </div>
 
-        {/* Search + Filters */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -128,8 +127,8 @@ export default function SubscriptionPlansPage() {
               />
             </div>
             <div className="flex gap-1.5">
-              {(["all", "published", "draft", "archived"] as const).map((status) => {
-                const labels = { all: "All", published: "Active", draft: "Draft", archived: "Archived" };
+              {(["all", "active", "inactive"] as const).map((status) => {
+                const labels = { all: "All", active: "Active", inactive: "Inactive" };
                 return (
                   <button
                     key={status}
@@ -148,7 +147,6 @@ export default function SubscriptionPlansPage() {
           </div>
         </motion.div>
 
-        {/* Table */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -158,10 +156,7 @@ export default function SubscriptionPlansPage() {
         </motion.div>
       </div>
 
-      {/* Plan Editor */}
       <PlanEditor />
-
-      {/* Delete Confirmation */}
       <DeleteConfirmation />
     </div>
   );

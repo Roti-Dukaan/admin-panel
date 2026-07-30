@@ -17,69 +17,52 @@ import {
   Eye,
   Pencil,
   Copy,
-  Archive,
+  Power,
   Trash2,
-  Star,
   ArrowUpDown,
   ChevronLeft,
   ChevronRight,
-  Users,
+  CreditCard,
 } from "lucide-react";
-import { SubscriptionPlan, STATUS_CONFIG } from "@/features/subscription-plans/types/subscription-plan";
+import {
+  ACTIVE_STATUS_CONFIG,
+  formatPlanDate,
+  formatPlanPrice,
+  PLAN_TYPE_LABELS,
+  SubscriptionPlan,
+} from "@/features/subscription-plans/types/subscription-plan";
 import { useSubscriptionPlanStore } from "@/features/subscription-plans/hooks/useSubscriptionPlans";
-
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount);
-}
-
-function formatDate(ts: number): string {
-  return new Date(ts).toLocaleDateString("en-IN", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-}
-
-function getDeliveryDayLabel(days: string[]): string {
-  if (days.length === 7) return "Everyday";
-  if (days.length === 5 && !days.includes("saturday") && !days.includes("sunday"))
-    return "Weekdays";
-  if (days.length === 2 && days.includes("saturday") && days.includes("sunday"))
-    return "Weekends";
-  if (days.length <= 2) return days.map((d) => d.charAt(0).toUpperCase() + d.slice(1, 3)).join(", ");
-  return `${days.length} days/week`;
-}
 
 export function PlansTable() {
   const allPlans = useSubscriptionPlanStore((s) => s.plans);
+  const loading = useSubscriptionPlanStore((s) => s.loading);
   const searchQuery = useSubscriptionPlanStore((s) => s.searchQuery);
   const statusFilter = useSubscriptionPlanStore((s) => s.statusFilter);
   const openViewEditor = useSubscriptionPlanStore((s) => s.openViewEditor);
   const openEditEditor = useSubscriptionPlanStore((s) => s.openEditEditor);
   const duplicatePlan = useSubscriptionPlanStore((s) => s.duplicatePlan);
-  const archivePlan = useSubscriptionPlanStore((s) => s.archivePlan);
+  const toggleActive = useSubscriptionPlanStore((s) => s.toggleActive);
   const openDeleteModal = useSubscriptionPlanStore((s) => s.openDeleteModal);
-  const toggleFeatured = useSubscriptionPlanStore((s) => s.toggleFeatured);
 
   const plans = useMemo(() => {
     let filtered = [...allPlans];
+
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       filtered = filtered.filter(
         (p) =>
           p.name.toLowerCase().includes(q) ||
-          p.shortDescription.toLowerCase().includes(q) ||
-          p.planBadge.toLowerCase().includes(q)
+          (p.description ?? "").toLowerCase().includes(q) ||
+          (p.slug ?? "").toLowerCase().includes(q)
       );
     }
-    if (statusFilter !== "all") {
-      filtered = filtered.filter((p) => p.status === statusFilter);
+
+    if (statusFilter === "active") {
+      filtered = filtered.filter((p) => p.isActive);
+    } else if (statusFilter === "inactive") {
+      filtered = filtered.filter((p) => !p.isActive);
     }
+
     return filtered.sort((a, b) => a.displayOrder - b.displayOrder);
   }, [allPlans, searchQuery, statusFilter]);
 
@@ -99,16 +82,9 @@ export function PlansTable() {
                 {plan.name.charAt(0)}
               </div>
               <div>
-                <div className="flex items-center gap-2">
-                  <span className="font-semibold text-gray-900">{plan.name}</span>
-                  {plan.isFeatured && (
-                    <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-                  )}
-                </div>
-                {plan.planBadge && (
-                  <span className="inline-block mt-0.5 rounded-full bg-orange-50 px-2 py-0.5 text-[10px] font-semibold text-orange-600">
-                    {plan.planBadge}
-                  </span>
+                <span className="font-semibold text-gray-900">{plan.name}</span>
+                {plan.description && (
+                  <p className="mt-0.5 line-clamp-1 text-xs text-gray-500">{plan.description}</p>
                 )}
               </div>
             </div>
@@ -116,13 +92,16 @@ export function PlansTable() {
         },
       },
       {
-        accessorKey: "status",
+        accessorKey: "isActive",
         header: "Status",
         cell: ({ row }) => {
-          const status = row.original.status;
-          const cfg = STATUS_CONFIG[status];
+          const cfg = row.original.isActive
+            ? ACTIVE_STATUS_CONFIG.active
+            : ACTIVE_STATUS_CONFIG.inactive;
           return (
-            <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${cfg.bgColor} ${cfg.color}`}>
+            <span
+              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${cfg.bgColor} ${cfg.color}`}
+            >
               <span className={`h-1.5 w-1.5 rounded-full ${cfg.dotColor}`} />
               {cfg.label}
             </span>
@@ -130,137 +109,154 @@ export function PlansTable() {
         },
       },
       {
-        accessorFn: (row) => row.pricing.monthlyPrice,
-        id: "billingCycle",
-        header: "Billing Cycle",
+        accessorKey: "type",
+        header: "Type",
+        cell: ({ row }) => (
+          <span className="inline-flex rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-700">
+            {PLAN_TYPE_LABELS[row.original.type]}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "finalPrice",
+        header: "Final Price",
         cell: ({ row }) => {
-          const p = row.original.pricing;
+          const plan = row.original;
+          const hasDiscount = plan.isDiscountActive && plan.savingsAmount > 0;
           return (
-            <div className="text-sm">
-              <span className="font-medium text-gray-900">{formatCurrency(p.monthlyPrice)}</span>
-              <span className="text-gray-400">/mo</span>
+            <div>
+              {hasDiscount && (
+                <span className="block text-xs text-gray-400 line-through">
+                  {formatPlanPrice(plan.originalPrice ?? plan.price)}
+                </span>
+              )}
+              <span className="text-sm font-semibold text-gray-900">
+                {formatPlanPrice(plan.finalPrice ?? plan.price)}
+              </span>
             </div>
           );
         },
       },
       {
-        accessorFn: (row) => row.meals.dailyMealCount,
-        id: "mealsPerDay",
-        header: "Meals/Day",
+        accessorKey: "skipLimitDisplay",
+        header: "Skip Allowance",
+        cell: ({ row }) => (
+          <span className="text-xs text-gray-600">{row.original.skipLimitDisplay ?? "—"}</span>
+        ),
+      },
+      {
+        accessorKey: "deliveriesPerCycle",
+        header: "Deliveries",
+        cell: ({ row }) => (
+          <span className="text-sm text-gray-600">{row.original.deliveriesPerCycle}/cycle</span>
+        ),
+      },
+      {
+        accessorKey: "validityDays",
+        header: "Validity",
+        cell: ({ row }) => (
+          <span className="text-sm text-gray-600">{row.original.validityDays} days</span>
+        ),
+      },
+      {
+        accessorKey: "razorpayPlanId",
+        header: "Razorpay Plan",
+        cell: ({ row }) => {
+          const id = row.original.razorpayPlanId;
+          if (!id) {
+            return <span className="text-xs text-gray-400">Not synced</span>;
+          }
+          return (
+            <code
+              className="max-w-[140px] truncate rounded bg-gray-100 px-2 py-1 text-[11px] text-gray-700"
+              title={id}
+            >
+              {id}
+            </code>
+          );
+        },
+      },
+      {
+        accessorKey: "displayOrder",
+        header: "Order",
         cell: ({ row }) => (
           <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-gray-100 text-sm font-semibold text-gray-700">
-            {row.original.meals.dailyMealCount}
+            {row.original.displayOrder}
           </span>
-        ),
-      },
-      {
-        accessorFn: (row) => row.delivery.deliveryDays,
-        id: "deliverySchedule",
-        header: "Delivery",
-        cell: ({ row }) => (
-          <span className="text-sm text-gray-600">
-            {getDeliveryDayLabel(row.original.delivery.deliveryDays)}
-          </span>
-        ),
-      },
-      {
-        accessorFn: (row) => row.pricing.weeklyPrice,
-        id: "price",
-        header: ({ column }) => (
-          <button
-            className="inline-flex items-center gap-1 hover:text-gray-900"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          >
-            Price
-            <ArrowUpDown className="h-3.5 w-3.5" />
-          </button>
-        ),
-        sortingFn: "basic",
-        cell: ({ row }) => {
-          const p = row.original.pricing;
-          return (
-            <div className="text-sm">
-              <span className="font-semibold text-gray-900">{formatCurrency(p.weeklyPrice)}</span>
-              <span className="text-gray-400">/wk</span>
-            </div>
-          );
-        },
-      },
-      {
-        accessorKey: "subscribers",
-        header: "Subscribers",
-        cell: ({ row }) => (
-          <div className="flex items-center gap-1.5 text-sm text-gray-600">
-            <Users className="h-3.5 w-3.5 text-gray-400" />
-            {row.original.subscribers}
-          </div>
         ),
       },
       {
         accessorKey: "updatedAt",
         header: "Updated",
         cell: ({ row }) => (
-          <span className="text-sm text-gray-500">{formatDate(row.original.updatedAt)}</span>
+          <span className="text-sm text-gray-500">{formatPlanDate(row.original.updatedAt)}</span>
         ),
       },
       {
         id: "actions",
-        header: "",
+        header: "Actions",
         cell: ({ row }) => {
           const plan = row.original;
           return (
             <div className="relative">
               <button
                 onClick={() => setOpenDropdown(openDropdown === plan.id ? null : plan.id)}
-                className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50 hover:text-gray-900 transition-colors"
               >
                 <MoreHorizontal className="h-4 w-4" />
+                Actions
               </button>
               {openDropdown === plan.id && (
                 <>
-                  <div
-                    className="fixed inset-0 z-40"
-                    onClick={() => setOpenDropdown(null)}
-                  />
+                  <div className="fixed inset-0 z-40" onClick={() => setOpenDropdown(null)} />
                   <motion.div
                     initial={{ opacity: 0, scale: 0.95, y: -4 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
-                    className="absolute right-0 top-full z-50 mt-1 w-48 rounded-xl border border-gray-200 bg-white py-1.5 shadow-lg"
+                    className="absolute right-0 top-full z-50 mt-1 w-52 rounded-xl border border-gray-200 bg-white py-1.5 shadow-lg"
                   >
                     <button
-                      onClick={() => { openViewEditor(plan); setOpenDropdown(null); }}
+                      onClick={() => {
+                        openViewEditor(plan);
+                        setOpenDropdown(null);
+                      }}
                       className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
                     >
                       <Eye className="h-4 w-4 text-gray-400" /> View
                     </button>
                     <button
-                      onClick={() => { openEditEditor(plan); setOpenDropdown(null); }}
+                      onClick={() => {
+                        openEditEditor(plan);
+                        setOpenDropdown(null);
+                      }}
                       className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
                     >
                       <Pencil className="h-4 w-4 text-gray-400" /> Edit
                     </button>
                     <button
-                      onClick={() => { duplicatePlan(plan); setOpenDropdown(null); }}
+                      onClick={() => {
+                        duplicatePlan(plan);
+                        setOpenDropdown(null);
+                      }}
                       className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
                     >
                       <Copy className="h-4 w-4 text-gray-400" /> Duplicate
                     </button>
                     <button
-                      onClick={() => { toggleFeatured(plan.id); setOpenDropdown(null); }}
+                      onClick={() => {
+                        toggleActive(plan.id, !plan.isActive);
+                        setOpenDropdown(null);
+                      }}
                       className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
                     >
-                      <Star className={`h-4 w-4 ${plan.isFeatured ? "fill-amber-400 text-amber-400" : "text-gray-400"}`} />
-                      {plan.isFeatured ? "Unfeature" : "Feature"}
+                      <Power className="h-4 w-4 text-gray-400" />
+                      {plan.isActive ? "Deactivate" : "Activate"}
                     </button>
                     <div className="my-1 border-t border-gray-100" />
                     <button
-                      onClick={() => { archivePlan(plan.id); setOpenDropdown(null); }}
-                      className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                    >
-                      <Archive className="h-4 w-4 text-gray-400" /> Archive
-                    </button>
-                    <button
-                      onClick={() => { openDeleteModal(plan); setOpenDropdown(null); }}
+                      onClick={() => {
+                        openDeleteModal(plan);
+                        setOpenDropdown(null);
+                      }}
                       className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-red-600 hover:bg-red-50"
                     >
                       <Trash2 className="h-4 w-4" /> Delete
@@ -273,15 +269,7 @@ export function PlansTable() {
         },
       },
     ],
-    [
-      openDropdown,
-      openViewEditor,
-      openEditEditor,
-      duplicatePlan,
-      archivePlan,
-      openDeleteModal,
-      toggleFeatured,
-    ]
+    [openDropdown, openViewEditor, openEditEditor, duplicatePlan, toggleActive, openDeleteModal]
   );
 
   const table = useReactTable({
@@ -295,6 +283,14 @@ export function PlansTable() {
     getSortedRowModel: getSortedRowModel(),
     initialState: { pagination: { pageSize: 10 } },
   });
+
+  if (loading && plans.length === 0) {
+    return (
+      <div className="rounded-2xl border border-gray-200 bg-white p-12 text-center">
+        <p className="text-sm text-gray-500">Loading subscription plans...</p>
+      </div>
+    );
+  }
 
   if (plans.length === 0) {
     return (
@@ -349,7 +345,6 @@ export function PlansTable() {
         </table>
       </div>
 
-      {/* Pagination */}
       <div className="flex items-center justify-between border-t border-gray-100 px-4 py-3">
         <p className="text-sm text-gray-500">
           Showing {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} to{" "}
@@ -390,14 +385,5 @@ export function PlansTable() {
         </div>
       </div>
     </div>
-  );
-}
-
-function CreditCard(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <rect width="20" height="14" x="2" y="5" rx="2"/>
-      <line x1="2" x2="22" y1="10" y2="10"/>
-    </svg>
   );
 }

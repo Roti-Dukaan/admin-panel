@@ -12,6 +12,7 @@ import {
 import { ArrowUpDown, ArrowUp, ArrowDown, Eye, ChevronLeft, ChevronRight } from "lucide-react";
 import { useCustomerStore } from "../hooks/useCustomers";
 import { Customer } from "../types/customer";
+import { useWorkspace } from "@/contexts/WorkspaceContext";
 
 function formatDate(ts: string) {
   return new Date(ts).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
@@ -36,7 +37,9 @@ export function CustomersTable() {
   const setPage = useCustomerStore((s) => s.setPage);
   const openCustomer = useCustomerStore((s) => s.openCustomer);
   const fetchCustomers = useCustomerStore((s) => s.fetchCustomers);
+  const viewType = useCustomerStore((s) => s.filters.viewType);
   const [sorting, setSorting] = useState<SortingState>([]);
+  const { isSuperAdmin } = useWorkspace();
 
   useEffect(() => {
     fetchCustomers();
@@ -70,6 +73,41 @@ export function CustomersTable() {
           );
         },
       },
+      ...(isSuperAdmin
+        ? [
+            {
+              accessorKey: "branch",
+              header: () => (
+                <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400">Branch</span>
+              ),
+              cell: ({ row }: { row: { original: Customer } }) => {
+                const branch = row.original.branch;
+                return (
+                  <span className="text-sm text-gray-600">
+                    {branch ? `${branch.name} (${branch.code})` : "—"}
+                  </span>
+                );
+              },
+            } satisfies ColumnDef<Customer>,
+          ]
+        : []),
+      ...(viewType === "subscription"
+        ? [
+            {
+              accessorKey: "subscriptionPlanName",
+              header: () => (
+                <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400">
+                  Subscription
+                </span>
+              ),
+              cell: ({ row }: { row: { original: Customer } }) => (
+                <span className="text-sm font-medium text-gray-900">
+                  {row.original.subscriptionPlanName || "—"}
+                </span>
+              ),
+            } satisfies ColumnDef<Customer>,
+          ]
+        : []),
       {
         accessorKey: "email",
         header: () => <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400">Email</span>,
@@ -127,7 +165,7 @@ export function CustomersTable() {
         ),
       },
     ],
-    [openCustomer]
+    [openCustomer, isSuperAdmin, viewType]
   );
 
   const table = useReactTable({

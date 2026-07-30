@@ -11,10 +11,13 @@ import { CustomerProfile } from "@/features/customers/components/CustomerProfile
 import { useCustomerStore } from "@/features/customers/hooks/useCustomers"
 import type { CustomerDatePreset } from "@/features/customers/types/customer"
 import { Download } from "lucide-react"
+import { useWorkspace } from "@/contexts/WorkspaceContext"
 
 export default function BranchCustomersPage() {
   const filters = useCustomerStore((s) => s.filters)
   const setDateRange = useCustomerStore((s) => s.setDateRange)
+  const fetchCustomers = useCustomerStore((s) => s.fetchCustomers)
+  const { branchId } = useWorkspace()
 
   const dateRangeValue: DateRangeValue = {
     preset: filters.datePreset === "all" ? "today" : filters.datePreset as DateRangeValue["preset"],
@@ -27,6 +30,22 @@ export default function BranchCustomersPage() {
       value.preset as CustomerDatePreset,
       value.startDate || "",
       value.endDate || ""
+    )
+  }
+
+  React.useEffect(() => {
+    if (branchId) {
+      fetchCustomers()
+    }
+  }, [branchId, fetchCustomers])
+
+  if (!branchId) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-500">Branch context not loaded</p>
+        </div>
+      </div>
     )
   }
 

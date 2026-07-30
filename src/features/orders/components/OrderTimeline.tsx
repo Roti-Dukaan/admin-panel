@@ -1,14 +1,15 @@
 import { cn } from "@/lib/utils"
 import type { OrderTimelineEntry, OrderStatus } from "../types/order"
 import { CheckCircle2, Clock, Circle } from "lucide-react"
+import { normalizeOrderStatus } from "../utils/status"
 
 const STATUS_ORDER: OrderStatus[] = [
   "pending-confirmation",
   "confirmed",
   "accepted",
   "preparing",
-  "packed",
   "ready-for-pickup",
+  "picked-up",
   "out-for-delivery",
   "delivered",
 ]
@@ -35,13 +36,16 @@ interface OrderTimelineProps {
 }
 
 export function OrderTimeline({ timeline, currentStatus }: OrderTimelineProps) {
-  const isCancelled = currentStatus === "cancelled"
+  const normalizedCurrent = normalizeOrderStatus(currentStatus)
+  const isCancelled = normalizedCurrent === "cancelled"
 
   const activeStatuses: OrderStatus[] = isCancelled
     ? [...STATUS_ORDER.slice(0, 1), "cancelled"]
     : STATUS_ORDER
 
-  const timelineMap = new Map(timeline.map((t) => [t.status, t.timestamp]))
+  const timelineMap = new Map(
+    timeline.map((t) => [normalizeOrderStatus(String(t.status)), t.timestamp]),
+  )
 
   return (
     <div className="space-y-1">
@@ -50,7 +54,7 @@ export function OrderTimeline({ timeline, currentStatus }: OrderTimelineProps) {
         {activeStatuses.map((status, index) => {
           const timestamp = timelineMap.get(status)
           const isCompleted = timestamp !== undefined
-          const isCurrent = status === currentStatus
+          const isCurrent = status === normalizedCurrent
           const isLast = index === activeStatuses.length - 1
 
           return (

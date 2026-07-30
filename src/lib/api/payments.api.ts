@@ -51,6 +51,25 @@ function resolvePaymentDateRange(
   }
 }
 
+function toBackendPaymentStatus(status: string): string {
+  const map: Record<string, string> = {
+    paid: 'CAPTURED',
+    pending: 'CREATED',
+    failed: 'FAILED',
+    authorized: 'AUTHORIZED',
+    refunded: 'REFUNDED',
+    cancelled: 'FAILED',
+  };
+  return map[status] ?? status.toUpperCase();
+}
+
+function toBackendPaymentMethod(method: string): string {
+  if (method === 'cod') return 'COD';
+  if (method === 'upi' || method === 'credit_card' || method === 'debit_card' || method === 'net_banking' || method === 'wallet') {
+    return 'ONLINE';
+  }
+  return method.toUpperCase();
+}
 function mapBackendStatus(status: string): Payment['paymentStatus'] {
   const map: Record<string, Payment['paymentStatus']> = {
     CAPTURED: 'paid',
@@ -107,9 +126,9 @@ function mapBackendPayment(backend: any): Payment {
 export const paymentsApi = {
   list: async (filters?: Partial<PaymentFilters> & { page?: number; limit?: number }): Promise<Payment[]> => {
     const params = new URLSearchParams();
-    if (filters?.status && filters.status !== 'all') params.set('status', filters.status);
-    if (filters?.method && filters.method !== 'all') params.set('paymentMethod', filters.method);
-    if (filters?.gateway && filters.gateway !== 'all') params.set('provider', filters.gateway);
+    if (filters?.status && filters.status !== 'all') params.set('status', toBackendPaymentStatus(filters.status));
+    if (filters?.method && filters.method !== 'all') params.set('paymentMethod', toBackendPaymentMethod(filters.method));
+    if (filters?.gateway && filters.gateway !== 'all') params.set('provider', filters.gateway.toUpperCase());
     if (filters?.search) params.set('search', filters.search);
     params.set('page', String(filters?.page || 1));
     params.set('limit', String(filters?.limit || 20));

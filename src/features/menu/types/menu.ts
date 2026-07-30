@@ -6,6 +6,8 @@ export type HealthTag = 'high-protein' | 'high-fiber' | 'healthy' | 'gluten-free
 
 export type CustomerLabel = 'chef-special' | 'best-seller' | 'new' | 'recommended' | 'popular';
 
+export type FoodType = 'VEG' | 'NON_VEG' | 'EGG';
+
 export interface Category {
   id: string;
   name: string;
@@ -38,7 +40,7 @@ export interface FoodItem {
   healthTags: HealthTag[];
   customerLabels: CustomerLabel[];
   availability: Availability;
-  isVegetarian: boolean;
+  foodType: FoodType;
   isFeatured: boolean;
   displayOnWebsite: boolean;
   bestPairedWith: string[];
@@ -63,7 +65,7 @@ export interface FoodItemFormData {
   healthTags: HealthTag[];
   customerLabels: CustomerLabel[];
   availability: Availability;
-  isVegetarian: boolean;
+  foodType: FoodType;
   isFeatured: boolean;
   displayOnWebsite: boolean;
   bestPairedWith: string[];

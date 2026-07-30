@@ -5,7 +5,10 @@ import type {
   OrderFilters,
   OrderStatus,
   PaginatedResponse,
+  PaymentMethod,
+  OrderType,
 } from "../types/order"
+import { toBackendPaymentMethod, toBackendOrderType } from "../utils/filters"
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "/api"
 
@@ -41,8 +44,9 @@ function buildFilterParams(filters: OrderFilters) {
   const params: Record<string, string> = {}
   if (filters.dateFilter !== "all") params.dateFilter = filters.dateFilter
   if (filters.status !== "all") params.status = filters.status
-  if (filters.paymentMethod !== "all") params.paymentMethod = filters.paymentMethod
-  if (filters.orderType !== "all") params.orderType = filters.orderType
+  if (filters.paymentMethod !== "all") params.paymentMethod = toBackendPaymentMethod(filters.paymentMethod as PaymentMethod)
+  if (filters.paymentStatus !== "all") params.paymentStatus = filters.paymentStatus
+  if (filters.orderType !== "all") params.orderType = toBackendOrderType(filters.orderType as OrderType)
   if (filters.search) params.search = filters.search
   return params
 }

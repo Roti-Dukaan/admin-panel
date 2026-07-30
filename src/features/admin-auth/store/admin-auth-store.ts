@@ -1,7 +1,15 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { adminAuthApi } from '../api/admin-auth.api';
+import { reconnectRealtimeWithAuth, resetRealtimeAuth } from '@/lib/realtime/socket';
 import type { Workspace } from '@/contexts/WorkspaceContext';
+import { resolvePrimaryRole, workspaceFromRole } from '../utils/role-utils';
+
+function clearAuthCookies() {
+  if (typeof document === 'undefined') return
+  for (const name of ['workspace', 'user-role', 'branch-id']) {
+    document.cookie = `${name}=; path=/; max-age=0; SameSite=Lax`
+  }
+}
 
 export interface AdminUser {
   id: string;
@@ -41,8 +49,8 @@ export const useAdminAuthStore = create<AdminAuthState>()(
       permissions: [],
 
       login: (user, accessToken, refreshToken) => {
-        const role = user.roles?.[0] || null
-        const workspace = role === 'BRANCH_MANAGER' ? 'BRANCH_MANAGER' : 'SUPER_ADMIN'
+        const role = resolvePrimaryRole(user.roles)
+        const workspace = workspaceFromRole(role)
         set({
           user,
           isAuthenticated: true,
@@ -53,9 +61,12 @@ export const useAdminAuthStore = create<AdminAuthState>()(
           branchId: user.branchId || null,
           permissions: user.permissions || [],
         })
+        reconnectRealtimeWithAuth()
       },
 
-      logout: () =>
+      logout: () => {
+        resetRealtimeAuth()
+        clearAuthCookies()
         set({
           user: null,
           isAuthenticated: false,
@@ -65,13 +76,17 @@ export const useAdminAuthStore = create<AdminAuthState>()(
           role: null,
           branchId: null,
           permissions: [],
-        }),
+        })
+      },
 
-      setTokens: (accessToken, refreshToken) => set({ accessToken, refreshToken }),
+      setTokens: (accessToken, refreshToken) => {
+        set({ accessToken, refreshToken })
+        if (accessToken) reconnectRealtimeWithAuth()
+      },
 
       setUser: (user) => {
-        const role = user?.roles?.[0] || null
-        const workspace = role === 'BRANCH_MANAGER' ? 'BRANCH_MANAGER' : 'SUPER_ADMIN'
+        const role = user ? resolvePrimaryRole(user.roles) : null
+        const workspace = workspaceFromRole(role)
         set({
           user,
           isAuthenticated: !!user,
@@ -97,6 +112,15 @@ export const useAdminAuthStore = create<AdminAuthState>()(
         permissions: state.permissions,
       }),
       skipHydration: true,
+      onRehydrateStorage: () => (state) => {
+        if (!state?.user?.roles?.length) return
+        const role = resolvePrimaryRole(state.user.roles)
+        const workspace = workspaceFromRole(role)
+        if (state.role !== role || state.workspace !== workspace) {
+          state.role = role
+          state.workspace = workspace
+        }
+      },
     },
   ),
 );
