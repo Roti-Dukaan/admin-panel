@@ -33,6 +33,7 @@ import {
 import { branchIdsMatch } from "@/lib/realtime/branch-id";
 import { useAdminAuthStore } from "@/features/admin-auth/store/admin-auth-store";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
+import { isCodPayment } from "@/features/orders/utils/order-alert-format";
 
 const REALTIME_STALE_MS = 5_000;
 const FALLBACK_POLL_MS = 60_000;
@@ -233,8 +234,9 @@ export function applyKitchenFilters(
     }
     if (filters.payment !== "all") {
       const method = detailMap[o.orderId]?.payment?.paymentMethod ?? o.paymentMethod ?? null;
-      if (filters.payment === "cod" && method !== "cod") return false;
-      if (filters.payment === "paid" && method === "cod") return false;
+      const cod = isCodPayment(method ?? undefined);
+      if (filters.payment === "cod" && !cod) return false;
+      if (filters.payment === "paid" && cod) return false;
     }
     if (filters.slot !== "all") {
       if (o.deliverySlot?.name !== filters.slot) return false;

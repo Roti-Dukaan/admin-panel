@@ -9,6 +9,7 @@ import { DeliveryBanner } from "./DeliveryStatusCard";
 import { STAGE_META, priorityBadge, getDeliveryKind, formatSlotWindow } from "../types/kitchen";
 import type { KitchenOrderView } from "../types/kitchen";
 import type { KitchenOrderDetail } from "@/lib/api/kitchen.api";
+import { isCodPayment } from "@/features/orders/utils/order-alert-format";
 
 export function KitchenCard({
   order,
@@ -31,8 +32,8 @@ export function KitchenCard({
   const isScheduled = getDeliveryKind(order) === "scheduled";
   const slotWindow = formatSlotWindow(order.deliverySlot);
   const method = detail?.payment?.paymentMethod ?? order.paymentMethod ?? null;
-  const isCod = method === "cod";
-  const isPaid = method !== null && method !== "cod";
+  const isCod = isCodPayment(method ?? undefined);
+  const isPaid = method !== null && !isCod;
   const items = detail?.items ?? [];
   const specialNotes = detail?.specialInstructions;
   const badge = priorityBadge(order.priority);
