@@ -15,6 +15,11 @@ export type RealtimeDispatchItem = {
   dispatchMethod: RealtimeDispatchMethod | null;
   provider: string | null;
   paymentMethod: "COD" | "ONLINE";
+  isCod?: boolean;
+  codExpectedAmount?: number | null;
+  codCollectedAmount?: number | null;
+  codCollectionStatus?: string | null;
+  codHandoverStatus?: string | null;
   codAmount: number | null;
   codCollected: number | null;
   settlementStatus: string | null;

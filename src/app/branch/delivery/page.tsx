@@ -5,9 +5,10 @@ import { Header } from "@/components/layout/header";
 import { DeliveryListPage } from "@/features/delivery/components/DeliveryListPage";
 import { BranchSubscriptionDeliveriesTab } from "@/features/delivery/components/BranchSubscriptionDeliveriesTab";
 import { RealtimeDispatchPanel } from "@/features/realtime-dispatch/components/RealtimeDispatchPanel";
+import { CodReconciliationPanel } from "@/features/realtime-dispatch/components/CodReconciliationPanel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-type DeliveryTab = "dispatch" | "orders" | "subscriptions";
+type DeliveryTab = "dispatch" | "cod" | "orders" | "subscriptions";
 
 export default function BranchDeliveryPage() {
   const [activeTab, setActiveTab] = useState<DeliveryTab>("dispatch");
@@ -19,11 +20,15 @@ export default function BranchDeliveryPage() {
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as DeliveryTab)}>
           <TabsList>
             <TabsTrigger value="dispatch">Dispatch</TabsTrigger>
+            <TabsTrigger value="cod">COD Reconciliation</TabsTrigger>
             <TabsTrigger value="orders">One-time Orders</TabsTrigger>
             <TabsTrigger value="subscriptions">Subscriptions</TabsTrigger>
           </TabsList>
           <TabsContent value="dispatch" className="mt-4 pb-6">
             <RealtimeDispatchPanel />
+          </TabsContent>
+          <TabsContent value="cod" className="mt-4 pb-6">
+            <CodReconciliationPanel />
           </TabsContent>
           <TabsContent value="orders" className="mt-4">
             <DeliveryListPage apiMode="branch" />

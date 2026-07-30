@@ -1,0 +1,116 @@
+import { apiClient } from "@/lib/api/http";
+
+function unwrap<T>(promise: Promise<{ data: { success: boolean; data: T } }>): Promise<T> {
+  return promise.then((res) => res.data.data);
+}
+
+export type CodCollectionStatus = "PENDING" | "COLLECTED" | "MISMATCH" | "NOT_COLLECTED";
+export type CodHandoverStatus = "PENDING" | "SUBMITTED" | "RECEIVED" | "RECONCILED";
+export type RiderWorkflowStatus =
+  | "assigned"
+  | "picked_up"
+  | "arrived"
+  | "cash_collection_pending"
+  | "cash_collected"
+  | "delivered"
+  | "cash_handover_pending"
+  | "cash_handed_to_manager"
+  | "cash_reconciled"
+  | "failed";
+
+export type InHouseCodStop = {
+  id: string;
+  deliveryId: string;
+  orderId: string;
+  orderNumber: string;
+  paymentMethod: "COD" | "ONLINE";
+  isCod: boolean;
+  codExpectedAmount: number | null;
+  codCollectedAmount: number | null;
+  codCollectionStatus: CodCollectionStatus | null;
+  codHandoverStatus: CodHandoverStatus | null;
+  codAmount: number | null;
+  codCollected: number | null;
+  grandTotal: number;
+  customerName: string;
+  customerPhone: string;
+  address: string;
+  items: { name: string; quantity: number }[];
+  routeSequence: number | null;
+  riderWorkflowStatus: RiderWorkflowStatus;
+  dispatchStatus: string;
+  googleMapsUrl: string | null;
+  canMarkDelivered: boolean;
+  requiresCodCollection: boolean;
+  codCollectionNote: string | null;
+};
+
+export type CodSummary = {
+  date: string;
+  branchId: string;
+  totals: {
+    expected: number;
+    collected: number;
+    pendingHandover: number;
+    reconciled: number;
+    mismatches: number;
+    pendingDelivery: number;
+    orderCount: number;
+    riderCount: number;
+  };
+};
+
+export type CodRiderSummary = {
+  rider: { id: string; name: string | null; email: string; phone: string | null };
+  date: string;
+  summary: { expected: number; collected: number; pendingHandover: number; deliveryCount: number };
+  deliveries: InHouseCodStop[];
+};
+
+export const inHouseCodApi = {
+  getSummary: (date?: string): Promise<CodSummary> =>
+    unwrap(apiClient.get("/manager/cod-summary", { params: { date } })),
+
+  getRiderSummary: (riderId: string, date?: string): Promise<CodRiderSummary> =>
+    unwrap(apiClient.get(`/manager/cod-rider-summary/${riderId}`, { params: { date } })),
+
+  recordHandover: (riderId: string, body: { receivedAmount: number; note?: string; date?: string }) =>
+    unwrap(apiClient.patch(`/manager/cod-handover/${riderId}`, body)),
+
+  reconcileHandover: (riderId: string, body?: { note?: string; date?: string }) =>
+    unwrap(apiClient.patch(`/manager/cod-handover/${riderId}/reconcile`, body ?? {})),
+
+  codOverride: (orderId: string, body: { collectedAmount: number; note?: string }) =>
+    unwrap(apiClient.patch(`/manager/order/${orderId}/cod-override`, body)),
+
+  getMismatchOrders: (date?: string): Promise<InHouseCodStop[]> =>
+    unwrap(apiClient.get("/manager/cod-mismatch-orders", { params: { date } })),
+};
+
+export const inHouseRiderApi = {
+  myDeliveries: (params?: { date?: string; tab?: string }): Promise<{
+    stops: InHouseCodStop[];
+    counts: {
+      assigned: number;
+      pending: number;
+      completed: number;
+      codPending: number;
+      codCollected: number;
+    };
+  }> => unwrap(apiClient.get("/delivery-boy/realtime/my-deliveries", { params })),
+
+  pickedUp: (deliveryId: string) =>
+    unwrap(apiClient.patch(`/delivery-boy/realtime/delivery/${deliveryId}/picked-up`)),
+
+  arrived: (deliveryId: string) =>
+    unwrap(apiClient.patch(`/delivery-boy/realtime/delivery/${deliveryId}/arrived`)),
+
+  confirmCod: (deliveryId: string, body: { collectedAmount: number; note?: string }) =>
+    unwrap(apiClient.patch(`/delivery-boy/realtime/delivery/${deliveryId}/confirm-cod`, body)),
+
+  delivered: (deliveryId: string, body?: { collectedAmount?: number; note?: string; remarks?: string }) =>
+    unwrap(apiClient.patch(`/delivery-boy/realtime/delivery/${deliveryId}/delivered`, body ?? {})),
+
+  failed: (deliveryId: string, body: { failureReason: string; remarks?: string }) =>
+    unwrap(apiClient.patch(`/delivery-boy/realtime/delivery/${deliveryId}/failed`, body)),
+};

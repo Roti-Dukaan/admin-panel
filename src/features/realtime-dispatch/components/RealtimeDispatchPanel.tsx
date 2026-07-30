@@ -21,10 +21,12 @@ import { useDeliveriesRealtime } from "@/features/delivery/hooks/useDeliveriesRe
 
 function CodBadge({ item }: { item: RealtimeDispatchItem }) {
   if (item.paymentMethod !== "COD") return null;
-  const collected = item.codCollected != null;
+  const collected =
+    item.codCollectionStatus === "COLLECTED" || item.codCollectionStatus === "MISMATCH";
+  const expected = item.codExpectedAmount ?? item.codAmount ?? item.grandTotal;
   return (
     <Badge variant={collected ? "default" : "destructive"} className="text-xs">
-      COD ₹{item.codAmount ?? item.grandTotal}
+      COD ₹{expected}
       {collected ? " · Collected" : " · Pending"}
     </Badge>
   );

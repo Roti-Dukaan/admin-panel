@@ -229,7 +229,7 @@ export function DriverRouteView() {
       </div>
 
       <div className="space-y-3 p-4">
-        <RealtimeDriverStops tab={tab} />
+        <RealtimeDriverStops tab={tab} date={date} />
         {routeQuery.isLoading ? (
           <div className="flex justify-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
