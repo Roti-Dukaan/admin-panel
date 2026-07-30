@@ -1,7 +1,8 @@
 import { apiClient } from "./http";
 import type { InvoiceView } from "../../features/orders/types/invoice";
 import { toBackendOrderStatus } from "../../features/orders/utils/status";
-import type { OrderStatus } from "../../features/orders/types/order";
+import { toBackendPaymentMethod, toBackendOrderType } from "../../features/orders/utils/filters";
+import type { OrderStatus, PaymentMethod, OrderType } from "../../features/orders/types/order";
 
 interface OrderListParams {
   page?: number
@@ -76,9 +77,13 @@ export const ordersApi = {
     if (params.status && params.status !== "all") {
       queryParams.set("status", toBackendOrderStatus(params.status as OrderStatus));
     }
-    if (params.paymentMethod && params.paymentMethod !== "all") queryParams.set("paymentMethod", params.paymentMethod);
+    if (params.paymentMethod && params.paymentMethod !== "all") {
+      queryParams.set("paymentMethod", toBackendPaymentMethod(params.paymentMethod as PaymentMethod));
+    }
     if (params.paymentStatus && params.paymentStatus !== "all") queryParams.set("paymentStatus", params.paymentStatus);
-    if (params.orderType && params.orderType !== "all") queryParams.set("orderType", params.orderType);
+    if (params.orderType && params.orderType !== "all") {
+      queryParams.set("orderType", toBackendOrderType(params.orderType as OrderType));
+    }
     if (params.search) queryParams.set("search", params.search);
     if (params.branchId) queryParams.set("branchId", params.branchId);
     if (params.cityId) queryParams.set("cityId", params.cityId);
