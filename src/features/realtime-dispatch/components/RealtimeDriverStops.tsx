@@ -20,6 +20,15 @@ import { inHouseRiderApi, type InHouseCodStop } from "@/features/realtime-dispat
 
 type Tab = "today" | "completed" | "failed";
 
+const TODAY_VISIBLE_WORKFLOWS = new Set([
+  "assigned",
+  "picked_up",
+  "arrived",
+  "cash_collection_pending",
+  "cash_collected",
+  "cash_handover_pending",
+]);
+
 const WORKFLOW_LABELS: Record<string, { label: string; className: string }> = {
   assigned: { label: "Assigned", className: "bg-blue-100 text-blue-800" },
   picked_up: { label: "Picked up", className: "bg-indigo-100 text-indigo-800" },
@@ -28,6 +37,8 @@ const WORKFLOW_LABELS: Record<string, { label: string; className: string }> = {
   cash_collected: { label: "COD collected", className: "bg-emerald-100 text-emerald-800" },
   delivered: { label: "Delivered", className: "bg-gray-100 text-gray-800" },
   cash_handover_pending: { label: "Handover pending", className: "bg-amber-100 text-amber-800" },
+  cash_handed_to_manager: { label: "Handed to manager", className: "bg-teal-100 text-teal-800" },
+  cash_reconciled: { label: "Reconciled", className: "bg-emerald-100 text-emerald-800" },
   failed: { label: "Failed", className: "bg-red-100 text-red-800" },
 };
 
@@ -125,13 +136,13 @@ export function RealtimeDriverStops({ tab, date }: { tab: Tab; date?: string }) 
   const pickedUpMutation = useMutation({
     mutationFn: (id: string) => inHouseRiderApi.pickedUp(id),
     onSuccess: () => { invalidate(); toast.success("Marked picked up"); },
-    onError: () => toast.error("Update failed"),
+    onError: (err: Error) => toast.error(err?.message || "Update failed"),
   });
 
   const arrivedMutation = useMutation({
     mutationFn: (id: string) => inHouseRiderApi.arrived(id),
     onSuccess: () => { invalidate(); toast.success("Marked arrived"); },
-    onError: () => toast.error("Update failed"),
+    onError: (err: Error) => toast.error(err?.message || "Update failed"),
   });
 
   const deliveredMutation = useMutation({
@@ -142,17 +153,19 @@ export function RealtimeDriverStops({ tab, date }: { tab: Tab; date?: string }) 
       setDeliverStop(null);
       toast.success("Marked delivered");
     },
-    onError: () => toast.error("Delivery failed — confirm COD first"),
+    onError: (err: Error) => toast.error(err?.message || "Delivery failed"),
   });
 
   const failedMutation = useMutation({
     mutationFn: ({ id, reason }: { id: string; reason: string }) =>
       inHouseRiderApi.failed(id, { failureReason: reason }),
     onSuccess: () => { invalidate(); toast.success("Marked failed"); },
-    onError: () => toast.error("Update failed"),
+    onError: (err: Error) => toast.error(err?.message || "Update failed"),
   });
 
-  const stops = data?.stops ?? [];
+  const stops = (data?.stops ?? []).filter((stop) =>
+    tab === "today" ? TODAY_VISIBLE_WORKFLOWS.has(stop.riderWorkflowStatus) : true,
+  );
   const busy =
     pickedUpMutation.isPending ||
     arrivedMutation.isPending ||
@@ -216,24 +229,48 @@ export function RealtimeDriverStops({ tab, date }: { tab: Tab; date?: string }) 
 
             <p className="mt-2 flex items-start gap-1 text-sm text-gray-600">
               <MapPin className="mt-0.5 h-4 w-4 shrink-0" />
-              {stop.address}
+              {stop.navigationTarget === "branch" ? (
+                <span>
+                  <span className="font-medium text-orange-700">Pickup at branch: </span>
+                  {stop.branchName ?? stop.address}
+                </span>
+              ) : (
+                stop.address
+              )}
             </p>
+
+            {(stop.riderWorkflowStatus === "cash_handover_pending" ||
+              stop.riderWorkflowStatus === "cash_handed_to_manager") && (
+              <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                {stop.riderWorkflowStatus === "cash_handover_pending"
+                  ? `Delivery complete. Hand ₹${stop.codCollectedAmount ?? stop.codExpectedAmount ?? stop.grandTotal} cash to your manager for end-of-day reconciliation.`
+                  : "Cash recorded by manager — waiting for final confirmation in COD Reconciliation. No action needed from you."}
+              </p>
+            )}
+
+            {stop.riderWorkflowStatus === "cash_reconciled" && (
+              <p className="mt-2 rounded-lg bg-emerald-50 px-3 py-2 text-xs text-emerald-800">
+                COD reconciled with manager — no further action needed.
+              </p>
+            )}
 
             <div className="mt-3 flex flex-wrap gap-2">
               {stop.customerPhone && (
-                <Button size="sm" variant="outline" asChild>
-                  <a href={`tel:${stop.customerPhone}`}>
-                    <Phone className="mr-1 h-4 w-4" />
-                    Call
-                  </a>
+                <Button size="sm" variant="outline" href={`tel:${stop.customerPhone}`}>
+                  <Phone className="mr-1 h-4 w-4" />
+                  Call
                 </Button>
               )}
               {stop.googleMapsUrl && (
-                <Button size="sm" variant="outline" asChild>
-                  <a href={stop.googleMapsUrl} target="_blank" rel="noreferrer">
-                    <Navigation className="mr-1 h-4 w-4" />
-                    Maps
-                  </a>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  href={stop.googleMapsUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <Navigation className="mr-1 h-4 w-4" />
+                  {stop.navigationTarget === "branch" ? "Branch" : "Customer"}
                 </Button>
               )}
 
@@ -249,31 +286,30 @@ export function RealtimeDriverStops({ tab, date }: { tab: Tab; date?: string }) 
                 </Button>
               )}
 
-              {stop.riderWorkflowStatus !== "delivered" &&
-                stop.riderWorkflowStatus !== "failed" &&
-                !stop.riderWorkflowStatus.startsWith("cash_") && (
-                  <>
-                    <Button
-                      size="sm"
-                      className="bg-emerald-600 hover:bg-emerald-700"
-                      disabled={busy}
-                      onClick={() => setDeliverStop(stop)}
-                    >
-                      Delivered
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      disabled={busy}
-                      onClick={() => {
-                        const reason = window.prompt("Failure reason?") ?? "Could not deliver";
-                        failedMutation.mutate({ id: stop.id, reason });
-                      }}
-                    >
-                      Failed
-                    </Button>
-                  </>
-                )}
+              {stop.canMarkDelivered && (
+                <Button
+                  size="sm"
+                  className="bg-emerald-600 hover:bg-emerald-700"
+                  disabled={busy}
+                  onClick={() => setDeliverStop(stop)}
+                >
+                  Delivered
+                </Button>
+              )}
+
+              {stop.canMarkFailed && (
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  disabled={busy}
+                  onClick={() => {
+                    const reason = window.prompt("Failure reason?") ?? "Could not deliver";
+                    failedMutation.mutate({ id: stop.id, reason });
+                  }}
+                >
+                  Failed
+                </Button>
+              )}
             </div>
           </article>
         );

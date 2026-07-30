@@ -44,7 +44,10 @@ export function DateFilter() {
           <input
             type="date"
             value={customEndDate}
-            onChange={(e) => setCustomEndDate(e.target.value)}
+            onChange={(e) => {
+            setCustomEndDate(e.target.value);
+            if (customStartDate && e.target.value) void useReportsStore.getState().refreshData();
+          }}
             className="h-9 rounded-lg border border-gray-200 bg-white px-2.5 text-xs text-gray-700 focus:border-orange-400 focus:outline-none focus:ring-1 focus:ring-orange-300"
           />
         </div>

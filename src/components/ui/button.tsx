@@ -39,29 +39,42 @@ interface ButtonProps
   href?: string
 }
 
+function isNativeAnchorHref(href: string): boolean {
+  return /^(https?:|tel:|mailto:|sms:)/i.test(href)
+}
+
 function Button({
   className,
   variant = "default",
   size = "default",
   href,
+  target,
+  rel,
+  children,
   ...props
 }: ButtonProps) {
+  const classes = cn(buttonVariants({ variant, size, className }))
+
   if (href) {
+    if (isNativeAnchorHref(href)) {
+      return (
+        <a href={href} target={target} rel={rel} className={classes}>
+          {children}
+        </a>
+      )
+    }
+
     return (
-      <Link
-        href={href}
-        className={cn(buttonVariants({ variant, size, className }))}
-      >
-        {props.children}
+      <Link href={href} className={classes}>
+        {children}
       </Link>
     )
   }
 
   return (
-    <button
-      className={cn(buttonVariants({ variant, size, className }))}
-      {...props}
-    />
+    <button className={classes} {...props}>
+      {children}
+    </button>
   )
 }
 

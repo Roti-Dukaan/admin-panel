@@ -40,24 +40,55 @@ export type InHouseCodStop = {
   riderWorkflowStatus: RiderWorkflowStatus;
   dispatchStatus: string;
   googleMapsUrl: string | null;
+  navigationTarget?: "branch" | "customer";
+  branchName?: string | null;
   canMarkDelivered: boolean;
+  canMarkFailed: boolean;
   requiresCodCollection: boolean;
+  assigneeName?: string | null;
   codCollectionNote: string | null;
 };
 
+export type CodRiderRollup = {
+  id: string;
+  name: string | null;
+  email: string;
+  expected: number;
+  collected: number;
+  pendingHandover: number;
+  pendingCollectionCount: number;
+  pendingCollectionAmount: number;
+  awaitingReconcileAmount: number;
+  reconciledAmount: number;
+  deliveryCount: number;
+};
+
+export type CodHandoverFilter = "all" | "pending_collection" | "pending_handover" | "reconciled";
+
 export type CodSummary = {
   date: string;
-  branchId: string;
+  branchId: string | null;
   totals: {
     expected: number;
     collected: number;
     pendingHandover: number;
+    awaitingReconcile: number;
     reconciled: number;
     mismatches: number;
     pendingDelivery: number;
     orderCount: number;
     riderCount: number;
   };
+  riders: CodRiderRollup[];
+  pendingHandoverOrders: Array<{
+    deliveryId: string;
+    orderId: string;
+    orderNumber: string;
+    riderId: string | null;
+    riderName: string | null;
+    riderPhone: string | null;
+    amount: number;
+  }>;
 };
 
 export type CodRiderSummary = {
@@ -67,12 +98,22 @@ export type CodRiderSummary = {
   deliveries: InHouseCodStop[];
 };
 
-export const inHouseCodApi = {
-  getSummary: (date?: string): Promise<CodSummary> =>
-    unwrap(apiClient.get("/manager/cod-summary", { params: { date } })),
+type CodApiParams = { date?: string; branchId?: string | null };
 
-  getRiderSummary: (riderId: string, date?: string): Promise<CodRiderSummary> =>
-    unwrap(apiClient.get(`/manager/cod-rider-summary/${riderId}`, { params: { date } })),
+export const inHouseCodApi = {
+  getSummary: (params?: CodApiParams): Promise<CodSummary> =>
+    unwrap(
+      apiClient.get("/manager/cod-summary", {
+        params: { date: params?.date, branchId: params?.branchId ?? undefined },
+      }),
+    ),
+
+  getRiderSummary: (riderId: string, params?: CodApiParams): Promise<CodRiderSummary> =>
+    unwrap(
+      apiClient.get(`/manager/cod-rider-summary/${riderId}`, {
+        params: { date: params?.date, branchId: params?.branchId ?? undefined },
+      }),
+    ),
 
   recordHandover: (riderId: string, body: { receivedAmount: number; note?: string; date?: string }) =>
     unwrap(apiClient.patch(`/manager/cod-handover/${riderId}`, body)),
@@ -83,8 +124,15 @@ export const inHouseCodApi = {
   codOverride: (orderId: string, body: { collectedAmount: number; note?: string }) =>
     unwrap(apiClient.patch(`/manager/order/${orderId}/cod-override`, body)),
 
-  getMismatchOrders: (date?: string): Promise<InHouseCodStop[]> =>
-    unwrap(apiClient.get("/manager/cod-mismatch-orders", { params: { date } })),
+  getMismatchOrders: (params?: CodApiParams): Promise<InHouseCodStop[]> =>
+    unwrap(
+      apiClient.get("/manager/cod-mismatch-orders", {
+        params: {
+          date: params?.date,
+          branchId: params?.branchId ?? undefined,
+        },
+      }),
+    ),
 };
 
 export const inHouseRiderApi = {
