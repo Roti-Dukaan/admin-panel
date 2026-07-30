@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { deliverySlotsApi, DeliverySlot as ApiDeliverySlot } from "@/lib/api/delivery-slots.api";
 import { Header } from "@/components/layout/header";
+import { TableActionsMenu } from "@/components/ui/table-actions-menu";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -397,41 +398,34 @@ export default function DeliverySlotsPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <div className="relative inline-block">
-                        <button
-                          onClick={() => setMenuOpen(menuOpen === slot.id ? null : slot.id)}
-                          className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
-                        >
-                          <MoreHorizontal className="h-4 w-4" />
+                      <TableActionsMenu
+                        isOpen={menuOpen === slot.id}
+                        onClose={() => setMenuOpen(null)}
+                        onToggle={() => setMenuOpen(menuOpen === slot.id ? null : slot.id)}
+                        menuWidth={160}
+                        trigger={
+                          <button
+                            type="button"
+                            className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                          >
+                            <MoreHorizontal className="h-4 w-4" />
+                          </button>
+                        }
+                      >
+                        <button onClick={() => openView(slot)} className="flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                          <Eye className="h-4 w-4" /> View
                         </button>
-                        <AnimatePresence>
-                          {menuOpen === slot.id && (
-                            <>
-                              <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(null)} />
-                              <motion.div
-                                initial={{ opacity: 0, scale: 0.95 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.95 }}
-                                className="absolute right-0 top-full z-50 mt-1 w-40 rounded-xl border border-gray-200 bg-white py-1 shadow-lg"
-                              >
-                                <button onClick={() => openView(slot)} className="flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                                  <Eye className="h-4 w-4" /> View
-                                </button>
-                                <button onClick={() => openEdit(slot)} className="flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                                  <Pencil className="h-4 w-4" /> Edit
-                                </button>
-                                <button onClick={() => duplicateSlot(slot)} className="flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                                  <Copy className="h-4 w-4" /> Duplicate
-                                </button>
-                                <div className="my-1 border-t border-gray-100" />
-                                <button onClick={() => { setDeleteTarget(slot); setMenuOpen(null); }} className="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50">
-                                  <Trash2 className="h-4 w-4" /> Delete
-                                </button>
-                              </motion.div>
-                            </>
-                          )}
-                        </AnimatePresence>
-                      </div>
+                        <button onClick={() => openEdit(slot)} className="flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                          <Pencil className="h-4 w-4" /> Edit
+                        </button>
+                        <button onClick={() => duplicateSlot(slot)} className="flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                          <Copy className="h-4 w-4" /> Duplicate
+                        </button>
+                        <div className="my-1 border-t border-gray-100" />
+                        <button onClick={() => { setDeleteTarget(slot); setMenuOpen(null); }} className="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50">
+                          <Trash2 className="h-4 w-4" /> Delete
+                        </button>
+                      </TableActionsMenu>
                     </td>
                   </tr>
                 ))}

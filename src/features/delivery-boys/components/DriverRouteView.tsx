@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
 import { useDriverMutations, useDriverRoute } from "../hooks/useDeliveryBoys";
 import type { DriverDeliveryStop } from "../types/delivery-boys";
 import { DISPATCH_STATUS_LABELS } from "../types/delivery-boys";
+import { RealtimeDriverStops } from "@/features/realtime-dispatch/components/RealtimeDriverStops";
 
 type Tab = "today" | "completed" | "failed";
 
@@ -81,19 +82,21 @@ function StopCard({
 
       <div className="mt-4 flex flex-wrap gap-2">
         {stop.customerPhone && (
-          <Button type="button" size="sm" variant="outline" asChild>
-            <a href={`tel:${stop.customerPhone}`}>
-              <Phone className="mr-1 h-4 w-4" />
-              Call
-            </a>
+          <Button size="sm" variant="outline" href={`tel:${stop.customerPhone}`}>
+            <Phone className="mr-1 h-4 w-4" />
+            Call
           </Button>
         )}
         {stop.googleMapsUrl && (
-          <Button type="button" size="sm" variant="outline" asChild>
-            <a href={stop.googleMapsUrl} target="_blank" rel="noopener noreferrer">
-              <Navigation className="mr-1 h-4 w-4" />
-              Maps
-            </a>
+          <Button
+            size="sm"
+            variant="outline"
+            href={stop.googleMapsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Navigation className="mr-1 h-4 w-4" />
+            Maps
           </Button>
         )}
         {stop.dispatchStatus === "ASSIGNED" && (
@@ -170,7 +173,7 @@ export function DriverRouteView() {
         <div className="flex items-start justify-between gap-3">
           <div>
             <h1 className="text-lg font-bold text-gray-900">My Route</h1>
-            <p className="text-xs text-gray-500">Subscription deliveries only</p>
+            <p className="text-xs text-gray-500">Subscription + realtime deliveries</p>
           </div>
           <Button
             type="button"
@@ -228,6 +231,7 @@ export function DriverRouteView() {
       </div>
 
       <div className="space-y-3 p-4">
+        <RealtimeDriverStops tab={tab} date={date} />
         {routeQuery.isLoading ? (
           <div className="flex justify-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-orange-500" />

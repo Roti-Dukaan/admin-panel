@@ -32,6 +32,7 @@ import {
   SubscriptionPlan,
 } from "@/features/subscription-plans/types/subscription-plan";
 import { useSubscriptionPlanStore } from "@/features/subscription-plans/hooks/useSubscriptionPlans";
+import { TableActionsMenu } from "@/components/ui/table-actions-menu";
 
 export function PlansTable() {
   const allPlans = useSubscriptionPlanStore((s) => s.plans);
@@ -198,73 +199,69 @@ export function PlansTable() {
         cell: ({ row }) => {
           const plan = row.original;
           return (
-            <div className="relative">
+            <TableActionsMenu
+              isOpen={openDropdown === plan.id}
+              onClose={() => setOpenDropdown(null)}
+              onToggle={() => setOpenDropdown(openDropdown === plan.id ? null : plan.id)}
+              menuWidth={208}
+              trigger={
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50 hover:text-gray-900 transition-colors"
+                >
+                  <MoreHorizontal className="h-4 w-4" />
+                  Actions
+                </button>
+              }
+            >
               <button
-                onClick={() => setOpenDropdown(openDropdown === plan.id ? null : plan.id)}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50 hover:text-gray-900 transition-colors"
+                onClick={() => {
+                  openViewEditor(plan);
+                  setOpenDropdown(null);
+                }}
+                className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
               >
-                <MoreHorizontal className="h-4 w-4" />
-                Actions
+                <Eye className="h-4 w-4 text-gray-400" /> View
               </button>
-              {openDropdown === plan.id && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => setOpenDropdown(null)} />
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.95, y: -4 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    className="absolute right-0 top-full z-50 mt-1 w-52 rounded-xl border border-gray-200 bg-white py-1.5 shadow-lg"
-                  >
-                    <button
-                      onClick={() => {
-                        openViewEditor(plan);
-                        setOpenDropdown(null);
-                      }}
-                      className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                    >
-                      <Eye className="h-4 w-4 text-gray-400" /> View
-                    </button>
-                    <button
-                      onClick={() => {
-                        openEditEditor(plan);
-                        setOpenDropdown(null);
-                      }}
-                      className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                    >
-                      <Pencil className="h-4 w-4 text-gray-400" /> Edit
-                    </button>
-                    <button
-                      onClick={() => {
-                        duplicatePlan(plan);
-                        setOpenDropdown(null);
-                      }}
-                      className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                    >
-                      <Copy className="h-4 w-4 text-gray-400" /> Duplicate
-                    </button>
-                    <button
-                      onClick={() => {
-                        toggleActive(plan.id, !plan.isActive);
-                        setOpenDropdown(null);
-                      }}
-                      className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                    >
-                      <Power className="h-4 w-4 text-gray-400" />
-                      {plan.isActive ? "Deactivate" : "Activate"}
-                    </button>
-                    <div className="my-1 border-t border-gray-100" />
-                    <button
-                      onClick={() => {
-                        openDeleteModal(plan);
-                        setOpenDropdown(null);
-                      }}
-                      className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-red-600 hover:bg-red-50"
-                    >
-                      <Trash2 className="h-4 w-4" /> Delete
-                    </button>
-                  </motion.div>
-                </>
-              )}
-            </div>
+              <button
+                onClick={() => {
+                  openEditEditor(plan);
+                  setOpenDropdown(null);
+                }}
+                className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+              >
+                <Pencil className="h-4 w-4 text-gray-400" /> Edit
+              </button>
+              <button
+                onClick={() => {
+                  duplicatePlan(plan);
+                  setOpenDropdown(null);
+                }}
+                className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+              >
+                <Copy className="h-4 w-4 text-gray-400" /> Duplicate
+              </button>
+              <button
+                onClick={() => {
+                  toggleActive(plan.id, !plan.isActive);
+                  setOpenDropdown(null);
+                }}
+                className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+              >
+                <Power className="h-4 w-4 text-gray-400" />
+                {plan.isActive ? "Deactivate" : "Activate"}
+              </button>
+              <div className="my-1 border-t border-gray-100" />
+              <button
+                onClick={() => {
+                  openDeleteModal(plan);
+                  setOpenDropdown(null);
+                }}
+                className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+              >
+                <Trash2 className="h-4 w-4" /> Delete
+              </button>
+            </TableActionsMenu>
           );
         },
       },

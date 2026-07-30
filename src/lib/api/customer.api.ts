@@ -21,6 +21,7 @@ export interface ApiCustomer {
   updatedAt: string;
   branchId: string | null;
   branch: ApiCustomerBranch | null;
+  subscriptionPlanName?: string | null;
 }
 
 export interface ApiCustomerDetail extends ApiCustomer {

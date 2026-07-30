@@ -136,6 +136,11 @@ export const supportApi = {
     return data;
   },
 
+  async addReply(id: string, message: string): Promise<ApiResponse<SupportTicket>> {
+    const { data } = await apiClient.post(`/admin/support/${id}/reply`, { message });
+    return data;
+  },
+
   async uploadAttachment(id: string, file: File): Promise<ApiResponse<SupportTicket>> {
     const formData = new FormData();
     formData.append('file', file);

@@ -20,6 +20,7 @@ export interface Customer {
   updatedAt: string;
   branchId: string | null;
   branch: CustomerBranch | null;
+  subscriptionPlanName?: string | null;
 }
 
 export type CustomerDatePreset = "today" | "yesterday" | "7d" | "30d" | "this-month" | "custom" | "all"

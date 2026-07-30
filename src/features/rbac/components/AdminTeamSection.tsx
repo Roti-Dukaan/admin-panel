@@ -58,6 +58,8 @@ import {
 
 import { cn } from "@/lib/utils";
 
+import { TableActionsMenu } from "@/components/ui/table-actions-menu";
+
 
 
 const TEAM_QUERY_KEY = ["admin", "team"] as const;
@@ -554,99 +556,52 @@ export function AdminTeamSection() {
 
 
 
-                    <div className="relative">
-
+                    <TableActionsMenu
+                      isOpen={openDropdown === user.id}
+                      onClose={() => setOpenDropdown(null)}
+                      onToggle={() => setOpenDropdown(openDropdown === user.id ? null : user.id)}
+                      menuWidth={160}
+                      trigger={
+                        <button
+                          type="button"
+                          className="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                        >
+                          <MoreHorizontal className="h-4 w-4" />
+                        </button>
+                      }
+                    >
                       <button
-
                         type="button"
-
-                        onClick={() => setOpenDropdown(openDropdown === user.id ? null : user.id)}
-
-                        className="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-
+                        onClick={() => {
+                          setViewUser(user);
+                          setOpenDropdown(null);
+                        }}
+                        className="flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
                       >
-
-                        <MoreHorizontal className="h-4 w-4" />
-
+                        <Eye className="h-4 w-4 text-gray-400" /> View
                       </button>
-
-                      {openDropdown === user.id && (
-
-                        <>
-
-                          <div className="fixed inset-0 z-40" onClick={() => setOpenDropdown(null)} />
-
-                          <div className="absolute right-0 top-full z-50 mt-1 w-40 rounded-xl border border-gray-200 bg-white py-1.5 shadow-lg">
-
-                            <button
-
-                              type="button"
-
-                              onClick={() => {
-
-                                setViewUser(user);
-
-                                setOpenDropdown(null);
-
-                              }}
-
-                              className="flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
-
-                            >
-
-                              <Eye className="h-4 w-4 text-gray-400" /> View
-
-                            </button>
-
-                            <button
-
-                              type="button"
-
-                              onClick={() => {
-
-                                setEditUser(user);
-
-                                setOpenDropdown(null);
-
-                              }}
-
-                              className="flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
-
-                            >
-
-                              <Pencil className="h-4 w-4 text-gray-400" /> Edit
-
-                            </button>
-
-                            <div className="my-1 border-t border-gray-100" />
-
-                            <button
-
-                              type="button"
-
-                              onClick={() => {
-
-                                setDeleteUser(user);
-
-                                setOpenDropdown(null);
-
-                              }}
-
-                              className="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50"
-
-                            >
-
-                              <Trash2 className="h-4 w-4" /> Delete
-
-                            </button>
-
-                          </div>
-
-                        </>
-
-                      )}
-
-                    </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditUser(user);
+                          setOpenDropdown(null);
+                        }}
+                        className="flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      >
+                        <Pencil className="h-4 w-4 text-gray-400" /> Edit
+                      </button>
+                      <div className="my-1 border-t border-gray-100" />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDeleteUser(user);
+                          setOpenDropdown(null);
+                        }}
+                        className="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+                      >
+                        <Trash2 className="h-4 w-4" /> Delete
+                      </button>
+                    </TableActionsMenu>
 
                   </div>
 

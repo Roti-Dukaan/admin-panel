@@ -38,6 +38,7 @@ import {
   Bookmark,
 } from "lucide-react";
 import { useRoleStore } from "../hooks/useRoles";
+import { TableActionsMenu } from "@/components/ui/table-actions-menu";
 import { Role } from "../types/role";
 
 const iconMap: Record<string, React.ElementType> = {
@@ -241,97 +242,91 @@ export function RolesTable() {
         cell: ({ row }) => {
           const role = row.original;
           return (
-            <div className="relative">
+            <TableActionsMenu
+              isOpen={openMenuId === role.id}
+              onClose={() => setOpenMenuId(null)}
+              onToggle={() => setOpenMenuId(openMenuId === role.id ? null : role.id)}
+              menuWidth={192}
+              trigger={
+                <button
+                  type="button"
+                  className="inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white p-1.5 text-gray-500 hover:bg-gray-50 transition-colors"
+                >
+                  <MoreHorizontal className="h-4 w-4" />
+                </button>
+              }
+            >
               <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setOpenMenuId(openMenuId === role.id ? null : role.id);
+                onClick={() => {
+                  router.push(`/admin/roles/${role.id}`);
+                  setOpenMenuId(null);
                 }}
-                className="inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white p-1.5 text-gray-500 hover:bg-gray-50 transition-colors"
+                className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
               >
-                <MoreHorizontal className="h-4 w-4" />
+                <Eye className="h-4 w-4 text-gray-400" />
+                View Details
               </button>
-              {openMenuId === role.id && (
+              <button
+                onClick={() => {
+                  router.push(`/admin/roles/${role.id}?edit=true`);
+                  setOpenMenuId(null);
+                }}
+                className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+              >
+                <Pencil className="h-4 w-4 text-gray-400" />
+                Edit Role
+              </button>
+              {!role.isSystem && (
                 <>
-                  <div
-                    className="fixed inset-0 z-40"
-                    onClick={() => setOpenMenuId(null)}
-                  />
-                  <div className="absolute right-0 top-full z-50 mt-1 w-48 rounded-xl border border-gray-200 bg-white py-1 shadow-lg">
-                    <button
-                      onClick={() => {
-                        router.push(`/admin/roles/${role.id}`);
-                        setOpenMenuId(null);
-                      }}
-                      className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                    >
-                      <Eye className="h-4 w-4 text-gray-400" />
-                      View Details
-                    </button>
-                    <button
-                      onClick={() => {
-                        router.push(`/admin/roles/${role.id}?edit=true`);
-                        setOpenMenuId(null);
-                      }}
-                      className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                    >
-                      <Pencil className="h-4 w-4 text-gray-400" />
-                      Edit Role
-                    </button>
-                    {!role.isSystem && (
-                      <>
-                        <button
-                          onClick={() => {
-                            setCloneSourceRole(role);
-                            setCloneDialogOpen(true);
-                            setOpenMenuId(null);
-                          }}
-                          className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                        >
-                          <Copy className="h-4 w-4 text-gray-400" />
-                          Clone Role
-                        </button>
-                        <button
-                          onClick={() => {
-                            archiveRole(role.id);
-                            setOpenMenuId(null);
-                          }}
-                          className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-amber-700 hover:bg-amber-50"
-                        >
-                          <Archive className="h-4 w-4" />
-                          Archive
-                        </button>
-                        <div className="my-1 border-t border-gray-100" />
-                        <button
-                          onClick={() => {
-                            setRoleToDelete(role);
-                            setDeleteModalOpen(true);
-                            setOpenMenuId(null);
-                          }}
-                          className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-red-600 hover:bg-red-50"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                          Delete
-                        </button>
-                      </>
-                    )}
-                    {role.isSystem && (
-                      <button
-                        onClick={() => {
-                          setCloneSourceRole(role);
-                          setCloneDialogOpen(true);
-                          setOpenMenuId(null);
-                        }}
-                        className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                      >
-                        <Copy className="h-4 w-4 text-gray-400" />
-                        Clone Role
-                      </button>
-                    )}
-                  </div>
+                  <button
+                    onClick={() => {
+                      setCloneSourceRole(role);
+                      setCloneDialogOpen(true);
+                      setOpenMenuId(null);
+                    }}
+                    className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                  >
+                    <Copy className="h-4 w-4 text-gray-400" />
+                    Clone Role
+                  </button>
+                  <button
+                    onClick={() => {
+                      archiveRole(role.id);
+                      setOpenMenuId(null);
+                    }}
+                    className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-amber-700 hover:bg-amber-50"
+                  >
+                    <Archive className="h-4 w-4" />
+                    Archive
+                  </button>
+                  <div className="my-1 border-t border-gray-100" />
+                  <button
+                    onClick={() => {
+                      setRoleToDelete(role);
+                      setDeleteModalOpen(true);
+                      setOpenMenuId(null);
+                    }}
+                    className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Delete
+                  </button>
                 </>
               )}
-            </div>
+              {role.isSystem && (
+                <button
+                  onClick={() => {
+                    setCloneSourceRole(role);
+                    setCloneDialogOpen(true);
+                    setOpenMenuId(null);
+                  }}
+                  className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                >
+                  <Copy className="h-4 w-4 text-gray-400" />
+                  Clone Role
+                </button>
+              )}
+            </TableActionsMenu>
           );
         },
       },
