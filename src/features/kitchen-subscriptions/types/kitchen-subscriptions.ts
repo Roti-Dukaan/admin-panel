@@ -1,121 +1,119 @@
-export type SubscriptionKitchenStage = "PREPARING" | "READY" | "READY_FOR_DISPATCH" | "ASSIGNED" | "PICKED_UP";
+export type SubscriptionPrepStatus = "PENDING" | "PREPARING" | "PACKED" | "READY" | "DELIVERED" | "OTHER";
+export type SubscriptionPackingStatus = "PENDING" | "IN_PROGRESS" | "PACKED";
+export type SubscriptionDispatchStatus = "PENDING" | "READY" | "HANDED_OVER" | "DELIVERED";
+export interface SubscriptionRotiItem {
+  name: string;
+  rotiType: string | null;
+  quantity: number;
+}
 
-export const SUBSCRIPTION_STAGES: SubscriptionKitchenStage[] = [
-  "PREPARING",
-  "READY",
-  "READY_FOR_DISPATCH",
-];
+export interface SubscriptionDeliveryDashboard {
+  pendingPrep: number;
+  assigned: number;
+  outForDelivery: number;
+  delivered: number;
+  failed: number;
+  cancelledSkipped: number;
+  generatedAt: string;
+}
 
-export const SUBSCRIPTION_STAGE_META: Record<
-  SubscriptionKitchenStage,
-  { label: string; shortLabel: string; emoji: string; accent: string; columnClass: string; dotClass: string; pillClass: string }
-> = {
-  PREPARING: {
-    label: "Preparing",
-    shortLabel: "Preparing",
-    emoji: "👨‍🍳",
-    accent: "text-amber-700",
-    columnClass: "bg-amber-50/60",
-    dotClass: "bg-amber-400",
-    pillClass: "bg-amber-50 text-amber-700",
-  },
-  READY: {
-    label: "Ready",
-    shortLabel: "Ready",
-    emoji: "✅",
-    accent: "text-emerald-700",
-    columnClass: "bg-emerald-50/60",
-    dotClass: "bg-emerald-400",
-    pillClass: "bg-emerald-50 text-emerald-700",
-  },
-  READY_FOR_DISPATCH: {
-    label: "Ready For Dispatch",
-    shortLabel: "Dispatch",
-    emoji: "📦",
-    accent: "text-blue-700",
-    columnClass: "bg-blue-50/60",
-    dotClass: "bg-blue-400",
-    pillClass: "bg-blue-50 text-blue-700",
-  },
-};
+export interface SubscriptionKitchenSummary {
+  date: string;
+  branchId: string | null;
+  totalDeliveries: number;
+  totalPacks: number;
+  totalRotis: number;
+  totalCustomers: number;
+  statusCounts: {
+    pending: number;
+    preparing: number;
+    packed: number;
+    readyForDispatch: number;
+  };
+  bySlot: Array<{
+    slotId: string;
+    slotName: string;
+    deliveryCount: number;
+    customerCount: number;
+    packCount: number;
+    rotiCount: number;
+    rotiTypeTotals: Array<{ rotiType: string; quantity: number }>;
+  }>;
+  rotiTypeTotals: Array<{ rotiType: string; quantity: number }>;
+}
 
-export interface SubscriptionOrderListItem {
-  orderId: string;
-  orderNumber: string;
-  customerId: string;
+export interface SubscriptionPrepRow {
+  id: string;
+  deliveryDate: string;
+  source: "SUBSCRIPTION_DELIVERY";
   customerName: string;
   customerPhone: string;
-  mealSlot: string;
-  subscriptionId: string;
-  subscriptionNumber: string;
-  stage: SubscriptionKitchenStage;
-  itemsCount: number;
-  totalQuantity: number;
-  grandTotal: number;
+  area: string;
+  address: string;
+  deliverySlotId: string | null;
   deliverySlotName: string | null;
   deliverySlotStart: string | null;
   deliverySlotEnd: string | null;
-  deliveryZone: string | null;
-  createdAt: string;
-  startedPreparingAt: string | null;
-  readyAt: string | null;
-  readyForDispatchAt: string | null;
+  selectedRotis: SubscriptionRotiItem[];
+  totalQuantity: number;
+  notes: string | null;
+  status: string;
+  prepStatus: SubscriptionPrepStatus;
+  packingStatus: SubscriptionPackingStatus;
+  dispatchStatus: SubscriptionDispatchStatus;
+  planName: string | null;
+  subscriptionId: string;
 }
 
-export interface SubscriptionOrderDetail extends SubscriptionOrderListItem {
-  items: Array<{
-    id: string;
-    foodNameSnapshot: string;
-    categorySnapshot?: string;
-    quantity: number;
-    finalUnitPrice: number;
-    lineTotal: number;
-  }>;
-  address: {
-    customerName: string;
-    phoneNumber: string;
-    addressLine1: string;
-    addressLine2?: string;
-    landmark?: string;
-    city: string;
-    state: string;
-    pincode: string;
-  } | null;
-  pricing: {
-    currency: string;
-    subtotalBaseAmount: number;
-    subtotalGSTAmount: number;
-    subtotalAmount: number;
-    deliveryCharge: number;
-    grandTotal: number;
-  };
-  specialInstructions?: string;
-  timeline: Array<{
-    id: string;
-    status: string;
-    remarks?: string;
-    createdByType: string;
-    createdById: string;
-    createdAt: string;
-  }>;
+export interface SubscriptionDispatchRow {
+  id: string;
+  source: "SUBSCRIPTION_DELIVERY";
+  customerName: string;
+  customerPhone: string;
+  area: string;
+  address: string;
+  deliverySlotName: string | null;
+  selectedRotis: SubscriptionRotiItem[];
+  totalQuantity: number;
+  notes: string | null;
+  status: string;
+  dispatchStatus: "READY";
 }
 
-export interface SubscriptionProductionSummary {
-  breakfast: { totalOrders: number; vegMeals: number; nonVegMeals: number; totalRotis: number };
-  lunch: { totalOrders: number; vegMeals: number; nonVegMeals: number; totalRotis: number };
-  dinner: { totalOrders: number; vegMeals: number; nonVegMeals: number; totalRotis: number };
-  totalOrders: number;
-  totalVegMeals: number;
-  totalNonVegMeals: number;
-  totalRotis: number;
-}
+export const ROTI_TYPE_LABELS: Record<string, string> = {
+  JOWAR: "Jowar",
+  RAGI: "Ragi",
+  WHEAT: "Wheat",
+  MIXED: "Mixed",
+  OTHERS: "Others",
+};
 
-export interface SubscriptionOrderListResponse {
-  items: SubscriptionOrderListItem[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
-}
+export const PREP_STATUS_META: Record<
+  SubscriptionPrepStatus,
+  { label: string; className: string }
+> = {
+  PENDING: { label: "Pending", className: "bg-blue-50 text-blue-700" },
+  PREPARING: { label: "Preparing", className: "bg-amber-50 text-amber-700" },
+  PACKED: { label: "Packed", className: "bg-emerald-50 text-emerald-700" },
+  READY: { label: "Ready", className: "bg-indigo-50 text-indigo-700" },
+  DELIVERED: { label: "Delivered", className: "bg-emerald-50 text-emerald-700" },
+  OTHER: { label: "Other", className: "bg-gray-50 text-gray-700" },};
 
-export type MealSlot = "breakfast" | "lunch" | "dinner" | "all";
+export const PACKING_STATUS_META: Record<
+  SubscriptionPackingStatus,
+  { label: string; className: string }
+> = {
+  PENDING: { label: "Pending", className: "bg-gray-50 text-gray-600" },
+  IN_PROGRESS: { label: "In Progress", className: "bg-amber-50 text-amber-700" },
+  PACKED: { label: "Packed", className: "bg-emerald-50 text-emerald-700" },
+};
+
+export const DISPATCH_STATUS_META: Record<
+  SubscriptionDispatchStatus,
+  { label: string; className: string }
+> = {
+  PENDING: { label: "Pending", className: "bg-gray-50 text-gray-600" },
+  READY: { label: "Ready", className: "bg-blue-50 text-blue-700" },
+  HANDED_OVER: { label: "Handed Over", className: "bg-indigo-50 text-indigo-700" },
+  DELIVERED: { label: "Delivered", className: "bg-emerald-50 text-emerald-700" },
+};

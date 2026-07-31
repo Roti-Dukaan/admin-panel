@@ -5,7 +5,17 @@ import { usePathname } from "next/navigation"
 import { Sidebar } from "@/components/sidebar/Sidebar"
 import { cn } from "@/lib/utils"
 
-const SIDEBAR_ROUTES = ["/dashboard", "/orders", "/kitchen", "/kitchen-production", "/deliveries", "/menu", "/customers", "/subscription-plans", "/subscriptions", "/subscription-operations", "/delivery-slots", "/reports", "/settings", "/admin", "/audit-logs", "/branches", "/cities", "/areas", "/branch/dashboard", "/branch/orders", "/branch/kitchen", "/branch/production", "/branch/menu", "/branch/inventory", "/branch/delivery", "/branch/dispatch", "/branch/customers", "/branch/reports", "/branch/profile", "/branch-inventory", "/support", "/branch/support", "/dispatch", "/cms", "/cms/banners"]
+const SIDEBAR_ROUTES = [
+  "/dashboard", "/orders", "/kitchen", "/kitchen-production", "/deliveries", "/menu",
+  "/subscription-menu", "/customers", "/subscription-plans", "/subscriptions",
+  "/subscription-operations", "/delivery-slots", "/reports", "/settings", "/admin",
+  "/audit-logs", "/branches", "/cities", "/areas", "/branch/dashboard", "/branch/orders",
+  "/branch/kitchen", "/branch/subscription-dispatch", "/branch/production", "/branch/menu",
+  "/branch/inventory", "/branch/delivery", "/branch/dispatch", "/branch/delivery-boys",
+  "/branch/customers", "/branch/team", "/branch/reports", "/branch/profile",
+  "/branch-inventory", "/support", "/branch/support", "/dispatch", "/cms", "/cms/banners",
+  "/coupons",
+]
 
 interface SidebarContextValue {
   mobileOpen: boolean

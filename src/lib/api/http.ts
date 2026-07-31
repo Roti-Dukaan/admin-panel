@@ -1,6 +1,6 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios';
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+import { useAdminAuthStore } from '@/features/admin-auth/store/admin-auth-store';
+import { API_BASE_URL } from '@/lib/env';
 
 export const apiClient = axios.create({
   baseURL: `${API_BASE_URL}/api/v1`,
@@ -92,6 +92,10 @@ apiClient.interceptors.response.use(
           };
           localStorage.setItem('admin-auth', JSON.stringify(parsed));
         }
+
+        // Sync zustand + reconnect the shared realtime socket (setTokens also
+        // persists; localStorage is updated first so getToken() sees the new JWT).
+        useAdminAuthStore.getState().setTokens(newAccessToken, newRefreshToken);
 
         onTokenRefreshed(newAccessToken);
         if (originalRequest.headers) {

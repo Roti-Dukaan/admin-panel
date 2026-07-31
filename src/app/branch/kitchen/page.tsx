@@ -1,47 +1,53 @@
 "use client"
 
 import * as React from "react"
+import { Suspense } from "react"
+import { useSearchParams, useRouter } from "next/navigation"
 import { Header } from "@/components/layout/header"
 import { KitchenBoard } from "@/features/kitchen/components/KitchenBoard"
 import { SubscriptionsBoard } from "@/features/kitchen-subscriptions/components/SubscriptionsBoard"
+import { SubscriptionDispatchBoard } from "@/features/kitchen-subscriptions/components/SubscriptionDispatchBoard"
 import { usePrepClock } from "@/features/kitchen/hooks/usePrepClock"
-import { connectRealtime, disconnectRealtime, onRealtime } from "@/lib/realtime/socket"
-import { REALTIME_EVENTS } from "@/lib/realtime/events"
+import { useRealtimeConnectionStatus } from "@/lib/realtime/useRealtimeConnectionStatus"
 import { format } from "date-fns"
 import { Clock, Wifi, WifiOff } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-type KitchenTab = "live" | "subscriptions";
+type KitchenTab = "live" | "subscriptions" | "dispatch";
 
 const TABS: { value: KitchenTab; label: string; emoji: string }[] = [
   { value: "live", label: "Live Orders", emoji: "🔥" },
-  { value: "subscriptions", label: "Subscriptions", emoji: "🔁" },
+  { value: "subscriptions", label: "Subscription Prep", emoji: "🔁" },
+  { value: "dispatch", label: "Dispatch Ready", emoji: "🚚" },
 ];
 
-function useSocketConnection() {
-  const [connected, setConnected] = React.useState(false)
-
-  React.useEffect(() => {
-    const socket = connectRealtime()
-    setConnected(socket.connected)
-
-    const offConnect = onRealtime(REALTIME_EVENTS.CONNECT, () => setConnected(true))
-    const offDisconnect = onRealtime(REALTIME_EVENTS.DISCONNECT, () => setConnected(false))
-
-    return () => {
-      offConnect()
-      offDisconnect()
-      disconnectRealtime()
-    }
-  }, [])
-
-  return connected
+function parseKitchenTab(value: string | null): KitchenTab {
+  if (value === "subscriptions" || value === "dispatch") return value
+  return "live"
 }
 
-export default function BranchKitchenPage() {
+function BranchKitchenPageContent() {
   const now = usePrepClock(true)
-  const connected = useSocketConnection()
-  const [activeTab, setActiveTab] = React.useState<KitchenTab>("live")
+  const connected = useRealtimeConnectionStatus()
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const [activeTab, setActiveTab] = React.useState<KitchenTab>(() => parseKitchenTab(searchParams.get("tab")))
+
+  React.useEffect(() => {
+    setActiveTab(parseKitchenTab(searchParams.get("tab")))
+  }, [searchParams])
+
+  const handleTabChange = (tab: KitchenTab) => {
+    setActiveTab(tab)
+    const params = new URLSearchParams(searchParams.toString())
+    if (tab === "live") {
+      params.delete("tab")
+    } else {
+      params.set("tab", tab)
+    }
+    const query = params.toString()
+    router.replace(query ? `/branch/kitchen?${query}` : "/branch/kitchen", { scroll: false })
+  }
 
   return (
     <div className="min-h-screen bg-gray-50/50">
@@ -76,7 +82,7 @@ export default function BranchKitchenPage() {
               <button
                 key={tab.value}
                 type="button"
-                onClick={() => setActiveTab(tab.value)}
+                onClick={() => handleTabChange(tab.value)}
                 className={cn(
                   "flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium transition-colors",
                   activeTab === tab.value
@@ -93,6 +99,21 @@ export default function BranchKitchenPage() {
       />
       {activeTab === "live" && <KitchenBoard />}
       {activeTab === "subscriptions" && <SubscriptionsBoard />}
+      {activeTab === "dispatch" && <SubscriptionDispatchBoard />}
     </div>
+  )
+}
+
+export default function BranchKitchenPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-gray-50/50">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-orange-500 border-t-transparent" />
+        </div>
+      }
+    >
+      <BranchKitchenPageContent />
+    </Suspense>
   )
 }

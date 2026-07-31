@@ -80,7 +80,7 @@ export default function CmsBannersPage() {
 
   const handleEdit = (banner: any) => {
     setEditingBanner(banner);
-    setActiveTab('edit');
+    router.push(`/cms/banners/${banner.id}`);
   };
 
   const handleCreate = () => {

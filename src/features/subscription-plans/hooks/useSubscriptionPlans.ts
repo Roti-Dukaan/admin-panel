@@ -1,33 +1,25 @@
-import { create } from 'zustand';
+import { create } from "zustand";
 import {
+  CreateSubscriptionPlanInput,
+  PlanStatusFilter,
   SubscriptionPlan,
-  PlanStatus,
-  PlanTab,
-  PlanBenefit,
-  PlanPricing,
-  MealConfiguration,
-  DeliverySchedule,
-  MenuInclusion,
-  PlanRules,
-  DeliveryRules,
-  SeoConfig,
-} from '../types/subscription-plan';
-import { plansApi } from '../services/plans.api';
+  UpdateSubscriptionPlanInput,
+} from "../types/subscription-plan";
+import { plansApi } from "../services/plans.api";
 
 interface SubscriptionPlanStore {
   plans: SubscriptionPlan[];
   loading: boolean;
   searchQuery: string;
-  statusFilter: PlanStatus | 'all';
+  statusFilter: PlanStatusFilter;
   editorOpen: boolean;
-  editorMode: 'create' | 'edit' | 'view';
-  activeTab: PlanTab;
+  editorMode: "create" | "edit" | "view";
   selectedPlan: SubscriptionPlan | null;
   deleteModalOpen: boolean;
   planToDelete: SubscriptionPlan | null;
 
   setSearchQuery: (query: string) => void;
-  setStatusFilter: (status: PlanStatus | 'all') => void;
+  setStatusFilter: (status: PlanStatusFilter) => void;
 
   loadPlans: () => Promise<void>;
 
@@ -35,34 +27,21 @@ interface SubscriptionPlanStore {
   openEditEditor: (plan: SubscriptionPlan) => void;
   openViewEditor: (plan: SubscriptionPlan) => void;
   closeEditor: () => void;
-  setActiveTab: (tab: PlanTab) => void;
 
   openDeleteModal: (plan: SubscriptionPlan) => void;
   closeDeleteModal: () => void;
 
-  addPlan: (plan: Omit<SubscriptionPlan, 'id' | 'createdAt' | 'updatedAt' | 'subscribers'>) => Promise<SubscriptionPlan>;
-  updatePlan: (id: string, data: Partial<SubscriptionPlan>) => Promise<SubscriptionPlan>;
+  addPlan: (plan: CreateSubscriptionPlanInput) => Promise<SubscriptionPlan>;
+  updatePlan: (id: string, data: UpdateSubscriptionPlanInput) => Promise<SubscriptionPlan>;
   deletePlan: (id: string) => Promise<void>;
   duplicatePlan: (plan: SubscriptionPlan) => Promise<void>;
-  archivePlan: (id: string) => Promise<void>;
-  toggleFeatured: (id: string) => void;
-  toggleStatus: (id: string, status: PlanStatus) => Promise<void>;
-
-  updatePlanPricing: (id: string, pricing: Partial<PlanPricing>) => void;
-  updatePlanMeals: (id: string, meals: Partial<MealConfiguration>) => void;
-  updatePlanDelivery: (id: string, delivery: Partial<DeliverySchedule>) => void;
-  updatePlanMenu: (id: string, menu: Partial<MenuInclusion>) => void;
-  updatePlanBenefits: (id: string, benefits: PlanBenefit[]) => void;
-  updatePlanRules: (id: string, rules: Partial<PlanRules>) => void;
-  updatePlanDeliveryRules: (id: string, deliveryRules: Partial<DeliveryRules>) => void;
-  updatePlanSeo: (id: string, seo: Partial<SeoConfig>) => void;
+  toggleActive: (id: string, isActive: boolean) => Promise<void>;
 
   getFilteredPlans: () => SubscriptionPlan[];
   getStats: () => {
     total: number;
     active: number;
-    draft: number;
-    featured: number;
+    inactive: number;
     weekly: number;
     monthly: number;
   };
@@ -71,11 +50,10 @@ interface SubscriptionPlanStore {
 export const useSubscriptionPlanStore = create<SubscriptionPlanStore>((set, get) => ({
   plans: [],
   loading: false,
-  searchQuery: '',
-  statusFilter: 'all',
+  searchQuery: "",
+  statusFilter: "all",
   editorOpen: false,
-  editorMode: 'create',
-  activeTab: 'general',
+  editorMode: "create",
   selectedPlan: null,
   deleteModalOpen: false,
   planToDelete: null,
@@ -96,43 +74,37 @@ export const useSubscriptionPlanStore = create<SubscriptionPlanStore>((set, get)
   openCreateEditor: () =>
     set({
       editorOpen: true,
-      editorMode: 'create',
+      editorMode: "create",
       selectedPlan: null,
-      activeTab: 'general',
     }),
 
   openEditEditor: (plan) =>
     set({
       editorOpen: true,
-      editorMode: 'edit',
+      editorMode: "edit",
       selectedPlan: plan,
-      activeTab: 'general',
     }),
 
   openViewEditor: (plan) =>
     set({
       editorOpen: true,
-      editorMode: 'view',
+      editorMode: "view",
       selectedPlan: plan,
-      activeTab: 'general',
     }),
 
   closeEditor: () =>
     set({
       editorOpen: false,
       selectedPlan: null,
-      activeTab: 'general',
     }),
-
-  setActiveTab: (tab) => set({ activeTab: tab }),
 
   openDeleteModal: (plan) => set({ deleteModalOpen: true, planToDelete: plan }),
   closeDeleteModal: () => set({ deleteModalOpen: false, planToDelete: null }),
 
   addPlan: async (planData) => {
-    const created = await plansApi.create(planData as SubscriptionPlan);
+    const created = await plansApi.create(planData);
     set((state) => ({
-      plans: [created, ...state.plans],
+      plans: [...state.plans, created].sort((a, b) => a.displayOrder - b.displayOrder),
       editorOpen: false,
       selectedPlan: null,
     }));
@@ -140,9 +112,11 @@ export const useSubscriptionPlanStore = create<SubscriptionPlanStore>((set, get)
   },
 
   updatePlan: async (id, data) => {
-    const updated = await plansApi.update(id, data as SubscriptionPlan);
+    const updated = await plansApi.update(id, data);
     set((state) => ({
-      plans: state.plans.map((p) => (p.id === id ? updated : p)),
+      plans: state.plans
+        .map((p) => (p.id === id ? updated : p))
+        .sort((a, b) => a.displayOrder - b.displayOrder),
       editorOpen: false,
       selectedPlan: null,
     }));
@@ -152,103 +126,49 @@ export const useSubscriptionPlanStore = create<SubscriptionPlanStore>((set, get)
   deletePlan: async (id) => {
     await plansApi.remove(id);
     set((state) => ({
-      plans: state.plans.filter((p) => p.id !== id),
+      plans: state.plans.map((p) => (p.id === id ? { ...p, isActive: false } : p)),
       deleteModalOpen: false,
       planToDelete: null,
     }));
   },
 
   duplicatePlan: async (plan) => {
-    const copy: SubscriptionPlan = {
-      ...plan,
-      id: '',
+    const created = await plansApi.create({
       name: `${plan.name} (Copy)`,
-      slug: `${plan.slug}-copy`,
-      status: 'draft',
-      subscribers: 0,
-    };
-    const created = await plansApi.create(copy);
-    set((state) => ({ plans: [created, ...state.plans] }));
-  },
-
-  archivePlan: async (id) => {
-    const plan = get().plans.find((p) => p.id === id);
-    if (!plan) return;
-    const updated = await plansApi.setActive(id, false);
+      slug: plan.slug ? `${plan.slug}-copy` : undefined,
+      description: plan.description ?? undefined,
+      type: plan.type,
+      price: plan.originalPrice ?? plan.price,
+      validityDays: plan.validityDays,
+      deliveriesPerCycle: plan.deliveriesPerCycle,
+      itemRules: plan.itemRules,
+      isActive: false,
+      displayOrder: plan.displayOrder + 1,
+      badge: plan.badge ?? undefined,
+      skipEnabled: plan.skipEnabled,
+      monthlySkipLimit: plan.monthlySkipLimit,
+      weeklySkipLimit: plan.weeklySkipLimit,
+      maxSkipDaysPerCycle: plan.maxSkipDaysPerCycle,
+      skipCutoffHours: plan.skipCutoffHours,
+      carryForwardEnabled: plan.carryForwardEnabled,
+      carryForwardMode: plan.carryForwardMode,
+      allowAdminOverride: plan.allowAdminOverride,
+      discountType: plan.discountType,
+      discountValue: plan.discountValue,
+      discountLabel: plan.discountLabel ?? undefined,
+      isDiscountActive: plan.isDiscountActive,
+    });
     set((state) => ({
-      plans: state.plans.map((p) => (p.id === id ? { ...updated, status: 'archived' as const } : p)),
+      plans: [...state.plans, created].sort((a, b) => a.displayOrder - b.displayOrder),
     }));
   },
 
-  toggleFeatured: (id) =>
+  toggleActive: async (id, isActive) => {
+    const updated = await plansApi.update(id, { isActive });
     set((state) => ({
-      plans: state.plans.map((p) =>
-        p.id === id ? { ...p, isFeatured: !p.isFeatured, updatedAt: Date.now() } : p
-      ),
-    })),
-
-  toggleStatus: async (id, status) => {
-    const updated = await plansApi.setActive(id, status === 'published');
-    set((state) => ({
-      plans: state.plans.map((p) => (p.id === id ? { ...updated, status } : p)),
+      plans: state.plans.map((p) => (p.id === id ? updated : p)),
     }));
   },
-
-  updatePlanPricing: (id, pricing) =>
-    set((state) => ({
-      plans: state.plans.map((p) =>
-        p.id === id ? { ...p, pricing: { ...p.pricing, ...pricing }, updatedAt: Date.now() } : p
-      ),
-    })),
-
-  updatePlanMeals: (id, meals) =>
-    set((state) => ({
-      plans: state.plans.map((p) =>
-        p.id === id ? { ...p, meals: { ...p.meals, ...meals }, updatedAt: Date.now() } : p
-      ),
-    })),
-
-  updatePlanDelivery: (id, delivery) =>
-    set((state) => ({
-      plans: state.plans.map((p) =>
-        p.id === id ? { ...p, delivery: { ...p.delivery, ...delivery }, updatedAt: Date.now() } : p
-      ),
-    })),
-
-  updatePlanMenu: (id, menu) =>
-    set((state) => ({
-      plans: state.plans.map((p) =>
-        p.id === id ? { ...p, menu: { ...p.menu, ...menu }, updatedAt: Date.now() } : p
-      ),
-    })),
-
-  updatePlanBenefits: (id, benefits) =>
-    set((state) => ({
-      plans: state.plans.map((p) =>
-        p.id === id ? { ...p, benefits, updatedAt: Date.now() } : p
-      ),
-    })),
-
-  updatePlanRules: (id, rules) =>
-    set((state) => ({
-      plans: state.plans.map((p) =>
-        p.id === id ? { ...p, rules: { ...p.rules, ...rules }, updatedAt: Date.now() } : p
-      ),
-    })),
-
-  updatePlanDeliveryRules: (id, deliveryRules) =>
-    set((state) => ({
-      plans: state.plans.map((p) =>
-        p.id === id ? { ...p, deliveryRules: { ...p.deliveryRules, ...deliveryRules }, updatedAt: Date.now() } : p
-      ),
-    })),
-
-  updatePlanSeo: (id, seo) =>
-    set((state) => ({
-      plans: state.plans.map((p) =>
-        p.id === id ? { ...p, seo: { ...p.seo, ...seo }, updatedAt: Date.now() } : p
-      ),
-    })),
 
   getFilteredPlans: () => {
     const { plans, searchQuery, statusFilter } = get();
@@ -259,13 +179,15 @@ export const useSubscriptionPlanStore = create<SubscriptionPlanStore>((set, get)
       filtered = filtered.filter(
         (p) =>
           p.name.toLowerCase().includes(q) ||
-          p.shortDescription.toLowerCase().includes(q) ||
-          p.planBadge.toLowerCase().includes(q)
+          (p.description ?? "").toLowerCase().includes(q) ||
+          (p.slug ?? "").toLowerCase().includes(q)
       );
     }
 
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter((p) => p.status === statusFilter);
+    if (statusFilter === "active") {
+      filtered = filtered.filter((p) => p.isActive);
+    } else if (statusFilter === "inactive") {
+      filtered = filtered.filter((p) => !p.isActive);
     }
 
     return filtered.sort((a, b) => a.displayOrder - b.displayOrder);
@@ -275,11 +197,10 @@ export const useSubscriptionPlanStore = create<SubscriptionPlanStore>((set, get)
     const { plans } = get();
     return {
       total: plans.length,
-      active: plans.filter((p) => p.status === 'published').length,
-      draft: plans.filter((p) => p.status === 'draft').length,
-      featured: plans.filter((p) => p.isFeatured).length,
-      weekly: plans.filter((p) => p.delivery.deliveryDays.length >= 5).length,
-      monthly: plans.filter((p) => p.pricing.monthlyPrice > 0).length,
+      active: plans.filter((p) => p.isActive).length,
+      inactive: plans.filter((p) => !p.isActive).length,
+      weekly: plans.filter((p) => p.type === "WEEKLY").length,
+      monthly: plans.filter((p) => p.type === "MONTHLY").length,
     };
   },
 }));

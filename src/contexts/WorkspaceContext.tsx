@@ -3,7 +3,7 @@
 import * as React from "react"
 import { useAdminAuthStore } from "@/features/admin-auth/store/admin-auth-store"
 
-export type Workspace = 'SUPER_ADMIN' | 'BRANCH_MANAGER'
+export type Workspace = 'SUPER_ADMIN' | 'BRANCH_MANAGER' | 'DELIVERY_BOY'
 
 export interface WorkspaceContextValue {
   workspace: Workspace | null
@@ -11,6 +11,7 @@ export interface WorkspaceContextValue {
   branchId: string | null
   permissions: string[]
   isBranchManager: boolean
+  isDeliveryBoy: boolean
   isSuperAdmin: boolean
   isAuthenticated: boolean
 }
@@ -21,6 +22,7 @@ export const WorkspaceContext = React.createContext<WorkspaceContextValue>({
   branchId: null,
   permissions: [],
   isBranchManager: false,
+  isDeliveryBoy: false,
   isSuperAdmin: false,
   isAuthenticated: false,
 })
@@ -36,24 +38,12 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   const permissions = useAdminAuthStore((s) => s.permissions)
   const isAuthenticated = useAdminAuthStore((s) => s.isAuthenticated)
 
-  React.useEffect(() => {
-    try {
-      const raw = localStorage.getItem('admin-auth')
-      if (raw) {
-        const parsed = JSON.parse(raw)
-        if (parsed?.state) {
-          useAdminAuthStore.setState(parsed.state)
-        }
-      }
-    } catch {
-    }
-  }, [])
-
   const isBranchManager = role === 'BRANCH_MANAGER'
+  const isDeliveryBoy = role === 'DELIVERY_BOY'
   const isSuperAdmin = role === 'SUPER_ADMIN' || role === 'OWNER' || role === 'ADMIN'
 
   return (
-    <WorkspaceContext.Provider value={{ workspace, role, branchId, permissions, isBranchManager, isSuperAdmin, isAuthenticated }}>
+    <WorkspaceContext.Provider value={{ workspace, role, branchId, permissions, isBranchManager, isDeliveryBoy, isSuperAdmin, isAuthenticated }}>
       {children}
     </WorkspaceContext.Provider>
   )

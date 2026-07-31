@@ -166,7 +166,14 @@ export default function SettingsPage() {
             {activeTab === "business" && <BusinessTab saving={saving} onSubmit={updateBusiness} data={settings} />}
             {activeTab === "tax" && <TaxTab saving={saving} onSubmit={updateTax} data={settings?.tax ?? null} />}
             {activeTab === "payment" && <PaymentTab saving={saving} onSubmit={updatePayment} data={settings?.payment ?? null} />}
-{activeTab === "delivery" && <DeliveryTab saving={saving} onSubmit={updateDelivery} data={settings?.delivery ?? null} />}
+{activeTab === "delivery" && (
+              <DeliveryTab
+                saving={saving}
+                onSubmit={updateDelivery}
+                data={settings?.delivery ?? null}
+                business={settings}
+              />
+            )}
               {activeTab === "pincodes" && (
                 <PincodesTab
                   saving={saving}
@@ -385,13 +392,20 @@ function TaxTab({ saving, onSubmit, data }: { saving: boolean; onSubmit: (d: Rec
     if (data) {
       setForm({
         name: data.name || "",
-        gstPercentage: data.gstPercentage || 0,
+        gstPercentage: data.gstPercentage ?? 0,
         sacCode: data.sacCode || "",
       });
     }
   }, [data]);
 
   const set = (key: string, value: unknown) => setForm((prev) => ({ ...prev, [key]: value }));
+
+  const handleSubmit = () => {
+    onSubmit({
+      ...form,
+      gstPercentage: Number.isFinite(form.gstPercentage) ? form.gstPercentage : 0,
+    });
+  };
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm space-y-6">
@@ -406,8 +420,14 @@ function TaxTab({ saving, onSubmit, data }: { saving: boolean; onSubmit: (d: Rec
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-gray-500">%</span>
             <input
               type="number"
+              min={0}
+              max={100}
+              step={0.01}
               value={form.gstPercentage}
-              onChange={(e) => set("gstPercentage", Number(e.target.value))}
+              onChange={(e) => {
+                const next = e.target.value === "" ? 0 : Number(e.target.value);
+                set("gstPercentage", Number.isFinite(next) ? next : 0);
+              }}
               className="h-10 w-full rounded-lg border border-gray-200 bg-white pl-7 pr-3 text-sm text-gray-900 focus:border-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-300"
             />
           </div>
@@ -416,7 +436,7 @@ function TaxTab({ saving, onSubmit, data }: { saving: boolean; onSubmit: (d: Rec
           <Input value={form.sacCode} onChange={(v) => set("sacCode", v)} placeholder="21069099" />
         </Field>
       </div>
-      <SaveButton saving={saving} onClick={() => onSubmit(form)} />
+      <SaveButton saving={saving} onClick={handleSubmit} />
     </div>
   );
 }
@@ -466,7 +486,17 @@ function PaymentTab({ saving, onSubmit, data }: { saving: boolean; onSubmit: (d:
 }
 
 /* ─── Delivery Tab ─── */
-function DeliveryTab({ saving, onSubmit, data }: { saving: boolean; onSubmit: (d: Record<string, unknown>) => Promise<void>; data: DeliveryConfigData | null }) {
+function DeliveryTab({
+  saving,
+  onSubmit,
+  data,
+  business,
+}: {
+  saving: boolean;
+  onSubmit: (d: Record<string, unknown>) => Promise<void>;
+  data: DeliveryConfigData | null;
+  business: BusinessSettingsData | null;
+}) {
   const [form, setForm] = useState({
     defaultDeliveryCharge: 0,
     freeDeliveryAbove: 0,
@@ -478,14 +508,25 @@ function DeliveryTab({ saving, onSubmit, data }: { saving: boolean; onSubmit: (d
   useEffect(() => {
     if (data) {
       setForm({
-        defaultDeliveryCharge: data.defaultDeliveryCharge || 0,
-        freeDeliveryAbove: data.freeDeliveryAbove || 0,
-        minimumOrderAmount: data.minimumOrderAmount || 0,
-        maximumOrderAmount: data.maximumOrderAmount || 10000,
-        allowScheduledDelivery: data.allowScheduledDelivery,
+        defaultDeliveryCharge: data.defaultDeliveryCharge ?? 0,
+        freeDeliveryAbove: data.freeDeliveryAbove ?? 0,
+        minimumOrderAmount: data.minimumOrderAmount ?? 0,
+        maximumOrderAmount: data.maximumOrderAmount ?? 10000,
+        allowScheduledDelivery: data.allowScheduledDelivery ?? false,
+      });
+      return;
+    }
+
+    if (business) {
+      setForm({
+        defaultDeliveryCharge: business.deliveryCharge ?? 0,
+        freeDeliveryAbove: business.freeDeliveryAbove ?? 0,
+        minimumOrderAmount: business.minimumOrderAmount ?? 0,
+        maximumOrderAmount: business.maximumOrderAmount ?? 10000,
+        allowScheduledDelivery: false,
       });
     }
-  }, [data]);
+  }, [data, business]);
 
   const set = (key: string, value: unknown) => setForm((prev) => ({ ...prev, [key]: value }));
 
@@ -507,7 +548,18 @@ function DeliveryTab({ saving, onSubmit, data }: { saving: boolean; onSubmit: (d
         </Field>
       </div>
       <Toggle checked={form.allowScheduledDelivery} onChange={(v) => set("allowScheduledDelivery", v)} label="Allow scheduled delivery" />
-      <SaveButton saving={saving} onClick={() => onSubmit(form)} />
+      <SaveButton
+        saving={saving}
+        onClick={() =>
+          onSubmit({
+            defaultDeliveryCharge: Number(form.defaultDeliveryCharge) || 0,
+            freeDeliveryAbove: Number(form.freeDeliveryAbove) || 0,
+            minimumOrderAmount: Number(form.minimumOrderAmount) || 0,
+            maximumOrderAmount: Number(form.maximumOrderAmount) || 10000,
+            allowScheduledDelivery: form.allowScheduledDelivery,
+          })
+        }
+      />
     </div>
   );
 }

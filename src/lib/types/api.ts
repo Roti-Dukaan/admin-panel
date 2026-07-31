@@ -58,6 +58,7 @@ export interface ApiFoodItem {
   imageUrl: string | null;
   gallery: string[];
   isVeg: boolean;
+  foodType?: 'VEG' | 'NON_VEG' | 'EGG';
   isFeatured: boolean;
   isAvailable: boolean;
   isSubscriptionAvailable: boolean;

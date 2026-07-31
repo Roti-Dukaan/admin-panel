@@ -45,14 +45,15 @@ export const useHomepageBannerStore = create<HomepageBannerState>((set, get) => 
     set({ loading: true, error: null });
     try {
       const res = await homepageBannerApi.list(params);
+      const payload = res?.data;
       set({
-        banners: res.data.data.banners,
-        total: res.data.data.total,
+        banners: payload?.banners ?? [],
+        total: payload?.total ?? 0,
         loading: false,
       });
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to load banners';
-      set({ error: message, loading: false });
+      set({ banners: [], total: 0, error: message, loading: false });
     }
   },
 

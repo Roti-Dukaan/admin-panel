@@ -1,5 +1,8 @@
 import { apiClient } from "./http";
 import type { InvoiceView } from "../../features/orders/types/invoice";
+import { toBackendOrderStatus } from "../../features/orders/utils/status";
+import { toBackendPaymentMethod, toBackendOrderType } from "../../features/orders/utils/filters";
+import type { OrderStatus, PaymentMethod, OrderType } from "../../features/orders/types/order";
 
 interface OrderListParams {
   page?: number
@@ -71,10 +74,16 @@ export const ordersApi = {
     const queryParams = new URLSearchParams();
     if (params.page) queryParams.set("page", String(params.page));
     if (params.limit) queryParams.set("limit", String(params.limit));
-    if (params.status && params.status !== "all") queryParams.set("status", params.status.toUpperCase().replace(/-/g, "_"));
-    if (params.paymentMethod && params.paymentMethod !== "all") queryParams.set("paymentMethod", params.paymentMethod.toUpperCase());
+    if (params.status && params.status !== "all") {
+      queryParams.set("status", toBackendOrderStatus(params.status as OrderStatus));
+    }
+    if (params.paymentMethod && params.paymentMethod !== "all") {
+      queryParams.set("paymentMethod", toBackendPaymentMethod(params.paymentMethod as PaymentMethod));
+    }
     if (params.paymentStatus && params.paymentStatus !== "all") queryParams.set("paymentStatus", params.paymentStatus);
-    if (params.orderType && params.orderType !== "all") queryParams.set("orderType", params.orderType);
+    if (params.orderType && params.orderType !== "all") {
+      queryParams.set("orderType", toBackendOrderType(params.orderType as OrderType));
+    }
     if (params.search) queryParams.set("search", params.search);
     if (params.branchId) queryParams.set("branchId", params.branchId);
     if (params.cityId) queryParams.set("cityId", params.cityId);
@@ -94,8 +103,9 @@ export const ordersApi = {
     return data.data;
   },
 
-  getStats: async () => {
-    const { data } = await apiClient.get<{ success: boolean; data: unknown }>("/admin/orders/stats");
+  getStats: async (branchId?: string) => {
+    const query = branchId ? `?branchId=${encodeURIComponent(branchId)}` : "";
+    const { data } = await apiClient.get<{ success: boolean; data: unknown }>(`/admin/orders/stats${query}`);
     return data.data;
   },
 

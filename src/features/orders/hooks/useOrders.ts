@@ -3,6 +3,14 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import type { Order, OrderStatistics, OrderFilters, OrderDatePreset, OrderStatus, PaymentStatus } from "../types/order";
 import { ordersApi } from "@/lib/api/orders.api";
+import { useAdminAuthStore } from "@/features/admin-auth/store/admin-auth-store";
+import { toBackendOrderStatus } from "../utils/status";
+import { normalizeOrder } from "../utils/normalize-order";
+
+function getBranchScope(): string | undefined {
+  const { role, branchId } = useAdminAuthStore.getState();
+  return role === "BRANCH_MANAGER" && branchId ? branchId : undefined;
+}
 
 interface OrderStore {
   orders: Order[];
@@ -42,9 +50,9 @@ const defaultFilters: OrderFilters = {
   paymentStatus: "all",
   orderType: "all",
   search: "",
-  branchId: "",
-  cityId: "",
-  areaId: "",
+  branchId: "all",
+  cityId: "all",
+  areaId: "all",
 };
 
 export const useOrdersStore = create<OrderStore>((set, get) => ({
@@ -95,6 +103,7 @@ export const useOrdersStore = create<OrderStore>((set, get) => ({
 
   fetchOrders: async () => {
     const { filters, pagination } = get();
+    const branchScope = getBranchScope();
     set({ loading: true });
     try {
       const data = await ordersApi.list({
@@ -108,12 +117,14 @@ export const useOrdersStore = create<OrderStore>((set, get) => ({
         dateFilter: filters.dateFilter,
         customStartDate: filters.customStartDate,
         customEndDate: filters.customEndDate,
-        branchId: filters.branchId || undefined,
-        cityId: filters.cityId || undefined,
-        areaId: filters.areaId || undefined,
+        branchId:
+          (filters.branchId && filters.branchId !== "all" ? filters.branchId : undefined) ||
+          branchScope,
+        cityId: filters.cityId && filters.cityId !== "all" ? filters.cityId : undefined,
+        areaId: filters.areaId && filters.areaId !== "all" ? filters.areaId : undefined,
       });
       set({
-        orders: data.items as Order[],
+        orders: (data.items as Record<string, unknown>[]).map(normalizeOrder),
         pagination: {
           ...pagination,
           total: data.total,
@@ -132,7 +143,7 @@ export const useOrdersStore = create<OrderStore>((set, get) => ({
   fetchStatistics: async () => {
     set({ statisticsLoading: true });
     try {
-      const data = await ordersApi.getStats();
+      const data = await ordersApi.getStats(getBranchScope());
       set({ statistics: data as OrderStatistics, statisticsLoading: false });
     } catch (error: any) {
       const message = error?.response?.data?.message || "Failed to fetch statistics";
@@ -144,10 +155,8 @@ export const useOrdersStore = create<OrderStore>((set, get) => ({
 
   updateOrderStatus: async (orderId, status) => {
     set({ updatingStatus: orderId });
-    // Convert kebab-case to SNAKE_CASE for backend
-    const backendStatus = status.toUpperCase().replace(/-/g, '_');
     try {
-      await ordersApi.updateStatus(orderId, { status: backendStatus });
+      await ordersApi.updateStatus(orderId, { status: toBackendOrderStatus(status) });
       set((state) => ({
         orders: state.orders.map((o) => (o.id === orderId ? { ...o, status } : o)),
         selectedOrder: state.selectedOrder?.id === orderId ? { ...state.selectedOrder, status } : state.selectedOrder,
@@ -156,15 +165,17 @@ export const useOrdersStore = create<OrderStore>((set, get) => ({
     } catch (error) {
       console.error("Failed to update order status:", error);
       set({ updatingStatus: null });
+      throw error;
     }
   },
 
   cancelOrder: async (orderId) => {
     set({ updatingStatus: orderId });
     try {
-      // Backend doesn't have cancel endpoint in orders.api, use direct API call
-      const { apiClient } = await import("@/lib/api/http");
-      await apiClient.post(`/admin/orders/${orderId}/cancel`, { reason: "Cancelled by admin" });
+      await ordersApi.updateStatus(orderId, {
+        status: "CANCELLED",
+        remarks: "Cancelled by admin",
+      });
       set((state) => ({
         orders: state.orders.map((o) => o.id === orderId ? { ...o, status: "cancelled" } : o),
         selectedOrder: state.selectedOrder?.id === orderId ? { ...state.selectedOrder, status: "cancelled" } : state.selectedOrder,
@@ -173,6 +184,7 @@ export const useOrdersStore = create<OrderStore>((set, get) => ({
     } catch (error) {
       console.error("Failed to cancel order:", error);
       set({ updatingStatus: null });
+      throw error;
     }
   },
 

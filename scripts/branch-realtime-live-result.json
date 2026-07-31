@@ -1,0 +1,51 @@
+{
+  "steps": [
+    "manager: {\"id\":\"15d4bfa8-e2d8-416d-a335-5d574bb5ca46\",\"branchId\":\"86d2f21e-2df7-4292-bcbe-69e2c7bfb14f\"}",
+    "branch: {\"id\":\"86d2f21e-2df7-4292-bcbe-69e2c7bfb14f\",\"name\":\"Manikonda main branch\"}",
+    "recent_order: {\"orderNumber\":\"ORD-20260725-000010\",\"customerId\":\"9d939dfe-d584-40b5-acb4-b12c638d6a8e\"}",
+    "customer: {\"id\":\"9d939dfe-d584-40b5-acb4-b12c638d6a8e\",\"address\":{\"id\":\"c2f3f700-4263-4b7a-91e5-38ba54baa6f5\",\"area\":\"dd\",\"pincode\":\"500089\"}}",
+    "food_item: {\"id\":\"74b619f3-54c1-402c-8952-fc402af97229\",\"name\":\"Paneer Curry\"}",
+    "manager_logged_in",
+    "socket_connected: {\"id\":\"aOIfKBfJ_VM72OyaAAAD\"}",
+    "pong: {\"t\":1784977555906,\"role\":\"admin\"}",
+    "cart_item_added",
+    "cart_configured",
+    "checkout_created: {\"id\":\"4bb94455-b50a-4373-899d-6766a175ef89\",\"grandTotal\":262.5}",
+    "payment_created: {\"paymentId\":\"691a8a05-449a-4420-bff0-2bf3024d3329\"}",
+    "socket_event branch:order_new: {\"orderId\":\"c23d39f1-4b13-4a8f-82a0-508a6611f0e4\",\"orderNumber\":\"ORD-20260725-000011\",\"branchId\":\"86d2f21e-2df7-4292-bcbe-69e2c7bfb14f\"}",
+    "ORDER_PLACED: {\"id\":\"c23d39f1-4b13-4a8f-82a0-508a6611f0e4\",\"orderNumber\":\"ORD-20260725-000011\"}",
+    "socket_event kitchen:ticket_created: {\"orderId\":\"c23d39f1-4b13-4a8f-82a0-508a6611f0e4\",\"orderNumber\":\"ORD-20260725-000011\"}",
+    "SUCCESS both events received for the new order"
+  ],
+  "received": [
+    {
+      "evt": "branch:order_new",
+      "payload": {
+        "orderId": "c23d39f1-4b13-4a8f-82a0-508a6611f0e4",
+        "orderNumber": "ORD-20260725-000011",
+        "status": "PENDING_CONFIRMATION",
+        "occurredAt": "2026-07-25T11:06:25.529Z",
+        "branchId": "86d2f21e-2df7-4292-bcbe-69e2c7bfb14f",
+        "itemsSummary": "1× Paneer Curry",
+        "itemCount": 1,
+        "grandTotal": 262.5,
+        "paymentMethod": "COD"
+      }
+    },
+    {
+      "evt": "kitchen:ticket_created",
+      "payload": {
+        "ticketId": "aec9dea2-5cbe-4cf5-80f3-7ddba0a2d199",
+        "ticketNumber": "KT-20260725-805580",
+        "orderId": "c23d39f1-4b13-4a8f-82a0-508a6611f0e4",
+        "orderNumber": "ORD-20260725-000011",
+        "customerId": "9d939dfe-d584-40b5-acb4-b12c638d6a8e",
+        "stage": "PENDING",
+        "occurredAt": "2026-07-25T11:06:29.817Z",
+        "actorType": "SYSTEM",
+        "actorId": "system"
+      }
+    }
+  ],
+  "ok": true
+}

@@ -11,9 +11,10 @@ import { cn } from "@/lib/utils";
 interface InviteUserDialogProps {
   open: boolean;
   onClose: () => void;
+  onSuccess?: () => void;
 }
 
-export function InviteUserDialog({ open, onClose }: InviteUserDialogProps) {
+export function InviteUserDialog({ open, onClose, onSuccess }: InviteUserDialogProps) {
   const roles = useRoleStore((s) => s.roles);
 
   const [name, setName] = useState("");
@@ -81,6 +82,7 @@ export function InviteUserDialog({ open, onClose }: InviteUserDialogProps) {
     try {
       await apiClient.post("/admin/invitations", {
         email: email.trim(),
+        invitedName: name.trim(),
         role: selectedRole?.name?.toUpperCase().replace(/\s+/g, "_") || "BRANCH_MANAGER",
         branchId: isBranchRole ? branchId : undefined,
       });
@@ -89,6 +91,7 @@ export function InviteUserDialog({ open, onClose }: InviteUserDialogProps) {
         description: `Role: ${selectedRole?.name || "Unknown"}${isBranchRole ? ` | Branch: ${branches.find((b) => b.id === branchId)?.name || ""}` : ""}`,
       });
       reset();
+      onSuccess?.();
       onClose();
     } catch (err: any) {
       const message = err.response?.data?.message || "Failed to send invitation";
@@ -217,8 +220,9 @@ export function InviteUserDialog({ open, onClose }: InviteUserDialogProps) {
 
           <div className="rounded-lg bg-blue-50 border border-blue-100 p-3">
             <p className="text-xs text-blue-700">
-              An email invitation will be sent with a link to set up their
-              account and password.
+              An invitation email will be sent with a link to join the admin portal.
+              They can sign in anytime using a one-time code sent to their email — no
+              password setup required.
             </p>
           </div>
 

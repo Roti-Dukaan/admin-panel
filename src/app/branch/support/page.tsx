@@ -45,18 +45,24 @@ export default function BranchSupportDashboardPage() {
   }, []);
 
   async function loadData() {
-    try {
-      const [dashRes, ticketsRes] = await Promise.all([
-        supportApi.getDashboard(),
-        supportApi.list({ limit: 10 }),
-      ]);
-      setDashboard(dashRes.data);
-      setRecentTickets(ticketsRes.data.items);
-    } catch (err) {
-      console.error("Failed to load support dashboard", err);
-    } finally {
-      setLoading(false);
+    const [dashResult, ticketsResult] = await Promise.allSettled([
+      supportApi.getDashboard(),
+      supportApi.list({ limit: 10 }),
+    ]);
+
+    if (dashResult.status === "fulfilled") {
+      setDashboard(dashResult.value.data);
+    } else {
+      console.error("Failed to load support dashboard stats", dashResult.reason);
     }
+
+    if (ticketsResult.status === "fulfilled") {
+      setRecentTickets(ticketsResult.value.data.items);
+    } else {
+      console.error("Failed to load support tickets", ticketsResult.reason);
+    }
+
+    setLoading(false);
   }
 
   if (loading) {

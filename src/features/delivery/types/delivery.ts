@@ -118,6 +118,7 @@ export interface DeliveryFilters {
   deliveryType?: DeliveryType | "all";
   orderId?: string;
   customerId?: string;
+  branchId?: string;
   dateFrom?: string;
   dateTo?: string;
   search?: string;

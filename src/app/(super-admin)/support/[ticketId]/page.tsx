@@ -69,8 +69,7 @@ export default function TicketDetailPage() {
     if (!message.trim() || sending) return;
     setSending(true);
     try {
-      // Use internal note endpoint as admin reply
-      await supportApi.addInternalNote(ticketId, message);
+      await supportApi.addReply(ticketId, message);
       setMessage("");
       await loadTicket();
     } catch (err) {
@@ -137,7 +136,8 @@ export default function TicketDetailPage() {
     );
   }
 
-  const messages = ticket.messages || [];
+  const allMessages = ticket.messages || [];
+  const messages = allMessages.filter((m) => !m.isInternal);
   const activities = ticket.activities || [];
 
   return (
@@ -332,7 +332,7 @@ export default function TicketDetailPage() {
                 </CardContent>
               </Card>
 
-              {messages.filter((m) => m.isInternal).map((note) => (
+              {allMessages.filter((m) => m.isInternal).map((note) => (
                 <Card key={note.id} className="border-yellow-200 bg-yellow-50/50">
                   <CardContent className="p-4">
                     <p className="text-xs font-medium text-yellow-700 mb-1">Internal Note</p>

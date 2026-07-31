@@ -7,11 +7,6 @@ import {
   Plus,
   RefreshCw,
   Users,
-  UserCheck,
-  UserX,
-  Mail,
-  Search,
-  UserPlus,
   Eye,
   Pencil,
   Trash2,
@@ -32,7 +27,6 @@ import { useRoleStore } from "@/features/rbac/hooks/useRoles";
 import { RoleHierarchy } from "@/features/rbac/components/RoleHierarchy";
 import { AuditPreview } from "@/features/rbac/components/AuditPreview";
 import { RoleCloneDialog } from "@/features/rbac/components/RoleCloneDialog";
-import { InviteUserDialog } from "@/features/rbac/components/InviteUserDialog";
 import { RoleDrawer } from "@/features/rbac/components/RoleDrawer";
 import { RolesSkeleton } from "@/features/rbac/components/SkeletonLoader";
 import type { Role } from "@/features/rbac/types/role";
@@ -57,7 +51,6 @@ export default function RolesPage() {
 
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState(getStats());
-  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 800);
@@ -94,11 +87,8 @@ export default function RolesPage() {
 
   const kpiCards = [
     { label: "Total Roles", value: stats.totalRoles, icon: Shield, color: "text-blue-600", bg: "bg-blue-50" },
-    { label: "Active Users", value: stats.activeUsers, icon: UserCheck, color: "text-emerald-600", bg: "bg-emerald-50" },
     { label: "Custom Roles", value: stats.customRoles, icon: Plus, color: "text-violet-600", bg: "bg-violet-50" },
     { label: "System Roles", value: stats.systemRoles, icon: Shield, color: "text-amber-600", bg: "bg-amber-50" },
-    { label: "Inactive Users", value: stats.inactiveUsers, icon: UserX, color: "text-red-600", bg: "bg-red-50" },
-    { label: "Pending Invitations", value: stats.pendingInvitations, icon: Mail, color: "text-orange-600", bg: "bg-orange-50" },
   ];
 
   const RoleCard = ({ role }: { role: Role }) => {
@@ -195,13 +185,6 @@ export default function RolesPage() {
                 Refresh
               </button>
               <button
-                onClick={() => setInviteDialogOpen(true)}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
-              >
-                <UserPlus className="h-4 w-4" />
-                Invite User
-              </button>
-              <button
                 onClick={() => {
                   setSelectedRole(null);
                   setDrawerMode("create");
@@ -221,7 +204,7 @@ export default function RolesPage() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.05 }}
-          className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6"
+          className="grid grid-cols-1 gap-3 sm:grid-cols-3"
         >
           {kpiCards.map((card) => (
             <div
@@ -349,10 +332,6 @@ export default function RolesPage() {
 
       {/* Modals */}
       <RoleDrawer />
-      <InviteUserDialog
-        open={inviteDialogOpen}
-        onClose={() => setInviteDialogOpen(false)}
-      />
       <RoleCloneDialog
         open={false}
         sourceRole={null}

@@ -2,6 +2,11 @@ import { apiClient } from '../http';
 
 export type BranchStatus = 'OPEN' | 'BUSY' | 'CLOSED' | 'MAINTENANCE';
 
+export interface LatLngPoint {
+  lat: number;
+  lng: number;
+}
+
 export interface Branch {
   id: string;
   cityId: string;
@@ -19,6 +24,7 @@ export interface Branch {
   status: BranchStatus;
   isActive: boolean;
   deliveryRadiusKm?: number;
+  deliveryPolygon?: LatLngPoint[];
   deliveryCharge?: number;
   minimumOrderAmount?: number;
   estimatedDeliveryTime?: number;
@@ -29,10 +35,17 @@ export interface Branch {
   city?: { id: string; name: string; code: string };
   area?: { id: string; name: string };
   admins?: { id: string; name: string; email: string }[];
+  branchManager?: {
+    name: string | null;
+    email: string;
+    status: 'active' | 'pending';
+    adminId?: string;
+  } | null;
 }
 
 export interface DeliverySettings {
   deliveryRadiusKm?: number;
+  deliveryPolygon?: LatLngPoint[];
   deliveryCharge?: number;
   minimumOrderAmount?: number;
   estimatedDeliveryTime?: number;
@@ -50,13 +63,24 @@ export interface CreateBranchDTO {
   areaId: string;
   phone?: string;
   email?: string;
+  managerName?: string;
+  managerEmail?: string;
   address?: string;
   formattedAddress?: string;
   placeId?: string;
   pincode?: string;
   deliveryRadiusKm?: number;
+  deliveryPolygon?: LatLngPoint[];
   status?: BranchStatus;
   isActive?: boolean;
+}
+
+export interface CreateBranchResponse {
+  branch: Branch;
+  managerAccess?: {
+    action: 'invited' | 'assigned';
+    message: string;
+  } | null;
 }
 
 export interface UpdateBranchDTO {
@@ -66,17 +90,29 @@ export interface UpdateBranchDTO {
   areaId?: string;
   phone?: string;
   email?: string;
+  managerName?: string;
+  managerEmail?: string;
   address?: string;
   formattedAddress?: string;
   placeId?: string;
   pincode?: string;
   deliveryRadiusKm?: number;
+  deliveryPolygon?: LatLngPoint[];
   status?: BranchStatus;
   isActive?: boolean;
 }
 
+export interface UpdateBranchResponse {
+  branch: Branch;
+  managerAccess?: {
+    action: 'invited' | 'assigned' | 'updated';
+    message: string;
+  } | null;
+}
+
 export interface UpdateDeliverySettingsDTO {
   deliveryRadiusKm?: number;
+  deliveryPolygon?: LatLngPoint[];
   allowScheduledOrders?: boolean;
   allowSubscriptions?: boolean;
 }
@@ -112,10 +148,10 @@ export const branchesApi = {
     apiClient.get<ApiResponse<Branch>>(`/admin/branches/${id}`),
 
   create: (data: CreateBranchDTO) =>
-    apiClient.post<ApiResponse<Branch>>('/admin/branches', data),
+    apiClient.post<ApiResponse<CreateBranchResponse>>('/admin/branches', data),
 
   update: (id: string, data: UpdateBranchDTO) =>
-    apiClient.patch<ApiResponse<Branch>>(`/admin/branches/${id}`, data),
+    apiClient.patch<ApiResponse<UpdateBranchResponse>>(`/admin/branches/${id}`, data),
 
   archive: (id: string) =>
     apiClient.patch<ApiResponse<Branch>>(`/admin/branches/${id}/archive`),

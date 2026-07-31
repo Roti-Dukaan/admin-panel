@@ -1,7 +1,6 @@
 "use client"
 
 import * as React from "react"
-import { motion } from "motion/react"
 import { Header } from "@/components/layout/header"
 import { DateRangeFilter, type DateRangeValue } from "@/components/shared/DateRangeFilter"
 import { StatsCards } from "@/features/reports/components/StatsCards"
@@ -17,9 +16,19 @@ import { RecentActivity } from "@/features/reports/components/RecentActivity"
 import { RefreshCw } from "lucide-react"
 import { useReportsStore } from "@/features/reports/hooks/useReports"
 import type { DateRange } from "@/features/reports/types/report"
+import { useAdminAuthStore } from "@/features/admin-auth/store/admin-auth-store"
 
 export default function BranchReportsPage() {
-  const { dateRange, setDateRange, setCustomStartDate, setCustomEndDate, loading, refreshData, granularity, setGranularity } = useReportsStore()
+  const branchId = useAdminAuthStore((s) => s.user?.branchId)
+  const { dateRange, setDateRange, loading, refreshData, error, setForcedBranchId } = useReportsStore()
+
+  React.useEffect(() => {
+    setForcedBranchId(branchId ?? undefined)
+  }, [branchId, setForcedBranchId])
+
+  React.useEffect(() => {
+    void refreshData()
+  }, [refreshData])
 
   const dateRangeValue: DateRangeValue = {
     preset: dateRange === "all" ? "today" : dateRange as DateRangeValue["preset"],
@@ -50,6 +59,11 @@ export default function BranchReportsPage() {
       />
 
       <div className="p-6 space-y-6">
+        {error ? (
+          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {error}
+          </div>
+        ) : null}
         <StatsCards />
 
         {/* Revenue + Orders Row */}

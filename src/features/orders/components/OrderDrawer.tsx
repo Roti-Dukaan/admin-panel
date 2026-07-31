@@ -15,31 +15,17 @@ import { InvoiceCard } from "./InvoiceCard"
 import { useOrdersStore } from "../hooks/useOrders"
 import { toast } from "sonner"
 import type { OrderStatus } from "../types/order"
+import {
+  NEXT_ORDER_STATUS,
+  STATUS_ACTION_LABELS,
+  normalizeOrderStatus,
+} from "../utils/status"
 import { RefreshCw, ExternalLink, Truck } from "lucide-react"
 import { useQuery } from "@tanstack/react-query"
 import { deliveryApi } from "@/features/delivery/services/delivery.api"
 import { DeliveryStatusBadge } from "@/features/delivery/components/DeliveryStatusBadge"
 import { DeliveryInformation } from "@/features/orders/delivery/DeliveryInformation"
 import { DeliveryTimeline } from "@/features/orders/delivery/DeliveryTimeline"
-
-const NEXT_STATUS_MAP: Partial<Record<OrderStatus, OrderStatus>> = {
-  "pending-confirmation": "confirmed",
-  confirmed: "accepted",
-  accepted: "preparing",
-  preparing: "packed",
-  packed: "ready-for-pickup",
-  "ready-for-pickup": "out-for-delivery",
-  "out-for-delivery": "delivered",
-}
-
-const STATUS_ACTION_LABELS: Record<string, string> = {
-  accepted: "Accept Order",
-  preparing: "Start Preparing",
-  packed: "Mark Packed",
-  "ready-for-pickup": "Mark Ready for Pickup",
-  "out-for-delivery": "Mark Out For Delivery",
-  delivered: "Mark Delivered",
-}
 
 export function OrderDrawer() {
   const { selectedOrder, drawerOpen, setDrawerOpen, setSelectedOrder, updateOrderStatus, cancelOrder, updatingStatus } = useOrdersStore()
@@ -69,7 +55,10 @@ export function OrderDrawer() {
     }
   }
 
-  const nextStatus = selectedOrder ? NEXT_STATUS_MAP[selectedOrder.status] : undefined
+  const currentStatus = selectedOrder
+    ? normalizeOrderStatus(selectedOrder.status)
+    : undefined
+  const nextStatus = currentStatus ? NEXT_ORDER_STATUS[currentStatus] : undefined
 
   const { data: deliveryTracking, isLoading: deliveryLoading } = useQuery({
     queryKey: ["order-delivery", selectedOrder?.id],
@@ -145,7 +134,7 @@ export function OrderDrawer() {
 
             <OrderTimeline
               timeline={selectedOrder.timeline}
-              currentStatus={selectedOrder.status}
+              currentStatus={currentStatus ?? selectedOrder.status}
             />
           </DrawerContent>
 

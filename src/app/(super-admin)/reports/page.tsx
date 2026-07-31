@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { motion } from "motion/react";
 import { Header } from "@/components/layout/header";
 import { DateFilter } from "@/features/reports/components/DateFilter";
@@ -14,11 +15,26 @@ import { CustomerInsights } from "@/features/reports/components/CustomerInsights
 import { BestSellingItems } from "@/features/reports/components/BestSellingItems";
 import { RecentActivity } from "@/features/reports/components/RecentActivity";
 import { useReportsStore } from "@/features/reports/hooks/useReports";
+import {
+  DashboardLocationFilters,
+  type DashboardLocationFiltersValue,
+} from "@/features/super-admin-dashboard/components/DashboardLocationFilters";
 import { RefreshCw, Download, FileSpreadsheet } from "lucide-react";
 
 export default function ReportsPage() {
   const loading = useReportsStore((s) => s.loading);
+  const error = useReportsStore((s) => s.error);
   const refreshData = useReportsStore((s) => s.refreshData);
+  const locationFilters = useReportsStore((s) => s.locationFilters);
+  const setLocationFilters = useReportsStore((s) => s.setLocationFilters);
+
+  useEffect(() => {
+    void refreshData();
+  }, [refreshData]);
+
+  const handleLocationChange = (value: DashboardLocationFiltersValue) => {
+    setLocationFilters(value);
+  };
 
   if (loading) {
     return (
@@ -49,7 +65,12 @@ export default function ReportsPage() {
       <Header
         title="Reports & Analytics"
         subtitle="Track business performance with real-time insights."
-        dateFilter={<DateFilter />}
+        dateFilter={
+          <div className="flex flex-wrap items-center gap-2">
+            <DashboardLocationFilters value={locationFilters} onChange={handleLocationChange} />
+            <DateFilter />
+          </div>
+        }
         actions={
           <div className="flex items-center gap-2">
             <button className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
@@ -75,6 +96,11 @@ export default function ReportsPage() {
       />
 
       <div className="p-6 space-y-6">
+        {error ? (
+          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {error}
+          </div>
+        ) : null}
         <StatsCards />
 
         {/* Revenue + Orders Row */}

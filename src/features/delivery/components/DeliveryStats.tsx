@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { deliveryApi } from "../services/delivery.api";
+import { branchDeliveryApi } from "../services/branch-delivery.api";
 import {
   Clock,
   UserCheck,
@@ -22,10 +23,17 @@ const statCards = [
   { key: "cancelled" as const, label: "Cancelled", icon: Ban, color: "text-gray-600", bg: "bg-gray-50" },
 ];
 
-export function DeliveryStats() {
+export function DeliveryStats({
+  apiMode = "admin",
+  branchId,
+}: {
+  apiMode?: "admin" | "branch";
+  branchId?: string;
+}) {
+  const api = apiMode === "branch" ? branchDeliveryApi : deliveryApi;
   const { data, isLoading } = useQuery({
-    queryKey: ["deliveries", "dashboard"],
-    queryFn: () => deliveryApi.getDashboard(),
+    queryKey: ["deliveries", "dashboard", apiMode, branchId],
+    queryFn: () => api.getDashboard(branchId),
   });
 
   if (isLoading) {

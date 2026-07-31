@@ -412,6 +412,36 @@ function OverviewTab({
             Paused: {sub.pausedReason}
           </div>
         )}
+
+        {(sub as { razorpaySubscriptionId?: string; razorpayPaymentId?: string; pricePaid?: number | string })
+          .razorpaySubscriptionId && (
+          <div className="mt-4 border-t border-gray-200 pt-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">Payment (Razorpay)</p>
+            <div className="mt-2 space-y-1 text-xs text-gray-600">
+              <p>
+                <span className="font-medium">Subscription ID:</span>{" "}
+                <code className="break-all rounded bg-white px-1.5 py-0.5">
+                  {(sub as { razorpaySubscriptionId?: string }).razorpaySubscriptionId}
+                </code>
+              </p>
+              {(sub as { razorpayPaymentId?: string }).razorpayPaymentId && (
+                <p>
+                  <span className="font-medium">Last payment:</span>{" "}
+                  <code className="break-all rounded bg-white px-1.5 py-0.5">
+                    {(sub as { razorpayPaymentId?: string }).razorpayPaymentId}
+                  </code>
+                </p>
+              )}
+              {(sub as { pricePaid?: number | string }).pricePaid != null && (
+                <p>
+                  <span className="font-medium">Amount paid:</span> ₹
+                  {String((sub as { pricePaid?: number | string }).pricePaid)}
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
         {sub.effectiveEndDate && sub.originalEndDate && sub.effectiveEndDate !== sub.originalEndDate && (
           <div className="mt-3 flex items-center gap-2 rounded-lg bg-emerald-50 px-3 py-2 text-xs text-emerald-700">
             <RefreshCw className="h-3.5 w-3.5" />

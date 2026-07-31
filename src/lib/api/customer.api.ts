@@ -1,6 +1,12 @@
 import { apiClient } from './http';
 import type { ApiResponse, PaginatedData } from '../types/api';
 
+export interface ApiCustomerBranch {
+  id: string;
+  name: string;
+  code: string;
+}
+
 export interface ApiCustomer {
   id: string;
   email: string | null;
@@ -13,6 +19,9 @@ export interface ApiCustomer {
   lastLoginAt: string | null;
   createdAt: string;
   updatedAt: string;
+  branchId: string | null;
+  branch: ApiCustomerBranch | null;
+  subscriptionPlanName?: string | null;
 }
 
 export interface ApiCustomerDetail extends ApiCustomer {
@@ -50,10 +59,22 @@ export interface CustomerQueryParams {
   limit?: number;
   search?: string;
   isActive?: boolean;
+  branchId?: string;
+  hasSubscription?: boolean;
+}
+
+export interface CustomerListStats {
+  total: number;
+  active: number;
+  inactive: number;
+}
+
+export interface CustomerListData extends PaginatedData<ApiCustomer> {
+  stats?: CustomerListStats;
 }
 
 export const customerApi = {
-  async list(params?: CustomerQueryParams): Promise<ApiResponse<PaginatedData<ApiCustomer>>> {
+  async list(params?: CustomerQueryParams): Promise<ApiResponse<CustomerListData>> {
     const { data } = await apiClient.get('/admin/customers', { params });
     return data;
   },

@@ -6,6 +6,11 @@ import { toast } from "sonner"
 import type { AuthStep } from "../types/admin-auth"
 import { adminAuthApi } from "../api/admin-auth.api"
 import { useAdminAuthStore } from "../store/admin-auth-store"
+import {
+  getPostLoginPath,
+  resolvePrimaryRole,
+  workspaceFromRoles,
+} from "../utils/role-utils"
 
 export function useAdminLogin() {
   const router = useRouter()
@@ -59,9 +64,8 @@ export function useAdminLogin() {
         result.refreshToken,
       )
 
-      const isBranchManager = result.admin.roles?.includes('BRANCH_MANAGER')
-      const workspace = isBranchManager ? 'BRANCH_MANAGER' : 'SUPER_ADMIN'
-      const role = result.admin.roles?.[0] || 'SUPER_ADMIN'
+      const role = resolvePrimaryRole(result.admin.roles) || 'SUPER_ADMIN'
+      const workspace = workspaceFromRoles(result.admin.roles) || 'SUPER_ADMIN'
 
       if (typeof window !== 'undefined') {
         document.cookie = `workspace=${workspace}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`
@@ -72,7 +76,7 @@ export function useAdminLogin() {
       }
 
       toast.success("Login successful!")
-      router.push(isBranchManager ? '/branch/dashboard' : '/dashboard')
+      router.push(getPostLoginPath(result.admin.roles))
     } catch (err: any) {
       const message = err?.response?.data?.message || "Invalid OTP"
       toast.error(message)

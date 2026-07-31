@@ -2,14 +2,22 @@
 
 import { Search, X } from "lucide-react";
 import { useCustomerStore } from "../hooks/useCustomers";
+import { DeliveryBranchFilter } from "@/features/delivery/components/DeliveryBranchFilter";
+import { useWorkspace } from "@/contexts/WorkspaceContext";
 
 export function CustomersFilters() {
   const filters = useCustomerStore((s) => s.filters);
   const setSearch = useCustomerStore((s) => s.setSearch);
   const setStatusFilter = useCustomerStore((s) => s.setStatusFilter);
+  const setBranchFilter = useCustomerStore((s) => s.setBranchFilter);
   const clearFilters = useCustomerStore((s) => s.clearFilters);
+  const { isSuperAdmin } = useWorkspace();
 
-  const hasFilters = filters.status !== "all" || filters.search !== "" || filters.datePreset !== "all";
+  const hasFilters =
+    filters.status !== "all" ||
+    filters.search !== "" ||
+    filters.datePreset !== "all" ||
+    (isSuperAdmin && filters.branchId !== "all");
 
   return (
     <div className="space-y-3">
@@ -31,6 +39,14 @@ export function CustomersFilters() {
             );
           })}
         </div>
+
+        {isSuperAdmin && (
+          <DeliveryBranchFilter
+            value={filters.branchId === "all" ? undefined : filters.branchId}
+            onChange={(branchId) => setBranchFilter(branchId ?? "all")}
+            className="w-[200px] h-10 rounded-xl border-gray-200 bg-white"
+          />
+        )}
 
         <div className="relative flex-1 min-w-[200px] max-w-md">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />

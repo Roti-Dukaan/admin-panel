@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Play, Loader2, CheckCircle2, XCircle } from "lucide-react";
+import { Play, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -16,7 +17,20 @@ export function FulfillmentRunner() {
   const result = run.data as FulfillmentResult | undefined;
 
   const handleRun = () => {
-    run.mutate({ targetDate, triggeredBy: "ADMIN" });
+    run.mutate(
+      { targetDate, triggeredBy: "ADMIN" },
+      {
+        onSuccess: (data) => {
+          const summary = data as FulfillmentResult;
+          toast.success(
+            `Fulfillment complete: ${summary.ordersCreated} orders, ${summary.deliveriesCreated} new deliveries`
+          );
+        },
+        onError: () => {
+          toast.error("Fulfillment run failed. Check backend logs for details.");
+        },
+      }
+    );
   };
 
   return (

@@ -3,8 +3,7 @@ import { FoodItem, FoodItemFormData, MenuFilters, Availability, HealthTag, Categ
 import { categoryApi } from '@/lib/api/category.api';
 import { foodItemApi } from '@/lib/api/food.api';
 import type { ApiCategory, ApiFoodItem } from '@/lib/types/api';
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+import { API_BASE_URL } from '@/lib/env';
 
 // Backend returns image paths relative to the API server; resolve them to absolute URLs
 // so they load correctly from the admin (and any) frontend origin.
@@ -58,7 +57,7 @@ function mapApiFoodItemToFoodItem(api: ApiFoodItem, categories: Category[]): Foo
     healthTags: [],
     customerLabels: api.isFeatured ? ['chef-special'] : [],
     availability: !api.isAvailable ? 'unavailable' : 'available',
-    isVegetarian: api.isVeg,
+    foodType: api.foodType ?? (api.isVeg ? 'VEG' : 'NON_VEG'),
     isFeatured: api.isFeatured,
     displayOnWebsite: api.isAvailable,
     bestPairedWith: [],
@@ -263,7 +262,8 @@ export const useMenuStore = create<MenuStore>((set, get) => ({
         categoryId: get().categories.find(c => c.name === data.category || c.slug === data.category)?.id || '',
         basePrice: data.price,
         preparationTime: data.preparationTime,
-        isVeg: data.isVegetarian,
+        foodType: data.foodType,
+        isVeg: data.foodType === 'VEG',
         isFeatured: data.isFeatured,
         isAvailable: data.availability === 'available',
         calories: data.calories,
@@ -295,7 +295,8 @@ export const useMenuStore = create<MenuStore>((set, get) => ({
         categoryId: get().categories.find(c => c.name === data.category || c.slug === data.category)?.id,
         basePrice: data.price,
         preparationTime: data.preparationTime,
-        isVeg: data.isVegetarian,
+        foodType: data.foodType,
+        isVeg: data.foodType === 'VEG',
         isFeatured: data.isFeatured,
         isAvailable: data.availability === 'available',
         calories: data.calories,
