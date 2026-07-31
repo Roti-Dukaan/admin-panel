@@ -34,7 +34,7 @@ export function useAdminLogin() {
       setStep("otp")
       setCountdown(30)
       toast.success("OTP sent to your email")
-      if (result?.otp) {
+      if (result?.otp && process.env.NODE_ENV !== "production") {
         toast.info(`Demo OTP: ${result.otp}`, { duration: 8000 })
       }
     } catch (err: any) {
@@ -89,7 +89,7 @@ export function useAdminLogin() {
       const result = await adminAuthApi.sendOtp(email)
       setCountdown(30)
       toast.success("OTP resent successfully")
-      if (result?.otp) {
+      if (result?.otp && process.env.NODE_ENV !== "production") {
         toast.info(`Demo OTP: ${result.otp}`, { duration: 8000 })
       }
     } catch (err: any) {
