@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
 import { subscriptionsApi } from "@/features/subscriptions/services/subscriptions.api";
 import { useOpsBranchStore } from "@/features/subscriptions/hooks/useOpsBranch";
+import { addDaysIst, todayDateKey } from "@/lib/date";
 
 const REPORTS = [
   { value: "daily_production", label: "Daily Production Report" },
@@ -21,8 +22,8 @@ const REPORTS = [
 export function OpsReportsTab() {
   const [type, setType] = useState<string>("daily_production");
   const [format, setFormat] = useState<"csv" | "excel" | "pdf">("csv");
-  const [dateFrom, setDateFrom] = useState(new Date(Date.now() - 30 * 86_400_000).toISOString().slice(0, 10));
-  const [dateTo, setDateTo] = useState(new Date().toISOString().slice(0, 10));
+  const [dateFrom, setDateFrom] = useState(addDaysIst(new Date(), -30));
+  const [dateTo, setDateTo] = useState(todayDateKey());
   const [loading, setLoading] = useState(false);
   const branchId = useOpsBranchStore((s) => s.selectedBranchId);
 

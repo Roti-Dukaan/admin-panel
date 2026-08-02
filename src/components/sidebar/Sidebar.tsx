@@ -36,6 +36,7 @@ import type { NavGroup } from "./types"
 import { useOrdersStore } from "@/features/orders/hooks/useOrders"
 import { BRANCH_MANAGER_NAVIGATION, getNavigationForWorkspace } from "@/config/navigation"
 import { useWorkspace } from "@/contexts/WorkspaceContext"
+import { useBranchName } from "@/features/branch/hooks/useBranchName"
 
 
 const MAIN_ADMIN_NAV_GROUPS: NavGroup[] = [
@@ -129,6 +130,7 @@ export function Sidebar({ collapsed = false, onToggle, mobileOpen = false, onMob
   const pathname = usePathname()
   const { isGroupExpanded, toggleGroup } = useSidebar()
   const { isBranchManager, isDeliveryBoy } = useWorkspace()
+  const branchName = useBranchName()
   const statistics = useOrdersStore((s) => s.statistics)
   const kitchenLiveOrders = (statistics?.preparing ?? 0) + (statistics?.packed ?? 0)
 
@@ -159,25 +161,37 @@ export function Sidebar({ collapsed = false, onToggle, mobileOpen = false, onMob
 
   const homeHref = isDeliveryBoy ? '/delivery' : isBranchManager ? '/branch/dashboard' : '/dashboard'
   const workspaceLabel = isDeliveryBoy ? 'Delivery' : isBranchManager ? 'Branch Manager' : 'Admin'
+  const workspaceDetail = isBranchManager && branchName ? branchName : null
+
+  const logoSubtitle = (
+    <div className="flex min-w-0 flex-col">
+      <span className="text-[10px] font-medium text-gray-400 uppercase tracking-wider">
+        {workspaceLabel}
+      </span>
+      {workspaceDetail && (
+        <span className="truncate text-[11px] font-semibold text-orange-600 normal-case tracking-normal">
+          {workspaceDetail}
+        </span>
+      )}
+    </div>
+  )
 
   const sidebarContent = (
     <>
       {/* Logo */}
       <div className={cn("flex h-16 items-center border-b border-gray-100 px-5", collapsed && "justify-center px-0")}>
         {!collapsed ? (
-          <Link href={homeHref} className="flex items-center gap-2.5 group">
+          <Link href={homeHref} className="flex items-center gap-2.5 group min-w-0" title={workspaceDetail ?? workspaceLabel}>
             <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full ring-2 ring-orange-500/20 group-hover:ring-orange-500/40 transition-all">
               <img src="/roti_dukaan_logo.jpg" alt="Roti Dukaan" className="h-full w-full object-cover" />
             </div>
-            <div className="flex flex-col">
+            <div className="flex min-w-0 flex-col">
               <span className="text-[15px] font-bold text-gray-900 leading-tight">Roti Dukaan</span>
-              <span className="text-[10px] font-medium text-gray-400 uppercase tracking-wider">
-              {workspaceLabel}
-            </span>
+              {logoSubtitle}
             </div>
           </Link>
         ) : (
-          <Link href={homeHref} className="h-9 w-9 shrink-0 overflow-hidden rounded-full ring-2 ring-orange-500/20 hover:ring-orange-500/40 transition-all">
+          <Link href={homeHref} className="h-9 w-9 shrink-0 overflow-hidden rounded-full ring-2 ring-orange-500/20 hover:ring-orange-500/40 transition-all" title={workspaceDetail ?? workspaceLabel}>
             <img src="/roti_dukaan_logo.jpg" alt="Roti Dukaan" className="h-full w-full object-cover" />
           </Link>
         )}
@@ -253,15 +267,13 @@ export function Sidebar({ collapsed = false, onToggle, mobileOpen = false, onMob
             aria-label="Mobile sidebar"
           >
             <div className="flex h-16 items-center justify-between border-b border-gray-100 px-5">
-              <Link href={homeHref} className="flex items-center gap-2.5" onClick={onMobileClose}>
+              <Link href={homeHref} className="flex items-center gap-2.5 min-w-0" onClick={onMobileClose} title={workspaceDetail ?? workspaceLabel}>
                 <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full ring-2 ring-orange-500/20">
                   <img src="/roti_dukaan_logo.jpg" alt="Roti Dukaan" className="h-full w-full object-cover" />
                 </div>
-                <div className="flex flex-col">
+                <div className="flex min-w-0 flex-col">
                   <span className="text-[15px] font-bold text-gray-900 leading-tight">Roti Dukaan</span>
-                  <span className="text-[10px] font-medium text-gray-400 uppercase tracking-wider">
-              {workspaceLabel}
-            </span>
+                  {logoSubtitle}
                 </div>
               </Link>
               <button

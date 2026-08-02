@@ -9,12 +9,10 @@ import { Badge } from "@/components/ui/badge";
 import { useSubscriptionForecast } from "../hooks/useSubscriptions";
 import type { KitchenForecast, DeliveryForecast } from "../types/subscription";
 
-function toDateInput(d: Date) {
-  return d.toISOString().slice(0, 10);
-}
+import { tomorrowDateKey } from "@/lib/date";
 
 export function ForecastPanel() {
-  const [date, setDate] = useState(toDateInput(new Date(Date.now() + 86400000)));
+  const [date, setDate] = useState(tomorrowDateKey());
   const { data, isLoading, refetch, isFetching } = useSubscriptionForecast(date);
 
   const kitchen: KitchenForecast | null = data?.kitchen ?? null;

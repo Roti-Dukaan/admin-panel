@@ -36,6 +36,7 @@ function ErrorState({ onRetry }: { onRetry: () => void }) {
 export function SubscriptionDispatchBoard() {
   const [date, setDate] = useState(() => format(new Date(), "yyyy-MM-dd"));
   const [slotId, setSlotId] = useState("all");
+  const [areaFilter, setAreaFilter] = useState("");
 
   const summaryQuery = useSubscriptionKitchenSummary(date);
 
@@ -85,6 +86,14 @@ export function SubscriptionDispatchBoard() {
               ))}
             </SelectContent>
           </Select>
+          <Input
+            type="text"
+            value={areaFilter}
+            onChange={(e) => setAreaFilter(e.target.value)}
+            placeholder="Filter by area / pincode"
+            className="h-10 w-full sm:w-56"
+            aria-label="Filter by area"
+          />
         </div>
         {readyCount > 0 && (
           <p className="text-sm font-medium text-indigo-700">
@@ -93,7 +102,11 @@ export function SubscriptionDispatchBoard() {
         )}
       </div>
 
-      <SubscriptionAssignmentPanel date={date} slotId={slotId === "all" ? undefined : slotId} />
+      <SubscriptionAssignmentPanel
+        date={date}
+        slotId={slotId === "all" ? undefined : slotId}
+        areaFilter={areaFilter}
+      />
     </div>
   );
 }

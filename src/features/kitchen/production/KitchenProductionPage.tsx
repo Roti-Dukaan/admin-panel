@@ -26,6 +26,7 @@ import { FoodSummary } from "./components/FoodSummary";
 import { ReportsBar } from "./components/ReportsBar";
 import { ProductionTimeline } from "./components/ProductionTimeline";
 import type { MealSlot } from "./types";
+import { todayDateKey } from "@/lib/date";
 
 function StatTile({
   label,
@@ -70,7 +71,7 @@ function StatTile({
 
 export default function KitchenProductionPage() {
   const [tab, setTab] = useState("today");
-  const [date] = useState(new Date().toISOString().slice(0, 10));
+  const [date] = useState(todayDateKey());
   const plan = useProductionPlan(date);
   const batches = useProductionBatches(date);
   const canManage = useCanManageProduction();

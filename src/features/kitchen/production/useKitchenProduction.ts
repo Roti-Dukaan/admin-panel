@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { kitchenProductionApi } from "./kitchen-production.api";
 import { connectRealtime, disconnectRealtime, onRealtime } from "@/lib/realtime/socket";
 import { useAdminAuthStore } from "@/features/admin-auth/store/admin-auth-store";
+import { todayDateKey } from "@/lib/date";
 import type {
   CreateProductionBatchPayload,
   AddBatchItemPayload,
@@ -133,7 +134,7 @@ export async function downloadKitchenReport(opts: KitchenReportOptions) {
   const url = window.URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `kitchen_${opts.type}_${new Date().toISOString().slice(0, 10)}.${ext}`;
+  a.download = `kitchen_${opts.type}_${todayDateKey()}.${ext}`;
   document.body.appendChild(a);
   a.click();
   a.remove();

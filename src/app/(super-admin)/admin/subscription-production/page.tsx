@@ -9,6 +9,7 @@ import { ProductionCookingSheet } from "@/features/subscription-production/compo
 import { subscriptionProductionApi, type ProductionQueryParams } from "@/lib/api/subscription-production.api";
 import { Search, Filter, Calendar, ChevronDown, ChevronUp, Download, AlertTriangle, Clock, CheckCircle, XCircle, Loader2, SkipForward, Plus, TrendingUp, BarChart3, Users, Package } from "lucide-react";
 import { DELIVERY_SLOT_LABELS } from "@/features/subscription-production/types/subscription-production";
+import { todayDateKey } from "@/lib/date";
 
 interface AdminSubscriptionProductionPageProps {
   initialTab?: 'today' | 'tomorrow' | 'summary' | 'list' | 'generate';
@@ -16,7 +17,7 @@ interface AdminSubscriptionProductionPageProps {
 
 export default function AdminSubscriptionProductionPage({ initialTab = 'today' }: AdminSubscriptionProductionPageProps) {
   const [activeTab, setActiveTab] = useState(initialTab);
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState(todayDateKey());
   const [selectedBranch, setSelectedBranch] = useState<string | undefined>(undefined);
   const [selectedSlot, setSelectedSlot] = useState<string | undefined>(undefined);
   const [selectedStatus, setSelectedStatus] = useState<string | undefined>(undefined);
@@ -380,7 +381,7 @@ export default function AdminSubscriptionProductionPage({ initialTab = 'today' }
                     type="date"
                     value={selectedDate}
                     onChange={(e) => setSelectedDate(e.target.value)}
-                    min={new Date().toISOString().split('T')[0]}
+                    min={todayDateKey()}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                   />
                 </div>

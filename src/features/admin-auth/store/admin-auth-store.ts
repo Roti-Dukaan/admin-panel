@@ -18,6 +18,7 @@ export interface AdminUser {
   roles: string[];
   permissions: string[];
   branchId?: string | null;
+  branch?: { id: string; name: string; code: string } | null;
 }
 
 interface AdminAuthState {

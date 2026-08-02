@@ -11,32 +11,39 @@ import {
   MapPin,
   Navigation,
   Phone,
+  Route,
   XCircle,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useAdminAuthStore } from "@/features/admin-auth/store/admin-auth-store";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { useDriverMutations, useDriverRoute } from "../hooks/useDeliveryBoys";
-import type { DriverDeliveryStop } from "../types/delivery-boys";
-import { DISPATCH_STATUS_LABELS } from "../types/delivery-boys";
+import {
+  useDriverSubscriptionMutations,
+  useDriverSubscriptionRoutes,
+} from "@/features/subscription-dispatch/hooks/useSubscriptionDispatch";
+import type {
+  SubscriptionRouteBatch,
+  SubscriptionRouteBatchStop,
+} from "@/features/subscription-dispatch/services/subscription-dispatch.api";
 import { RealtimeDriverStops } from "@/features/realtime-dispatch/components/RealtimeDriverStops";
 
-type Tab = "today" | "completed" | "failed";
+type Tab = "today" | "completed" | "failed" | "summary";
 
-function StopCard({
+function SubscriptionStopCard({
   stop,
   isNext,
   onAction,
   busy,
 }: {
-  stop: DriverDeliveryStop;
+  stop: SubscriptionRouteBatchStop;
   isNext?: boolean;
-  onAction: (action: "ARRIVED" | "DELIVERED" | "FAILED") => void;
+  onAction: (action: "PICKED_UP" | "DELIVERED" | "FAILED" | "CUSTOMER_UNAVAILABLE") => void;
   busy: boolean;
 }) {
-  const meta = DISPATCH_STATUS_LABELS[stop.dispatchStatus] ?? DISPATCH_STATUS_LABELS.ASSIGNED;
+  const status = stop.stopAssignmentStatus ?? stop.dispatchStatus;
 
   return (
     <article
@@ -62,8 +69,8 @@ function StopCard({
             </p>
           </div>
         </div>
-        <span className={cn("rounded-full px-2 py-0.5 text-xs font-semibold", meta.className)}>
-          {meta.label}
+        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">
+          {status}
         </span>
       </div>
 
@@ -84,30 +91,26 @@ function StopCard({
 
       <div className="mt-4 flex flex-wrap gap-2">
         {stop.customerPhone && (
-          <Button size="sm" variant="outline" href={`tel:${stop.customerPhone}`}>
-            <Phone className="mr-1 h-4 w-4" />
-            Call
-          </Button>
+          <a href={`tel:${stop.customerPhone}`}>
+            <Button size="sm" variant="outline" type="button">
+              <Phone className="mr-1 h-4 w-4" />
+              Call
+            </Button>
+          </a>
         )}
         {stop.googleMapsUrl && (
-          <Button
-            size="sm"
-            variant="outline"
-            href={stop.googleMapsUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Navigation className="mr-1 h-4 w-4" />
-            Maps
-          </Button>
+          <a href={stop.googleMapsUrl} target="_blank" rel="noopener noreferrer">
+            <Button size="sm" variant="outline" type="button">
+              <Navigation className="mr-1 h-4 w-4" />
+              Maps
+            </Button>
+          </a>
         )}
-        {stop.dispatchStatus === "ASSIGNED" && (
-          <Button type="button" size="sm" disabled={busy} onClick={() => onAction("ARRIVED")}>
-            Arrived
-          </Button>
-        )}
-        {(stop.dispatchStatus === "ASSIGNED" || stop.dispatchStatus === "ARRIVED") && (
+        {!["DELIVERED", "FAILED", "CUSTOMER_UNAVAILABLE", "RESCHEDULED"].includes(status ?? "") && (
           <>
+            <Button type="button" size="sm" disabled={busy} onClick={() => onAction("PICKED_UP")}>
+              Arrived
+            </Button>
             <Button
               type="button"
               size="sm"
@@ -126,6 +129,15 @@ function StopCard({
             >
               Failed
             </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={busy}
+              onClick={() => onAction("CUSTOMER_UNAVAILABLE")}
+            >
+              Unavailable
+            </Button>
           </>
         )}
       </div>
@@ -133,41 +145,228 @@ function StopCard({
   );
 }
 
-export function DriverRouteView() {
-  const router = useRouter();
-  const logout = useAdminAuthStore((s) => s.logout);
-  const [date, setDate] = React.useState(() => format(new Date(), "yyyy-MM-dd"));
-  const [tab, setTab] = React.useState<Tab>("today");
-  const routeQuery = useDriverRoute(date, tab);
-  const { updateStatus } = useDriverMutations();
-
-  const handleLogout = () => {
-    logout();
-    router.replace("/login");
+function RouteSummaryCard({ batch }: { batch: SubscriptionRouteBatch }) {
+  const progress = batch.progress ?? {
+    total: batch.stops.length,
+    completed: 0,
+    pending: batch.stops.length,
+    failed: 0,
   };
 
-  const data = routeQuery.data;
-  const progress = data?.progress ?? { assigned: 0, completed: 0, pending: 0, failed: 0 };
+  return (
+    <div className="rounded-2xl border border-indigo-100 bg-indigo-50/50 p-4">
+      <div className="flex items-center gap-2 text-sm font-semibold text-indigo-900">
+        <Route className="h-4 w-4" />
+        Route summary
+      </div>
+      <p className="mt-1 text-xs text-indigo-800/80">
+        {batch.deliverySlotName ?? "All slots"} · {progress.total} stops · {batch.totalQty} rotis
+      </p>
+      <div className="mt-3 grid grid-cols-3 gap-2 text-center text-xs">
+        <div className="rounded-lg bg-white py-2">
+          <p className="font-bold text-emerald-700">{progress.completed}</p>
+          <p className="text-gray-500">Done</p>
+        </div>
+        <div className="rounded-lg bg-white py-2">
+          <p className="font-bold text-amber-700">{progress.pending}</p>
+          <p className="text-gray-500">Pending</p>
+        </div>
+        <div className="rounded-lg bg-white py-2">
+          <p className="font-bold text-red-700">{progress.failed}</p>
+          <p className="text-gray-500">Failed</p>
+        </div>
+      </div>
+      {batch.fullRouteUrl && (
+        <a href={batch.fullRouteUrl} target="_blank" rel="noopener noreferrer">
+          <Button type="button" size="sm" variant="outline" className="mt-3 w-full">
+            <Navigation className="mr-1 h-4 w-4" />
+            Open full route in Maps
+          </Button>
+        </a>
+      )}
+    </div>
+  );
+}
 
-  const handleAction = async (stopId: string, status: "ARRIVED" | "DELIVERED" | "FAILED") => {
+export function DriverSubscriptionRouteSection({ date }: { date: string }) {
+  const routesQuery = useDriverSubscriptionRoutes(date);
+  const { updateStopStatus } = useDriverSubscriptionMutations();
+  const [tab, setTab] = React.useState<Tab>("today");
+  const [activeBatchId, setActiveBatchId] = React.useState<string | null>(null);
+
+  const batches = routesQuery.data ?? [];
+  const activeBatch =
+    batches.find((b) => b.id === activeBatchId) ?? batches[0] ?? null;
+
+  React.useEffect(() => {
+    if (batches.length > 0 && !activeBatchId) {
+      setActiveBatchId(batches[0]!.id);
+    }
+  }, [batches, activeBatchId]);
+
+  const allStops = batches.flatMap((b) => b.stops);
+  const completed = allStops.filter(
+    (s) => s.stopAssignmentStatus === "DELIVERED" || s.dispatchStatus === "DELIVERED",
+  );
+  const failed = allStops.filter(
+    (s) =>
+      ["FAILED", "CUSTOMER_UNAVAILABLE", "RESCHEDULED"].includes(s.stopAssignmentStatus ?? "") ||
+      s.dispatchStatus === "FAILED",
+  );
+  const pending = allStops.filter(
+    (s) =>
+      !["DELIVERED", "FAILED", "CUSTOMER_UNAVAILABLE", "RESCHEDULED"].includes(
+        s.stopAssignmentStatus ?? "",
+      ) && s.dispatchStatus !== "DELIVERED" && s.dispatchStatus !== "FAILED",
+  );
+
+  const handleAction = async (
+    stopId: string,
+    status: "PICKED_UP" | "DELIVERED" | "FAILED" | "CUSTOMER_UNAVAILABLE",
+  ) => {
     try {
-      if (status === "FAILED") {
-        const reason = window.prompt("Failure reason?") ?? "Could not deliver";
-        await updateStatus.mutateAsync({ id: stopId, status, failureReason: reason });
+      if (status === "FAILED" || status === "CUSTOMER_UNAVAILABLE") {
+        const reason =
+          window.prompt("Reason?") ??
+          (status === "CUSTOMER_UNAVAILABLE" ? "Customer unavailable" : "Could not deliver");
+        await updateStopStatus.mutateAsync({ id: stopId, status, failureReason: reason });
       } else {
-        await updateStatus.mutateAsync({ id: stopId, status });
+        await updateStopStatus.mutateAsync({ id: stopId, status });
       }
-      toast.success(status === "DELIVERED" ? "Marked delivered" : status === "ARRIVED" ? "Marked arrived" : "Marked failed");
+      toast.success("Stop updated");
     } catch {
       toast.error("Update failed");
     }
   };
 
   const tabs: { id: Tab; label: string }[] = [
-    { id: "today", label: "Today" },
+    { id: "today", label: "Today's Route" },
     { id: "completed", label: "Completed" },
-    { id: "failed", label: "Failed / Attention" },
+    { id: "failed", label: "Failed / Skipped" },
+    { id: "summary", label: "Route Summary" },
   ];
+
+  const displayStops =
+    tab === "completed"
+      ? completed
+      : tab === "failed"
+        ? failed
+        : tab === "today"
+          ? pending.sort((a, b) => (a.routeSequence ?? 999) - (b.routeSequence ?? 999))
+          : [];
+
+  const nextStop = pending.sort((a, b) => (a.routeSequence ?? 999) - (b.routeSequence ?? 999))[0];
+
+  if (routesQuery.isLoading) {
+    return (
+      <div className="flex justify-center py-8">
+        <Loader2 className="h-6 w-6 animate-spin text-orange-500" />
+      </div>
+    );
+  }
+
+  if (batches.length === 0) {
+    return (
+      <p className="rounded-xl border border-dashed border-gray-200 bg-white p-4 text-center text-sm text-gray-500">
+        No subscription route batches assigned for this date.
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-bold uppercase tracking-wide text-gray-700">Subscription routes</h2>
+        {batches.length > 1 && (
+          <select
+            className="rounded-lg border border-gray-200 px-2 py-1 text-xs"
+            value={activeBatch?.id ?? ""}
+            onChange={(e) => setActiveBatchId(e.target.value)}
+          >
+            {batches.map((b) => (
+              <option key={b.id} value={b.id}>
+                {b.deliverySlotName ?? "Route"} · {b.totalStops} stops
+              </option>
+            ))}
+          </select>
+        )}
+      </div>
+
+      {activeBatch?.pendingWarning && tab === "today" && (
+        <div className="flex items-center gap-2 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
+          <AlertTriangle className="h-4 w-4 shrink-0" />
+          {activeBatch.progress?.pending ?? pending.length} stop(s) still pending.
+        </div>
+      )}
+
+      <div className="flex gap-1 overflow-x-auto border-b border-gray-200">
+        {tabs.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            onClick={() => setTab(t.id)}
+            className={cn(
+              "whitespace-nowrap px-3 py-2 text-xs font-medium",
+              tab === t.id ? "border-b-2 border-orange-500 text-orange-600" : "text-gray-500",
+            )}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === "summary" && activeBatch && <RouteSummaryCard batch={activeBatch} />}
+
+      {tab === "today" && nextStop && (
+        <div>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-orange-600">Next stop</p>
+          <SubscriptionStopCard
+            stop={nextStop}
+            isNext
+            busy={updateStopStatus.isPending}
+            onAction={(action) => handleAction(nextStop.id, action)}
+          />
+        </div>
+      )}
+
+      {tab !== "summary" &&
+        displayStops
+          .filter((s) => tab !== "today" || s.id !== nextStop?.id)
+          .map((stop) => (
+            <SubscriptionStopCard
+              key={stop.id}
+              stop={stop}
+              busy={updateStopStatus.isPending}
+              onAction={(action) => handleAction(stop.id, action)}
+            />
+          ))}
+
+      {tab === "today" && pending.length === 0 && allStops.length > 0 && (
+        <div className="flex items-center gap-2 rounded-xl bg-emerald-50 p-4 text-sm text-emerald-800">
+          <CheckCircle2 className="h-5 w-5" />
+          All subscription stops completed.
+        </div>
+      )}
+
+      {tab === "failed" && failed.length > 0 && (
+        <div className="flex items-center gap-2 rounded-xl bg-red-50 p-4 text-sm text-red-800">
+          <XCircle className="h-5 w-5" />
+          {failed.length} failed or skipped — contact branch manager.
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function DriverRouteView() {
+  const router = useRouter();
+  const logout = useAdminAuthStore((s) => s.logout);
+  const [date, setDate] = React.useState(() => format(new Date(), "yyyy-MM-dd"));
+
+  const handleLogout = () => {
+    logout();
+    router.replace("/login");
+  };
 
   return (
     <div className="mx-auto min-h-screen max-w-lg bg-gray-50 pb-8">
@@ -175,7 +374,7 @@ export function DriverRouteView() {
         <div className="flex items-start justify-between gap-3">
           <div>
             <h1 className="text-lg font-bold text-gray-900">My Route</h1>
-            <p className="text-xs text-gray-500">Subscription + realtime deliveries</p>
+            <p className="text-xs text-gray-500">Subscription routes + realtime deliveries</p>
           </div>
           <Button
             type="button"
@@ -194,93 +393,14 @@ export function DriverRouteView() {
           onChange={(e) => setDate(e.target.value)}
           className="mt-3 h-10"
         />
-        <div className="mt-3 grid grid-cols-3 gap-2 text-center text-xs">
-          <div className="rounded-lg bg-gray-100 py-2">
-            <p className="font-bold text-gray-900">{progress.assigned}</p>
-            <p className="text-gray-500">Assigned</p>
-          </div>
-          <div className="rounded-lg bg-emerald-50 py-2">
-            <p className="font-bold text-emerald-700">{progress.completed}</p>
-            <p className="text-emerald-600">Done</p>
-          </div>
-          <div className="rounded-lg bg-amber-50 py-2">
-            <p className="font-bold text-amber-700">{progress.pending}</p>
-            <p className="text-amber-600">Pending</p>
-          </div>
-        </div>
-        {data?.pendingWarning && tab === "today" && (
-          <div className="mt-3 flex items-center gap-2 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
-            <AlertTriangle className="h-4 w-4 shrink-0" />
-            {progress.pending} stop(s) still pending — resolve before ending your route.
-          </div>
-        )}
       </header>
 
-      <div className="flex gap-1 border-b border-gray-200 bg-white px-2">
-        {tabs.map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            onClick={() => setTab(t.id)}
-            className={cn(
-              "flex-1 py-3 text-sm font-medium",
-              tab === t.id ? "border-b-2 border-orange-500 text-orange-600" : "text-gray-500",
-            )}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
-
-      <div className="space-y-3 p-4">
-        <RealtimeDriverStops tab={tab} date={date} />
-        {routeQuery.isLoading ? (
-          <div className="flex justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
-          </div>
-        ) : (data?.stops ?? []).length === 0 ? (
-          <div className="py-12 text-center text-sm text-gray-500">
-            {tab === "today" ? "No pending stops for this date." : "Nothing here yet."}
-          </div>
-        ) : (
-          <>
-            {tab === "today" && data?.nextStop && (
-              <div className="mb-2">
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-orange-600">Next stop</p>
-                <StopCard
-                  stop={data.nextStop}
-                  isNext
-                  busy={updateStatus.isPending}
-                  onAction={(action) => handleAction(data.nextStop!.id, action)}
-                />
-              </div>
-            )}
-            {(data?.stops ?? [])
-              .filter((s) => tab !== "today" || s.id !== data?.nextStop?.id)
-              .map((stop) => (
-                <StopCard
-                  key={stop.id}
-                  stop={stop}
-                  busy={updateStatus.isPending}
-                  onAction={(action) => handleAction(stop.id, action)}
-                />
-              ))}
-          </>
-        )}
-
-        {tab === "today" && progress.pending === 0 && progress.assigned > 0 && progress.failed === 0 && (
-          <div className="flex items-center gap-2 rounded-xl bg-emerald-50 p-4 text-sm text-emerald-800">
-            <CheckCircle2 className="h-5 w-5" />
-            All stops completed for today.
-          </div>
-        )}
-
-        {tab === "failed" && progress.failed > 0 && (
-          <div className="flex items-center gap-2 rounded-xl bg-red-50 p-4 text-sm text-red-800">
-            <XCircle className="h-5 w-5" />
-            {progress.failed} failed — contact branch manager.
-          </div>
-        )}
+      <div className="space-y-6 p-4">
+        <DriverSubscriptionRouteSection date={date} />
+        <div>
+          <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-gray-700">Live orders</h2>
+          <RealtimeDriverStops tab="today" date={date} />
+        </div>
       </div>
     </div>
   );

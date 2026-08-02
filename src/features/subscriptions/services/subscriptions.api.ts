@@ -1,4 +1,5 @@
 import { apiClient } from "@/lib/api/http";
+import { todayDateKey, tomorrowDateKey } from "@/lib/date";
 
 export const subscriptionsApi = {
   async list(params?: Record<string, string>) {
@@ -94,7 +95,7 @@ export const subscriptionsApi = {
   },
 
   async getForecast(date?: string) {
-    const target = date ?? new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+    const target = date ?? tomorrowDateKey();
     const kitchen = await subscriptionsApi.getKitchenSummary(target);
     return { kitchen, delivery: null };
   },
@@ -112,7 +113,7 @@ export const subscriptionsApi = {
   },
 
   async getOpsKitchenForecast(date?: string, branchId?: string) {
-    return subscriptionsApi.getKitchenSummary(date ?? new Date().toISOString().slice(0, 10), branchId);
+    return subscriptionsApi.getKitchenSummary(date ?? todayDateKey(), branchId);
   },
 
   async getOpsKitchenForecastRange(_from: string, _to: string, _branchId?: string) {
