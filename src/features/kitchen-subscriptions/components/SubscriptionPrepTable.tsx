@@ -1,7 +1,7 @@
 "use client";
 
 import { ChefHat, Package, Truck } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { formatDeliverySlotLabel } from "@/lib/delivery-slot-display";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
@@ -120,7 +120,7 @@ export function SubscriptionPrepTable({
                     <p>{row.deliverySlotName ?? "—"}</p>
                     {row.deliverySlotStart && row.deliverySlotEnd && (
                       <p className="text-xs text-gray-400">
-                        {row.deliverySlotStart} – {row.deliverySlotEnd}
+                        {formatDeliverySlotLabel(row.deliverySlotStart, row.deliverySlotEnd)}
                       </p>
                     )}
                   </TableCell>

@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { format } from "date-fns";
-import { toast } from "sonner";
+import { formatDeliverySlotLabel } from "@/lib/delivery-slot-display";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -56,7 +56,9 @@ function StopCard({
             <h3 className="font-semibold text-gray-900">{stop.customerName}</h3>
             <p className="text-xs text-gray-500">
               {stop.slot?.name ?? "Slot"}
-              {stop.slot?.startTime ? ` · ${stop.slot.startTime}–${stop.slot.endTime}` : ""}
+              {stop.slot?.startTime
+                ? ` · ${formatDeliverySlotLabel(stop.slot.startTime, stop.slot.endTime ?? stop.slot.startTime)}`
+                : ""}
             </p>
           </div>
         </div>
