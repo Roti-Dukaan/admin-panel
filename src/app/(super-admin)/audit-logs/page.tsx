@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Search, Download } from "lucide-react";
 import { toast } from "sonner";
+import { addDaysIst, startOfMonthDateKey, todayDateKey } from "@/lib/date";
 
 const ENTITY_OPTIONS = ["all", "Order", "Delivery", "Menu", "Customer", "Settings", "Kitchen", "Payment", "Role", "Admin", "Subscription"];
 const ACTION_OPTIONS = ["all", "CREATED", "UPDATED", "DELETED", "STATUS_CHANGED", "KITCHEN_STATUS_UPDATED", "LOGIN", "LOGOUT"];
@@ -58,16 +59,16 @@ export default function AuditLogsPage() {
 
   const handleDateRangeChange = (value: DateRangeValue) => {
     const presets: Record<string, { dateFrom: string; dateTo: string }> = {
-      today: { dateFrom: new Date().toISOString().split("T")[0], dateTo: new Date().toISOString().split("T")[0] },
+      today: { dateFrom: todayDateKey(), dateTo: todayDateKey() },
       yesterday: {
-        dateFrom: new Date(Date.now() - 86400000).toISOString().split("T")[0],
-        dateTo: new Date(Date.now() - 86400000).toISOString().split("T")[0],
+        dateFrom: addDaysIst(new Date(), -1),
+        dateTo: addDaysIst(new Date(), -1),
       },
-      "7d": { dateFrom: new Date(Date.now() - 7 * 86400000).toISOString().split("T")[0], dateTo: new Date().toISOString().split("T")[0] },
-      "30d": { dateFrom: new Date(Date.now() - 30 * 86400000).toISOString().split("T")[0], dateTo: new Date().toISOString().split("T")[0] },
+      "7d": { dateFrom: addDaysIst(new Date(), -7), dateTo: todayDateKey() },
+      "30d": { dateFrom: addDaysIst(new Date(), -30), dateTo: todayDateKey() },
       "this-month": {
-        dateFrom: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split("T")[0],
-        dateTo: new Date().toISOString().split("T")[0],
+        dateFrom: startOfMonthDateKey(),
+        dateTo: todayDateKey(),
       },
       custom: { dateFrom: value.startDate || "", dateTo: value.endDate || "" },
     };

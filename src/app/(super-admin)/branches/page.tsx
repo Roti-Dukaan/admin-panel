@@ -28,6 +28,7 @@ import DeliverySettingsDialog from "./branches/DeliverySettingsDialog"
 import { toast } from "sonner"
 import { DEFAULT_MAP_CENTER, hasValidMapCoords, parseDeliveryPolygon, toMapCoords } from "@/lib/geo-utils"
 import { reverseGeocode } from "@/lib/google-maps"
+import { normalizeEmail } from "@/lib/utils/email"
 
 const DeliveryPolygonPicker = dynamic(
   () => import("@/components/Map/DeliveryPolygonPicker").then((m) => m.DeliveryPolygonPicker),
@@ -292,7 +293,7 @@ export default function BranchesPage() {
         const updatePayload: UpdateBranchDTO = {
           ...payload,
           managerName: form.managerName.trim() || undefined,
-          managerEmail: form.managerEmail.trim() || undefined,
+          managerEmail: form.managerEmail ? normalizeEmail(form.managerEmail) : undefined,
         }
         const response = await branchesApi.update(editingBranch.id, updatePayload)
         const managerAccess = response.data.data.managerAccess
@@ -309,7 +310,7 @@ export default function BranchesPage() {
         const createPayload: CreateBranchDTO = {
           ...payload,
           managerName: form.managerName.trim() || undefined,
-          managerEmail: form.managerEmail.trim() || undefined,
+          managerEmail: form.managerEmail ? normalizeEmail(form.managerEmail) : undefined,
         }
         const response = await branchesApi.create(createPayload)
         const managerAccess = response.data.data.managerAccess
@@ -546,7 +547,7 @@ export default function BranchesPage() {
                   <Input
                     type="email"
                     value={form.managerEmail}
-                    onChange={(e) => setForm({ ...form, managerEmail: e.target.value })}
+                    onChange={(e) => setForm({ ...form, managerEmail: normalizeEmail(e.target.value) })}
                     placeholder="manager@rotidukaan.com"
                   />
                   <p className="text-xs text-gray-400 mt-1">

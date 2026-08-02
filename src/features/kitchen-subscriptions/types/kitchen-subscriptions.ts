@@ -46,6 +46,8 @@ export interface SubscriptionPrepRow {
   id: string;
   deliveryDate: string;
   source: "SUBSCRIPTION_DELIVERY";
+  orderId?: string | null;
+  orderNumber?: string | null;
   customerName: string;
   customerPhone: string;
   area: string;

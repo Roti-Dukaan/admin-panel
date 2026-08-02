@@ -13,6 +13,7 @@ import { CodDashboard } from "@/features/payments/components/CodDashboard";
 import { CodTable } from "@/features/payments/components/CodTable";
 import { FailedPayments } from "@/features/payments/components/FailedPayments";
 import { PaymentDrawer } from "@/features/payments/components/PaymentDrawer";
+import { todayDateKey } from "@/lib/date";
 import { usePaymentStore } from "@/features/payments/hooks/usePayments";
 import { PAYMENT_STATUS_CONFIG, PAYMENT_METHOD_CONFIG } from "@/features/payments/types/payment";
 import { toast } from "sonner";
@@ -97,7 +98,7 @@ export default function PaymentsPage() {
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
-    const stamp = new Date().toISOString().slice(0, 10);
+    const stamp = todayDateKey();
     link.href = url;
     link.download = `payments-${activeTab}-${stamp}.csv`;
     document.body.appendChild(link);

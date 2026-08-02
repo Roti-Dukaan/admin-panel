@@ -13,6 +13,7 @@ import { KitchenRotiSummaryPanel } from "./KitchenRotiSummaryPanel";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend,
 } from "recharts";
+import { addDaysIst, todayDateKey } from "@/lib/date";
 
 const SLOT_COLORS: Record<string, string> = {
   breakfast: "#f59e0b",
@@ -21,10 +22,10 @@ const SLOT_COLORS: Record<string, string> = {
 };
 
 export function OpsForecastTab() {
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(todayDateKey());
   const [range] = useState({
-    from: new Date().toISOString().slice(0, 10),
-    to: new Date(Date.now() + 6 * 86_400_000).toISOString().slice(0, 10),
+    from: todayDateKey(),
+    to: addDaysIst(new Date(), 6),
   });
   const [tab, setTab] = useState("kitchen");
 

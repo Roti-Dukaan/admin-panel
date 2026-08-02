@@ -6,6 +6,7 @@ import type {
   KitchenPrepTimer,
   KitchenDeliverySlot,
 } from "@/lib/api/kitchen.api";
+import { formatDeliverySlotLabel } from "@/lib/delivery-slot-display";
 
 /** Public 3-stage kitchen workflow used by the dashboard. */
 export const STAGES: KitchenStage[] = ["PENDING", "PREPARING", "READY_FOR_PICKUP"];
@@ -92,17 +93,8 @@ export function getDeliveryKind(order: KitchenOrderListItem | KitchenOrderView):
   return order.deliverySlot ? DELIVERY_KIND.SCHEDULED : DELIVERY_KIND.QUICK;
 }
 
-/** Format a delivery slot window, e.g. "7:00 PM - 7:30 PM". */
+/** Format a delivery slot window, e.g. "7:00 AM – 7:30 AM". */
 export function formatSlotWindow(slot?: KitchenDeliverySlot | null): string | null {
   if (!slot) return null;
-  return `${formatTime(slot.startTime)} - ${formatTime(slot.endTime)}`;
-}
-
-function formatTime(value: string): string {
-  // Accept "19:00" or "19:00:00" and produce "7:00 PM".
-  const [h, m] = value.split(":").map((n) => parseInt(n, 10));
-  if (Number.isNaN(h)) return value;
-  const period = h >= 12 ? "PM" : "AM";
-  const hour12 = h % 12 === 0 ? 12 : h % 12;
-  return `${hour12}:${String(m).padStart(2, "0")} ${period}`;
+  return formatDeliverySlotLabel(slot.startTime, slot.endTime);
 }

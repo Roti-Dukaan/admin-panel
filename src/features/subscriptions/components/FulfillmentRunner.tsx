@@ -8,11 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useRunFulfillment } from "../hooks/useSubscriptions";
 import type { FulfillmentResult } from "../types/subscription";
+import { tomorrowDateKey } from "@/lib/date";
 
 export function FulfillmentRunner() {
-  const [targetDate, setTargetDate] = useState(
-    new Date(Date.now() + 86400000).toISOString().slice(0, 10)
-  );
+  const [targetDate, setTargetDate] = useState(tomorrowDateKey());
   const run = useRunFulfillment();
   const result = run.data as FulfillmentResult | undefined;
 

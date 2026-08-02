@@ -2,55 +2,20 @@
 
 import * as React from "react"
 import { Header } from "@/components/layout/header"
-import { DateRangeFilter, type DateRangeValue } from "@/components/shared/DateRangeFilter"
-import { OrderStatistics } from "@/features/orders/components/OrderStatistics"
-import { OrderFilters } from "@/features/orders/components/OrderFilters"
-import { OrdersTable } from "@/features/orders/components/OrdersTable"
 import { OrderDrawer } from "@/features/orders/components/OrderDrawer"
-import { useOrdersStore } from "@/features/orders/hooks/useOrders"
 import { useBranchOrdersRealtime } from "@/features/orders/hooks/useBranchOrdersRealtime"
-import { RefreshCw } from "lucide-react"
-import { toast } from "sonner"
-import type { Order } from "@/features/orders/types/order"
-import type { OrderDatePreset } from "@/features/orders/types/order"
-import { motion } from "motion/react"
+import { DeliveryListPage } from "@/features/delivery/components/DeliveryListPage"
+import { BranchSubscriptionDeliveriesTab } from "@/features/delivery/components/BranchSubscriptionDeliveriesTab"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useWorkspace } from "@/contexts/WorkspaceContext"
+
+type BranchOrderTab = "one-time" | "subscriptions"
 
 export default function BranchOrdersPage() {
   const { branchId } = useWorkspace()
-  const { fetchOrders, fetchStatistics, setDrawerOpen, setSelectedOrder, refreshAll, loading, filters, setDateRange } = useOrdersStore()
   useBranchOrdersRealtime()
 
-  const dateRangeValue: DateRangeValue = {
-    preset: filters.dateFilter === "all" ? "today" : filters.dateFilter as DateRangeValue["preset"],
-    startDate: filters.customStartDate,
-    endDate: filters.customEndDate,
-  }
-
-  const handleDateRangeChange = (value: DateRangeValue) => {
-    setDateRange(
-      value.preset as OrderDatePreset,
-      value.startDate || "",
-      value.endDate || ""
-    )
-  }
-
-  React.useEffect(() => {
-    if (branchId) {
-      fetchOrders()
-      fetchStatistics()
-    }
-  }, [branchId])
-
-  const handleRefresh = async () => {
-    await refreshAll()
-    toast.success("Orders refreshed")
-  }
-
-  const handleViewDetails = (order: Order) => {
-    setSelectedOrder(order)
-    setDrawerOpen(true)
-  }
+  const [activeTab, setActiveTab] = React.useState<BranchOrderTab>("one-time")
 
   if (!branchId) {
     return (
@@ -63,49 +28,31 @@ export default function BranchOrdersPage() {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-gray-50/50">
       <Header
         title="Branch Orders"
-        subtitle="Manage and monitor orders for your branch."
+        subtitle="Manage one-time and subscription orders for your branch."
         showSearch={false}
-        dateFilter={<DateRangeFilter value={dateRangeValue} onChange={handleDateRangeChange} />}
-        actions={
-          <button
-            onClick={handleRefresh}
-            disabled={loading}
-            className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors disabled:opacity-50"
-            title="Refresh orders"
-          >
-            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-          </button>
-        }
       />
 
-      <div className="p-6 space-y-6">
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
+      <div className="px-6 pt-4 pb-6">
+        <Tabs
+          value={activeTab}
+          onValueChange={(value) => setActiveTab(value as BranchOrderTab)}
         >
-          <OrderStatistics />
-        </motion.div>
+          <TabsList>
+            <TabsTrigger value="one-time">One-time Orders</TabsTrigger>
+            <TabsTrigger value="subscriptions">Subscriptions</TabsTrigger>
+          </TabsList>
 
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.1 }}
-          className="rounded-xl border border-border bg-card p-4"
-        >
-          <OrderFilters />
-        </motion.div>
+          <TabsContent value="one-time" className="mt-4">
+            <DeliveryListPage apiMode="branch" />
+          </TabsContent>
 
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.2 }}
-        >
-          <OrdersTable onViewDetails={handleViewDetails} />
-        </motion.div>
+          <TabsContent value="subscriptions" className="mt-4">
+            <BranchSubscriptionDeliveriesTab />
+          </TabsContent>
+        </Tabs>
       </div>
 
       <OrderDrawer />

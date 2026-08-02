@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Mail, Send, Loader2, CheckCircle, AlertCircle, Wifi, WifiOff } from "lucide-react";
 import { toast } from "sonner";
 import { apiClient } from "@/lib/api/http";
+import { normalizeEmail } from "@/lib/utils/email";
 
 interface EmailSettings {
   enabled: boolean;
@@ -67,7 +68,7 @@ export function EmailTab({ saving }: EmailTabProps) {
     setTesting(true);
     setTestResult(null);
     try {
-      const res = await apiClient.post("/admin/settings/email/test", { to: testEmail });
+      const res = await apiClient.post("/admin/settings/email/test", { to: normalizeEmail(testEmail) });
       if (res.data.success) {
         setTestResult("success");
         toast.success("Test email sent successfully!");
@@ -174,7 +175,7 @@ export function EmailTab({ saving }: EmailTabProps) {
             <input
               type="email"
               value={testEmail}
-              onChange={(e) => setTestEmail(e.target.value)}
+              onChange={(e) => setTestEmail(normalizeEmail(e.target.value))}
               placeholder="test@example.com"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />

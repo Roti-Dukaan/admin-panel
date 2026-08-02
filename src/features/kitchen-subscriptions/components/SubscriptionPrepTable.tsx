@@ -1,8 +1,9 @@
 "use client";
 
-import { ChefHat, Package, Truck } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ChefHat, Package, Printer, Truck } from "lucide-react";
+import { formatDeliverySlotLabel } from "@/lib/delivery-slot-display";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import type { SubscriptionPrepRow } from "../types/kitchen-subscriptions";
@@ -46,6 +47,7 @@ export function SubscriptionPrepTable({
   onPrep,
   onPack,
   onDispatch,
+  onPrintTicket,
   updatingId,
   isLoading,
 }: {
@@ -53,6 +55,7 @@ export function SubscriptionPrepTable({
   onPrep: (id: string) => void;
   onPack: (id: string) => void;
   onDispatch: (id: string) => void;
+  onPrintTicket: (row: SubscriptionPrepRow) => void;
   updatingId: string | null;
   isLoading: boolean;
 }) {
@@ -120,7 +123,7 @@ export function SubscriptionPrepTable({
                     <p>{row.deliverySlotName ?? "—"}</p>
                     {row.deliverySlotStart && row.deliverySlotEnd && (
                       <p className="text-xs text-gray-400">
-                        {row.deliverySlotStart} – {row.deliverySlotEnd}
+                        {formatDeliverySlotLabel(row.deliverySlotStart, row.deliverySlotEnd)}
                       </p>
                     )}
                   </TableCell>
@@ -139,7 +142,7 @@ export function SubscriptionPrepTable({
                     <StatusBadge label={dispatchMeta.label} className={dispatchMeta.className} />
                   </TableCell>
                   <TableCell className="text-right">
-                    <div className="flex justify-end gap-1.5">
+                    <div className="flex flex-wrap justify-end gap-1.5">
                       {row.prepStatus === "PENDING" && (
                         <Button
                           type="button"
@@ -153,19 +156,32 @@ export function SubscriptionPrepTable({
                           Prep
                         </Button>
                       )}
-                      {row.prepStatus === "PREPARING" && row.packingStatus !== "PACKED" && (
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          disabled={isUpdating}
-                          onClick={() => onPack(row.id)}
-                          className="h-8 gap-1"
-                        >
-                          <Package className="h-3.5 w-3.5" />
-                          Pack
-                        </Button>
-                      )}
+                      {row.prepStatus === "PREPARING" && row.packingStatus !== "PACKED" ? (
+                        <>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="secondary"
+                            disabled={isUpdating}
+                            onClick={() => onPrintTicket(row)}
+                            className="h-8 gap-1"
+                          >
+                            <Printer className="h-3.5 w-3.5" />
+                            Print Ticket
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            disabled={isUpdating}
+                            onClick={() => onPack(row.id)}
+                            className="h-8 gap-1"
+                          >
+                            <Package className="h-3.5 w-3.5" />
+                            Pack
+                          </Button>
+                        </>
+                      ) : null}
                       {row.dispatchStatus === "READY" && (
                         <Button
                           type="button"

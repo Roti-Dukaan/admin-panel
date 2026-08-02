@@ -7,6 +7,7 @@ import { Loader2, CheckCircle, AlertCircle, Mail, Lock, User } from "lucide-reac
 import { Header } from "@/components/layout/header";
 import { apiClient } from "@/lib/api/http";
 import { toast } from "sonner";
+import { normalizeEmail } from "@/lib/utils/email";
 
 function AcceptInvitationPageContent() {
   const router = useRouter();
@@ -53,7 +54,7 @@ function AcceptInvitationPageContent() {
       await apiClient.post("/invitations/accept", {
         token,
         name: name.trim(),
-        email: email.trim(),
+        email: normalizeEmail(email),
         password,
       });
 
@@ -237,7 +238,7 @@ function AcceptInvitationPageContent() {
                       id="email"
                       type="email"
                       value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      onChange={(e) => setEmail(normalizeEmail(e.target.value))}
                       placeholder="arjun@rotidukaan.com"
                       className="w-full h-10 rounded-lg border border-gray-200 bg-white pl-10 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-orange-400 focus:outline-none focus:ring-1 focus:ring-orange-400"
                       required

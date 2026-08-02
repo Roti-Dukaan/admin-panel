@@ -17,6 +17,7 @@ import {
   FileText,
   IndianRupee,
 } from "lucide-react";
+import { DocumentQuickAction } from "@/features/documents";
 import { Drawer, DrawerHeader, DrawerTitle, DrawerContent, DrawerClose } from "@/components/ui/drawer";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -233,6 +234,17 @@ export function KitchenOrderDrawer({
                 </a>
               ) : null}
             </Section>
+
+            {order?.orderId ? (
+              <div className="pt-2">
+                <DocumentQuickAction
+                  orderId={order.orderId}
+                  documentType="KITCHEN_TICKET"
+                  label="Print Kitchen Ticket"
+                  icon={ChefHat}
+                />
+              </div>
+            ) : null}
 
             <Section icon={CreditCard} title="Payment Information">
               <Row label="Method" value={detail.payment?.paymentMethod?.toUpperCase() ?? "—"} />

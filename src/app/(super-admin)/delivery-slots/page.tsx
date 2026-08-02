@@ -18,6 +18,8 @@ import {
   GripVertical,
 } from "lucide-react";
 import { deliverySlotsApi, DeliverySlot as ApiDeliverySlot } from "@/lib/api/delivery-slots.api";
+import { formatDeliverySlotLabel } from "@/lib/delivery-slot-display";
+import { DeliverySlotTimeInput } from "@/components/delivery/DeliverySlotTimeInput";
 import { Header } from "@/components/layout/header";
 import { TableActionsMenu } from "@/components/ui/table-actions-menu";
 
@@ -368,8 +370,8 @@ export default function DeliverySlotsPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <span className="font-mono text-sm text-gray-700">
-                        {slot.startTime} – {slot.endTime}
+                      <span className="text-sm text-gray-700">
+                        {formatDeliverySlotLabel(slot.startTime, slot.endTime)}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-600">{slot.cutoffMinutes} min</td>
@@ -451,7 +453,7 @@ export default function DeliverySlotsPage() {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="fixed right-0 top-0 z-50 h-full w-full max-w-lg border-l border-gray-200 bg-white shadow-2xl"
+              className="fixed right-0 top-0 z-50 h-full w-full max-w-xl border-l border-gray-200 bg-white shadow-2xl"
             >
               <div className="flex h-full flex-col">
                 {/* Drawer Header */}
@@ -497,26 +499,22 @@ export default function DeliverySlotsPage() {
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-4">
                     <div>
                       <label className="mb-1.5 block text-xs font-bold text-gray-500">Start Time *</label>
-                      <input
-                        type="time"
+                      <DeliverySlotTimeInput
                         value={editing.startTime}
-                        onChange={(e) => setEditing((p) => ({ ...p, startTime: e.target.value }))}
+                        onChange={(startTime) => setEditing((p) => ({ ...p, startTime }))}
                         disabled={drawerMode === "view"}
-                        className={inputCls("startTime")}
                       />
                       {errors.startTime && <p className="mt-1 text-xs text-red-500">{errors.startTime}</p>}
                     </div>
                     <div>
                       <label className="mb-1.5 block text-xs font-bold text-gray-500">End Time *</label>
-                      <input
-                        type="time"
+                      <DeliverySlotTimeInput
                         value={editing.endTime}
-                        onChange={(e) => setEditing((p) => ({ ...p, endTime: e.target.value }))}
+                        onChange={(endTime) => setEditing((p) => ({ ...p, endTime }))}
                         disabled={drawerMode === "view"}
-                        className={inputCls("endTime")}
                       />
                       {errors.endTime && <p className="mt-1 text-xs text-red-500">{errors.endTime}</p>}
                     </div>

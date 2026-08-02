@@ -8,12 +8,8 @@ import {
   Receipt,
   CreditCard,
   Truck,
-  MapPin,
   Save,
   Loader2,
-  Plus,
-  Trash2,
-  Pencil,
   CheckCircle,
   AlertCircle,
   X,
@@ -32,17 +28,17 @@ import {
 } from "lucide-react";
 import { useSettingsStore } from "@/features/settings/hooks/useSettings";
 import { useDeliveryProviderStore } from "@/features/delivery-providers/hooks/useDeliveryProviders";
-import type { SettingsTab, PincodeData, BusinessSettingsData, TaxConfigData, PaymentConfigData, DeliveryConfigData } from "@/features/settings/types/settings";
+import type { SettingsTab, BusinessSettingsData, TaxConfigData, PaymentConfigData, DeliveryConfigData } from "@/features/settings/types/settings";
 import { PROVIDER_LABELS, STRATEGY_LABELS } from "@/features/delivery-providers/types/delivery-provider";
 import { Header } from "@/components/layout/header";
 import { EmailTab } from "@/features/settings/components/EmailTab";
+import { normalizeEmail } from "@/lib/utils/email";
 
 const tabs: { key: SettingsTab; label: string; icon: React.ElementType }[] = [
   { key: "business", label: "Business", icon: Building2 },
   { key: "tax", label: "Tax", icon: Receipt },
   { key: "payment", label: "Payment", icon: CreditCard },
   { key: "delivery", label: "Delivery", icon: Truck },
-  { key: "pincodes", label: "Pincodes", icon: MapPin },
   { key: "delivery-providers", label: "Delivery Providers", icon: Server },
   { key: "email", label: "Email", icon: Mail },
 ];
@@ -61,9 +57,6 @@ export default function SettingsPage() {
     updateTax,
     updatePayment,
     updateDelivery,
-    addPincode,
-    updatePincode,
-    deletePincode,
     clearMessages,
   } = useSettingsStore();
 
@@ -174,15 +167,6 @@ export default function SettingsPage() {
                 business={settings}
               />
             )}
-              {activeTab === "pincodes" && (
-                <PincodesTab
-                  saving={saving}
-                  pincodes={settings?.delivery?.pincodes || []}
-                  onAdd={addPincode}
-                  onUpdate={updatePincode}
-                  onDelete={deletePincode}
-                />
-              )}
             {activeTab === "delivery-providers" && (
               <DeliveryProvidersTab />
             )}
@@ -327,7 +311,7 @@ function BusinessTab({ saving, onSubmit, data }: { saving: boolean; onSubmit: (d
           <Input value={form.businessName} onChange={(v) => set("businessName", v)} placeholder="Roti Dukaan" />
         </Field>
         <Field label="Email">
-          <Input value={form.businessEmail} onChange={(v) => set("businessEmail", v)} placeholder="info@rotidukaan.com" />
+          <Input value={form.businessEmail} onChange={(v) => set("businessEmail", normalizeEmail(v))} placeholder="info@rotidukaan.com" />
         </Field>
         <Field label="Phone">
           <Input value={form.businessPhone} onChange={(v) => set("businessPhone", v)} placeholder="9876543210" />
@@ -560,162 +544,6 @@ function DeliveryTab({
           })
         }
       />
-    </div>
-  );
-}
-
-/* ─── Pincodes Tab ─── */
-function PincodesTab({
-  saving,
-  pincodes,
-  onAdd,
-  onUpdate,
-  onDelete,
-}: {
-  saving: boolean;
-  pincodes: PincodeData[];
-  onAdd: (d: Record<string, unknown>) => Promise<void>;
-  onUpdate: (id: string, d: Record<string, unknown>) => Promise<void>;
-  onDelete: (id: string) => Promise<void>;
-}) {
-  const [showAdd, setShowAdd] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState({ pincode: "", city: "", state: "" });
-  const [deleteId, setDeleteId] = useState<string | null>(null);
-
-  const handleAdd = async () => {
-    if (!form.pincode) return;
-    await onAdd({ ...form, isActive: true });
-    setForm({ pincode: "", city: "", state: "" });
-    setShowAdd(false);
-  };
-
-  const handleUpdate = async (id: string) => {
-    await onUpdate(id, form);
-    setEditingId(null);
-    setForm({ pincode: "", city: "", state: "" });
-  };
-
-  const startEdit = (p: PincodeData) => {
-    setEditingId(p.id);
-    setForm({ pincode: p.pincode, city: p.city || "", state: p.state || "" });
-  };
-
-  return (
-    <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-      <div className="flex items-center justify-between p-6 border-b border-gray-100">
-        <h3 className="text-lg font-bold text-gray-900">Serviceable Pincodes</h3>
-        <button
-          onClick={() => { setShowAdd(!showAdd); setEditingId(null); setForm({ pincode: "", city: "", state: "" }); }}
-          className="inline-flex items-center gap-2 rounded-xl bg-gray-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-gray-800"
-        >
-          <Plus className="h-4 w-4" />
-          Add Pincode
-        </button>
-      </div>
-
-      {/* Add form */}
-      {showAdd && (
-        <div className="border-b border-gray-100 bg-gray-50/50 p-5">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
-            <Input value={form.pincode} onChange={(v) => setForm((p) => ({ ...p, pincode: v }))} placeholder="Pincode" />
-            <Input value={form.city} onChange={(v) => setForm((p) => ({ ...p, city: v }))} placeholder="City" />
-            <Input value={form.state} onChange={(v) => setForm((p) => ({ ...p, state: v }))} placeholder="State" />
-            <div className="flex gap-2">
-              <button
-                onClick={handleAdd}
-                disabled={saving || !form.pincode}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-50"
-              >
-                {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
-                Add
-              </button>
-              <button onClick={() => setShowAdd(false)} className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-50">
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Table */}
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-gray-100 text-left">
-              <th className="px-6 py-3 text-xs font-bold uppercase tracking-wider text-gray-400">Pincode</th>
-              <th className="px-6 py-3 text-xs font-bold uppercase tracking-wider text-gray-400">City</th>
-              <th className="px-6 py-3 text-xs font-bold uppercase tracking-wider text-gray-400">State</th>
-              <th className="px-6 py-3 text-xs font-bold uppercase tracking-wider text-gray-400">Status</th>
-              <th className="px-6 py-3 text-xs font-bold uppercase tracking-wider text-gray-400 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-50">
-            {pincodes.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="px-6 py-12 text-center text-sm text-gray-400">
-                  No pincodes configured. Add your first serviceable pincode.
-                </td>
-              </tr>
-            ) : (
-              pincodes.map((p) => (
-                <tr key={p.id} className="hover:bg-gray-50/50 transition-colors">
-                  {editingId === p.id ? (
-                    <>
-                      <td className="px-6 py-3"><input value={form.pincode} onChange={(e) => setForm((f) => ({ ...f, pincode: e.target.value }))} className="h-8 w-full rounded border border-gray-200 px-2 text-sm" /></td>
-                      <td className="px-6 py-3"><input value={form.city} onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))} className="h-8 w-full rounded border border-gray-200 px-2 text-sm" /></td>
-                      <td className="px-6 py-3"><input value={form.state} onChange={(e) => setForm((f) => ({ ...f, state: e.target.value }))} className="h-8 w-full rounded border border-gray-200 px-2 text-sm" /></td>
-                      <td className="px-6 py-3">—</td>
-                      <td className="px-6 py-3 text-right">
-                        <div className="flex justify-end gap-1">
-                          <button onClick={() => handleUpdate(p.id)} disabled={saving} className="rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-600">Save</button>
-                          <button onClick={() => setEditingId(null)} className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-50">Cancel</button>
-                        </div>
-                      </td>
-                    </>
-                  ) : (
-                    <>
-                      <td className="px-6 py-3 font-semibold text-gray-900">{p.pincode}</td>
-                      <td className="px-6 py-3 text-gray-600">{p.city || "—"}</td>
-                      <td className="px-6 py-3 text-gray-600">{p.state || "—"}</td>
-                      <td className="px-6 py-3">
-                        <button
-                          type="button"
-                          onClick={() => onUpdate(p.id, { isActive: !p.isActive })}
-                          style={{ backgroundColor: p.isActive ? '#f97316' : '#e5e7eb' }}
-                          className="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors"
-                        >
-                          <span
-                            style={{ transform: p.isActive ? 'translateX(24px)' : 'translateX(4px)' }}
-                            className="inline-block h-4 w-4 rounded-full bg-white shadow transition-transform"
-                          />
-                        </button>
-                      </td>
-                      <td className="px-6 py-3 text-right">
-                        <div className="flex justify-end gap-1">
-                          <button onClick={() => { startEdit(p); setShowAdd(false); }} className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600">
-                            <Pencil className="h-3.5 w-3.5" />
-                          </button>
-                          {deleteId === p.id ? (
-                            <div className="flex items-center gap-1">
-                              <button onClick={async () => { await onDelete(p.id); setDeleteId(null); }} disabled={saving} className="rounded-lg bg-red-500 px-2 py-1 text-xs font-semibold text-white hover:bg-red-600">Confirm</button>
-                              <button onClick={() => setDeleteId(null)} className="rounded-lg border border-gray-200 px-2 py-1 text-xs font-semibold text-gray-600 hover:bg-gray-50">No</button>
-                            </div>
-                          ) : (
-                            <button onClick={() => setDeleteId(p.id)} className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-500">
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </>
-                  )}
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
     </div>
   );
 }

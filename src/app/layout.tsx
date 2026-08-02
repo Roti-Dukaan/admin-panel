@@ -4,6 +4,7 @@ import { ToasterProvider } from "@/components/providers/toaster-provider"
 import QueryProvider from "@/components/providers/query-provider"
 import { WorkspaceProvider } from "@/contexts/WorkspaceContext"
 import { AppShell } from "./app-shell"
+import { DocumentsProvider } from "@/features/documents"
 import "./globals.css"
 
 export const metadata: Metadata = {
@@ -22,7 +23,9 @@ export default function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} forcedTheme="light">
           <QueryProvider>
             <WorkspaceProvider>
-              <AppShell>{children}</AppShell>
+              <DocumentsProvider>
+                <AppShell>{children}</AppShell>
+              </DocumentsProvider>
             </WorkspaceProvider>
           </QueryProvider>
           <ToasterProvider />

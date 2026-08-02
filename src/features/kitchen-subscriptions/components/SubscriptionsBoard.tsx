@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { format } from "date-fns";
-import { AlertTriangle, ArrowRight, Printer } from "lucide-react";
+import { AlertTriangle, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { SearchBar } from "@/features/kitchen/components/SearchBar";
+import { useDocumentPreview } from "@/features/documents/context/DocumentPreviewContext";
 import {
   useSubscriptionKitchenSummary,
   useSubscriptionPrepList,
@@ -20,7 +21,8 @@ import {
 } from "../hooks/useKitchenSubscriptions";
 import { SubscriptionStats, SubscriptionPrepSummary } from "./SubscriptionStats";
 import { SubscriptionPrepTable } from "./SubscriptionPrepTable";
-import { ROTI_TYPE_LABELS } from "../types/kitchen-subscriptions";
+import { SubscriptionDispatchTicketModal } from "./SubscriptionDispatchTicketModal";
+import type { SubscriptionPrepRow } from "../types/kitchen-subscriptions";
 
 function ErrorState({ onRetry }: { onRetry: () => void }) {
   return (
@@ -39,11 +41,22 @@ function ErrorState({ onRetry }: { onRetry: () => void }) {
   );
 }
 
+function withPrepStarted(row: SubscriptionPrepRow): SubscriptionPrepRow {
+  return {
+    ...row,
+    prepStatus: "PREPARING",
+    packingStatus: "IN_PROGRESS",
+    status: "IN_KITCHEN",
+  };
+}
+
 export function SubscriptionsBoard() {
   const [date, setDate] = useState(() => format(new Date(), "yyyy-MM-dd"));
   const [search, setSearch] = useState("");
   const [slotId, setSlotId] = useState("all");
+  const [ticketRow, setTicketRow] = useState<SubscriptionPrepRow | null>(null);
 
+  const { openDocument } = useDocumentPreview();
   const filters = useMemo(() => ({ date, slotId, search }), [date, slotId, search]);
   const summaryQuery = useSubscriptionKitchenSummary(date);
   const prepQuery = useSubscriptionPrepList(filters);
@@ -76,17 +89,39 @@ export function SubscriptionsBoard() {
     ? (mutation.variables as { id: string } | undefined)?.id ?? null
     : null;
 
-  const handlePrint = () => {
-    window.print();
-  };
+  const openDispatchTicket = useCallback(
+    (row: SubscriptionPrepRow) => {
+      if (row.orderId) {
+        openDocument(row.orderId, "DELIVERY_LABEL");
+        return;
+      }
+      setTicketRow(row);
+    },
+    [openDocument],
+  );
+
+  const handlePrep = useCallback(
+    (id: string) => {
+      const row = prepQuery.data?.find((r) => r.id === id);
+      mutation.mutate(
+        { id, action: "prep" },
+        {
+          onSuccess: () => {
+            if (row) openDispatchTicket(withPrepStarted(row));
+          },
+        },
+      );
+    },
+    [mutation, openDispatchTicket, prepQuery.data],
+  );
 
   if ((prepQuery.isError || summaryQuery.isError) && !prepQuery.data && !summaryQuery.data) {
     return <ErrorState onRetry={handleRefresh} />;
   }
 
   return (
-    <div className="flex min-h-screen flex-col gap-5 bg-gray-50/50 p-6 print:bg-white">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between print:hidden">
+    <div className="flex min-h-screen flex-col gap-5 bg-gray-50/50 p-6">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-wrap items-center gap-3">
           <Input
             type="date"
@@ -122,33 +157,26 @@ export function SubscriptionsBoard() {
               <ArrowRight className="h-4 w-4" />
             </Button>
           )}
-          <Button type="button" variant="outline" onClick={handlePrint} className="gap-1.5">
-            <Printer className="h-4 w-4" />
-            Print
-          </Button>
         </div>
       </div>
 
       <SubscriptionStats stats={stats} />
       <SubscriptionPrepSummary summary={summaryQuery.data} />
 
-      <div className="hidden print:block">
-        <h2 className="mb-2 text-lg font-bold">Subscription Prep — {date}</h2>
-        <p className="mb-4 text-sm text-gray-600">
-          {stats.total} deliveries · {stats.totalRotis} rotis ·{" "}
-          {(summaryQuery.data?.rotiTypeTotals ?? [])
-            .map((r) => `${ROTI_TYPE_LABELS[r.rotiType] ?? r.rotiType}: ${r.quantity}`)
-            .join(" · ")}
-        </p>
-      </div>
-
       <SubscriptionPrepTable
         rows={prepQuery.data ?? []}
-        onPrep={(id) => mutation.mutate({ id, action: "prep" })}
+        onPrep={handlePrep}
         onPack={(id) => mutation.mutate({ id, action: "pack" })}
         onDispatch={(id) => mutation.mutate({ id, action: "dispatch" })}
+        onPrintTicket={openDispatchTicket}
         updatingId={updatingId}
         isLoading={prepQuery.isLoading}
+      />
+
+      <SubscriptionDispatchTicketModal
+        row={ticketRow}
+        open={ticketRow !== null}
+        onClose={() => setTicketRow(null)}
       />
     </div>
   );

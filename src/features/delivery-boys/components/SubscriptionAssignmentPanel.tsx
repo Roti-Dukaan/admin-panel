@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { toast } from "sonner";
-import { Loader2, UserCheck, UserPlus, UserMinus } from "lucide-react";
+import { Loader2, UserCheck, UserPlus, UserMinus, Route, Navigation } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAdminAuthStore } from "@/features/admin-auth/store/admin-auth-store";
@@ -16,6 +16,18 @@ import {
   PREP_STATUS_LABELS,
   type DriverDeliveryStop,
 } from "../types/delivery-boys";
+import { RoutePreviewModal } from "@/features/dispatch-routes/components/RoutePreviewModal";
+import { RouteSheetPrint } from "@/features/dispatch-routes/components/RouteSheetPrint";
+import {
+  dispatchRoutesApi,
+  type RouteOptimizationResult,
+} from "@/features/dispatch-routes/services/dispatch-routes.api";
+import { RouteBatchPanel } from "@/features/subscription-dispatch/components/RouteBatchPanel";
+import {
+  useRouteBatches,
+  useSubscriptionDispatchMutations,
+} from "@/features/subscription-dispatch/hooks/useSubscriptionDispatch";
+import type { SubscriptionRouteBatch } from "@/features/subscription-dispatch/services/subscription-dispatch.api";
 
 function extractError(err: unknown, fallback: string) {
   return (
@@ -113,29 +125,55 @@ function DispatchRowActions({
   return <span className="text-xs text-gray-400">Locked</span>;
 }
 
-export function SubscriptionAssignmentPanel({ date, slotId }: { date: string; slotId?: string }) {
+export function SubscriptionAssignmentPanel({
+  date,
+  slotId,
+  areaFilter,
+}: {
+  date: string;
+  slotId?: string;
+  areaFilter?: string;
+}) {
   const currentUserId = useAdminAuthStore((s) => s.user?.id);
   const {
     dispatchBoard,
     assign,
-    bulkAssign,
-    assignSelf,
     unassign,
     assignOne,
     assignOneSelf,
     unassignOne,
     reassign,
   } = useSubscriptionAssignment(date, slotId);
+  const { bulkAssign, assignSelf: bulkAssignSelf } = useSubscriptionDispatchMutations();
+  const routeBatchesQuery = useRouteBatches(date, slotId);
   const assignableQuery = useAssignableStaff(date, slotId);
   const [selectedIds, setSelectedIds] = React.useState<string[]>([]);
   const [bulkAssigneeId, setBulkAssigneeId] = React.useState("");
+  const [routeBusy, setRouteBusy] = React.useState(false);
+  const [optimization, setOptimization] = React.useState<RouteOptimizationResult | null>(null);
+  const [previewOpen, setPreviewOpen] = React.useState(false);
+  const [createdRouteId, setCreatedRouteId] = React.useState<string | null>(null);
+  const [routeDriverId, setRouteDriverId] = React.useState("");
+  const [lastCreatedBatch, setLastCreatedBatch] = React.useState<SubscriptionRouteBatch | null>(null);
+  const [activeBatchId, setActiveBatchId] = React.useState<string | null>(null);
 
-  const rows = dispatchBoard.data ?? [];
+  const allRows = dispatchBoard.data ?? [];
+  const rows = React.useMemo(() => {
+    if (!areaFilter?.trim()) return allRows;
+    const q = areaFilter.trim().toLowerCase();
+    return allRows.filter((r) => r.address.toLowerCase().includes(q));
+  }, [allRows, areaFilter]);
+  const routeBatches = routeBatchesQuery.data ?? [];
+  const activeBatch =
+    routeBatches.find((b) => b.id === activeBatchId) ??
+    lastCreatedBatch ??
+    routeBatches[0] ??
+    null;
   const staff = assignableQuery.data ?? [];
   const busy =
     assign.isPending ||
     bulkAssign.isPending ||
-    assignSelf.isPending ||
+    bulkAssignSelf.isPending ||
     unassign.isPending ||
     assignOne.isPending ||
     assignOneSelf.isPending ||
@@ -163,12 +201,17 @@ export function SubscriptionAssignmentPanel({ date, slotId }: { date: string; sl
         date,
         slotId,
         allowPartial: true,
+        optimize: true,
       });
-      const failed = (result as { failed?: Array<{ id: string; error: string }> }).failed ?? [];
+      const failed = result.assignment.failed ?? [];
       if (failed.length > 0) {
-        toast.warning(`Assigned ${selectedIds.length - failed.length}; ${failed.length} failed`);
+        toast.warning(`Assigned ${result.assignment.assignedCount}; ${failed.length} failed`);
       } else {
-        toast.success(`Assigned ${selectedIds.length} subscription deliveries`);
+        toast.success(`Assigned ${result.assignment.assignedCount} deliveries with route batch`);
+      }
+      if (result.routeBatch) {
+        setLastCreatedBatch(result.routeBatch);
+        setActiveBatchId(result.routeBatch.id);
       }
       setSelectedIds([]);
     } catch (err: unknown) {
@@ -182,8 +225,17 @@ export function SubscriptionAssignmentPanel({ date, slotId }: { date: string; sl
       return;
     }
     try {
-      await assignSelf.mutateAsync({ deliveryIds: selectedIds, date, slotId });
-      toast.success(`Assigned ${selectedIds.length} to yourself`);
+      const result = await bulkAssignSelf.mutateAsync({
+        deliveryIds: selectedIds,
+        date,
+        slotId,
+        optimize: true,
+      });
+      if (result.routeBatch) {
+        setLastCreatedBatch(result.routeBatch);
+        setActiveBatchId(result.routeBatch.id);
+      }
+      toast.success(`Assigned ${selectedIds.length} to yourself with route batch`);
       setSelectedIds([]);
     } catch (err: unknown) {
       toast.error(extractError(err, "Self assignment failed"));
@@ -241,6 +293,183 @@ export function SubscriptionAssignmentPanel({ date, slotId }: { date: string; sl
     }
   };
 
+  const selectedStopRefs = selectedIds.map((id) => ({ type: "SUBSCRIPTION" as const, id }));
+
+  const handleOptimizeRoute = async () => {
+    if (selectedStopRefs.length < 2) {
+      toast.error("Select at least 2 deliveries to optimize");
+      return;
+    }
+    setRouteBusy(true);
+    try {
+      const result = await dispatchRoutesApi.optimize({
+        stopIds: selectedStopRefs,
+        date,
+        deliverySlotId: slotId,
+      });
+      setOptimization(result);
+      setPreviewOpen(true);
+    } catch (err: unknown) {
+      toast.error(extractError(err, "Route optimization failed"));
+    } finally {
+      setRouteBusy(false);
+    }
+  };
+
+  const createRouteFromOptimization = async (routeType: "SELF" | "BORZO") => {
+    if (!optimization) return null;
+    const route = await dispatchRoutesApi.createRoute({
+      date,
+      deliverySlotId: slotId,
+      routeType,
+      stops: optimization.stops.map((s) => ({
+        type: s.type,
+        id: s.id,
+        sequence: s.sequence,
+        latitude: s.latitude,
+        longitude: s.longitude,
+        distanceFromPreviousMeters: s.distanceFromPreviousMeters ?? undefined,
+        durationFromPreviousSeconds: s.durationFromPreviousSeconds ?? undefined,
+      })),
+      distanceMeters: optimization.totalDistanceMeters,
+      durationSeconds: optimization.totalDurationSeconds,
+    });
+    setCreatedRouteId(route.id);
+    return route;
+  };
+
+  const handleAssignDriverFromPreview = async (driverId: string) => {
+    if (!optimization) return;
+    setRouteBusy(true);
+    try {
+      const route = await createRouteFromOptimization("SELF");
+      if (!route) return;
+      const result = await dispatchRoutesApi.assignRoute(route.id, {
+        routeType: "SELF",
+        driverId,
+      });
+      if (result.failures?.length) {
+        toast.warning(`Route created with ${result.failures.length} assignment warning(s)`);
+      } else {
+        toast.success(`Route ${route.routeNumber} assigned to driver`);
+      }
+      setPreviewOpen(false);
+      setSelectedIds([]);
+      setOptimization(null);
+    } catch (err: unknown) {
+      toast.error(extractError(err, "Driver assignment failed"));
+    } finally {
+      setRouteBusy(false);
+    }
+  };
+
+  const handleAssignBorzoFromPreview = async () => {
+    if (!optimization) return;
+    setRouteBusy(true);
+    try {
+      const route = await createRouteFromOptimization("BORZO");
+      if (!route) return;
+      const result = await dispatchRoutesApi.assignRoute(route.id, { routeType: "BORZO" });
+      if (result.failures?.length) {
+        toast.warning(`Borzo dispatch: ${result.failures.length} stop(s) failed`);
+      } else {
+        toast.success(`Route ${route.routeNumber} sent to Borzo`);
+      }
+      setPreviewOpen(false);
+      setSelectedIds([]);
+      setOptimization(null);
+    } catch (err: unknown) {
+      toast.error(extractError(err, "Borzo assignment failed"));
+    } finally {
+      setRouteBusy(false);
+    }
+  };
+
+  const handleToolbarAssignDriver = async () => {
+    if (!routeDriverId || selectedStopRefs.length < 2) {
+      toast.error("Select driver and at least 2 deliveries");
+      return;
+    }
+    setRouteBusy(true);
+    try {
+      const result = await dispatchRoutesApi.optimize({
+        stopIds: selectedStopRefs,
+        date,
+        deliverySlotId: slotId,
+      });
+      const route = await dispatchRoutesApi.createRoute({
+        date,
+        deliverySlotId: slotId,
+        routeType: "SELF",
+        stops: result.stops.map((s) => ({
+          type: s.type,
+          id: s.id,
+          sequence: s.sequence,
+          latitude: s.latitude,
+          longitude: s.longitude,
+          distanceFromPreviousMeters: s.distanceFromPreviousMeters ?? undefined,
+          durationFromPreviousSeconds: s.durationFromPreviousSeconds ?? undefined,
+        })),
+        distanceMeters: result.totalDistanceMeters,
+        durationSeconds: result.totalDurationSeconds,
+      });
+      const assignResult = await dispatchRoutesApi.assignRoute(route.id, {
+        routeType: "SELF",
+        driverId: routeDriverId,
+      });
+      setCreatedRouteId(route.id);
+      if (assignResult.failures?.length) {
+        toast.warning(`Route ${route.routeNumber} created with warnings`);
+      } else {
+        toast.success(`Route ${route.routeNumber} assigned`);
+      }
+      setSelectedIds([]);
+    } catch (err: unknown) {
+      toast.error(extractError(err, "Assign driver failed"));
+    } finally {
+      setRouteBusy(false);
+    }
+  };
+
+  const handleToolbarAssignBorzo = async () => {
+    if (selectedStopRefs.length < 2) {
+      toast.error("Select at least 2 deliveries");
+      return;
+    }
+    setRouteBusy(true);
+    try {
+      const result = await dispatchRoutesApi.optimize({
+        stopIds: selectedStopRefs,
+        date,
+        deliverySlotId: slotId,
+      });
+      const route = await dispatchRoutesApi.createRoute({
+        date,
+        deliverySlotId: slotId,
+        routeType: "BORZO",
+        stops: result.stops.map((s) => ({
+          type: s.type,
+          id: s.id,
+          sequence: s.sequence,
+          latitude: s.latitude,
+          longitude: s.longitude,
+          distanceFromPreviousMeters: s.distanceFromPreviousMeters ?? undefined,
+          durationFromPreviousSeconds: s.durationFromPreviousSeconds ?? undefined,
+        })),
+        distanceMeters: result.totalDistanceMeters,
+        durationSeconds: result.totalDurationSeconds,
+      });
+      await dispatchRoutesApi.assignRoute(route.id, { routeType: "BORZO" });
+      setCreatedRouteId(route.id);
+      toast.success(`Route ${route.routeNumber} sent to Borzo`);
+      setSelectedIds([]);
+    } catch (err: unknown) {
+      toast.error(extractError(err, "Borzo dispatch failed"));
+    } finally {
+      setRouteBusy(false);
+    }
+  };
+
   if (dispatchBoard.isLoading) {
     return (
       <div className="flex items-center gap-2 py-6 text-sm text-gray-500">
@@ -257,7 +486,83 @@ export function SubscriptionAssignmentPanel({ date, slotId }: { date: string; sl
           <UserCheck className="h-4 w-4" />
           Subscription dispatch & assignment ({rows.length})
         </h3>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            disabled={routeBusy || selectedIds.length < 2}
+            onClick={handleOptimizeRoute}
+          >
+            <Route className="mr-1 h-4 w-4" />
+            Optimize Route
+          </Button>
+          <AssigneeSelect
+            value={routeDriverId}
+            onChange={setRouteDriverId}
+            staff={staff}
+            disabled={routeBusy}
+            placeholder="Driver for route"
+            className="h-8 w-40 text-xs"
+          />
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            disabled={routeBusy || selectedIds.length < 2 || !routeDriverId}
+            onClick={handleToolbarAssignDriver}
+          >
+            <Navigation className="mr-1 h-4 w-4" />
+            Assign Driver
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            disabled={routeBusy || selectedIds.length < 2}
+            onClick={handleToolbarAssignBorzo}
+          >
+            Assign Borzo
+          </Button>
+          {createdRouteId && <RouteSheetPrint routeId={createdRouteId} />}
+        </div>
       </div>
+
+      <RoutePreviewModal
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        optimization={optimization}
+        staff={staff}
+        busy={routeBusy}
+        onAssignDriver={handleAssignDriverFromPreview}
+        onAssignBorzo={handleAssignBorzoFromPreview}
+        onCancel={() => {
+          setPreviewOpen(false);
+          setOptimization(null);
+        }}
+      />
+
+      {routeBatches.length > 0 && (
+        <div className="space-y-2">
+          {routeBatches.length > 1 && (
+            <select
+              className="rounded-lg border border-gray-200 px-2 py-1 text-xs"
+              value={activeBatch?.id ?? ""}
+              onChange={(e) => setActiveBatchId(e.target.value)}
+            >
+              {routeBatches.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.driverName ?? "Driver"} · {b.deliverySlotName ?? "Slot"} · {b.totalStops} stops ·{" "}
+                  {b.optimizationStatus}
+                </option>
+              ))}
+            </select>
+          )}
+          {activeBatch && (
+            <RouteBatchPanel batch={activeBatch} onUpdated={() => routeBatchesQuery.refetch()} />
+          )}
+        </div>
+      )}
 
       {selectedIds.length > 0 && (
         <div className="flex flex-wrap items-center gap-2 rounded-xl border border-orange-200 bg-white p-3">
