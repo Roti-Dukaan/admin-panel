@@ -1,6 +1,7 @@
 ﻿"use client";
 
-import { User, Phone, Zap, Clock, Package, IndianRupee, AlertCircle, Play, CheckCircle2 } from "lucide-react";
+import { User, Phone, Zap, Clock, Package, IndianRupee, AlertCircle, Play, CheckCircle2, ChefHat } from "lucide-react";
+import { DocumentQuickAction } from "@/features/documents";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -147,7 +148,15 @@ export function KitchenCard({
         </span>
       </div>
 
-      <div className="mt-3">
+      <div className="mt-3 space-y-2" onClick={(e) => e.stopPropagation()}>
+        <DocumentQuickAction
+          orderId={order.orderId}
+          documentType="KITCHEN_TICKET"
+          label="Print Kitchen Ticket"
+          icon={ChefHat}
+          variant="outline"
+          size="sm"
+        />
         {order.kitchenStatus === "PENDING" && (
           <Button
             type="button"

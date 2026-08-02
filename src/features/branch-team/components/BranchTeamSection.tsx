@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { branchTeamApi } from "@/lib/api/branch-team.api"
+import { normalizeEmail } from "@/lib/utils/email"
 
 const TEAM_QUERY_KEY = ["branch", "team"] as const
 
@@ -56,7 +57,7 @@ export function BranchTeamSection() {
       toast.error("Name and email are required")
       return
     }
-    inviteMutation.mutate({ name: name.trim(), email: email.trim() })
+    inviteMutation.mutate({ name: name.trim(), email: normalizeEmail(email) })
   }
 
   const managers = managersQuery.data ?? []
@@ -165,7 +166,7 @@ export function BranchTeamSection() {
               id="manager-email"
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => setEmail(normalizeEmail(e.target.value))}
               placeholder="manager@example.com"
             />
           </div>

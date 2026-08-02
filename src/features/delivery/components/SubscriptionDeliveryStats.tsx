@@ -1,7 +1,6 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   kitchenSubscriptionsApi,
@@ -15,14 +14,15 @@ import {
   XCircle,
   Ban,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const statCards = [
-  { key: "pendingPrep" as const, label: "Pending Prep", icon: Clock, color: "text-amber-600", bg: "bg-amber-50" },
+  { key: "pendingPrep" as const, label: "Pending", icon: Clock, color: "text-amber-600", bg: "bg-amber-50" },
   { key: "assigned" as const, label: "Assigned", icon: UserCheck, color: "text-blue-600", bg: "bg-blue-50" },
-  { key: "outForDelivery" as const, label: "Out for Delivery", icon: Truck, color: "text-indigo-600", bg: "bg-indigo-50" },
-  { key: "delivered" as const, label: "Delivered Today", icon: CheckCircle2, color: "text-green-600", bg: "bg-green-50" },
+  { key: "outForDelivery" as const, label: "Out", icon: Truck, color: "text-indigo-600", bg: "bg-indigo-50" },
+  { key: "delivered" as const, label: "Delivered", icon: CheckCircle2, color: "text-green-600", bg: "bg-green-50" },
   { key: "failed" as const, label: "Failed", icon: XCircle, color: "text-red-600", bg: "bg-red-50" },
-  { key: "cancelledSkipped" as const, label: "Cancelled / Skipped", icon: Ban, color: "text-gray-600", bg: "bg-gray-50" },
+  { key: "cancelledSkipped" as const, label: "Skipped", icon: Ban, color: "text-gray-600", bg: "bg-gray-50" },
 ];
 
 export function SubscriptionDeliveryStats({
@@ -54,35 +54,29 @@ export function SubscriptionDeliveryStats({
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+      <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
         {Array.from({ length: 6 }).map((_, i) => (
-          <Card key={i}>
-            <CardContent className="p-4">
-              <Skeleton className="h-4 w-20 mb-2" />
-              <Skeleton className="h-7 w-12" />
-            </CardContent>
-          </Card>
+          <Skeleton key={i} className="h-12 rounded-lg" />
         ))}
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+    <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
       {statCards.map((stat) => (
-        <Card key={stat.key} className="hover:shadow-md transition-shadow">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <div className={`rounded-lg p-1.5 ${stat.bg}`}>
-                <stat.icon className={`h-4 w-4 ${stat.color}`} />
-              </div>
-              <span className="text-xs font-medium text-muted-foreground truncate">
-                {stat.label}
-              </span>
-            </div>
-            <div className="text-2xl font-bold">{data?.[stat.key] ?? 0}</div>
-          </CardContent>
-        </Card>
+        <div
+          key={stat.key}
+          className="flex items-center gap-2.5 rounded-lg border border-gray-200 bg-white px-3.5 py-2.5"
+        >
+          <div className={cn("rounded p-1.5", stat.bg)}>
+            <stat.icon className={cn("h-4 w-4", stat.color)} />
+          </div>
+          <div className="min-w-0">
+            <p className="truncate text-xs font-medium text-gray-500">{stat.label}</p>
+            <p className="text-base font-bold leading-tight text-gray-900">{data?.[stat.key] ?? 0}</p>
+          </div>
+        </div>
       ))}
     </div>
   );

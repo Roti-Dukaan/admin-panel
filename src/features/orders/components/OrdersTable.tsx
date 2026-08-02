@@ -14,7 +14,8 @@ import { StatusBadge } from "./StatusBadge"
 import { useOrdersStore } from "../hooks/useOrders"
 import type { Order, PaymentStatus, PaymentMethod } from "../types/order"
 import { PAYMENT_STATUS_CONFIG, PAYMENT_STATUS_LABELS, PAYMENT_METHOD_CONFIG } from "../types/order"
-import { Eye, RefreshCw, Printer, ChevronLeft, ChevronRight, Smartphone, Banknote, CircleDollarSign } from "lucide-react"
+import { Eye, RefreshCw, ChevronLeft, ChevronRight, Smartphone, Banknote, CircleDollarSign } from "lucide-react"
+import { DocumentsMenu } from "@/features/documents"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 
@@ -205,9 +206,7 @@ export function OrdersTable({ onViewDetails }: OrdersTableProps) {
                     >
                       <Eye className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" title="Print" disabled>
-                      <Printer className="h-4 w-4" />
-                    </Button>
+                    <DocumentsMenu orderId={order.id} />
                   </div>
                 </TableCell>
               </TableRow>

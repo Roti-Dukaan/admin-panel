@@ -32,6 +32,7 @@ import type { SettingsTab, BusinessSettingsData, TaxConfigData, PaymentConfigDat
 import { PROVIDER_LABELS, STRATEGY_LABELS } from "@/features/delivery-providers/types/delivery-provider";
 import { Header } from "@/components/layout/header";
 import { EmailTab } from "@/features/settings/components/EmailTab";
+import { normalizeEmail } from "@/lib/utils/email";
 
 const tabs: { key: SettingsTab; label: string; icon: React.ElementType }[] = [
   { key: "business", label: "Business", icon: Building2 },
@@ -310,7 +311,7 @@ function BusinessTab({ saving, onSubmit, data }: { saving: boolean; onSubmit: (d
           <Input value={form.businessName} onChange={(v) => set("businessName", v)} placeholder="Roti Dukaan" />
         </Field>
         <Field label="Email">
-          <Input value={form.businessEmail} onChange={(v) => set("businessEmail", v)} placeholder="info@rotidukaan.com" />
+          <Input value={form.businessEmail} onChange={(v) => set("businessEmail", normalizeEmail(v))} placeholder="info@rotidukaan.com" />
         </Field>
         <Field label="Phone">
           <Input value={form.businessPhone} onChange={(v) => set("businessPhone", v)} placeholder="9876543210" />

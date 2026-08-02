@@ -13,30 +13,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
+import { CopyTextButton } from "@/components/shared/CopyTextButton";
+import { compactTableCellClass, compactTableHeadClass } from "@/components/shared/compact-table";
 import { toast } from "sonner";
 import { DeliveryStats } from "./DeliveryStats";
 import { DeliveryBranchFilter } from "./DeliveryBranchFilter";
-
-type AdminAddress = {
-  addressLine1: string;
-  addressLine2?: string | null;
-  landmark?: string | null;
-  city: string;
-  state: string;
-  pincode: string;
-};
-
-function formatAddress(address?: AdminAddress): string {
-  if (!address) return "";
-  return [
-    address.addressLine1,
-    address.addressLine2,
-    address.landmark,
-    `${address.city}, ${address.state} - ${address.pincode}`,
-  ]
-    .filter((p): p is string => Boolean(p))
-    .join(", ");
-}
+import { cn } from "@/lib/utils";
 
 function customerName(delivery: Delivery): string {
   return delivery.order?.customer?.fullName ?? delivery.order?.customer?.name ?? "—";
@@ -45,6 +27,26 @@ function customerName(delivery: Delivery): string {
 function customerPhone(delivery: Delivery): string {
   return delivery.order?.customer?.phone ?? "—";
 }
+
+function orderNumber(delivery: Delivery): string {
+  return delivery.order?.orderNumber ?? delivery.orderId;
+}
+
+function formatDeliveryTime(delivery: Delivery): string {
+  if (delivery.actualDeliveryAt) {
+    return `✓ ${format(new Date(delivery.actualDeliveryAt), "MMM d, HH:mm")}`;
+  }
+  if (delivery.estimatedDeliveryAt) {
+    return `ETA ${format(new Date(delivery.estimatedDeliveryAt), "HH:mm")}`;
+  }
+  if (delivery.estimatedPickupAt) {
+    return `Pickup ${format(new Date(delivery.estimatedPickupAt), "HH:mm")}`;
+  }
+  return "—";
+}
+
+const compactInputClass = "h-9 text-sm";
+const compactSelectClass = "h-9 text-sm";
 
 export function DeliveryListPage({
   apiMode = "admin",
@@ -211,21 +213,21 @@ export function DeliveryListPage({
   const getProviderFromRow = (row: Delivery) => row.provider as DeliveryProvider;
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-4">
         <DeliveryStats apiMode={apiMode} branchId={branchId} />
 
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1 max-w-xs">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+        <div className="rounded-lg border border-gray-200 bg-white p-3.5">
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+            <div className="relative min-w-[180px] flex-1 sm:max-w-xs">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
               <Input
-                placeholder="Search order #, customer, tracking..."
+                placeholder="Search order #, customer..."
                 value={filters.search || ""}
                 onChange={(e) => handleSearch(e.target.value)}
-                className="pl-10"
+                className={cn(compactInputClass, "pl-9")}
               />
             </div>
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap items-center gap-2">
               {showBranchFilter && (
                 <DeliveryBranchFilter
                   value={branchId}
@@ -233,8 +235,8 @@ export function DeliveryListPage({
                 />
               )}
               <Select value={filters.status || "all"} onValueChange={(v) => handleFilterChange("status", v)}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="All Statuses" />
+                <SelectTrigger className={cn(compactSelectClass, "w-[130px]")}>
+                  <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Statuses</SelectItem>
@@ -253,8 +255,8 @@ export function DeliveryListPage({
                 </SelectContent>
               </Select>
               <Select value={filters.provider || "all"} onValueChange={(v) => handleFilterChange("provider", v)}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="All Providers" />
+                <SelectTrigger className={cn(compactSelectClass, "w-[120px]")}>
+                  <SelectValue placeholder="Provider" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Providers</SelectItem>
@@ -266,8 +268,8 @@ export function DeliveryListPage({
                 </SelectContent>
               </Select>
               <Select value={filters.deliveryType || "all"} onValueChange={(v) => handleFilterChange("deliveryType", v)}>
-                <SelectTrigger className="w-[160px]">
-                  <SelectValue placeholder="All Types" />
+                <SelectTrigger className={cn(compactSelectClass, "w-[110px]")}>
+                  <SelectValue placeholder="Type" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Types</SelectItem>
@@ -279,147 +281,135 @@ export function DeliveryListPage({
                 type="date"
                 value={filters.dateFrom || ""}
                 onChange={(e) => handleFilterChange("dateFrom", e.target.value)}
-                className="w-[160px]"
+                className={cn(compactInputClass, "w-[130px]")}
                 aria-label="Date from"
               />
               <Input
                 type="date"
                 value={filters.dateTo || ""}
                 onChange={(e) => handleFilterChange("dateTo", e.target.value)}
-                className="w-[160px]"
+                className={cn(compactInputClass, "w-[130px]")}
                 aria-label="Date to"
               />
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
           <Table>
             <TableHeader>
-              <TableRow className="border-b border-gray-200 bg-gray-50">
-                <TableHead className="w-32">Order #</TableHead>
-                <TableHead>Customer</TableHead>
-                <TableHead className="w-40">Provider</TableHead>
-                <TableHead className="w-48">Status</TableHead>
-                <TableHead className="w-48">Times</TableHead>
-                <TableHead className="w-32">Rider</TableHead>
-                <TableHead className="w-40">Actions</TableHead>
+              <TableRow className="border-b border-gray-200 bg-gray-50 hover:bg-gray-50">
+                <TableHead className={cn(compactTableHeadClass, "w-[11rem]")}>Order #</TableHead>
+                <TableHead className={compactTableHeadClass}>Customer</TableHead>
+                <TableHead className={cn(compactTableHeadClass, "w-28")}>Provider</TableHead>
+                <TableHead className={cn(compactTableHeadClass, "w-36")}>Status</TableHead>
+                <TableHead className={cn(compactTableHeadClass, "w-28")}>Time</TableHead>
+                <TableHead className={cn(compactTableHeadClass, "w-24")}>Rider</TableHead>
+                <TableHead className={cn(compactTableHeadClass, "w-14 text-right")} />
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <TableRow key={i} className="animate-pulse">
-                    <TableCell><div className="h-4 w-24 bg-gray-200 rounded" /></TableCell>
-                    <TableCell><div className="h-4 w-32 bg-gray-200 rounded" /></TableCell>
-                    <TableCell><div className="h-4 w-20 bg-gray-200 rounded" /></TableCell>
-                    <TableCell><div className="h-4 w-24 bg-gray-200 rounded" /></TableCell>
-                    <TableCell><div className="h-4 w-24 bg-gray-200 rounded" /></TableCell>
-                    <TableCell><div className="h-4 w-20 bg-gray-200 rounded" /></TableCell>
-                    <TableCell><div className="h-4 w-16 bg-gray-200 rounded" /></TableCell>
+                    <TableCell className={compactTableCellClass}><div className="h-4 w-20 rounded bg-gray-200" /></TableCell>
+                    <TableCell className={compactTableCellClass}><div className="h-4 w-28 rounded bg-gray-200" /></TableCell>
+                    <TableCell className={compactTableCellClass}><div className="h-4 w-16 rounded bg-gray-200" /></TableCell>
+                    <TableCell className={compactTableCellClass}><div className="h-4 w-20 rounded bg-gray-200" /></TableCell>
+                    <TableCell className={compactTableCellClass}><div className="h-4 w-16 rounded bg-gray-200" /></TableCell>
+                    <TableCell className={compactTableCellClass}><div className="h-4 w-14 rounded bg-gray-200" /></TableCell>
+                    <TableCell className={compactTableCellClass}><div className="h-4 w-8 rounded bg-gray-200" /></TableCell>
                   </TableRow>
                 ))
               ) : deliveries.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-12 text-gray-500">
+                  <TableCell colSpan={7} className="py-10 text-center text-sm text-gray-500">
                     No deliveries found
                   </TableCell>
                 </TableRow>
               ) : (
-                deliveries.map((delivery) => (
-                  <TableRow key={delivery.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => handleViewDetails(delivery)}>
-                    <TableCell className="font-mono text-sm font-medium">{delivery.order?.orderNumber ?? delivery.orderId}</TableCell>
-                    <TableCell>
-                      <div>
-                        <p className="font-medium">{customerName(delivery)}</p>
-                        <p className="text-sm text-gray-500">{customerPhone(delivery)}</p>
+                deliveries.map((delivery) => {
+                  const orderNo = orderNumber(delivery);
+                  return (
+                  <TableRow key={delivery.id} className="cursor-pointer hover:bg-gray-50" onClick={() => handleViewDetails(delivery)}>
+                    <TableCell className={compactTableCellClass}>
+                      <div className="flex items-center gap-1.5">
+                        <span className="truncate font-mono text-sm font-medium text-gray-900" title={orderNo}>
+                          {orderNo}
+                        </span>
+                        <CopyTextButton text={orderNo} label="Order ID copied!" title="Copy order ID" />
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <div className="flex flex-col gap-1">
+                    <TableCell className={cn(compactTableCellClass, "max-w-[180px]")}>
+                      <p className="truncate text-gray-900">
+                        <span className="font-medium">{customerName(delivery)}</span>
+                        <span className="text-gray-400"> · </span>
+                        <span className="text-gray-500">{customerPhone(delivery)}</span>
+                      </p>
+                    </TableCell>
+                    <TableCell className={compactTableCellClass}>
+                      <div className="flex flex-wrap items-center gap-1">
                         <DeliveryProviderBadge provider={getProviderFromRow(delivery)} size="sm" />
                         {delivery.deliveryType && <DeliveryTypeBadge deliveryType={delivery.deliveryType} size="sm" />}
                       </div>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className={compactTableCellClass}>
                       <DeliveryStatusBadge status={getStatusFromRow(delivery)} size="sm" />
                     </TableCell>
-                    <TableCell className="text-sm">
-                      <div className="text-gray-600">
-                        {delivery.estimatedPickupAt && (
-                          <div className="flex items-center gap-1 text-amber-700">
-                            <span className="text-xs">📦</span>
-                            Pickup: {format(new Date(delivery.estimatedPickupAt), "HH:mm")}
-                          </div>
-                        )}
-                        {delivery.estimatedDeliveryAt && (
-                          <div className="flex items-center gap-1 text-indigo-700">
-                            <span className="text-xs">🚚</span>
-                            Deliver: {format(new Date(delivery.estimatedDeliveryAt), "HH:mm")}
-                          </div>
-                        )}
-                        {delivery.actualDeliveryAt && (
-                          <div className="flex items-center gap-1 text-emerald-700">
-                            <span className="text-xs">✓</span>
-                            Delivered: {format(new Date(delivery.actualDeliveryAt), "MMM d, HH:mm")}
-                          </div>
-                        )}
-                      </div>
+                    <TableCell className={cn(compactTableCellClass, "whitespace-nowrap text-gray-600")}>
+                      {formatDeliveryTime(delivery)}
                     </TableCell>
-                    <TableCell className="text-sm">
+                    <TableCell className={cn(compactTableCellClass, "truncate")}>
                       {delivery.riderName ? (
-                        <div>
-                          <p className="font-medium">{delivery.riderName}</p>
-                          {delivery.riderPhone && (
-                            <a href={`tel:${delivery.riderPhone}`} className="text-indigo-600 hover:underline text-xs">
-                              {delivery.riderPhone}
-                            </a>
-                          )}
-                        </div>
+                        <span title={delivery.riderPhone ?? undefined}>
+                          {delivery.riderName}
+                        </span>
                       ) : (
-                        <span className="text-gray-400">Not assigned</span>
+                        <span className="text-gray-400">—</span>
                       )}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className={cn(compactTableCellClass, "text-right")}>
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={(e) => { e.stopPropagation(); handleViewDetails(delivery); }}
-                        className="text-indigo-600 hover:bg-indigo-50"
+                        className="h-8 px-2.5 text-xs text-indigo-600 hover:bg-indigo-50"
                       >
                         View
                       </Button>
                     </TableCell>
                   </TableRow>
-                ))
+                )})
               )}
             </TableBody>
           </Table>
 
           {pagination.totalPages > 1 && (
-            <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200">
-              <p className="text-sm text-gray-600">
-                Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} deliveries
+            <div className="flex items-center justify-between border-t border-gray-200 px-3 py-2.5">
+              <p className="text-xs text-gray-500">
+                {((pagination.page - 1) * pagination.limit) + 1}–{Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total}
               </p>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
                 <Button
                   variant="outline"
                   size="sm"
+                  className="h-8 w-8 p-0"
                   onClick={() => handlePageChange(pagination.page - 1)}
                   disabled={pagination.page === 1}
                 >
-                  <ChevronLeft className="w-4 h-4" />
+                  <ChevronLeft className="h-3.5 w-3.5" />
                 </Button>
-                <span className="px-3 text-sm font-medium">
-                  Page {pagination.page} of {pagination.totalPages}
+                <span className="px-1.5 text-xs font-medium text-gray-600">
+                  {pagination.page}/{pagination.totalPages}
                 </span>
                 <Button
                   variant="outline"
                   size="sm"
+                  className="h-8 w-8 p-0"
                   onClick={() => handlePageChange(pagination.page + 1)}
                   disabled={pagination.page === pagination.totalPages}
                 >
-                  <ChevronRight className="w-4 h-4" />
+                  <ChevronRight className="h-3.5 w-3.5" />
                 </Button>
               </div>
             </div>

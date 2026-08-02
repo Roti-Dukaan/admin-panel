@@ -7,6 +7,7 @@ import { useRoleStore } from "../hooks/useRoles";
 import { branchesApi, type Branch } from "@/lib/api/master-data/branches.api";
 import { apiClient } from "@/lib/api/http";
 import { cn } from "@/lib/utils";
+import { normalizeEmail } from "@/lib/utils/email";
 
 interface InviteUserDialogProps {
   open: boolean;
@@ -81,7 +82,7 @@ export function InviteUserDialog({ open, onClose, onSuccess }: InviteUserDialogP
     setSaving(true);
     try {
       await apiClient.post("/admin/invitations", {
-        email: email.trim(),
+        email: normalizeEmail(email),
         invitedName: name.trim(),
         role: selectedRole?.name?.toUpperCase().replace(/\s+/g, "_") || "BRANCH_MANAGER",
         branchId: isBranchRole ? branchId : undefined,
@@ -155,7 +156,7 @@ export function InviteUserDialog({ open, onClose, onSuccess }: InviteUserDialogP
               <input
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => setEmail(normalizeEmail(e.target.value))}
                 placeholder="arjun@rotidukaan.com"
                 className="w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-9 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-orange-400 focus:outline-none focus:ring-1 focus:ring-orange-400"
               />

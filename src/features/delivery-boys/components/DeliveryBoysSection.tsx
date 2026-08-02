@@ -20,6 +20,7 @@ import {
 } from "../hooks/useDeliveryBoys";
 import type { DeliveryBoy, DeliveryBoyAvailability } from "../types/delivery-boys";
 import { AVAILABILITY_LABELS } from "../types/delivery-boys";
+import { normalizeEmail } from "@/lib/utils/email";
 
 function DeliveryBoyForm({
   initial,
@@ -59,7 +60,7 @@ function DeliveryBoyForm({
         await create.mutateAsync({
           name: name.trim(),
           phone: phone.trim(),
-          email: email.trim(),
+          email: normalizeEmail(email),
           vehicleType: vehicleType.trim() || undefined,
           notes: notes.trim() || undefined,
           availabilityStatus,
@@ -93,7 +94,7 @@ function DeliveryBoyForm({
               id="db-email"
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => setEmail(normalizeEmail(e.target.value))}
               required
             />
           </div>

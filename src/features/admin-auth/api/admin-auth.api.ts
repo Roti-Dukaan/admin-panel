@@ -1,4 +1,5 @@
 import { apiClient } from '@/lib/api/http';
+import { normalizeEmail } from '@/lib/utils/email';
 
 export interface AdminLoginResponse {
   accessToken: string;
@@ -24,12 +25,12 @@ export interface CurrentAdminResponse {
 
 export const adminAuthApi = {
   async sendOtp(email: string): Promise<{ otp: string; message: string }> {
-    const { data } = await apiClient.post('/admin-auth/send-otp', { email });
+    const { data } = await apiClient.post('/admin-auth/send-otp', { email: normalizeEmail(email) });
     return data.data;
   },
 
   async login(email: string, otp: string): Promise<AdminLoginResponse> {
-    const { data } = await apiClient.post('/admin-auth/login', { email, otp });
+    const { data } = await apiClient.post('/admin-auth/login', { email: normalizeEmail(email), otp });
     return data.data;
   },
 

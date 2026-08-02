@@ -5,6 +5,8 @@ import { format } from "date-fns";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { CopyTextButton } from "@/components/shared/CopyTextButton";
+import { compactTableCellClass, compactTableHeadClass } from "@/components/shared/compact-table";
 import {
   Select,
   SelectContent,
@@ -38,6 +40,7 @@ function dispatchLabel(status: string): { label: string; className: string } {
 
 type SubscriptionTrackingRow = {
   id: string;
+  subscriptionId: string;
   customerName: string;
   customerPhone: string;
   address: string;
@@ -68,6 +71,7 @@ function toTrackingRows(
     const assignment = assigneeMap.get(row.id);
     return {
       id: row.id,
+      subscriptionId: row.subscriptionId,
       customerName: row.customerName,
       customerPhone: row.customerPhone,
       address: row.address,
@@ -153,7 +157,7 @@ export function BranchSubscriptionDeliveriesTab({
   const hasError = prepQuery.isError || summaryQuery.isError;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <SubscriptionDeliveryStats
         apiMode={apiMode}
         date={date}
@@ -162,18 +166,18 @@ export function BranchSubscriptionDeliveriesTab({
         search={search}
       />
 
-      <div className="bg-white rounded-xl border border-gray-200 p-4">
-        <div className="flex flex-col sm:flex-row gap-4">
+      <div className="rounded-lg border border-gray-200 bg-white p-3.5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
           <Input
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="w-[160px]"
+            className="h-9 w-[140px] text-sm"
             aria-label="Delivery date"
           />
           <Select value={slotId} onValueChange={setSlotId}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="All Slots" />
+            <SelectTrigger className="h-9 w-[140px] text-sm">
+              <SelectValue placeholder="Slot" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Slots</SelectItem>
@@ -187,45 +191,46 @@ export function BranchSubscriptionDeliveriesTab({
           {showBranchFilter && onBranchChange && (
             <DeliveryBranchFilter value={branchId} onChange={onBranchChange} />
           )}
-          <div className="relative flex-1 max-w-xs">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <div className="relative min-w-[180px] flex-1 sm:max-w-xs">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
             <Input
-              placeholder="Search customer, phone, address..."
+              placeholder="Search customer, phone..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-10"
+              className="h-9 pl-9 text-sm"
             />
           </div>
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
         {loading ? (
-          <div className="flex items-center justify-center gap-2 py-12 text-sm text-gray-500">
+          <div className="flex items-center justify-center gap-2 py-10 text-sm text-gray-500">
             <Loader2 className="h-4 w-4 animate-spin" />
             Loading subscription deliveries…
           </div>
         ) : hasError ? (
-          <div className="py-12 text-center text-sm text-red-600">
+          <div className="py-10 text-center text-sm text-red-600">
             Failed to load subscription deliveries
           </div>
         ) : (
           <Table>
             <TableHeader>
-              <TableRow className="border-b border-gray-200 bg-gray-50">
-                <TableHead>Customer</TableHead>
-                <TableHead>Address</TableHead>
-                <TableHead className="w-32">Slot</TableHead>
-                <TableHead className="w-40">Rotis</TableHead>
-                <TableHead className="w-32">Prep</TableHead>
-                <TableHead className="w-32">Dispatch</TableHead>
-                <TableHead className="w-36">Assignee</TableHead>
+              <TableRow className="border-b border-gray-200 bg-gray-50 hover:bg-gray-50">
+                <TableHead className={cn(compactTableHeadClass, "w-[9rem]")}>Subscription ID</TableHead>
+                <TableHead className={compactTableHeadClass}>Customer</TableHead>
+                <TableHead className={compactTableHeadClass}>Address</TableHead>
+                <TableHead className={cn(compactTableHeadClass, "w-20")}>Slot</TableHead>
+                <TableHead className={cn(compactTableHeadClass, "w-24")}>Rotis</TableHead>
+                <TableHead className={cn(compactTableHeadClass, "w-24")}>Prep</TableHead>
+                <TableHead className={cn(compactTableHeadClass, "w-24")}>Dispatch</TableHead>
+                <TableHead className={cn(compactTableHeadClass, "w-24")}>Assignee</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {rows.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-12 text-gray-500">
+                  <TableCell colSpan={8} className="py-10 text-center text-sm text-gray-500">
                     No subscription deliveries for {format(new Date(`${date}T12:00:00`), "MMM d, yyyy")}
                   </TableCell>
                 </TableRow>
@@ -238,36 +243,61 @@ export function BranchSubscriptionDeliveriesTab({
 
                   return (
                     <TableRow key={row.id} className="hover:bg-gray-50">
-                      <TableCell>
-                        <div>
-                          <p className="font-medium">{row.customerName}</p>
-                          <p className="text-sm text-gray-500">{row.customerPhone || "—"}</p>
+                      <TableCell className={compactTableCellClass}>
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            className="truncate font-mono text-sm text-gray-900"
+                            title={row.subscriptionId}
+                          >
+                            {row.subscriptionId}
+                          </span>
+                          <CopyTextButton
+                            text={row.subscriptionId}
+                            label="Subscription ID copied!"
+                            title="Copy subscription ID"
+                          />
                         </div>
                       </TableCell>
-                      <TableCell className="max-w-[220px] truncate text-sm text-gray-600" title={row.address}>
+                      <TableCell className={cn(compactTableCellClass, "max-w-[140px]")}>
+                        <p className="truncate text-gray-900">
+                          <span className="font-medium">{row.customerName}</span>
+                          {row.customerPhone && (
+                            <>
+                              <span className="text-gray-400"> · </span>
+                              <span className="text-gray-500">{row.customerPhone}</span>
+                            </>
+                          )}
+                        </p>
+                      </TableCell>
+                      <TableCell
+                        className={cn(compactTableCellClass, "max-w-[160px] truncate text-gray-600")}
+                        title={row.address}
+                      >
                         {row.address}
                       </TableCell>
-                      <TableCell className="text-sm text-gray-600">{row.slotName}</TableCell>
-                      <TableCell className="text-sm text-gray-600">
-                        {row.totalQuantity}
+                      <TableCell className={cn(compactTableCellClass, "text-gray-600")}>
+                        {row.slotName}
+                      </TableCell>
+                      <TableCell className={cn(compactTableCellClass, "text-gray-600")}>
+                        <span className="font-medium">{row.totalQuantity}</span>
                         {row.rotisLabel && (
-                          <span className="block text-xs text-gray-400 truncate max-w-[160px]" title={row.rotisLabel}>
-                            {row.rotisLabel}
+                          <span className="ml-1 truncate text-gray-400" title={row.rotisLabel}>
+                            ({row.rotisLabel})
                           </span>
                         )}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className={compactTableCellClass}>
                         <span className={cn("rounded-full px-2 py-0.5 text-xs font-medium", prepMeta.className)}>
                           {PREP_STATUS_LABELS[row.prepStatus] ?? prepMeta.label}
                         </span>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className={compactTableCellClass}>
                         <span className={cn("rounded-full px-2 py-0.5 text-xs font-medium", dispatchMeta.className)}>
                           {dispatchMeta.label}
                         </span>
                       </TableCell>
-                      <TableCell className="text-sm text-gray-600">
-                        {row.assigneeName ?? <span className="text-gray-400">Unassigned</span>}
+                      <TableCell className={cn(compactTableCellClass, "truncate text-gray-600")}>
+                        {row.assigneeName ?? <span className="text-gray-400">—</span>}
                       </TableCell>
                     </TableRow>
                   );

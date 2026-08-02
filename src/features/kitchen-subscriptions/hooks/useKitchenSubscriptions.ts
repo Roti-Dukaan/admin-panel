@@ -109,7 +109,7 @@ export function useSubscriptionStatusMutation() {
     onSuccess: (_data, vars) => {
       const label =
         vars.action === "prep"
-          ? "Started prep"
+          ? "Started prep — print dispatch ticket"
           : vars.action === "pack"
             ? "Marked packed"
             : "Handed over for dispatch";
