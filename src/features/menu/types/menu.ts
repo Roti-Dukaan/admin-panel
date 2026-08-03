@@ -24,6 +24,7 @@ export interface NutritionInfo {
   protein: number;
   carbs: number;
   fats: number;
+  fiber: number;
   servingSize: string;
 }
 
@@ -61,6 +62,7 @@ export interface FoodItemFormData {
   protein: number;
   carbs: number;
   fats: number;
+  fiber: number;
   servingSize: string;
   healthTags: HealthTag[];
   customerLabels: CustomerLabel[];
