@@ -26,6 +26,11 @@ function mapApiCategoryToCategory(api: ApiCategory): Category {
   };
 }
 
+function parseNutritionValue(value: unknown): number {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
 function toFormData(dto: Record<string, unknown>, imageFile: File): FormData {
   const fd = new FormData();
   Object.entries(dto).forEach(([key, value]) => {
@@ -48,11 +53,11 @@ function mapApiFoodItemToFoodItem(api: ApiFoodItem, categories: Category[]): Foo
     price: Number(api.discountPrice || api.basePrice),
     preparationTime: api.preparationTime || 20,
     nutrition: {
-      calories: api.calories || 0,
-      protein: api.protein || 0,
-      carbs: api.carbs || 0,
-      fats: api.fats || 0,
-      fiber: api.fiber || 0,
+      calories: api.calories != null ? Number(api.calories) : 0,
+      protein: api.protein != null ? Number(api.protein) : 0,
+      carbs: api.carbs != null ? Number(api.carbs) : 0,
+      fats: api.fats != null ? Number(api.fats) : 0,
+      fiber: api.fiber != null ? Number(api.fiber) : 0,
       servingSize: api.servingSize || '',
     },
     healthTags: [],
@@ -64,6 +69,7 @@ function mapApiFoodItemToFoodItem(api: ApiFoodItem, categories: Category[]): Foo
     bestPairedWith: [],
     imageUrl: resolveImageUrl(api.imageUrl),
     galleryImages: (api.gallery || []).map(resolveImageUrl),
+    sortOrder: api.sortOrder ?? 0,
     createdAt: new Date(api.createdAt).getTime(),
     updatedAt: new Date(api.updatedAt).getTime(),
   };
@@ -115,6 +121,7 @@ interface MenuStore {
   archiveFood: (id: string) => Promise<void>;
   toggleFeatured: (id: string) => Promise<void>;
   toggleAvailability: (id: string) => Promise<void>;
+  moveFood: (id: string, direction: 'up' | 'down') => Promise<void>;
 
   getFilteredFoods: () => FoodItem[];
   getCategoryById: (id: string) => Category | undefined;
@@ -267,12 +274,13 @@ export const useMenuStore = create<MenuStore>((set, get) => ({
         isVeg: data.foodType === 'VEG',
         isFeatured: data.isFeatured,
         isAvailable: data.availability === 'available',
-        calories: data.calories,
-        protein: data.protein,
-        carbs: data.carbs,
-        fats: data.fats,
-        fiber: data.fiber,
+        calories: parseNutritionValue(data.calories),
+        protein: parseNutritionValue(data.protein),
+        carbs: parseNutritionValue(data.carbs),
+        fats: parseNutritionValue(data.fats),
+        fiber: parseNutritionValue(data.fiber),
         servingSize: data.servingSize,
+        sortOrder: data.sortOrder ?? Math.max(0, ...get().foods.map((f) => f.sortOrder)) + 1,
       };
       const payload: Record<string, unknown> | FormData = imageFile
         ? toFormData(dto, imageFile)
@@ -303,12 +311,13 @@ export const useMenuStore = create<MenuStore>((set, get) => ({
         isVeg: data.foodType === 'VEG',
         isFeatured: data.isFeatured,
         isAvailable: data.availability === 'available',
-        calories: data.calories,
-        protein: data.protein,
-        carbs: data.carbs,
-        fats: data.fats,
-        fiber: data.fiber,
+        calories: parseNutritionValue(data.calories),
+        protein: parseNutritionValue(data.protein),
+        carbs: parseNutritionValue(data.carbs),
+        fats: parseNutritionValue(data.fats),
+        fiber: parseNutritionValue(data.fiber),
         servingSize: data.servingSize,
+        sortOrder: data.sortOrder,
       };
       const payload: Record<string, unknown> | FormData = imageFile
         ? toFormData(dto, imageFile)
@@ -391,6 +400,39 @@ export const useMenuStore = create<MenuStore>((set, get) => ({
       set({ foods });
     } catch (error) {
       console.error('Failed to toggle availability:', error);
+    }
+  },
+
+  moveFood: async (id, direction) => {
+    const sorted = [...get().foods].sort(
+      (a, b) => a.sortOrder - b.sortOrder || a.createdAt - b.createdAt,
+    );
+    const index = sorted.findIndex((f) => f.id === id);
+    if (index === -1) return;
+
+    const swapIndex = direction === 'up' ? index - 1 : index + 1;
+    if (swapIndex < 0 || swapIndex >= sorted.length) return;
+
+    const current = sorted[index];
+    const neighbor = sorted[swapIndex];
+    let currentOrder = current.sortOrder;
+    let neighborOrder = neighbor.sortOrder;
+
+    if (currentOrder === neighborOrder) {
+      currentOrder = index;
+      neighborOrder = swapIndex;
+    }
+
+    try {
+      await Promise.all([
+        foodItemApi.update(current.id, { sortOrder: neighborOrder }),
+        foodItemApi.update(neighbor.id, { sortOrder: currentOrder }),
+      ]);
+      const prodRes = await foodItemApi.list({ limit: 200, sort: 'sort_order' });
+      const foods = (prodRes.data?.items || []).map((p) => mapApiFoodItemToFoodItem(p, get().categories));
+      set({ foods });
+    } catch (error) {
+      console.error('Failed to reorder food:', error);
     }
   },
 

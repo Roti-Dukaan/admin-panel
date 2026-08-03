@@ -31,6 +31,7 @@ interface FormData {
   isFeatured: boolean;
   displayOnWebsite: boolean;
   bestPairedWith: string[];
+  sortOrder: number;
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -105,6 +106,7 @@ export function FoodDrawer() {
       isFeatured: false,
       displayOnWebsite: true,
       bestPairedWith: [],
+      sortOrder: 0,
     },
   });
 
@@ -135,13 +137,16 @@ export function FoodDrawer() {
         isFeatured: selectedFood.isFeatured,
         displayOnWebsite: selectedFood.displayOnWebsite,
         bestPairedWith: selectedFood.bestPairedWith,
+        sortOrder: selectedFood.sortOrder,
       });
     } else {
+      const nextSortOrder = Math.max(0, ...useMenuStore.getState().foods.map((f) => f.sortOrder)) + 1;
       reset({
         name: "", description: "", shortDescription: "", category: categories[0]?.name || "",
         price: 0, preparationTime: 15, calories: 0, protein: 0, carbs: 0, fats: 0, fiber: 0,
         servingSize: "1 bowl", healthTags: [], customerLabels: [], availability: "available",
         foodType: "VEG", isFeatured: false, displayOnWebsite: true, bestPairedWith: [],
+        sortOrder: nextSortOrder,
       });
     }
   }, [selectedFood, isEdit, isView, reset]);
@@ -263,23 +268,23 @@ export function FoodDrawer() {
               <Section title="Nutrition Information">
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                   <Field label="Calories" error={errors.calories?.message}>
-                    <Input {...register("calories", { min: { value: 0, message: "Calories must be non-negative" } })} type="number" placeholder="0" />
+                    <Input {...register("calories", { valueAsNumber: true, min: { value: 0, message: "Calories must be non-negative" } })} type="number" step="any" min={0} placeholder="0" />
                   </Field>
 
                   <Field label="Protein (g)" error={errors.protein?.message}>
-                    <Input {...register("protein", { min: { value: 0, message: "Protein must be non-negative" } })} type="number" placeholder="0" />
+                    <Input {...register("protein", { valueAsNumber: true, min: { value: 0, message: "Protein must be non-negative" } })} type="number" step="any" min={0} placeholder="0" />
                   </Field>
 
                   <Field label="Carbs (g)" error={errors.carbs?.message}>
-                    <Input {...register("carbs", { min: { value: 0, message: "Carbs must be non-negative" } })} type="number" placeholder="0" />
+                    <Input {...register("carbs", { valueAsNumber: true, min: { value: 0, message: "Carbs must be non-negative" } })} type="number" step="any" min={0} placeholder="0" />
                   </Field>
 
                   <Field label="Fats (g)" error={errors.fats?.message}>
-                    <Input {...register("fats", { min: { value: 0, message: "Fats must be non-negative" } })} type="number" placeholder="0" />
+                    <Input {...register("fats", { valueAsNumber: true, min: { value: 0, message: "Fats must be non-negative" } })} type="number" step="any" min={0} placeholder="0" />
                   </Field>
 
                   <Field label="Fiber (g)" error={errors.fiber?.message}>
-                    <Input {...register("fiber", { min: { value: 0, message: "Fiber must be non-negative" } })} type="number" placeholder="0" />
+                    <Input {...register("fiber", { valueAsNumber: true, min: { value: 0, message: "Fiber must be non-negative" } })} type="number" step="any" min={0} placeholder="0" />
                   </Field>
                 </div>
               </Section>
@@ -328,6 +333,17 @@ export function FoodDrawer() {
                       <option value="NON_VEG">Non-Veg</option>
                       <option value="EGG">Egg</option>
                     </Select>
+                  </Field>
+
+                  <Field label="Display Order">
+                    <Input
+                      {...register("sortOrder", { valueAsNumber: true, min: { value: 0, message: "Must be 0 or greater" } })}
+                      type="number"
+                      min={0}
+                      placeholder="0"
+                      disabled={isView}
+                    />
+                    <p className="mt-1 text-xs text-gray-500">Lower numbers appear first on the customer menu.</p>
                   </Field>
 
                   <div className="space-y-4">

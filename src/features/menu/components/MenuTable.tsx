@@ -12,7 +12,7 @@ import {
   SortingState,
 } from "@tanstack/react-table";
 import { motion } from "motion/react";
-import { ArrowUpDown, MoreHorizontal, Eye, Edit, Copy, Trash2, Star, ToggleLeft, ToggleRight, ImageIcon } from "lucide-react";
+import { ArrowUpDown, MoreHorizontal, Eye, Edit, Copy, Trash2, Star, ToggleLeft, ToggleRight, ImageIcon, ChevronUp, ChevronDown } from "lucide-react";
 import { useMenuStore } from "../hooks/useMenu";
 import { FoodItem, CUSTOMER_LABEL_CONFIG, CustomerLabel } from "../types/menu";
 import { CategoryBadge, AvailabilityBadge } from "./CategoryBadge";
@@ -30,11 +30,59 @@ export function MenuTable() {
   const duplicateFood = useMenuStore((s) => s.duplicateFood);
   const toggleFeatured = useMenuStore((s) => s.toggleFeatured);
   const toggleAvailability = useMenuStore((s) => s.toggleAvailability);
+  const moveFood = useMenuStore((s) => s.moveFood);
 
-  const [sorting, setSorting] = useState<SortingState>([]);
+  const displayOrderFoods = useMemo(
+    () => [...foods].sort((a, b) => a.sortOrder - b.sortOrder || a.createdAt - b.createdAt),
+    [foods],
+  );
+  const displayOrderIndexById = useMemo(
+    () => new Map(displayOrderFoods.map((food, index) => [food.id, index])),
+    [displayOrderFoods],
+  );
+
+  const [sorting, setSorting] = useState<SortingState>([{ id: "sortOrder", desc: false }]);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
 
   const columns = useMemo(() => [
+    columnHelper.display({
+      id: "order",
+      header: "Order",
+      cell: (info) => {
+        const displayIndex = displayOrderIndexById.get(info.row.original.id);
+        if (displayIndex === undefined) return null;
+        const isFirst = displayIndex === 0;
+        const isLast = displayIndex === displayOrderFoods.length - 1;
+        return (
+          <div className="flex flex-col items-center gap-0.5">
+            <button
+              type="button"
+              onClick={() => moveFood(info.row.original.id, "up")}
+              disabled={isFirst}
+              className="rounded p-0.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-30 disabled:hover:bg-transparent"
+              aria-label="Move up"
+            >
+              <ChevronUp className="h-4 w-4" />
+            </button>
+            <span className="text-[11px] font-mono text-gray-500">{info.row.original.sortOrder}</span>
+            <button
+              type="button"
+              onClick={() => moveFood(info.row.original.id, "down")}
+              disabled={isLast}
+              className="rounded p-0.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-30 disabled:hover:bg-transparent"
+              aria-label="Move down"
+            >
+              <ChevronDown className="h-4 w-4" />
+            </button>
+          </div>
+        );
+      },
+      size: 56,
+    }),
+    columnHelper.accessor("sortOrder", {
+      header: "Display Order",
+      enableHiding: true,
+    }),
     columnHelper.display({
       id: "image",
       header: "",
@@ -150,12 +198,12 @@ export function MenuTable() {
       },
       size: 50,
     }),
-  ], [toggleFeatured, openViewDrawer, openEditDrawer, openDeleteModal, duplicateFood, toggleAvailability, openMenu]);
+  ], [toggleFeatured, openViewDrawer, openEditDrawer, openDeleteModal, duplicateFood, toggleAvailability, openMenu, moveFood, displayOrderFoods, displayOrderIndexById]);
 
   const table = useReactTable({
     data: filteredFoods,
     columns,
-    state: { sorting },
+    state: { sorting, columnVisibility: { sortOrder: false } },
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),

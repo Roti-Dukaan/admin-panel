@@ -47,6 +47,7 @@ export interface FoodItem {
   bestPairedWith: string[];
   imageUrl: string;
   galleryImages: string[];
+  sortOrder: number;
   createdAt: number;
   updatedAt: number;
 }
@@ -71,6 +72,7 @@ export interface FoodItemFormData {
   isFeatured: boolean;
   displayOnWebsite: boolean;
   bestPairedWith: string[];
+  sortOrder: number;
 }
 
 export interface MenuFilters {
