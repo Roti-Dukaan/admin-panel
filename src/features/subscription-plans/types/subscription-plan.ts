@@ -26,6 +26,11 @@ export interface SubscriptionPlan {
   discountValue: number;
   discountLabel: string | null;
   isDiscountActive: boolean;
+  /** Stored discount config for admin editing (not date-adjusted runtime pricing). */
+  configDiscountType?: PlanDiscountType;
+  configDiscountValue?: number;
+  configDiscountLabel?: string | null;
+  configIsDiscountActive?: boolean;
   validityDays: number;
   deliveriesPerCycle: number;
   itemRules: SubscriptionPlanItemRules | null;

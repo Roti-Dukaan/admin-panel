@@ -1,9 +1,12 @@
 import { apiClient } from "@/lib/api/http";
 import {
+  CarryForwardMode,
   CreateSubscriptionPlanInput,
   parsePlanPrice,
+  PlanDiscountType,
   SubscriptionPlan,
   SubscriptionPlanItemRules,
+  SubscriptionPlanType,
   UpdateSubscriptionPlanInput,
 } from "../types/subscription-plan";
 
@@ -12,30 +15,86 @@ interface RawSubscriptionPlan {
   name: string;
   slug?: string | null;
   description?: string | null;
-  type: SubscriptionPlan["type"];
+  type: SubscriptionPlanType;
+  billingCycle?: SubscriptionPlanType;
   price: number | string;
+  originalPrice?: number | string;
+  finalPrice?: number | string;
+  savingsAmount?: number | string;
   validityDays: number;
   deliveriesPerCycle: number;
   itemRules?: SubscriptionPlanItemRules | null;
   isActive: boolean;
   displayOrder: number;
+  badge?: string | null;
+  skipEnabled?: boolean;
+  monthlySkipLimit?: number;
+  weeklySkipLimit?: number;
+  maxSkipDaysPerCycle?: number;
+  skipCutoffHours?: number;
+  carryForwardEnabled?: boolean;
+  carryForwardMode?: CarryForwardMode;
+  allowAdminOverride?: boolean;
+  discountType?: PlanDiscountType;
+  discountValue?: number | string;
+  discountLabel?: string | null;
+  isDiscountActive?: boolean;
+  configDiscountType?: PlanDiscountType;
+  configDiscountValue?: number | string;
+  configDiscountLabel?: string | null;
+  configIsDiscountActive?: boolean;
+  discountStartDate?: string | null;
+  discountEndDate?: string | null;
+  skipLimitDisplay?: string;
+  razorpayPlanId?: string | null;
   createdAt: string;
   updatedAt: string;
 }
 
 function normalizePlan(raw: RawSubscriptionPlan): SubscriptionPlan {
+  const originalPrice = parsePlanPrice(raw.originalPrice ?? raw.price);
+  const finalPrice = parsePlanPrice(raw.finalPrice ?? originalPrice);
+  const savingsAmount = parsePlanPrice(
+    raw.savingsAmount ?? Math.max(0, originalPrice - finalPrice)
+  );
+
   return {
     id: raw.id,
     name: raw.name,
     slug: raw.slug ?? null,
     description: raw.description ?? null,
     type: raw.type,
-    price: parsePlanPrice(raw.price),
+    billingCycle: raw.billingCycle ?? raw.type,
+    price: originalPrice,
+    originalPrice,
+    finalPrice,
+    savingsAmount,
+    discountType: raw.discountType ?? "NONE",
+    discountValue: parsePlanPrice(raw.discountValue ?? 0),
+    discountLabel: raw.discountLabel ?? null,
+    isDiscountActive: raw.isDiscountActive ?? false,
+    configDiscountType: raw.configDiscountType ?? raw.discountType ?? "NONE",
+    configDiscountValue: parsePlanPrice(raw.configDiscountValue ?? raw.discountValue ?? 0),
+    configDiscountLabel: raw.configDiscountLabel ?? raw.discountLabel ?? null,
+    configIsDiscountActive: raw.configIsDiscountActive ?? raw.isDiscountActive ?? false,
     validityDays: raw.validityDays,
     deliveriesPerCycle: raw.deliveriesPerCycle,
     itemRules: raw.itemRules ?? null,
     isActive: raw.isActive,
     displayOrder: raw.displayOrder,
+    badge: raw.badge ?? null,
+    skipEnabled: raw.skipEnabled ?? true,
+    monthlySkipLimit: raw.monthlySkipLimit ?? 2,
+    weeklySkipLimit: raw.weeklySkipLimit ?? 1,
+    maxSkipDaysPerCycle: raw.maxSkipDaysPerCycle ?? 2,
+    skipCutoffHours: raw.skipCutoffHours ?? 12,
+    carryForwardEnabled: raw.carryForwardEnabled ?? false,
+    carryForwardMode: raw.carryForwardMode ?? "EXTEND_END_DATE",
+    allowAdminOverride: raw.allowAdminOverride ?? true,
+    skipLimitDisplay: raw.skipLimitDisplay ?? "",
+    discountStartDate: raw.discountStartDate ?? null,
+    discountEndDate: raw.discountEndDate ?? null,
+    razorpayPlanId: raw.razorpayPlanId ?? null,
     createdAt: raw.createdAt,
     updatedAt: raw.updatedAt,
   };

@@ -3,12 +3,14 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Save, ArrowLeft } from "lucide-react";
+import { isAxiosError } from "axios";
 import {
   CARRY_FORWARD_LABELS,
   CreateSubscriptionPlanInput,
   DISCOUNT_TYPE_LABELS,
   EMPTY_PLAN,
   formatPlanPrice,
+  parsePlanPrice,
   PLAN_TYPE_LABELS,
   previewFinalPrice,
   SubscriptionPlan,
@@ -21,13 +23,24 @@ import { useSubscriptionPlanStore } from "@/features/subscription-plans/hooks/us
 
 type PlanFormState = CreateSubscriptionPlanInput & { itemRulesJson: string };
 
+function formatDateInput(value?: string | Date | null): string {
+  if (!value) return "";
+  const str = typeof value === "string" ? value : value.toISOString();
+  return str.slice(0, 10);
+}
+
 function planToForm(plan: SubscriptionPlan): PlanFormState {
+  const basePrice = parsePlanPrice(plan.originalPrice ?? plan.price);
+  const discountType = plan.configDiscountType ?? plan.discountType ?? "NONE";
+  const discountValue = plan.configDiscountValue ?? plan.discountValue ?? 0;
+  const isDiscountActive = plan.configIsDiscountActive ?? plan.isDiscountActive ?? false;
+
   return {
     name: plan.name,
     slug: plan.slug ?? "",
     description: plan.description ?? "",
     type: plan.type,
-    price: plan.originalPrice ?? plan.price,
+    price: basePrice,
     validityDays: plan.validityDays,
     deliveriesPerCycle: plan.deliveriesPerCycle,
     itemRules: plan.itemRules,
@@ -43,23 +56,30 @@ function planToForm(plan: SubscriptionPlan): PlanFormState {
     carryForwardEnabled: plan.carryForwardEnabled,
     carryForwardMode: plan.carryForwardMode,
     allowAdminOverride: plan.allowAdminOverride,
-    discountType: plan.discountType,
-    discountValue: plan.discountValue,
-    discountLabel: plan.discountLabel ?? "",
-    discountStartDate: plan.discountStartDate?.slice(0, 10) ?? "",
-    discountEndDate: plan.discountEndDate?.slice(0, 10) ?? "",
-    isDiscountActive: plan.isDiscountActive,
+    discountType,
+    discountValue,
+    discountLabel: plan.configDiscountLabel ?? plan.discountLabel ?? "",
+    discountStartDate: formatDateInput(plan.discountStartDate),
+    discountEndDate: formatDateInput(plan.discountEndDate),
+    isDiscountActive,
   };
 }
 
 function formToPayload(form: PlanFormState): CreateSubscriptionPlanInput {
-  let itemRules: SubscriptionPlanItemRules | null = null;
+  let itemRules: SubscriptionPlanItemRules | undefined;
   try {
     const parsed = JSON.parse(form.itemRulesJson || "{}");
-    itemRules = Object.keys(parsed).length > 0 ? parsed : null;
+    if (Object.keys(parsed).length > 0) {
+      itemRules = parsed;
+    }
   } catch {
-    itemRules = form.itemRules ?? null;
+    itemRules = form.itemRules ?? undefined;
   }
+
+  const discountType = form.discountType ?? "NONE";
+  const isDiscountActive = form.isDiscountActive ?? false;
+  const discountValue =
+    discountType === "NONE" ? 0 : Number(form.discountValue) || 0;
 
   return {
     name: form.name.trim(),
@@ -81,12 +101,12 @@ function formToPayload(form: PlanFormState): CreateSubscriptionPlanInput {
     carryForwardEnabled: form.carryForwardEnabled,
     carryForwardMode: form.carryForwardMode,
     allowAdminOverride: form.allowAdminOverride,
-    discountType: form.discountType,
-    discountValue: Number(form.discountValue),
+    discountType,
+    discountValue,
     discountLabel: form.discountLabel?.trim() || undefined,
     discountStartDate: form.discountStartDate || undefined,
     discountEndDate: form.discountEndDate || undefined,
-    isDiscountActive: form.isDiscountActive,
+    isDiscountActive: isDiscountActive && discountType !== "NONE",
   };
 }
 
@@ -140,13 +160,17 @@ export function PlanEditor() {
 
   const validateForm = (): string | null => {
     const price = Number(localForm.price) || 0;
+    const discountType = localForm.discountType ?? "NONE";
+    const isDiscountActive = localForm.isDiscountActive ?? false;
     const discountValue = Number(localForm.discountValue) || 0;
-    if (localForm.discountType === "PERCENTAGE" && discountValue > 100) {
+
+    if (isDiscountActive && discountType === "PERCENTAGE" && discountValue > 100) {
       return "Percentage discount cannot exceed 100";
     }
-    if (localForm.discountType === "FLAT" && discountValue > price) {
+    if (isDiscountActive && discountType === "FLAT" && discountValue > price) {
       return "Flat discount cannot exceed base price";
     }
+
     if ((localForm.monthlySkipLimit ?? 0) < 0 || (localForm.weeklySkipLimit ?? 0) < 0) {
       return "Skip limits must be ≥ 0";
     }
@@ -181,6 +205,22 @@ export function PlanEditor() {
         await updatePlan(selectedPlan.id, payload);
       }
       closeEditor();
+    } catch (error) {
+      if (isAxiosError(error)) {
+        const apiMessage = error.response?.data?.message;
+        const apiErrors = error.response?.data?.errors;
+        if (Array.isArray(apiErrors) && apiErrors.length > 0) {
+          setFormError(apiErrors.join(", "));
+        } else if (typeof apiMessage === "string" && apiMessage.trim()) {
+          setFormError(apiMessage);
+        } else {
+          setFormError("Failed to save subscription plan. Please check your inputs and try again.");
+        }
+      } else if (error instanceof Error && error.message) {
+        setFormError(error.message);
+      } else {
+        setFormError("Failed to save subscription plan. Please try again.");
+      }
     } finally {
       setSaving(false);
     }

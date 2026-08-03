@@ -22,6 +22,7 @@ interface FormData {
   protein: number;
   carbs: number;
   fats: number;
+  fiber: number;
   servingSize: string;
   healthTags: HealthTag[];
   customerLabels: CustomerLabel[];
@@ -95,6 +96,7 @@ export function FoodDrawer() {
       protein: 0,
       carbs: 0,
       fats: 0,
+      fiber: 0,
       servingSize: "1 bowl",
       healthTags: [],
       customerLabels: [],
@@ -124,6 +126,7 @@ export function FoodDrawer() {
         protein: selectedFood.nutrition.protein,
         carbs: selectedFood.nutrition.carbs,
         fats: selectedFood.nutrition.fats,
+        fiber: selectedFood.nutrition.fiber,
         servingSize: selectedFood.nutrition.servingSize,
         healthTags: selectedFood.healthTags,
         customerLabels: selectedFood.customerLabels,
@@ -136,7 +139,7 @@ export function FoodDrawer() {
     } else {
       reset({
         name: "", description: "", shortDescription: "", category: categories[0]?.name || "",
-        price: 0, preparationTime: 15, calories: 0, protein: 0, carbs: 0, fats: 0,
+        price: 0, preparationTime: 15, calories: 0, protein: 0, carbs: 0, fats: 0, fiber: 0,
         servingSize: "1 bowl", healthTags: [], customerLabels: [], availability: "available",
         foodType: "VEG", isFeatured: false, displayOnWebsite: true, bestPairedWith: [],
       });
@@ -258,7 +261,7 @@ export function FoodDrawer() {
               </Section>
 
               <Section title="Nutrition Information">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                   <Field label="Calories" error={errors.calories?.message}>
                     <Input {...register("calories", { min: { value: 0, message: "Calories must be non-negative" } })} type="number" placeholder="0" />
                   </Field>
@@ -273,6 +276,10 @@ export function FoodDrawer() {
 
                   <Field label="Fats (g)" error={errors.fats?.message}>
                     <Input {...register("fats", { min: { value: 0, message: "Fats must be non-negative" } })} type="number" placeholder="0" />
+                  </Field>
+
+                  <Field label="Fiber (g)" error={errors.fiber?.message}>
+                    <Input {...register("fiber", { min: { value: 0, message: "Fiber must be non-negative" } })} type="number" placeholder="0" />
                   </Field>
                 </div>
               </Section>
