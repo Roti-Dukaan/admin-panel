@@ -50,8 +50,8 @@ function mapApiFoodItemToFoodItem(api: ApiFoodItem, categories: Category[]): Foo
     nutrition: {
       calories: api.calories || 0,
       protein: api.protein || 0,
-      carbs: 0,
-      fats: 0,
+      carbs: api.carbs || 0,
+      fats: api.fats || 0,
       fiber: api.fiber || 0,
       servingSize: api.servingSize || '',
     },
@@ -269,6 +269,8 @@ export const useMenuStore = create<MenuStore>((set, get) => ({
         isAvailable: data.availability === 'available',
         calories: data.calories,
         protein: data.protein,
+        carbs: data.carbs,
+        fats: data.fats,
         fiber: data.fiber,
         servingSize: data.servingSize,
       };
@@ -303,6 +305,8 @@ export const useMenuStore = create<MenuStore>((set, get) => ({
         isAvailable: data.availability === 'available',
         calories: data.calories,
         protein: data.protein,
+        carbs: data.carbs,
+        fats: data.fats,
         fiber: data.fiber,
         servingSize: data.servingSize,
       };

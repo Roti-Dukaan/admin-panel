@@ -65,6 +65,8 @@ export interface ApiFoodItem {
   preparationTime: number;
   calories: number | null;
   protein: number | null;
+  carbs: number | null;
+  fats: number | null;
   fiber: number | null;
   servingSize: string | null;
   sortOrder: number;
