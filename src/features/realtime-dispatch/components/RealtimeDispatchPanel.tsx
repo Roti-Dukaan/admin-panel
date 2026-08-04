@@ -86,6 +86,11 @@ function DispatchRow({
             </span>
           )}
           <CodBadge item={item} />
+          {item.deliveryStatus === "WAITING_FOR_KITCHEN" && (
+            <Badge variant="outline" className="h-5 px-1.5 text-[10px] text-amber-700">
+              In kitchen
+            </Badge>
+          )}
           {item.dispatchMethod && item.dispatchMethod !== "PENDING" && (
             <Badge variant="outline" className="h-5 px-1.5 text-[10px]">
               {item.dispatchMethod}

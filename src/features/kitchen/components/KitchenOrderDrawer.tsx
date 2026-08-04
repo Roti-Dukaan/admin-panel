@@ -74,7 +74,11 @@ export function KitchenOrderDrawer({
       <DrawerHeader>
         <div>
           <DrawerTitle>{order?.orderNumber ?? "Order"}</DrawerTitle>
-          <p className="mt-0.5 text-xs text-gray-500">{order?.ticketNumber}</p>
+          {order?.ticketNumber &&
+            order.ticketNumber !== order.orderNumber &&
+            order.ticketNumber !== "Pending" && (
+              <p className="mt-0.5 text-xs text-gray-500">{order.ticketNumber}</p>
+            )}
         </div>
         <DrawerClose
           onClick={onClose}

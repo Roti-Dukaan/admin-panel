@@ -59,7 +59,7 @@ function branchOrderPlaceholder(
   return {
     orderId: payload.orderId,
     ticketId: `pending:${payload.orderId}`,
-    ticketNumber: payload.orderNumber,
+    ticketNumber: "Pending",
     orderNumber: payload.orderNumber,
     kitchenStatus: "PENDING",
     stageLabel: "New Orders",
