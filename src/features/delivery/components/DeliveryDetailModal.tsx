@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { X, Phone, Truck, User, Package, Map, ExternalLink, CheckCircle, AlertCircle, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
+import { FNS_DATE_TIME, FNS_DATE_TIME_YEAR } from "@/lib/date";
 import type { DeliveryTracking, DeliveryOrder, DeliveryAddress } from "@/features/delivery/types/delivery";
 import { DeliveryStatusBadge, DeliveryProviderBadge } from "./DeliveryStatusBadge";
 import { Button } from "@/components/ui/button";
@@ -218,7 +219,7 @@ export function DeliveryDetailModal({
               <div className="flex-1 min-w-0 pt-1">
                 <div className={`flex items-center gap-2 ${isCurrent ? "font-semibold text-gray-900" : "text-gray-600"}`}>
                   <span className="text-sm">{entry.label}</span>
-                  <span className="text-xs text-gray-400">{format(new Date(entry.timestamp), "MMM d, HH:mm")}</span>
+                  <span className="text-xs text-gray-400">{format(new Date(entry.timestamp), FNS_DATE_TIME)}</span>
                 </div>
                 {entry.details && (
                   <p className="text-sm text-gray-500 mt-1">{entry.details}</p>
@@ -245,8 +246,8 @@ export function DeliveryDetailModal({
           {delivery.trackingNumber && (
             <div className="flex justify-between"><span className="text-gray-500">Tracking #</span><span className="font-mono text-xs font-medium">{delivery.trackingNumber}</span></div>
           )}
-          <div className="flex justify-between"><span className="text-gray-500">Created</span><span>{format(new Date(delivery.createdAt), "MMM d, yyyy HH:mm")}</span></div>
-          <div className="flex justify-between"><span className="text-gray-500">Last Updated</span><span>{format(new Date(delivery.updatedAt), "MMM d, yyyy HH:mm")}</span></div>
+          <div className="flex justify-between"><span className="text-gray-500">Created</span><span>{format(new Date(delivery.createdAt), FNS_DATE_TIME_YEAR)}</span></div>
+          <div className="flex justify-between"><span className="text-gray-500">Last Updated</span><span>{format(new Date(delivery.updatedAt), FNS_DATE_TIME_YEAR)}</span></div>
         </div>
       </div>
 
@@ -254,16 +255,16 @@ export function DeliveryDetailModal({
         <h4 className="font-semibold text-gray-900 border-b pb-2">Timing</h4>
         <div className="space-y-3 text-sm">
           {delivery.estimatedPickupAt && (
-            <div className="flex justify-between"><span className="text-gray-500">Est. Pickup</span><span>{format(new Date(delivery.estimatedPickupAt), "MMM d, HH:mm")}</span></div>
+            <div className="flex justify-between"><span className="text-gray-500">Est. Pickup</span><span>{format(new Date(delivery.estimatedPickupAt), FNS_DATE_TIME)}</span></div>
           )}
           {delivery.actualPickupAt && (
-            <div className="flex justify-between text-amber-700"><span className="text-gray-500">Actual Pickup</span><span className="font-medium">{format(new Date(delivery.actualPickupAt), "MMM d, HH:mm")}</span></div>
+            <div className="flex justify-between text-amber-700"><span className="text-gray-500">Actual Pickup</span><span className="font-medium">{format(new Date(delivery.actualPickupAt), FNS_DATE_TIME)}</span></div>
           )}
           {delivery.estimatedDeliveryAt && (
-            <div className="flex justify-between"><span className="text-gray-500">Est. Delivery</span><span>{format(new Date(delivery.estimatedDeliveryAt), "MMM d, HH:mm")}</span></div>
+            <div className="flex justify-between"><span className="text-gray-500">Est. Delivery</span><span>{format(new Date(delivery.estimatedDeliveryAt), FNS_DATE_TIME)}</span></div>
           )}
           {delivery.actualDeliveryAt && (
-            <div className="flex justify-between text-emerald-700"><span className="text-gray-500">Actual Delivery</span><span className="font-medium">{format(new Date(delivery.actualDeliveryAt), "MMM d, HH:mm")}</span></div>
+            <div className="flex justify-between text-emerald-700"><span className="text-gray-500">Actual Delivery</span><span className="font-medium">{format(new Date(delivery.actualDeliveryAt), FNS_DATE_TIME)}</span></div>
           )}
         </div>
       </div>

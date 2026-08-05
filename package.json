@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "predev": "node scripts/ensure-dev-cache.mjs && node scripts/ensure-order-alert-sound.mjs",
-    "dev": "next dev -p 3002",
-    "dev:clean": "node -e \"require('fs').rmSync('.next',{recursive:true,force:true})\" && next dev -p 3002",
+    "dev": "node --use-system-ca ./node_modules/next/dist/bin/next dev -p 3002",
+    "dev:clean": "node -e \"require('fs').rmSync('.next',{recursive:true,force:true})\" && node --use-system-ca ./node_modules/next/dist/bin/next dev -p 3002",
     "prebuild": "node scripts/ensure-order-alert-sound.mjs",
     "build": "next build",
     "start": "next start -p 3002"

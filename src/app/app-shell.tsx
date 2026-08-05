@@ -46,6 +46,7 @@ const SIDEBAR_ROUTES = [
   "/dispatch",
   "/cms",
   "/cms/banners",
+  "/contact-messages",
   "/coupons",
 ]
 

@@ -429,18 +429,12 @@ function TaxTab({ saving, onSubmit, data }: { saving: boolean; onSubmit: (d: Rec
 function PaymentTab({ saving, onSubmit, data }: { saving: boolean; onSubmit: (d: Record<string, unknown>) => Promise<void>; data: PaymentConfigData | null }) {
   const [form, setForm] = useState({
     cashOnDeliveryEnabled: true,
-    razorpayEnabled: false,
-    razorpayKeyId: "",
-    razorpayKeySecret: "",
   });
 
   useEffect(() => {
     if (data) {
       setForm({
         cashOnDeliveryEnabled: data.cashOnDeliveryEnabled,
-        razorpayEnabled: data.razorpayEnabled,
-        razorpayKeyId: data.razorpayKeyId || "",
-        razorpayKeySecret: "",
       });
     }
   }, [data]);
@@ -450,21 +444,20 @@ function PaymentTab({ saving, onSubmit, data }: { saving: boolean; onSubmit: (d:
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm space-y-6">
       <h3 className="text-lg font-bold text-gray-900">Payment Settings</h3>
+      <p className="text-sm text-gray-500">
+        Online payments (Razorpay) are controlled via server environment variables, not this panel.
+      </p>
       <div className="space-y-4">
         <Toggle checked={form.cashOnDeliveryEnabled} onChange={(v) => set("cashOnDeliveryEnabled", v)} label="Cash on Delivery (COD)" />
-        <Toggle checked={form.razorpayEnabled} onChange={(v) => set("razorpayEnabled", v)} label="Razorpay Online Payments" />
       </div>
-      {form.razorpayEnabled && (
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 pt-2">
-          <Field label="Razorpay Key ID">
-            <Input value={form.razorpayKeyId} onChange={(v) => set("razorpayKeyId", v)} placeholder="rzp_test_..." />
-          </Field>
-          <Field label="Razorpay Key Secret">
-            <SecretInput value={form.razorpayKeySecret} onChange={(v) => set("razorpayKeySecret", v)} placeholder="Enter secret key" />
-          </Field>
-        </div>
-      )}
-      <SaveButton saving={saving} onClick={() => onSubmit(form)} />
+      <SaveButton
+        saving={saving}
+        onClick={() =>
+          onSubmit({
+            cashOnDeliveryEnabled: form.cashOnDeliveryEnabled,
+          })
+        }
+      />
     </div>
   );
 }
@@ -487,6 +480,7 @@ function DeliveryTab({
     minimumOrderAmount: 0,
     maximumOrderAmount: 10000,
     allowScheduledDelivery: false,
+    allowInstantDelivery: true,
   });
 
   useEffect(() => {
@@ -497,6 +491,7 @@ function DeliveryTab({
         minimumOrderAmount: data.minimumOrderAmount ?? 0,
         maximumOrderAmount: data.maximumOrderAmount ?? 10000,
         allowScheduledDelivery: data.allowScheduledDelivery ?? false,
+        allowInstantDelivery: data.allowInstantDelivery ?? true,
       });
       return;
     }
@@ -508,6 +503,7 @@ function DeliveryTab({
         minimumOrderAmount: business.minimumOrderAmount ?? 0,
         maximumOrderAmount: business.maximumOrderAmount ?? 10000,
         allowScheduledDelivery: false,
+        allowInstantDelivery: true,
       });
     }
   }, [data, business]);
@@ -531,6 +527,7 @@ function DeliveryTab({
           <Input type="number" value={form.maximumOrderAmount} onChange={(v) => set("maximumOrderAmount", Number(v))} />
         </Field>
       </div>
+      <Toggle checked={form.allowInstantDelivery} onChange={(v) => set("allowInstantDelivery", v)} label="Allow instant delivery" />
       <Toggle checked={form.allowScheduledDelivery} onChange={(v) => set("allowScheduledDelivery", v)} label="Allow scheduled delivery" />
       <SaveButton
         saving={saving}
@@ -540,6 +537,7 @@ function DeliveryTab({
             freeDeliveryAbove: Number(form.freeDeliveryAbove) || 0,
             minimumOrderAmount: Number(form.minimumOrderAmount) || 0,
             maximumOrderAmount: Number(form.maximumOrderAmount) || 10000,
+            allowInstantDelivery: form.allowInstantDelivery,
             allowScheduledDelivery: form.allowScheduledDelivery,
           })
         }

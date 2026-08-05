@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
+import { FNS_DATE_TIME, FNS_TIME } from "@/lib/date";
 import type { Delivery, DeliveryFilters, DeliveryStatus, DeliveryProvider } from "@/features/delivery/types/delivery";
 import { DeliveryStatusBadge, DeliveryProviderBadge, DeliveryTypeBadge } from "./DeliveryStatusBadge";
 import { DeliveryDetailModal } from "./DeliveryDetailModal";
@@ -34,13 +35,13 @@ function orderNumber(delivery: Delivery): string {
 
 function formatDeliveryTime(delivery: Delivery): string {
   if (delivery.actualDeliveryAt) {
-    return `✓ ${format(new Date(delivery.actualDeliveryAt), "MMM d, HH:mm")}`;
+    return `✓ ${format(new Date(delivery.actualDeliveryAt), FNS_DATE_TIME)}`;
   }
   if (delivery.estimatedDeliveryAt) {
-    return `ETA ${format(new Date(delivery.estimatedDeliveryAt), "HH:mm")}`;
+    return `ETA ${format(new Date(delivery.estimatedDeliveryAt), FNS_TIME)}`;
   }
   if (delivery.estimatedPickupAt) {
-    return `Pickup ${format(new Date(delivery.estimatedPickupAt), "HH:mm")}`;
+    return `Pickup ${format(new Date(delivery.estimatedPickupAt), FNS_TIME)}`;
   }
   return "—";
 }

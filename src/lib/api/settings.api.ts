@@ -54,6 +54,7 @@ export interface DeliveryConfigData {
   minimumOrderAmount: number;
   maximumOrderAmount: number;
   allowScheduledDelivery: boolean;
+  allowInstantDelivery: boolean;
   pincodes: PincodeData[];
 }
 

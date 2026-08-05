@@ -13,7 +13,7 @@ const SIDEBAR_ROUTES = [
   "/branch/kitchen", "/branch/subscription-dispatch", "/branch/production", "/branch/menu",
   "/branch/inventory", "/branch/delivery", "/branch/dispatch", "/branch/delivery-boys",
   "/branch/customers", "/branch/team", "/branch/reports", "/branch/profile",
-  "/branch-inventory", "/support", "/branch/support", "/dispatch", "/cms", "/cms/banners",
+  "/branch-inventory", "/support", "/branch/support", "/dispatch", "/cms", "/cms/banners", "/contact-messages",
   "/coupons",
 ]
 
