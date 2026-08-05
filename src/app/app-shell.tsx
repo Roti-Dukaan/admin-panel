@@ -99,8 +99,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     children
   )
 
-  // Global alert layer for branch managers on authenticated app routes only.
-  if (isBranchManager && isAuthenticated && !isPublicRoute(pathname)) {
+  // Global alert layer for branch managers — stays mounted across page navigation
+  // and token refresh so socket listeners and poll backup are never torn down.
+  if (isBranchManager && !isPublicRoute(pathname)) {
     return <BranchOrderAlertProvider>{page}</BranchOrderAlertProvider>
   }
 

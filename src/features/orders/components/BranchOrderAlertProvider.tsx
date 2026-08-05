@@ -62,6 +62,7 @@ import {
   scheduleBranchDashboardRefresh,
 } from "@/features/branch-dashboard/utils/branch-dashboard-realtime-sync";
 import { useOrdersStore } from "../hooks/useOrders";
+import { useGlobalPendingOrderPoll } from "../hooks/useGlobalPendingOrderPoll";
 import { normalizeOrderStatus } from "../utils/status";
 import { NewOrderAlertModal } from "./NewOrderAlertModal";
 
@@ -275,6 +276,19 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
   const resolveOrderRef = useRef(resolveOrder);
   resolveOrderRef.current = resolveOrder;
 
+  const qcRef = useRef(qc);
+  qcRef.current = qc;
+
+  const branchIdRef = useRef(branchId);
+  branchIdRef.current = branchId;
+
+  // Poll pending kitchen orders on every page — not only /branch/kitchen.
+  useGlobalPendingOrderPoll(
+    isBranchManager && isAuthenticated && !!accessToken,
+    branchId,
+    (payload) => showAlertRef.current(payload, { forceAlert: true, broadcast: true }),
+  );
+
   // Own the shared socket lifecycle once per branch-manager session. Token
   // refreshes are applied via ensureRealtimeAuth so we do not disconnect on
   // every accessToken change (that dropped refCount and forced 60s polling).
@@ -314,23 +328,26 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
 
     let refreshTimer: ReturnType<typeof setTimeout> | null = null;
     const scheduleOrdersRefresh = () => {
-      refetchKitchenQueries(qc);
+      refetchKitchenQueries(qcRef.current);
       if (refreshTimer) return;
       refreshTimer = setTimeout(() => {
         refreshTimer = null;
         void useOrdersStore.getState().fetchOrders();
         void useOrdersStore.getState().fetchStatistics();
-        scheduleBranchDashboardRefresh(qc);
-        refetchKitchenQueries(qc);
+        scheduleBranchDashboardRefresh(qcRef.current);
+        refetchKitchenQueries(qcRef.current);
       }, 400);
     };
 
     const offTicketCreated = onRealtime(REALTIME_EVENTS.KITCHEN_TICKET_CREATED, (raw) => {
       const ticket = raw as KitchenTicketCreatedPayload;
-      handleKitchenTicketCreated(qc, ticket);
+      handleKitchenTicketCreated(qcRef.current, ticket);
       scheduleOrdersRefresh();
 
-      const alertPayload = ticketToAlertPayload(ticket, branchId ?? ticket.branchId ?? "");
+      const alertPayload = ticketToAlertPayload(
+        ticket,
+        branchIdRef.current ?? ticket.branchId ?? "",
+      );
       showAlertRef.current(alertPayload, {
         forceAlert: true,
         broadcast: false,
@@ -339,13 +356,11 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
 
     const offBranch = onRealtime(REALTIME_EVENTS.BRANCH_ORDER_NEW, (raw) => {
       const payload = raw as BranchOrderNewPayload;
-      if (!branchIdsMatch(branchId, payload.branchId)) return;
-      // Cache sync FIRST and unconditionally — the kitchen board and orders
-      // list must update even when the popup is deduped or sound is off.
+      if (!branchIdsMatch(branchIdRef.current, payload.branchId)) return;
       if (!isScheduledBranchOrder(payload)) {
-        handleBranchOrderNew(qc, payload);
+        handleBranchOrderNew(qcRef.current, payload);
       }
-      patchBranchDashboardOnNewOrder(qc, payload);
+      patchBranchDashboardOnNewOrder(qcRef.current, payload);
       scheduleOrdersRefresh();
 
       if (isScheduledBranchOrder(payload)) {
@@ -359,7 +374,6 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
     const offBranchUpdated = onRealtime(REALTIME_EVENTS.BRANCH_ORDER_UPDATED, (raw) => {
       const payload = raw as BranchOrderUpdatedPayload;
       const nextStatus = normalizeOrderStatus(payload.status);
-      // Order handled elsewhere (other device/staff) — close its alert and stop ring.
       if (!NEW_ORDER_STATUSES.has(nextStatus)) {
         resolveOrderRef.current(payload.orderId, { broadcast: true });
       }
@@ -373,32 +387,30 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
             : state.selectedOrder,
       }));
       if (nextStatus === "preparing") {
-        patchKitchenStageInCache(qc, payload.orderId, "PREPARING", payload.occurredAt);
+        patchKitchenStageInCache(qcRef.current, payload.orderId, "PREPARING", payload.occurredAt);
       } else if (nextStatus === "ready-for-pickup") {
-        patchKitchenStageInCache(qc, payload.orderId, "READY_FOR_PICKUP", payload.occurredAt);
+        patchKitchenStageInCache(qcRef.current, payload.orderId, "READY_FOR_PICKUP", payload.occurredAt);
       }
       scheduleOrdersRefresh();
     });
 
     const offKitchenUpdated = onRealtime(REALTIME_EVENTS.KITCHEN_TICKET_UPDATED, (raw) => {
       const payload = raw as KitchenTicketUpdatedPayload;
-      // Kitchen already started this order — its alert is no longer "new".
       resolveOrderRef.current(payload.orderId, { broadcast: true });
-      handleKitchenTicketUpdated(qc, payload);
+      handleKitchenTicketUpdated(qcRef.current, payload);
       scheduleOrdersRefresh();
     });
 
     const offDeliveryUpdated = onRealtime(REALTIME_EVENTS.KITCHEN_DELIVERY_UPDATED, (raw) => {
-      handleKitchenDeliveryUpdated(qc, raw as DeliveryUpdatedPayload);
+      handleKitchenDeliveryUpdated(qcRef.current, raw as DeliveryUpdatedPayload);
     });
 
     const offBroadcast = subscribeOrderAlertBroadcast({
       onNewOrder: (payload) => {
-        // Another tab saw the order first — sync this tab's caches too.
         if (!isScheduledBranchOrder(payload)) {
-          handleBranchOrderNew(qc, payload);
+          handleBranchOrderNew(qcRef.current, payload);
         }
-        patchBranchDashboardOnNewOrder(qc, payload);
+        patchBranchDashboardOnNewOrder(qcRef.current, payload);
         scheduleOrdersRefresh();
         if (isScheduledBranchOrder(payload)) {
           placementSeen.current.add(payload.orderId);
@@ -419,7 +431,7 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
       offBroadcast();
       if (refreshTimer) clearTimeout(refreshTimer);
     };
-  }, [isBranchManager, isAuthenticated, branchId, accessToken, qc]);
+  }, [isBranchManager, isAuthenticated, accessToken]);
 
   useEffect(() => {
     if (ringingOrderIds.length === 0) return;
