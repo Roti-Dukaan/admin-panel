@@ -1,56 +1,122 @@
 /**
- * Browser notification + order alert audio (Howler.js).
+ * Order alert audio for localhost and production.
  *
- * Browsers block autoplay until the user interacts with the page. Managers must
- * click "Enable Sound Alerts" once; Howler auto-unlocks on subsequent gestures.
+ * File: public/sounds/ringing_old_phone.mp3
+ * Browsers block autoplay until the user clicks "Enable Order Alert" once.
  */
-
-import { Howl, Howler } from "howler";
 
 const ORDER_ALERTS_ENABLED_KEY = "roti-order-alerts-enabled";
 const ORDER_ALERTS_ENABLED_EVENT = "order-alerts-enabled";
-const RING_AUDIO_PATH = "/sounds/order-alert.wav";
+const ORDER_ALERTS_VERIFIED_SESSION_KEY = "roti-order-alerts-verified-session";
+const ORDER_ALERTS_VERIFIED_SESSION_EVENT = "order-alerts-verified-session";
+const RING_AUDIO_PATH = "/sounds/ringing_old_phone.mp3";
 
-let orderRing: Howl | null = null;
+let ringAudio: HTMLAudioElement | null = null;
 let ringActive = false;
-let audioUnlockBound = false;
+let unlockListenersAttached = false;
+let loadPromise: Promise<boolean> | null = null;
 
-function getOrderRing(): Howl | null {
+function logAudio(message: string, detail?: unknown): void {
+  if (detail !== undefined) {
+    console.warn(`[order-alert] ${message}`, detail);
+  } else {
+    console.warn(`[order-alert] ${message}`);
+  }
+}
+
+function createRingAudio(): HTMLAudioElement | null {
   if (typeof window === "undefined") return null;
-  if (!orderRing) {
-    Howler.autoUnlock = true;
-    Howler.volume(1);
-
-    orderRing = new Howl({
-      src: [RING_AUDIO_PATH],
-      loop: true,
-      volume: 1,
-      preload: true,
-      html5: false,
+  if (!ringAudio) {
+    ringAudio = document.createElement("audio");
+    ringAudio.src = RING_AUDIO_PATH;
+    ringAudio.preload = "auto";
+    ringAudio.loop = true;
+    ringAudio.volume = 1;
+    ringAudio.setAttribute("playsinline", "true");
+    ringAudio.style.display = "none";
+    document.body.appendChild(ringAudio);
+    ringAudio.addEventListener("error", () => {
+      logAudio(`failed to load ${RING_AUDIO_PATH} — is the file in public/sounds/?`);
+      loadPromise = null;
     });
   }
-  return orderRing;
+  return ringAudio;
 }
 
-/** Create + buffer the alert audio once so playback starts instantly later. */
+function isAudioReady(audio: HTMLAudioElement): boolean {
+  return audio.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA;
+}
+
+/** Ensure MP3 is loaded (with timeout so localhost dev never hangs silently). */
+export function ensureAudioLoaded(): Promise<boolean> {
+  const audio = createRingAudio();
+  if (!audio) return Promise.resolve(false);
+  if (isAudioReady(audio)) return Promise.resolve(true);
+  if (loadPromise) return loadPromise;
+
+  loadPromise = new Promise((resolve) => {
+    let settled = false;
+    const finish = (ok: boolean) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      audio.removeEventListener("canplaythrough", onReady);
+      audio.removeEventListener("loadeddata", onReady);
+      audio.removeEventListener("error", onError);
+      if (!ok) loadPromise = null;
+      resolve(ok);
+    };
+
+    const onReady = () => finish(true);
+    const onError = () => finish(false);
+    const timer = window.setTimeout(() => {
+      finish(isAudioReady(audio));
+    }, 5000);
+
+    audio.addEventListener("canplaythrough", onReady, { once: true });
+    audio.addEventListener("loadeddata", onReady, { once: true });
+    audio.addEventListener("error", onError, { once: true });
+    audio.load();
+  });
+
+  return loadPromise;
+}
+
 export function preloadOrderAudio(): void {
-  const howl = getOrderRing();
-  if (!howl || howl.state() !== "unloaded") return;
-  howl.load();
+  void ensureAudioLoaded();
 }
 
-/** Whether the looping order ring is currently active. */
+async function playRing(loop: boolean): Promise<boolean> {
+  const audio = createRingAudio();
+  if (!audio) return false;
+
+  const loaded = await ensureAudioLoaded();
+  if (!loaded) {
+    logAudio("audio file not ready — open /sounds/ringing_old_phone.mp3 in browser to verify");
+    return false;
+  }
+
+  try {
+    audio.loop = loop;
+    audio.currentTime = 0;
+    audio.volume = 1;
+    await audio.play();
+    return !audio.paused;
+  } catch (error) {
+    logAudio("play() blocked — click Enable Order Alert first", error);
+    return false;
+  }
+}
+
 export function isOrderRinging(): boolean {
-  const howl = getOrderRing();
-  return ringActive && !!howl?.playing();
+  const audio = createRingAudio();
+  return ringActive && !!audio && !audio.paused;
 }
 
-/** Whether audio has been unlocked and can play without a user gesture. */
 export function canPlayOrderAlerts(): boolean {
   return isOrderAlertsEnabled() || ringActive;
 }
 
-/** Whether the manager explicitly enabled sound alerts (persists across visits). */
 export function isOrderAlertsEnabled(): boolean {
   if (typeof window === "undefined") return false;
   try {
@@ -64,191 +130,117 @@ function markOrderAlertsEnabled(): void {
   if (typeof window === "undefined") return;
   try {
     localStorage.setItem(ORDER_ALERTS_ENABLED_KEY, "true");
+    sessionStorage.setItem(ORDER_ALERTS_VERIFIED_SESSION_KEY, "true");
     window.dispatchEvent(new Event(ORDER_ALERTS_ENABLED_EVENT));
+    window.dispatchEvent(new Event(ORDER_ALERTS_VERIFIED_SESSION_EVENT));
   } catch {
     /* ignore */
   }
 }
 
-/** Subscribe when alerts become enabled (explicit button or first page click). */
+export function isOrderAlertsVerifiedThisSession(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return sessionStorage.getItem(ORDER_ALERTS_VERIFIED_SESSION_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
+
+export function onOrderAlertsVerifiedSessionChange(listener: () => void): () => void {
+  if (typeof window === "undefined") return () => undefined;
+  window.addEventListener(ORDER_ALERTS_VERIFIED_SESSION_EVENT, listener);
+  return () => window.removeEventListener(ORDER_ALERTS_VERIFIED_SESSION_EVENT, listener);
+}
+
 export function onOrderAlertsEnabledChange(listener: () => void): () => void {
   if (typeof window === "undefined") return () => undefined;
   window.addEventListener(ORDER_ALERTS_ENABLED_EVENT, listener);
   return () => window.removeEventListener(ORDER_ALERTS_ENABLED_EVENT, listener);
 }
 
-function playTestChime(howl: Howl): Promise<boolean> {
-  // Never interrupt an active order ring (e.g. incidental click while modal is open).
-  if (ringActive && howl.playing()) return Promise.resolve(true);
+export function unlockAudio(): void {
+  if (typeof window === "undefined" || unlockListenersAttached) return;
+  unlockListenersAttached = true;
 
-  return new Promise((resolve) => {
-    let settled = false;
-    const finish = (ok: boolean) => {
-      if (settled) return;
-      settled = true;
-      if (!ringActive) {
-        howl.stop();
-      } else if (howl.playing()) {
-        howl.loop(true);
+  const unlock = () => {
+    void (async () => {
+      await ensureAudioLoaded();
+      if (ringActive) {
+        const ok = await startOrderRing();
+        if (ok) markOrderAlertsEnabled();
       }
-      resolve(ok);
-    };
+    })();
+  };
 
-    howl.once("playerror", () => finish(false));
-    howl.once("loaderror", () => finish(false));
+  window.addEventListener("pointerdown", unlock, true);
+  window.addEventListener("keydown", unlock, true);
+  window.addEventListener("touchstart", unlock, true);
+}
 
-    if (howl.state() === "unloaded") {
-      howl.once("load", () => {
-        if (ringActive) {
-          finish(true);
-          return;
-        }
-        howl.loop(false);
-        howl.play();
-        window.setTimeout(() => finish(true), 900);
-      });
-      howl.load();
-      return;
+/** Must be called from a button click — plays ~3s of the ringtone as proof. */
+export async function enableOrderAlerts(): Promise<boolean> {
+  const loaded = await ensureAudioLoaded();
+  if (!loaded) return false;
+
+  const ok = await playRing(true);
+  if (!ok) return false;
+
+  markOrderAlertsEnabled();
+
+  window.setTimeout(() => {
+    if (!ringActive && ringAudio) {
+      ringAudio.pause();
+      ringAudio.currentTime = 0;
     }
+  }, 3000);
 
-    howl.loop(false);
-    howl.play();
-    window.setTimeout(() => finish(true), 900);
+  return true;
+}
+
+export function playChime(): void {
+  if (!isOrderAlertsEnabled() || ringActive) return;
+  void playRing(false).then((ok) => {
+    if (!ok) return;
+    window.setTimeout(() => {
+      if (!ringActive && ringAudio) {
+        ringAudio.pause();
+        ringAudio.currentTime = 0;
+      }
+    }, 3000);
   });
 }
 
-/**
- * Wire one-time listeners so incidental clicks unlock Howler's audio context.
- * Prefer {@link enableOrderAlerts} for the explicit first-visit UX.
- */
-function removeAudioUnlockListeners(unlock: () => void): void {
-  window.removeEventListener("pointerdown", unlock);
-  window.removeEventListener("keydown", unlock);
-  window.removeEventListener("touchstart", unlock);
-}
-
-export function unlockAudio(): void {
-  if (typeof window === "undefined" || audioUnlockBound) return;
-  audioUnlockBound = true;
-
-  const unlock = () => {
-    Howler.autoUnlock = true;
-    preloadOrderAudio();
-
-    const finish = (ok: boolean) => {
-      if (ok) markOrderAlertsEnabled();
-      if (ok || !ringActive) {
-        removeAudioUnlockListeners(unlock);
-      }
-    };
-
-    if (isOrderAlertsEnabled()) {
-      if (ringActive) {
-        void startOrderRing().then(finish);
-      } else {
-        finish(true);
-      }
-      return;
-    }
-
-    if (ringActive) {
-      void startOrderRing().then(finish);
-      return;
-    }
-
-    const howl = getOrderRing();
-    if (!howl) {
-      removeAudioUnlockListeners(unlock);
-      return;
-    }
-
-    void playTestChime(howl).then(finish);
-  };
-
-  window.addEventListener("pointerdown", unlock);
-  window.addEventListener("keydown", unlock);
-  window.addEventListener("touchstart", unlock);
-}
-
-/**
- * Enable order alert sound — must be invoked from a user gesture (button click).
- * Plays a short test ring and persists the enabled flag.
- */
-export async function enableOrderAlerts(): Promise<boolean> {
-  const howl = getOrderRing();
-  if (!howl) return false;
-
-  const ok = await playTestChime(howl);
-  if (ok) markOrderAlertsEnabled();
-  return ok;
-}
-
-/** Play a short two-tone chime (uses the same alert file, no loop). */
-export function playChime(): void {
-  if (!isOrderAlertsEnabled()) return;
-  const howl = getOrderRing();
-  if (!howl || ringActive) return;
-  howl.loop(false);
-  howl.play();
-  window.setTimeout(() => {
-    if (!ringActive) howl.stop();
-  }, 400);
-}
-
-/** Start ring after alerts are enabled (legacy helper). */
 export async function tryStartOrderRing(): Promise<boolean> {
   return startOrderRing();
 }
 
-/**
- * Start a looping alert until {@link stopOrderRing} is called.
- * Marks the ring as active immediately so keep-alive can retry after autoplay blocks.
- */
 export async function startOrderRing(): Promise<boolean> {
   ringActive = true;
+  return playRing(true);
+}
 
-  const howl = getOrderRing();
-  if (!howl) return false;
-  if (howl.playing()) return true;
+export function stopOrderRing(): void {
+  ringActive = false;
+  if (ringAudio) {
+    ringAudio.pause();
+    ringAudio.currentTime = 0;
+    ringAudio.loop = false;
+  }
+}
 
-  return new Promise((resolve) => {
-    const begin = () => {
-      howl.loop(true);
-      howl.volume(1);
-      const soundId = howl.play();
-      resolve(soundId !== undefined);
-    };
-
-    howl.once("playerror", () => resolve(false));
-    howl.once("loaderror", () => resolve(false));
-
-    if (howl.state() === "unloaded") {
-      howl.once("load", begin);
-      howl.load();
-      return;
-    }
-
-    begin();
+export function ensureOrderRingPlaying(): void {
+  if (!ringActive) return;
+  const audio = createRingAudio();
+  if (!audio || !audio.paused) return;
+  audio.loop = true;
+  audio.volume = 1;
+  void ensureAudioLoaded().then((loaded) => {
+    if (!loaded || !ringActive || !ringAudio) return;
+    void ringAudio.play().catch((error) => logAudio("keep-alive play failed", error));
   });
 }
 
-/** Stop the looping order ring started by {@link startOrderRing}. */
-export function stopOrderRing(): void {
-  ringActive = false;
-  orderRing?.stop();
-}
-
-/** Re-start the loop if it was interrupted while alerts are still open. */
-export function ensureOrderRingPlaying(): void {
-  if (!ringActive) return;
-  const howl = getOrderRing();
-  if (!howl || howl.playing()) return;
-  howl.loop(true);
-  howl.volume(1);
-  howl.play();
-}
-
-/** Consolidated audio-manager surface for the order alert ring. */
 export const orderAlertAudio = {
   preload: preloadOrderAudio,
   unlock: enableOrderAlerts,
@@ -267,7 +259,6 @@ export function notificationPermission(): NotificationPermission | "unsupported"
   return Notification.permission;
 }
 
-/** Prompt for notification permission (call from a user gesture for best UX). */
 export function ensureNotificationPermission(): void {
   if (!notificationsSupported()) return;
   if (Notification.permission === "default") {

@@ -5,6 +5,7 @@ import { Suspense } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { Header } from "@/components/layout/header"
 import { KitchenBoard } from "@/features/kitchen/components/KitchenBoard"
+import { KitchenAlertSoundButton } from "@/features/kitchen/components/KitchenAlertSoundButton"
 import { SubscriptionsBoard } from "@/features/kitchen-subscriptions/components/SubscriptionsBoard"
 import { SubscriptionDispatchBoard } from "@/features/kitchen-subscriptions/components/SubscriptionDispatchBoard"
 import { usePrepClock } from "@/features/kitchen/hooks/usePrepClock"
@@ -77,7 +78,9 @@ function BranchKitchenPageContent() {
         }
         showSearch={false}
         actions={
-          <div className="flex items-center gap-1 rounded-xl bg-white p-1 shadow-sm ring-1 ring-black/5">
+          <div className="flex flex-wrap items-center gap-2">
+            <KitchenAlertSoundButton />
+            <div className="flex items-center gap-1 rounded-xl bg-white p-1 shadow-sm ring-1 ring-black/5">
             {TABS.map((tab) => (
               <button
                 key={tab.value}
@@ -94,6 +97,7 @@ function BranchKitchenPageContent() {
                 {tab.label}
               </button>
             ))}
+            </div>
           </div>
         }
       />

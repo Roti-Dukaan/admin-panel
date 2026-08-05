@@ -4,7 +4,8 @@ const CHANNEL_NAME = "roti-branch-order-alert";
 
 type OrderAlertMessage =
   | { type: "new_order"; payload: BranchOrderNewPayload; sourceId: string }
-  | { type: "dismiss_order"; orderId: string; sourceId: string };
+  | { type: "dismiss_order"; orderId: string; sourceId: string }
+  | { type: "resolve_order"; orderId: string; sourceId: string };
 
 let tabId: string | null = null;
 
@@ -35,6 +36,23 @@ export function broadcastNewOrderAlert(payload: BranchOrderNewPayload): void {
 }
 
 /** Notify other tabs that an order alert was handled so they can stop ringing. */
+export function broadcastResolveOrderAlert(orderId: string): void {
+  if (typeof BroadcastChannel === "undefined") return;
+  try {
+    const channel = new BroadcastChannel(CHANNEL_NAME);
+    const message: OrderAlertMessage = {
+      type: "resolve_order",
+      orderId,
+      sourceId: getTabId(),
+    };
+    channel.postMessage(message);
+    channel.close();
+  } catch {
+    /* ignore */
+  }
+}
+
+/** Notify other tabs that an order alert modal was dismissed (ring continues). */
 export function broadcastDismissOrderAlert(orderId: string): void {
   if (typeof BroadcastChannel === "undefined") return;
   try {
@@ -54,6 +72,7 @@ export function broadcastDismissOrderAlert(orderId: string): void {
 export function subscribeOrderAlertBroadcast(handlers: {
   onNewOrder: (payload: BranchOrderNewPayload) => void;
   onDismissOrder: (orderId: string) => void;
+  onResolveOrder: (orderId: string) => void;
 }): () => void {
   if (typeof BroadcastChannel === "undefined") return () => undefined;
 
@@ -68,6 +87,8 @@ export function subscribeOrderAlertBroadcast(handlers: {
       handlers.onNewOrder(data.payload);
     } else if (data.type === "dismiss_order") {
       handlers.onDismissOrder(data.orderId);
+    } else if (data.type === "resolve_order") {
+      handlers.onResolveOrder(data.orderId);
     }
   };
 

@@ -69,6 +69,8 @@ export interface CreateBranchDTO {
   formattedAddress?: string;
   placeId?: string;
   pincode?: string;
+  latitude?: number;
+  longitude?: number;
   deliveryRadiusKm?: number;
   deliveryPolygon?: LatLngPoint[];
   status?: BranchStatus;
@@ -96,6 +98,8 @@ export interface UpdateBranchDTO {
   formattedAddress?: string;
   placeId?: string;
   pincode?: string;
+  latitude?: number;
+  longitude?: number;
   deliveryRadiusKm?: number;
   deliveryPolygon?: LatLngPoint[];
   status?: BranchStatus;

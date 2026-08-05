@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { branchIdsMatch, normalizeBranchId } from "@/lib/realtime/branch-id";
 import {
   connectRealtime,
-  disconnectRealtime,
   onRealtime,
   ensureRealtimeAuth,
 } from "@/lib/realtime/socket";
@@ -24,14 +23,22 @@ import {
 import {
   broadcastDismissOrderAlert,
   broadcastNewOrderAlert,
+  broadcastResolveOrderAlert,
   subscribeOrderAlertBroadcast,
 } from "@/lib/realtime/order-alert-broadcast";
+import {
+  registerOrderAlertActions,
+  unregisterOrderAlertActions,
+} from "@/lib/realtime/order-alert-actions";
 import {
   enableOrderAlerts,
   ensureNotificationPermission,
   ensureOrderRingPlaying,
+  ensureAudioLoaded,
   isOrderAlertsEnabled,
+  isOrderAlertsVerifiedThisSession,
   onOrderAlertsEnabledChange,
+  onOrderAlertsVerifiedSessionChange,
   preloadOrderAudio,
   showOrderNotification,
   startOrderRing,
@@ -49,6 +56,7 @@ import {
   patchKitchenStageInCache,
   refetchKitchenQueries,
 } from "@/features/kitchen/utils/kitchen-realtime-sync";
+import { isScheduledBranchOrder } from "@/features/kitchen/utils/kitchen-scheduling";
 import {
   patchBranchDashboardOnNewOrder,
   scheduleBranchDashboardRefresh,
@@ -58,7 +66,30 @@ import { normalizeOrderStatus } from "../utils/status";
 import { NewOrderAlertModal } from "./NewOrderAlertModal";
 
 /** Statuses where an order still counts as "new" — anything else auto-closes its alert. */
-const NEW_ORDER_STATUSES = new Set(["pending-confirmation", "pending", "confirmed"]);
+const NEW_ORDER_STATUSES = new Set([
+  "pending-confirmation",
+  "pending",
+  "confirmed",
+  "accepted",
+]);
+
+function ticketToAlertPayload(
+  ticket: KitchenTicketCreatedPayload,
+  branchId: string,
+): BranchOrderNewPayload {
+  return {
+    orderId: ticket.orderId,
+    orderNumber: ticket.orderNumber,
+    status: ticket.stage,
+    occurredAt: ticket.occurredAt,
+    branchId: ticket.branchId ?? branchId,
+    itemsSummary: ticket.itemsSummary ?? "New kitchen order",
+    itemCount: ticket.itemCount ?? 0,
+    grandTotal: ticket.grandTotal ?? 0,
+    paymentMethod: ticket.paymentMethod,
+    deliveryType: ticket.deliveryType,
+  };
+}
 
 export function BranchOrderAlertProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -68,14 +99,17 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
   const accessToken = useAdminAuthStore((s) => s.accessToken);
   const userBranchId = useAdminAuthStore((s) => s.user?.branchId ?? s.branchId);
   const branchId = normalizeBranchId(workspaceBranchId ?? userBranchId);
+  const missingBranchAssignment = isBranchManager && isAuthenticated && !branchId;
   // Newest alert first; older unhandled orders stay queued behind it.
   const [alerts, setAlerts] = useState<BranchOrderNewPayload[]>([]);
   /** Orders that must keep ringing until Start Preparing (survives dismiss). */
   const [ringingOrderIds, setRingingOrderIds] = useState<string[]>([]);
   const [soundBlocked, setSoundBlocked] = useState(false);
   const [alertsEnabled, setAlertsEnabled] = useState(false);
+  const [alertsVerifiedSession, setAlertsVerifiedSession] = useState(false);
   const [enablingAlerts, setEnablingAlerts] = useState(false);
   const seen = useRef<Set<string>>(new Set());
+  const placementSeen = useRef<Set<string>>(new Set());
   const stageMutation = useKitchenStageMutation();
 
   const alert = alerts[0] ?? null;
@@ -84,7 +118,13 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
 
   useEffect(() => {
     setAlertsEnabled(isOrderAlertsEnabled());
-    return onOrderAlertsEnabledChange(() => setAlertsEnabled(true));
+    setAlertsVerifiedSession(isOrderAlertsVerifiedThisSession());
+    const offEnabled = onOrderAlertsEnabledChange(() => setAlertsEnabled(true));
+    const offVerified = onOrderAlertsVerifiedSessionChange(() => setAlertsVerifiedSession(true));
+    return () => {
+      offEnabled();
+      offVerified();
+    };
   }, []);
 
   const addRingingOrder = useCallback((orderId: string) => {
@@ -117,31 +157,61 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
       setAlerts((prev) => prev.filter((a) => a.orderId !== orderId));
       clearRingingOrder(orderId);
       if (broadcast) {
-        broadcastDismissOrderAlert(orderId);
+        broadcastResolveOrderAlert(orderId);
       }
     },
     [clearRingingOrder],
   );
 
+  const beginRingForOrder = useCallback((orderId: string) => {
+    addRingingOrder(orderId);
+    void (async () => {
+      await ensureAudioLoaded();
+      if (isOrderAlertsEnabled()) {
+        const started = await startOrderRing();
+        setSoundBlocked(!started);
+        if (!started) {
+          toast.info("New order — click Enable Order Alert or tap anywhere on the page.", {
+            duration: 10000,
+          });
+        }
+        return;
+      }
+      const started = await startOrderRing();
+      setSoundBlocked(!started);
+      if (!started) {
+        toast.info("New order — click Enable Order Alert to allow the ringtone.", {
+          duration: 10000,
+        });
+      }
+    })();
+  }, [addRingingOrder]);
+
   const handleEnableAlerts = useCallback(async () => {
     setEnablingAlerts(true);
     try {
+      const loaded = await ensureAudioLoaded();
+      if (!loaded) {
+        toast.error("Could not load ringing_old_phone.mp3 — check public/sounds/ folder.");
+        return;
+      }
       const enabled = await enableOrderAlerts();
       ensureNotificationPermission();
       if (enabled) {
         setAlertsEnabled(true);
+        setAlertsVerifiedSession(true);
         setSoundBlocked(false);
-        toast.success("Order sound alerts enabled");
-        if (open) {
+        toast.success("Sound enabled — you should hear the ringtone for 3 seconds.");
+        if (ringingOrderIds.length > 0 || open) {
           void startOrderRing().then((started) => setSoundBlocked(!started));
         }
       } else {
-        toast.error("Could not enable sound. Check your browser volume and try again.");
+        toast.error("Could not play sound. Unmute this tab and check system volume.");
       }
     } finally {
       setEnablingAlerts(false);
     }
-  }, [open]);
+  }, [open, ringingOrderIds.length]);
 
   /**
    * Popup/sound only. Cache sync (orders + kitchen refetch) runs
@@ -149,30 +219,30 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
    * skipped by alert dedup, branch mismatch or disabled sound.
    */
   const showAlert = useCallback(
-    (payload: BranchOrderNewPayload, options?: { broadcast?: boolean }) => {
+    (
+      payload: BranchOrderNewPayload,
+      options?: { broadcast?: boolean; forceAlert?: boolean },
+    ) => {
       if (!branchIdsMatch(branchId, payload.branchId)) return;
-      if (seen.current.has(payload.orderId)) return;
-      seen.current.add(payload.orderId);
-      // Evict oldest entries instead of wiping the set, so recent orders
-      // can never re-trigger a duplicate ring.
-      if (seen.current.size > 200) {
-        for (const id of seen.current) {
-          seen.current.delete(id);
-          if (seen.current.size <= 100) break;
+
+      const alreadyAlerted = seen.current.has(payload.orderId);
+      if (alreadyAlerted && !options?.forceAlert) {
+        beginRingForOrder(payload.orderId);
+        return;
+      }
+
+      if (!alreadyAlerted) {
+        seen.current.add(payload.orderId);
+        if (seen.current.size > 200) {
+          for (const id of seen.current) {
+            seen.current.delete(id);
+            if (seen.current.size <= 100) break;
+          }
         }
       }
 
       setAlerts((prev) => [payload, ...prev.filter((a) => a.orderId !== payload.orderId)]);
-      addRingingOrder(payload.orderId);
-
-      void startOrderRing().then((started) => {
-        setSoundBlocked(!started);
-        if (!started) {
-          toast.info("New order received — tap anywhere on the page to enable the alert sound.", {
-            duration: 10000,
-          });
-        }
-      });
+      beginRingForOrder(payload.orderId);
 
       if (typeof document !== "undefined" && document.hidden) {
         showOrderNotification(
@@ -186,7 +256,14 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
         broadcastNewOrderAlert(payload);
       }
     },
-    [branchId, router, addRingingOrder],
+    [branchId, router, beginRingForOrder],
+  );
+
+  const ensureRinging = useCallback(
+    (orderId: string) => {
+      beginRingForOrder(orderId);
+    },
+    [beginRingForOrder],
   );
 
   const showAlertRef = useRef(showAlert);
@@ -202,18 +279,30 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
   // refreshes are applied via ensureRealtimeAuth so we do not disconnect on
   // every accessToken change (that dropped refCount and forced 60s polling).
   useEffect(() => {
+    registerOrderAlertActions({
+      resolveOrder: (orderId) => resolveOrderRef.current(orderId),
+      ensureRinging: (orderId) => ensureRinging(orderId),
+      alertNewOrder: (payload) => showAlertRef.current(payload, { forceAlert: true, broadcast: true }),
+    });
+    return () => unregisterOrderAlertActions();
+  }, [ensureRinging]);
+
+  useEffect(() => {
     if (!isBranchManager || !isAuthenticated) {
-      return;
+      stopOrderRing();
+      setAlerts([]);
+      setRingingOrderIds([]);
+      setSoundBlocked(false);
     }
+  }, [isBranchManager, isAuthenticated]);
+
+  useEffect(() => {
+    if (!isBranchManager || !isAuthenticated || !accessToken) return;
 
     preloadOrderAudio();
     unlockAudio();
     connectRealtime(accessToken);
-
-    return () => {
-      disconnectRealtime();
-    };
-  }, [isBranchManager, isAuthenticated]);
+  }, [isBranchManager, isAuthenticated, accessToken]);
 
   useEffect(() => {
     if (!isBranchManager || !isAuthenticated || !accessToken) return;
@@ -221,13 +310,7 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
   }, [isBranchManager, isAuthenticated, accessToken]);
 
   useEffect(() => {
-    if (!isBranchManager || !isAuthenticated || !accessToken) {
-      stopOrderRing();
-      setAlerts([]);
-      setRingingOrderIds([]);
-      setSoundBlocked(false);
-      return;
-    }
+    if (!isBranchManager || !isAuthenticated || !accessToken) return;
 
     let refreshTimer: ReturnType<typeof setTimeout> | null = null;
     const scheduleOrdersRefresh = () => {
@@ -243,8 +326,15 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
     };
 
     const offTicketCreated = onRealtime(REALTIME_EVENTS.KITCHEN_TICKET_CREATED, (raw) => {
-      handleKitchenTicketCreated(qc, raw as KitchenTicketCreatedPayload);
+      const ticket = raw as KitchenTicketCreatedPayload;
+      handleKitchenTicketCreated(qc, ticket);
       scheduleOrdersRefresh();
+
+      const alertPayload = ticketToAlertPayload(ticket, branchId ?? ticket.branchId ?? "");
+      showAlertRef.current(alertPayload, {
+        forceAlert: true,
+        broadcast: false,
+      });
     });
 
     const offBranch = onRealtime(REALTIME_EVENTS.BRANCH_ORDER_NEW, (raw) => {
@@ -252,9 +342,17 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
       if (!branchIdsMatch(branchId, payload.branchId)) return;
       // Cache sync FIRST and unconditionally — the kitchen board and orders
       // list must update even when the popup is deduped or sound is off.
-      handleBranchOrderNew(qc, payload);
+      if (!isScheduledBranchOrder(payload)) {
+        handleBranchOrderNew(qc, payload);
+      }
       patchBranchDashboardOnNewOrder(qc, payload);
       scheduleOrdersRefresh();
+
+      if (isScheduledBranchOrder(payload)) {
+        placementSeen.current.add(payload.orderId);
+        return;
+      }
+
       showAlertRef.current(payload);
     });
 
@@ -263,7 +361,7 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
       const nextStatus = normalizeOrderStatus(payload.status);
       // Order handled elsewhere (other device/staff) — close its alert and stop ring.
       if (!NEW_ORDER_STATUSES.has(nextStatus)) {
-        resolveOrderRef.current(payload.orderId, { broadcast: false });
+        resolveOrderRef.current(payload.orderId, { broadcast: true });
       }
       useOrdersStore.setState((state) => ({
         orders: state.orders.map((order) =>
@@ -285,7 +383,7 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
     const offKitchenUpdated = onRealtime(REALTIME_EVENTS.KITCHEN_TICKET_UPDATED, (raw) => {
       const payload = raw as KitchenTicketUpdatedPayload;
       // Kitchen already started this order — its alert is no longer "new".
-      resolveOrderRef.current(payload.orderId, { broadcast: false });
+      resolveOrderRef.current(payload.orderId, { broadcast: true });
       handleKitchenTicketUpdated(qc, payload);
       scheduleOrdersRefresh();
     });
@@ -297,12 +395,19 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
     const offBroadcast = subscribeOrderAlertBroadcast({
       onNewOrder: (payload) => {
         // Another tab saw the order first — sync this tab's caches too.
-        handleBranchOrderNew(qc, payload);
+        if (!isScheduledBranchOrder(payload)) {
+          handleBranchOrderNew(qc, payload);
+        }
         patchBranchDashboardOnNewOrder(qc, payload);
         scheduleOrdersRefresh();
+        if (isScheduledBranchOrder(payload)) {
+          placementSeen.current.add(payload.orderId);
+          return;
+        }
         showAlertRef.current(payload, { broadcast: false });
       },
       onDismissOrder: (orderId) => hideAlertRef.current(orderId, false),
+      onResolveOrder: (orderId) => resolveOrderRef.current(orderId, { broadcast: false }),
     });
 
     return () => {
@@ -328,30 +433,28 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
   }, [ringingOrderIds.length]);
 
   useEffect(() => {
-    if (ringingOrderIds.length === 0 || !soundBlocked) return;
+    if (ringingOrderIds.length === 0) return;
 
     const retrySound = () => {
-      void startOrderRing().then((started) => {
-        if (started) {
-          setSoundBlocked(false);
-          if (!isOrderAlertsEnabled()) {
-            // Persist unlock after a successful gesture-triggered ring.
-            void enableOrderAlerts();
-          }
-          setAlertsEnabled(true);
+      void (async () => {
+        if (!isOrderAlertsEnabled()) {
+          const enabled = await enableOrderAlerts();
+          if (enabled) setAlertsEnabled(true);
         }
-      });
+        const started = await startOrderRing();
+        if (started) setSoundBlocked(false);
+      })();
     };
 
-    window.addEventListener("pointerdown", retrySound);
-    window.addEventListener("keydown", retrySound);
-    window.addEventListener("touchstart", retrySound);
+    window.addEventListener("pointerdown", retrySound, { capture: true });
+    window.addEventListener("keydown", retrySound, { capture: true });
+    window.addEventListener("touchstart", retrySound, { capture: true });
     return () => {
-      window.removeEventListener("pointerdown", retrySound);
-      window.removeEventListener("keydown", retrySound);
-      window.removeEventListener("touchstart", retrySound);
+      window.removeEventListener("pointerdown", retrySound, { capture: true });
+      window.removeEventListener("keydown", retrySound, { capture: true });
+      window.removeEventListener("touchstart", retrySound, { capture: true });
     };
-  }, [ringingOrderIds.length, soundBlocked]);
+  }, [ringingOrderIds.length]);
 
   const dismissAlert = useCallback(
     (broadcast = true) => {
@@ -372,6 +475,8 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
     if (!alert) return;
     const orderId = alert.orderId;
 
+    void enableOrderAlerts().then(() => setAlertsEnabled(true));
+
     stageMutation.mutate(
       { id: orderId, action: "preparing" },
       {
@@ -384,7 +489,19 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
     <>
       {children}
 
-      {!alertsEnabled && !open && (
+      {missingBranchAssignment && (
+        <div
+          role="alert"
+          className="fixed top-4 left-1/2 z-[200] w-[min(100%-2rem,32rem)] -translate-x-1/2 rounded-xl border border-red-200 bg-red-50 p-4 shadow-lg"
+        >
+          <p className="text-sm font-semibold text-red-900">Branch not assigned to your account</p>
+          <p className="mt-1 text-xs text-red-800">
+            Order alerts and sounds will not work until a Super Admin links your manager account to a branch.
+          </p>
+        </div>
+      )}
+
+      {(!alertsVerifiedSession || (soundBlocked && ringingOrderIds.length > 0)) && !missingBranchAssignment && (
         <div
           role="status"
           className="fixed bottom-4 left-1/2 z-[200] w-[min(100%-2rem,28rem)] -translate-x-1/2 rounded-xl border border-orange-200 bg-white p-4 shadow-lg"
@@ -394,9 +511,13 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
               <Volume2 className="h-5 w-5" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-gray-900">Enable order sound alerts</p>
+              <p className="text-sm font-semibold text-gray-900">
+                {soundBlocked ? "Order alert is blocked" : "Enable order alert sound (works on localhost)"}
+              </p>
               <p className="mt-0.5 text-xs text-gray-500">
-                Browsers require one click before playing alert sounds. Enable now so you hear every new order.
+                {soundBlocked
+                  ? "Click below or tap anywhere on the page to allow the ringtone for new orders."
+                  : "Click Enable — you should hear ringing_old_phone.mp3 for 3 seconds. Required once per browser."}
               </p>
               <Button
                 size="sm"
@@ -404,7 +525,7 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
                 onClick={() => void handleEnableAlerts()}
                 disabled={enablingAlerts}
               >
-                {enablingAlerts ? "Enabling..." : "Enable Sound Alerts"}
+                {enablingAlerts ? "Enabling..." : soundBlocked ? "Allow Order Alert" : "Enable Order Alert"}
               </Button>
             </div>
           </div>

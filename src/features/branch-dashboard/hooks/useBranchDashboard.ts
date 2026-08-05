@@ -17,7 +17,7 @@ export const BRANCH_DASHBOARD_STATS_KEY = ["branch-dashboard", "stats"] as const
 
 const REALTIME_STALE_MS = 5_000;
 /** Slow fallback when Socket.IO is offline; realtime invalidates this query. */
-const FALLBACK_POLL_MS = 60_000;
+const FALLBACK_POLL_MS = 5_000;
 
 /**
  * Dashboard stats with Socket.IO invalidation. BranchOrderAlertProvider handles

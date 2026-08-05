@@ -218,9 +218,9 @@ export function NewOrderAlertModal({
               <div className="flex items-start gap-3">
                 <Volume2 className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" />
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs font-medium text-amber-900">Alert sound is muted</p>
+                  <p className="text-xs font-medium text-amber-900">Order alert is muted</p>
                   <p className="mt-0.5 text-xs text-amber-800">
-                    Enable sound so you hear every new order.
+                    Tap Enable below — the alert will play continuously until you press Start Preparing.
                   </p>
                   <Button
                     size="sm"
@@ -229,7 +229,7 @@ export function NewOrderAlertModal({
                     onClick={onEnableSound}
                     disabled={enablingSound}
                   >
-                    {enablingSound ? "Enabling…" : "Enable Sound Now"}
+                    {enablingSound ? "Enabling…" : "Enable Order Alert"}
                   </Button>
                 </div>
               </div>

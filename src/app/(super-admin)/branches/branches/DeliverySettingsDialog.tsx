@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label"
 import { Loader2, MapPin, X } from "lucide-react"
 import { toast } from "sonner"
 import dynamic from "next/dynamic"
-import { parseDeliveryPolygon, toMapCoords, DEFAULT_MAP_CENTER } from "@/lib/geo-utils"
+import { findOverlappingBranch, parseDeliveryPolygon, toMapCoords, DEFAULT_MAP_CENTER } from "@/lib/geo-utils"
 
 const DeliveryPolygonPicker = dynamic(
   () => import("@/components/Map/DeliveryPolygonPicker").then((m) => m.DeliveryPolygonPicker),
@@ -71,6 +71,19 @@ export default function DeliverySettingsSidebar({
 
     setSaving(true)
     try {
+      const allBranchesResponse = await branchesApi.list({ isActive: true, limit: 200 })
+      const overlap = findOverlappingBranch(
+        deliveryPolygon,
+        allBranchesResponse.data.data.items,
+        branch.id,
+      )
+      if (overlap) {
+        toast.error(
+          `Delivery polygon overlaps with branch "${overlap.name}" (${overlap.code}). Adjust the zone before saving.`,
+        )
+        return
+      }
+
       await branchesApi.updateDeliverySettings(branch.id, {
         ...form,
         deliveryPolygon,
