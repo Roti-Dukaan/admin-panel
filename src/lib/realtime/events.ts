@@ -48,6 +48,12 @@ export interface KitchenTicketCreatedPayload {
   occurredAt: string;
   actorType: "SYSTEM" | "ADMIN";
   actorId: string;
+  branchId?: string;
+  itemsSummary?: string;
+  itemCount?: number;
+  grandTotal?: number;
+  paymentMethod?: string;
+  deliveryType?: string;
 }
 
 export interface KitchenTicketUpdatedPayload {
@@ -79,6 +85,7 @@ export interface BranchOrderNewPayload extends AdminOrderCreatedPayload {
   itemCount: number;
   grandTotal: number;
   paymentMethod?: string;
+  deliveryType?: string;
 }
 
 export interface BranchOrderUpdatedPayload extends AdminOrderUpdatedPayload {

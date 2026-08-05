@@ -4,7 +4,6 @@ import { motion } from "motion/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Loader2, Mail } from "lucide-react"
-import { normalizeEmail } from "@/lib/utils/email"
 
 interface EmailStepProps {
   email: string
@@ -14,7 +13,7 @@ interface EmailStepProps {
 }
 
 export function EmailStep({ email, onEmailChange, onContinue, isLoading }: EmailStepProps) {
-  const isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+  const isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
 
   return (
     <motion.div
@@ -44,7 +43,7 @@ export function EmailStep({ email, onEmailChange, onContinue, isLoading }: Email
               type="email"
               placeholder="you@company.com"
               value={email}
-              onChange={(e) => onEmailChange(normalizeEmail(e.target.value))}
+              onChange={(e) => onEmailChange(e.target.value)}
               className="pl-10 h-12 rounded-xl border-gray-200 bg-gray-50/50 focus:bg-white focus:border-orange-300 focus:ring-orange-200 text-base"
             />
           </div>

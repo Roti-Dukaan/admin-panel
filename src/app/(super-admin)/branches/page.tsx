@@ -7,6 +7,7 @@ import { areasApi, type Area } from "@/lib/api/master-data/areas.api"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
+import { Switch } from "@/components/ui/switch"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import {
   Dialog,
@@ -26,7 +27,7 @@ import { BranchAddressSearch, type PlaceResult } from "@/components/Map/BranchAd
 import dynamic from "next/dynamic"
 import DeliverySettingsDialog from "./branches/DeliverySettingsDialog"
 import { toast } from "sonner"
-import { DEFAULT_MAP_CENTER, hasValidMapCoords, parseDeliveryPolygon, toMapCoords } from "@/lib/geo-utils"
+import { DEFAULT_MAP_CENTER, findOverlappingBranch, hasValidMapCoords, parseDeliveryPolygon, toMapCoords } from "@/lib/geo-utils"
 import { reverseGeocode } from "@/lib/google-maps"
 import { normalizeEmail } from "@/lib/utils/email"
 
@@ -88,8 +89,7 @@ export default function BranchesPage() {
   const [saving, setSaving] = useState(false)
 
   const [mapCoords, setMapCoords] = useState<{ lat: number; lng: number } | null>(null)
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [deletingBranch, setDeletingBranch] = useState<Branch | null>(null)
+  const [togglingBranchId, setTogglingBranchId] = useState<string | null>(null)
   const [deliverySettingsBranch, setDeliverySettingsBranch] = useState<Branch | null>(null)
   const [isLocating, setIsLocating] = useState(false)
 
@@ -265,6 +265,11 @@ export default function BranchesPage() {
       return
     }
 
+    if (!mapCoords) {
+      toast.error("Pin the branch location on the map before saving")
+      return
+    }
+
     const hasManagerEmail = !!form.managerEmail.trim()
     const hasManagerName = !!form.managerName.trim()
     if (hasManagerEmail !== hasManagerName) {
@@ -274,6 +279,19 @@ export default function BranchesPage() {
 
     setSaving(true)
     try {
+      const allBranchesResponse = await branchesApi.list({ isActive: true, limit: 200 })
+      const overlap = findOverlappingBranch(
+        form.deliveryPolygon,
+        allBranchesResponse.data.data.items,
+        editingBranch?.id,
+      )
+      if (overlap) {
+        toast.error(
+          `Delivery polygon overlaps with branch "${overlap.name}" (${overlap.code}). Adjust the zone before saving.`,
+        )
+        return
+      }
+
       const payload: CreateBranchDTO | UpdateBranchDTO = {
         name: form.name,
         code: form.code,
@@ -282,6 +300,8 @@ export default function BranchesPage() {
         formattedAddress: form.formattedAddress || undefined,
         placeId: form.placeId || undefined,
         pincode: form.pincode || undefined,
+        latitude: mapCoords?.lat,
+        longitude: mapCoords?.lng,
         cityId: form.cityId,
         areaId: form.areaId,
         deliveryPolygon: form.deliveryPolygon,
@@ -333,20 +353,25 @@ export default function BranchesPage() {
     }
   }
 
-  const confirmDelete = async () => {
-    if (!deletingBranch) return
-    setSaving(true)
+  const handleToggleActive = async (branch: Branch, isActive: boolean) => {
+    setTogglingBranchId(branch.id)
     try {
-      await branchesApi.archive(deletingBranch.id)
-      toast.success("Branch archived successfully")
-      setDeleteDialogOpen(false)
-      setDeletingBranch(null)
-      fetchBranches()
+      await branchesApi.update(branch.id, {
+        name: branch.name,
+        code: branch.code,
+        isActive,
+      })
+      setBranches((prev) =>
+        prev.map((item) => (item.id === branch.id ? { ...item, isActive } : item)),
+      )
+      toast.success(isActive ? "Branch activated" : "Branch deactivated")
     } catch (err: unknown) {
-      const message = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || "Failed to archive branch"
+      const message =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+        "Failed to update branch status"
       toast.error(message)
     } finally {
-      setSaving(false)
+      setTogglingBranchId(null)
     }
   }
 
@@ -434,7 +459,10 @@ export default function BranchesPage() {
                   </thead>
                   <tbody>
                     {branches.map((branch) => (
-                      <tr key={branch.id} className="border-b border-gray-100 text-sm hover:bg-gray-50">
+                      <tr
+                        key={branch.id}
+                        className={`border-b border-gray-100 text-sm hover:bg-gray-50 ${branch.isActive ? "" : "opacity-60"}`}
+                      >
                         <td className="py-3 pr-4">
                           <div>
                             <p className="font-medium text-gray-900">{branch.name}</p>
@@ -461,14 +489,17 @@ export default function BranchesPage() {
                               <MapPin className="h-3.5 w-3.5 mr-1" />
                               Delivery
                             </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-red-600 hover:text-red-700"
-                              onClick={() => { setDeletingBranch(branch); setDeleteDialogOpen(true) }}
-                            >
-                              Archive
-                            </Button>
+                            <div className="flex items-center gap-2 pl-1">
+                              <Switch
+                                checked={branch.isActive}
+                                disabled={togglingBranchId === branch.id}
+                                onCheckedChange={(checked) => handleToggleActive(branch, checked)}
+                                aria-label={`${branch.isActive ? "Deactivate" : "Activate"} ${branch.name}`}
+                              />
+                              <span className="text-xs text-gray-500 min-w-[24px]">
+                                {branch.isActive ? "On" : "Off"}
+                              </span>
+                            </div>
                           </div>
                         </td>
                       </tr>
@@ -718,24 +749,6 @@ export default function BranchesPage() {
             >
               {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               {editingBranch ? "Update" : "Create"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Archive Branch</DialogTitle>
-            <p className="text-sm text-gray-500 mt-1">
-              Are you sure you want to archive {deletingBranch?.name}? This action can be reversed by reactivating.
-            </p>
-          </DialogHeader>
-          <div className="flex justify-end gap-3 pt-2">
-            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
-            <Button variant="destructive" onClick={confirmDelete} disabled={saving}>
-              {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Archive
             </Button>
           </div>
         </DialogContent>

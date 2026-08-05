@@ -9,7 +9,7 @@ import {
 } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { kitchenApi } from "@/lib/api/kitchen.api";
-import type { KitchenStage, KitchenOrderListResponse, KitchenOrderDetail } from "@/lib/api/kitchen.api";
+import type { KitchenStage, KitchenOrderListResponse, KitchenOrderDetail, KitchenOrderListItem } from "@/lib/api/kitchen.api";
 import type { KitchenOrderView, DeliveryKind, PaymentFilter, PrepTimeFilter } from "../types/kitchen";
 import { onRealtime, getRealtimeSocket } from "@/lib/realtime/socket";
 import {
@@ -30,13 +30,15 @@ import {
   type BranchOrderNewPayload,
   type KitchenTicketCreatedPayload,
 } from "@/lib/realtime/events";
+import { alertNewKitchenOrder, resolveOrderAlert } from "@/lib/realtime/order-alert-actions";
 import { branchIdsMatch } from "@/lib/realtime/branch-id";
 import { useAdminAuthStore } from "@/features/admin-auth/store/admin-auth-store";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
 import { isCodPayment } from "@/features/orders/utils/order-alert-format";
+import { isKitchenBoardVisible, isScheduledBranchOrder } from "../utils/kitchen-scheduling";
 
 const REALTIME_STALE_MS = 5_000;
-const FALLBACK_POLL_MS = 60_000;
+const FALLBACK_POLL_MS = 5_000;
 
 export interface KitchenFilterState {
   search: string;
@@ -151,6 +153,10 @@ export function useKitchenStageMutation() {
         patchKitchenDetailMapStage(old, data),
       );
 
+      if (data.stage === "PREPARING") {
+        resolveOrderAlert(data.orderId);
+      }
+
       toast.success(
         data.stage === "PREPARING"
           ? "Order moved to Preparing."
@@ -196,6 +202,7 @@ export function useKitchenRealtime(options?: {
     const offBranchNew = onRealtime(REALTIME_EVENTS.BRANCH_ORDER_NEW, (raw) => {
       const payload = raw as BranchOrderNewPayload;
       if (isBranchManager && !branchIdsMatch(branchId, payload.branchId)) return;
+      if (isScheduledBranchOrder(payload)) return;
       handleBranchOrderNew(qc, payload);
     });
 
@@ -241,6 +248,68 @@ export function applyKitchenFilters(
     if (filters.slot !== "all") {
       if (o.deliverySlot?.name !== filters.slot) return false;
     }
+    if (!isKitchenBoardVisible(o)) return false;
     return true;
   });
+}
+
+function kitchenItemToAlertPayload(
+  item: KitchenOrderListItem,
+  branchId: string | null | undefined,
+  detail?: KitchenOrderDetail,
+): BranchOrderNewPayload {
+  const itemsSummary =
+    detail?.items?.map((line) => `${line.quantity}x ${line.foodNameSnapshot}`).join(", ") ||
+    `${item.itemsCount} items`;
+
+  return {
+    orderId: item.orderId,
+    orderNumber: item.orderNumber,
+    status: "pending",
+    occurredAt: item.orderCreatedAt,
+    branchId: branchId ?? "",
+    itemsSummary,
+    itemCount: item.itemsCount,
+    grandTotal: detail?.pricing?.grandTotal ?? 0,
+    paymentMethod: detail?.payment?.paymentMethod,
+    deliveryType: item.deliveryType,
+  };
+}
+
+/**
+ * Backup alert path when Socket.IO is offline — poll still refreshes the kitchen
+ * list every few seconds; new PENDING tickets trigger popup + ring.
+ */
+export function useKitchenPendingOrderAlerts(
+  items: KitchenOrderListItem[] | undefined,
+  branchId: string | null | undefined,
+  detailMap: Record<string, KitchenOrderDetail | undefined>,
+) {
+  const pollSeen = useRef<Set<string>>(new Set());
+  const bootstrapped = useRef(false);
+
+  useEffect(() => {
+    if (!items?.length) return;
+
+    if (!bootstrapped.current) {
+      for (const item of items) {
+        if (item.kitchenStatus === "PENDING") {
+          pollSeen.current.add(item.orderId);
+        }
+      }
+      bootstrapped.current = true;
+      return;
+    }
+
+    for (const item of items) {
+      if (item.kitchenStatus !== "PENDING") continue;
+      if (pollSeen.current.has(item.orderId)) continue;
+      pollSeen.current.add(item.orderId);
+
+      const payload = kitchenItemToAlertPayload(item, branchId, detailMap[item.orderId]);
+      if (branchId && payload.branchId && !branchIdsMatch(branchId, payload.branchId)) continue;
+
+      alertNewKitchenOrder(payload);
+    }
+  }, [items, branchId, detailMap]);
 }
