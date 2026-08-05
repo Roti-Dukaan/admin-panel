@@ -3,8 +3,7 @@
 import { useMemo, useState } from "react";
 import { AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useKitchenOrders, useKitchenDetailMap, useKitchenStageMutation, useKitchenRealtime, useKitchenPendingOrderAlerts, applyKitchenFilters } from "../hooks/useKitchen";
-import { useWorkspace } from "@/contexts/WorkspaceContext";
+import { useKitchenOrders, useKitchenDetailMap, useKitchenStageMutation, useKitchenRealtime, applyKitchenFilters } from "../hooks/useKitchen";
 import { usePrepClock, elapsedSeconds } from "../hooks/usePrepClock";
 import { KitchenStats, type KitchenStatsData } from "./KitchenStats";
 import { ProductionSummary, type ProductionItem } from "./ProductionSummary";
@@ -38,7 +37,6 @@ function ErrorState({ onRetry }: { onRetry: () => void }) {
 
 export function KitchenBoard() {
   const now = usePrepClock(true);
-  const { branchId: workspaceBranchId } = useWorkspace();
   const [search, setSearch] = useState("");
   const [deliveryKind, setDeliveryKind] = useState<DeliveryKind | "all">("all");
   const [payment, setPayment] = useState<PaymentFilter>("all");
@@ -54,7 +52,6 @@ export function KitchenBoard() {
   const orderIds = useMemo(() => (query.data?.items ?? []).map((i) => i.orderId), [query.data]);
   const detailMap = useKitchenDetailMap(orderIds);
   const mutation = useKitchenStageMutation();
-  useKitchenPendingOrderAlerts(query.data?.items, workspaceBranchId, detailMap);
   const realtime = useKitchenRealtime({
     onNewOrder: (payload) => {
       const minimal: KitchenOrderView = {
