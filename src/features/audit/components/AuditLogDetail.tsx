@@ -1,6 +1,7 @@
 "use client";
 
 import { format } from "date-fns";
+import { FNS_DATE_TIME_YEAR_SECONDS } from "@/lib/date";
 import { X, Copy, Check } from "lucide-react";
 import { useState } from "react";
 import type { AuditLog } from "../types/audit";
@@ -87,7 +88,7 @@ export function AuditLogDetail({ log, isOpen, onClose }: AuditLogDetailProps) {
             <div className="space-y-3 text-sm">
               <div className="flex justify-between items-center">
                 <span className="text-gray-500">Timestamp</span>
-                <span className="font-medium">{format(new Date(log.createdAt), "MMM d, yyyy HH:mm:ss")}</span>
+                <span className="font-medium">{format(new Date(log.createdAt), FNS_DATE_TIME_YEAR_SECONDS)}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-gray-500">Admin</span>

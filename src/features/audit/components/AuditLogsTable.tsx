@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { format } from "date-fns";
+import { FNS_DATE_TIME_SECONDS } from "@/lib/date";
 import { ChevronLeft, ChevronRight, Eye } from "lucide-react";
 import type { AuditLog } from "../types/audit";
 import { Button } from "@/components/ui/button";
@@ -79,7 +80,7 @@ export function AuditLogsTable({ logs, loading, page, totalPages, total, limit, 
             logs.map((log) => (
               <TableRow key={log.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => onSelectLog(log)}>
                 <TableCell className="text-sm text-gray-600">
-                  {format(new Date(log.createdAt), "MMM d, HH:mm:ss")}
+                  {format(new Date(log.createdAt), FNS_DATE_TIME_SECONDS)}
                 </TableCell>
                 <TableCell>
                   <div>

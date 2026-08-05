@@ -33,3 +33,10 @@ export function startOfMonthDateKey(): string {
   const today = todayDateKey();
   return `${today.slice(0, 7)}-01`;
 }
+
+/** date-fns format tokens — 12-hour clock with AM/PM */
+export const FNS_DATE_TIME = "MMM d, h:mm a";
+export const FNS_DATE_TIME_YEAR = "MMM d, yyyy h:mm a";
+export const FNS_DATE_TIME_SECONDS = "MMM d, h:mm:ss a";
+export const FNS_DATE_TIME_YEAR_SECONDS = "MMM d, yyyy h:mm:ss a";
+export const FNS_TIME = "h:mm a";

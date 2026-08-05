@@ -26,6 +26,7 @@ import {
   FolderOpen,
   Wheat,
   Ticket,
+  Mail,
 } from "lucide-react"
 import { useSidebar } from "./hooks/useSidebar"
 import { SidebarGroup } from "./SidebarGroup"
@@ -115,6 +116,7 @@ const MAIN_ADMIN_NAV_GROUPS: NavGroup[] = [
     roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'],
     items: [
       { label: "Homepage Banners", href: "/cms", icon: FolderOpen, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
+      { label: "Contact Messages", href: "/contact-messages", icon: Mail, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
     ],
   },
 ]
