@@ -48,11 +48,13 @@ export default function BannerEditPage({ params }: { params: { id: string } }) {
 
   const {
     editingBanner,
+    loading,
     saving,
     error,
     successMessage,
     createBanner,
     updateBanner,
+    loadBannerById,
     setEditingBanner,
     setActiveTab,
     clearMessages,
@@ -72,6 +74,16 @@ export default function BannerEditPage({ params }: { params: { id: string } }) {
   const [mobilePreview, setMobilePreview] = useState<string | null>(null);
   const [desktopWarning, setDesktopWarning] = useState<string | null>(null);
   const [mobileWarning, setMobileWarning] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isNew) {
+      if (!editingBanner || editingBanner.id !== id) {
+        void loadBannerById(id);
+      }
+    } else {
+      setEditingBanner(null);
+    }
+  }, [isNew, id, editingBanner, loadBannerById, setEditingBanner]);
 
   useEffect(() => {
     if (!isNew && editingBanner) {
@@ -183,7 +195,7 @@ export default function BannerEditPage({ params }: { params: { id: string } }) {
             </Link>
             <Button
               onClick={handleSubmit}
-              disabled={saving}
+              disabled={saving || loading}
               className="inline-flex items-center gap-2 rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-bold text-white hover:bg-gray-800 disabled:opacity-50"
             >
               {saving ? (

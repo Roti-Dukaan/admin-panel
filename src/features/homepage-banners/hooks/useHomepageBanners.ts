@@ -16,6 +16,7 @@ interface HomepageBannerState {
   statusFilter: 'all' | 'active' | 'inactive';
 
   loadBanners: (params?: { page?: number; limit?: number; isActive?: boolean; search?: string }) => Promise<void>;
+  loadBannerById: (id: string) => Promise<void>;
   createBanner: (formData: BannerFormData, desktopImage?: File | null, mobileImage?: File | null) => Promise<void>;
   updateBanner: (id: string, formData: BannerFormData, desktopImage?: File | null, mobileImage?: File | null) => Promise<void>;
   deleteBanner: (id: string) => Promise<void>;
@@ -54,6 +55,20 @@ export const useHomepageBannerStore = create<HomepageBannerState>((set, get) => 
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to load banners';
       set({ banners: [], total: 0, error: message, loading: false });
+    }
+  },
+
+  loadBannerById: async (id) => {
+    set({ loading: true, error: null });
+    try {
+      const res = await homepageBannerApi.getById(id);
+      set({
+        editingBanner: res?.data ?? null,
+        loading: false,
+      });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to load banner';
+      set({ editingBanner: null, error: message, loading: false });
     }
   },
 
