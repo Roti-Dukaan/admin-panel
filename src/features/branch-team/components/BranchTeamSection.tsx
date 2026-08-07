@@ -51,18 +51,29 @@ export function BranchTeamSection() {
     },
   })
 
+  const managers = managersQuery.data ?? []
+  const invitations = invitationsQuery.data ?? []
+  const isLoading = managersQuery.isLoading || invitationsQuery.isLoading
+
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault()
     if (!name.trim() || !email.trim()) {
       toast.error("Name and email are required")
       return
     }
-    inviteMutation.mutate({ name: name.trim(), email: normalizeEmail(email) })
-  }
 
-  const managers = managersQuery.data ?? []
-  const invitations = invitationsQuery.data ?? []
-  const isLoading = managersQuery.isLoading || invitationsQuery.isLoading
+    const normalizedEmail = normalizeEmail(email)
+    if (managers.some((manager) => manager.email.toLowerCase() === normalizedEmail)) {
+      toast.error("This manager is already on the team")
+      return
+    }
+    if (invitations.some((invitation) => invitation.email.toLowerCase() === normalizedEmail)) {
+      toast.error("An invitation has already been sent to this email")
+      return
+    }
+
+    inviteMutation.mutate({ name: name.trim(), email: normalizedEmail })
+  }
 
   return (
     <div className="space-y-6">

@@ -262,9 +262,14 @@ export function AdminTeamSection() {
 
 
 
-  const pendingInvitations = invitationsQuery.data?.items ?? [];
+  const pendingInvitations = useMemo(() => {
+    const memberEmails = new Set(users.map((user) => user.email.toLowerCase()));
+    return (invitationsQuery.data?.items ?? []).filter(
+      (invitation) => !memberEmails.has(invitation.email.toLowerCase()),
+    );
+  }, [invitationsQuery.data?.items, users]);
 
-  const pendingCount = invitationsQuery.data?.total ?? 0;
+  const pendingCount = pendingInvitations.length;
 
 
 

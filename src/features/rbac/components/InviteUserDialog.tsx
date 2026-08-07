@@ -79,10 +79,12 @@ export function InviteUserDialog({ open, onClose, onSuccess }: InviteUserDialogP
       return;
     }
 
+    const normalizedEmail = normalizeEmail(email);
+
     setSaving(true);
     try {
       await apiClient.post("/admin/invitations", {
-        email: normalizeEmail(email),
+        email: normalizedEmail,
         invitedName: name.trim(),
         role: selectedRole?.name?.toUpperCase().replace(/\s+/g, "_") || "BRANCH_MANAGER",
         branchId: isBranchRole ? branchId : undefined,
