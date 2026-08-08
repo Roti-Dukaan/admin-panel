@@ -71,7 +71,7 @@ function isSidebarRoute(pathname: string): boolean {
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-  const { isBranchManager, isAuthenticated } = useWorkspace()
+  const { isBranchManager } = useWorkspace()
   const showSidebar = isSidebarRoute(pathname)
   const needsAuth = showSidebar || isAuthGuardRoute(pathname)
   const [authReady, setAuthReady] = React.useState(false)
@@ -99,8 +99,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     children
   )
 
-  // Global alert layer for branch managers — stays mounted across page navigation
-  // and token refresh so socket listeners and poll backup are never torn down.
   if (isBranchManager && !isPublicRoute(pathname)) {
     return <BranchOrderAlertProvider>{page}</BranchOrderAlertProvider>
   }

@@ -20,13 +20,6 @@ const STATUS_COLORS: Record<string, string> = {
   REOPENED: "bg-red-100 text-red-700",
 };
 
-const PRIORITY_COLORS: Record<string, string> = {
-  LOW: "bg-gray-100 text-gray-600",
-  MEDIUM: "bg-blue-100 text-blue-700",
-  HIGH: "bg-orange-100 text-orange-700",
-  URGENT: "bg-red-100 text-red-700",
-};
-
 const STATUSES = ["OPEN", "IN_PROGRESS", "WAITING_FOR_BRANCH", "WAITING_FOR_CUSTOMER", "RESOLVED", "CLOSED"];
 
 export default function TicketDetailPage() {
@@ -102,15 +95,6 @@ export default function TicketDetailPage() {
     }
   };
 
-  const handlePriorityChange = async (priority: string) => {
-    try {
-      await supportApi.update(ticketId, { priority: priority as any });
-      await loadTicket();
-    } catch (err) {
-      console.error("Failed to update priority", err);
-    }
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50/50">
@@ -152,7 +136,6 @@ export default function TicketDetailPage() {
               <div className="flex items-center gap-2">
                 <h1 className="text-lg font-semibold text-gray-900">{ticket.ticketNumber}</h1>
                 <Badge className={`text-xs ${STATUS_COLORS[ticket.status]}`}>{ticket.status.replace(/_/g, " ")}</Badge>
-                <Badge className={`text-xs ${PRIORITY_COLORS[ticket.priority]}`}>{ticket.priority}</Badge>
               </div>
               <p className="text-sm text-gray-500">{ticket.subject}</p>
             </div>
@@ -361,16 +344,6 @@ export default function TicketDetailPage() {
                   className="mt-1 h-9 w-full rounded-lg border border-gray-200 bg-white px-2 text-sm"
                 >
                   {STATUSES.map((s) => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="text-xs font-medium text-gray-500">Priority</label>
-                <select
-                  value={ticket.priority}
-                  onChange={(e) => handlePriorityChange(e.target.value)}
-                  className="mt-1 h-9 w-full rounded-lg border border-gray-200 bg-white px-2 text-sm"
-                >
-                  {["LOW", "MEDIUM", "HIGH", "URGENT"].map((p) => <option key={p} value={p}>{p}</option>)}
                 </select>
               </div>
               <div className="border-t border-gray-100 pt-3">

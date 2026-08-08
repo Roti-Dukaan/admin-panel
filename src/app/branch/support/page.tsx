@@ -28,13 +28,6 @@ const STATUS_COLORS: Record<string, string> = {
   REOPENED: "bg-red-100 text-red-700",
 };
 
-const PRIORITY_COLORS: Record<string, string> = {
-  LOW: "bg-gray-100 text-gray-600",
-  MEDIUM: "bg-blue-100 text-blue-700",
-  HIGH: "bg-orange-100 text-orange-700",
-  URGENT: "bg-red-100 text-red-700",
-};
-
 export default function BranchSupportDashboardPage() {
   const [dashboard, setDashboard] = useState<SupportDashboard | null>(null);
   const [recentTickets, setRecentTickets] = useState<SupportTicket[]>([]);
@@ -81,12 +74,12 @@ export default function BranchSupportDashboardPage() {
       <Header title="Customer Support" subtitle="Support dashboard and ticket management" />
 
       <div className="p-6 space-y-6">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[
             { label: "Open Tickets", value: dashboard?.openTickets ?? 0, icon: MessageSquare, color: "text-blue-600 bg-blue-50" },
             { label: "In Progress", value: dashboard?.inProgressTickets ?? 0, icon: Clock, color: "text-yellow-600 bg-yellow-50" },
             { label: "Resolved Today", value: dashboard?.resolvedToday ?? 0, icon: CheckCircle2, color: "text-green-600 bg-green-50" },
-            { label: "High Priority", value: dashboard?.highPriorityTickets ?? 0, icon: AlertTriangle, color: "text-red-600 bg-red-50" },
+            { label: "Avg Resolution", value: `${dashboard?.avgResolutionTimeHours ?? 0}h`, icon: BarChart3, color: "text-purple-600 bg-purple-50" },
             { label: "Satisfaction", value: `${dashboard?.customerSatisfaction ?? 0}/5`, icon: Star, color: "text-orange-600 bg-orange-50" },
           ].map((kpi) => (
             <motion.div
@@ -215,7 +208,6 @@ export default function BranchSupportDashboardPage() {
                       <th className="pb-2 text-left font-medium text-gray-500">Ticket</th>
                       <th className="pb-2 text-left font-medium text-gray-500">Customer</th>
                       <th className="pb-2 text-left font-medium text-gray-500">Category</th>
-                      <th className="pb-2 text-left font-medium text-gray-500">Priority</th>
                       <th className="pb-2 text-left font-medium text-gray-500">Status</th>
                       <th className="pb-2 text-left font-medium text-gray-500">Created</th>
                     </tr>
@@ -235,11 +227,6 @@ export default function BranchSupportDashboardPage() {
                         <td className="py-2.5 text-gray-700">{ticket.customer?.name ?? "N/A"}</td>
                         <td className="py-2.5 text-gray-600 text-xs">{ticket.category.replace(/_/g, " ")}</td>
                         <td className="py-2.5">
-                          <Badge className={`text-xs ${PRIORITY_COLORS[ticket.priority]}`}>
-                            {ticket.priority}
-                          </Badge>
-                        </td>
-                        <td className="py-2.5">
                           <Badge className={`text-xs ${STATUS_COLORS[ticket.status]}`}>
                             {ticket.status.replace(/_/g, " ")}
                           </Badge>
@@ -251,7 +238,7 @@ export default function BranchSupportDashboardPage() {
                     ))}
                     {recentTickets.length === 0 && (
                       <tr>
-                        <td colSpan={6} className="py-8 text-center text-gray-400">
+                        <td colSpan={5} className="py-8 text-center text-gray-400">
                           No tickets yet
                         </td>
                       </tr>

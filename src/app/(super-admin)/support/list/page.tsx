@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { motion } from "motion/react";
 import { Header } from "@/components/layout/header";
-import { supportApi, type SupportTicket, type SupportQueryParams, type TicketStatus, type TicketPriority, type TicketCategory } from "@/lib/api/support.api";
+import { supportApi, type SupportTicket, type SupportQueryParams, type TicketStatus, type TicketCategory } from "@/lib/api/support.api";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,15 +20,7 @@ const STATUS_COLORS: Record<string, string> = {
   REOPENED: "bg-red-100 text-red-700",
 };
 
-const PRIORITY_COLORS: Record<string, string> = {
-  LOW: "bg-gray-100 text-gray-600",
-  MEDIUM: "bg-blue-100 text-blue-700",
-  HIGH: "bg-orange-100 text-orange-700",
-  URGENT: "bg-red-100 text-red-700",
-};
-
 const ALL_STATUSES: TicketStatus[] = ["OPEN", "IN_PROGRESS", "WAITING_FOR_BRANCH", "WAITING_FOR_CUSTOMER", "RESOLVED", "CLOSED", "REOPENED"];
-const ALL_PRIORITIES: TicketPriority[] = ["LOW", "MEDIUM", "HIGH", "URGENT"];
 const ALL_CATEGORIES: TicketCategory[] = ["ORDER_NOT_RECEIVED", "LATE_DELIVERY", "WRONG_ITEM", "MISSING_ITEM", "FOOD_QUALITY", "DAMAGED_PACKAGE", "PAYMENT", "REFUND", "SUBSCRIPTION", "ACCOUNT", "PROMOTION", "OTHER"];
 
 export default function SupportListPage() {
@@ -67,7 +59,7 @@ export default function SupportListPage() {
     setSearchInput("");
   };
 
-  const hasActiveFilters = filters.status || filters.priority || filters.category || filters.branchId || filters.assignedToId || filters.search || filters.dateFrom || filters.dateTo;
+  const hasActiveFilters = filters.status || filters.category || filters.branchId || filters.assignedToId || filters.search || filters.dateFrom || filters.dateTo;
 
   return (
     <div className="min-h-screen bg-gray-50/50">
@@ -129,17 +121,6 @@ export default function SupportListPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-gray-500">Priority</label>
-                  <select
-                    value={filters.priority || ""}
-                    onChange={(e) => setFilters((p) => ({ ...p, priority: (e.target.value || undefined) as TicketPriority, page: 1 }))}
-                    className="h-9 w-full rounded-lg border border-gray-200 bg-white px-2 text-sm"
-                  >
-                    <option value="">All</option>
-                    {ALL_PRIORITIES.map((p) => <option key={p} value={p}>{p}</option>)}
-                  </select>
-                </div>
-                <div>
                   <label className="mb-1 block text-xs font-medium text-gray-500">Category</label>
                   <select
                     value={filters.category || ""}
@@ -194,7 +175,6 @@ export default function SupportListPage() {
                     <th className="px-4 py-3 text-left font-medium text-gray-500">Customer</th>
                     <th className="px-4 py-3 text-left font-medium text-gray-500">Order</th>
                     <th className="px-4 py-3 text-left font-medium text-gray-500">Category</th>
-                    <th className="px-4 py-3 text-left font-medium text-gray-500">Priority</th>
                     <th className="px-4 py-3 text-left font-medium text-gray-500">Assigned</th>
                     <th className="px-4 py-3 text-left font-medium text-gray-500">Status</th>
                     <th className="px-4 py-3 text-left font-medium text-gray-500">Created</th>
@@ -204,7 +184,7 @@ export default function SupportListPage() {
                 <tbody className="divide-y divide-gray-50">
                   {loading ? (
                     <tr>
-                      <td colSpan={9} className="py-12 text-center">
+                      <td colSpan={8} className="py-12 text-center">
                         <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-orange-500 border-t-transparent" />
                       </td>
                     </tr>
@@ -232,9 +212,6 @@ export default function SupportListPage() {
                         </td>
                         <td className="px-4 py-3">
                           <span className="text-xs text-gray-600">{ticket.category.replace(/_/g, " ")}</span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <Badge className={`text-xs ${PRIORITY_COLORS[ticket.priority]}`}>{ticket.priority}</Badge>
                         </td>
                         <td className="px-4 py-3 text-xs text-gray-600">
                           {ticket.assignedTo?.name ?? "Unassigned"}

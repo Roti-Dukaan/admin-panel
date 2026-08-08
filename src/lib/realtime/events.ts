@@ -36,6 +36,12 @@ export const REALTIME_EVENTS = {
 
   // Dispatch batch auto-advancement from webhooks
   ADMIN_DISPATCH_BATCH_STATUS_UPDATED: "admin:dispatch_batch_status_updated",
+
+  // Customer support alerts
+  ADMIN_SUPPORT_TICKET_NEW: "admin:support_ticket_new",
+  BRANCH_SUPPORT_TICKET_NEW: "branch:support_ticket_new",
+  ADMIN_SUPPORT_TICKET_REPLIED: "admin:support_ticket_replied",
+  BRANCH_SUPPORT_TICKET_REPLIED: "branch:support_ticket_replied",
 } as const;
 
 export interface KitchenTicketCreatedPayload {
@@ -112,4 +118,26 @@ export interface DeliveryUpdatedPayload {
   actorType: "SYSTEM" | "ADMIN" | "CUSTOMER" | "PROVIDER";
   actorId: string;
   remarks?: string | null;
+}
+
+export interface AdminSupportTicketNewPayload {
+  ticketId: string;
+  ticketNumber: string;
+  customerId: string;
+  branchId: string | null;
+  category: string;
+  priority: string;
+  subject: string;
+  status: string;
+  occurredAt: string;
+}
+
+export interface AdminSupportTicketRepliedPayload {
+  ticketId: string;
+  ticketNumber: string;
+  customerId: string;
+  branchId: string | null;
+  subject: string;
+  messagePreview: string;
+  occurredAt: string;
 }
