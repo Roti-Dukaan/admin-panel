@@ -5,6 +5,62 @@ export function getGoogleMapsApiKey(): string | undefined {
   );
 }
 
+let mapsLoadPromise: Promise<void> | null = null;
+
+export function loadGoogleMaps(): Promise<void> {
+  if (typeof window === "undefined") {
+    return Promise.reject(new Error("Not in browser"));
+  }
+
+  if (window.google?.maps) {
+    return Promise.resolve();
+  }
+
+  if (mapsLoadPromise) {
+    return mapsLoadPromise;
+  }
+
+  const apiKey = getGoogleMapsApiKey();
+  if (!apiKey) {
+    return Promise.reject(new Error("Google Maps API key is not configured"));
+  }
+
+  mapsLoadPromise = new Promise((resolve, reject) => {
+    const existing = document.querySelector<HTMLScriptElement>(
+      'script[src*="maps.googleapis.com/maps/api/js"]',
+    );
+    if (existing) {
+      existing.addEventListener("load", () => resolve(), { once: true });
+      existing.addEventListener("error", () => reject(new Error("Failed to load Google Maps")), {
+        once: true,
+      });
+      if (window.google?.maps) {
+        resolve();
+      }
+      return;
+    }
+
+    const callbackName = `__googleMapsCallback${Date.now()}`;
+    (window as unknown as Record<string, () => void>)[callbackName] = () => {
+      delete (window as unknown as Record<string, unknown>)[callbackName];
+      resolve();
+    };
+
+    const script = document.createElement("script");
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&callback=${callbackName}`;
+    script.async = true;
+    script.defer = true;
+    script.onerror = () => {
+      delete (window as unknown as Record<string, unknown>)[callbackName];
+      mapsLoadPromise = null;
+      reject(new Error("Failed to load Google Maps script"));
+    };
+    document.head.appendChild(script);
+  });
+
+  return mapsLoadPromise;
+}
+
 function parseGeocoderComponents(
   components: google.maps.GeocoderAddressComponent[] = []
 ): { city: string; area: string } {

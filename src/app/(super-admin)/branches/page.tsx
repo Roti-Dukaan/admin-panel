@@ -28,7 +28,8 @@ import dynamic from "next/dynamic"
 import DeliverySettingsDialog from "./branches/DeliverySettingsDialog"
 import { toast } from "sonner"
 import { DEFAULT_MAP_CENTER, findOverlappingBranch, hasValidMapCoords, parseDeliveryPolygon, toMapCoords } from "@/lib/geo-utils"
-import { reverseGeocode } from "@/lib/google-maps"
+import { reverseGeocode, loadGoogleMaps } from "@/lib/google-maps"
+import { locationService } from "@/services/location.service"
 import { normalizeEmail } from "@/lib/utils/email"
 
 const DeliveryPolygonPicker = dynamic(
@@ -205,21 +206,12 @@ export default function BranchesPage() {
   }
 
   const handleUseCurrentLocation = async () => {
-    if (!navigator.geolocation) {
-      toast.error("Geolocation is not supported by your browser")
-      return
-    }
-
     setIsLocating(true)
     try {
-      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject, {
-          enableHighAccuracy: true,
-          timeout: 10000,
-        })
-      })
-
+      const position = await locationService.getCurrentPosition()
       const { latitude, longitude } = position.coords
+
+      await loadGoogleMaps()
 
       try {
         const place = await reverseGeocode(latitude, longitude)
@@ -246,7 +238,9 @@ export default function BranchesPage() {
     } catch (err: unknown) {
       const geoErr = err as GeolocationPositionError
       if (geoErr.code === 1) {
-        toast.error("Location permission denied. Please allow location access in your browser settings.")
+        toast.error(
+          "Location permission denied. Click the lock icon in your browser address bar and allow location access for this site.",
+        )
       } else if (geoErr.code === 2) {
         toast.error("Unable to detect your location. Please ensure GPS is enabled.")
       } else if (geoErr.code === 3) {

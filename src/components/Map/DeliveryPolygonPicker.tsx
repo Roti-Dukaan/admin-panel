@@ -3,8 +3,10 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useGoogleMapsScript } from '@/features/kitchen-location/hooks/useGoogleMapsScript';
 import { Button } from '@/components/ui/button';
-import { Loader2, Trash2, PenTool, Check } from 'lucide-react';
-import { DEFAULT_MAP_CENTER, toMapCoords } from '@/lib/geo-utils';
+import { Loader2, Trash2, PenTool, Check, MapPin } from 'lucide-react';
+import { DEFAULT_MAP_CENTER, distanceKm, formatDistance, toMapCoords } from '@/lib/geo-utils';
+import { locationService } from '@/services/location.service';
+import { toast } from 'sonner';
 
 export interface LatLngPoint {
   lat: number;
@@ -36,6 +38,11 @@ function pathToPoints(path: google.maps.MVCArray<google.maps.LatLng>): LatLngPoi
     points.push({ lat: ll.lat(), lng: ll.lng() });
   }
   return points;
+}
+
+interface DraftPointInfo {
+  point: LatLngPoint;
+  distanceKm: number;
 }
 
 function samePoints(a: LatLngPoint[], b: LatLngPoint[]): boolean {
@@ -71,6 +78,8 @@ export function DeliveryPolygonPicker({
 
   const [isDrawing, setIsDrawing] = useState(false);
   const [draftPointCount, setDraftPointCount] = useState(0);
+  const [draftPointsInfo, setDraftPointsInfo] = useState<DraftPointInfo[]>([]);
+  const [isAddingAtLocation, setIsAddingAtLocation] = useState(false);
   const [pointCount, setPointCount] = useState(value.length);
 
   const center = useMemo(
@@ -87,6 +96,7 @@ export function DeliveryPolygonPicker({
     draftPolylineRef.current = null;
     draftPointsRef.current = [];
     setDraftPointCount(0);
+    setDraftPointsInfo([]);
   }, []);
 
   const detachMapClickListener = useCallback(() => {
@@ -168,6 +178,8 @@ export function DeliveryPolygonPicker({
 
   const addDraftPoint = useCallback(
     (map: google.maps.Map, point: LatLngPoint) => {
+      const kitchen = { lat: latitude, lng: longitude };
+      const dist = distanceKm(kitchen, point);
       const nextPoints = [...draftPointsRef.current, point];
       draftPointsRef.current = nextPoints;
 
@@ -187,9 +199,43 @@ export function DeliveryPolygonPicker({
       draftMarkersRef.current.push(marker);
       updateDraftPolyline(map, nextPoints);
       setDraftPointCount(nextPoints.length);
+      setDraftPointsInfo((prev) => [...prev, { point, distanceKm: dist }]);
     },
-    [updateDraftPolyline],
+    [latitude, longitude, updateDraftPolyline],
   );
+
+  const addCornerAtCurrentLocation = useCallback(async () => {
+    const map = mapInstanceRef.current;
+    if (!map || disabled || !isDrawing) return;
+
+    setIsAddingAtLocation(true);
+    try {
+      const position = await locationService.getCurrentPosition();
+      const point = {
+        lat: position.coords.latitude,
+        lng: position.coords.longitude,
+      };
+      const dist = distanceKm({ lat: latitude, lng: longitude }, point);
+      addDraftPoint(map, point);
+      map.panTo(point);
+      toast.success(`Corner added — ${formatDistance(dist)} from kitchen`);
+    } catch (err: unknown) {
+      const geoErr = err as GeolocationPositionError;
+      if (geoErr.code === 1) {
+        toast.error(
+          'Location permission denied. Allow location access in your browser settings.',
+        );
+      } else if (geoErr.code === 2) {
+        toast.error('Unable to detect your location. Please ensure GPS is enabled.');
+      } else if (geoErr.code === 3) {
+        toast.error('Location request timed out. Please try again.');
+      } else {
+        toast.error('Failed to get current location');
+      }
+    } finally {
+      setIsAddingAtLocation(false);
+    }
+  }, [addDraftPoint, disabled, isDrawing, latitude, longitude]);
 
   const cancelDrawing = useCallback(() => {
     detachMapClickListener();
@@ -305,12 +351,25 @@ export function DeliveryPolygonPicker({
     <div className={`space-y-3 ${className}`}>
       <div className="relative overflow-hidden rounded-lg border border-gray-200" style={{ height: mapHeight }}>
         <div ref={mapRef} className="h-full w-full" />
-        {isDrawing && (
-          <div className="pointer-events-none absolute left-3 top-3 rounded-md bg-white/95 px-2 py-1 text-xs font-medium text-orange-700 shadow-sm">
-            Click the map to add corners ({draftPointCount} placed)
-          </div>
-        )}
       </div>
+
+      {isDrawing && draftPointsInfo.length > 0 && (
+        <div className="rounded-lg border border-orange-100 bg-orange-50 px-3 py-2">
+          <p className="text-xs font-medium text-orange-800 mb-1.5">
+            Corner distances from kitchen ({draftPointCount})
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {draftPointsInfo.map((info, index) => (
+              <span
+                key={`${info.point.lat}-${info.point.lng}-${index}`}
+                className="rounded-full border border-orange-200 bg-white px-2 py-0.5 text-xs font-medium text-orange-700"
+              >
+                C{index + 1}: {formatDistance(info.distanceKm)}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
 
       {!disabled && (
         <div className="flex flex-wrap items-center gap-2">
@@ -321,6 +380,20 @@ export function DeliveryPolygonPicker({
             </Button>
           ) : (
             <>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={addCornerAtCurrentLocation}
+                disabled={isAddingAtLocation}
+              >
+                {isAddingAtLocation ? (
+                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <MapPin className="mr-1.5 h-3.5 w-3.5" />
+                )}
+                Add at my location
+              </Button>
               <Button
                 type="button"
                 size="sm"
@@ -342,8 +415,8 @@ export function DeliveryPolygonPicker({
           <span className="text-xs text-gray-500">
             {isDrawing
               ? draftPointCount < 3
-                ? 'Add at least 3 points, then click Complete'
-                : `${draftPointCount} points ready — click Complete to close the polygon`
+                ? 'Click the map or use “Add at my location”, then Complete'
+                : `${draftPointCount} corners ready — click Complete to close the polygon`
               : pointCount >= 3
                 ? `${pointCount} points — drag vertices to edit`
                 : 'Draw a delivery zone with at least 3 corners'}
