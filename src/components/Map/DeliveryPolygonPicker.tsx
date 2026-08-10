@@ -79,6 +79,7 @@ export function DeliveryPolygonPicker({
   const [isDrawing, setIsDrawing] = useState(false);
   const [draftPointCount, setDraftPointCount] = useState(0);
   const [draftPointsInfo, setDraftPointsInfo] = useState<DraftPointInfo[]>([]);
+  const [vertexDistances, setVertexDistances] = useState<DraftPointInfo[]>([]);
   const [isAddingAtLocation, setIsAddingAtLocation] = useState(false);
   const [pointCount, setPointCount] = useState(value.length);
 
@@ -87,7 +88,18 @@ export function DeliveryPolygonPicker({
     [latitude, longitude],
   );
 
+  const kitchenRef = useRef(center);
+  kitchenRef.current = center;
+
   onChangeRef.current = onChange;
+
+  const buildVertexDistances = useCallback((points: LatLngPoint[]): DraftPointInfo[] => {
+    const kitchen = kitchenRef.current;
+    return points.map((point) => ({
+      point,
+      distanceKm: distanceKm(kitchen, point),
+    }));
+  }, []);
 
   const clearDraftOverlays = useCallback(() => {
     draftMarkersRef.current.forEach((marker) => marker.setMap(null));
@@ -109,8 +121,9 @@ export function DeliveryPolygonPicker({
   const syncPolygonPath = useCallback((polygon: google.maps.Polygon) => {
     const points = pathToPoints(polygon.getPath());
     setPointCount(points.length);
+    setVertexDistances(buildVertexDistances(points));
     onChangeRef.current(points);
-  }, []);
+  }, [buildVertexDistances]);
 
   const removePolygon = useCallback(() => {
     if (polygonRef.current) {
@@ -118,6 +131,7 @@ export function DeliveryPolygonPicker({
       polygonRef.current = null;
     }
     setPointCount(0);
+    setVertexDistances([]);
     onChangeRef.current([]);
   }, []);
 
@@ -321,11 +335,23 @@ export function DeliveryPolygonPicker({
   }, [center, isDrawing, removePolygon, renderPolygonFromValue, value]);
 
   useEffect(() => {
+    const polygon = polygonRef.current;
+    if (!polygon || isDrawing) return;
+
+    const points = pathToPoints(polygon.getPath());
+    if (points.length >= 3) {
+      setVertexDistances(buildVertexDistances(points));
+    }
+  }, [buildVertexDistances, isDrawing, latitude, longitude]);
+
+  useEffect(() => {
     return () => {
       detachMapClickListener();
       clearDraftOverlays();
     };
   }, [clearDraftOverlays, detachMapClickListener]);
+
+  const activeDistances = isDrawing ? draftPointsInfo : vertexDistances;
 
   if (error) {
     return (
@@ -353,13 +379,13 @@ export function DeliveryPolygonPicker({
         <div ref={mapRef} className="h-full w-full" />
       </div>
 
-      {isDrawing && draftPointsInfo.length > 0 && (
+      {activeDistances.length > 0 && (
         <div className="rounded-lg border border-orange-100 bg-orange-50 px-3 py-2">
           <p className="text-xs font-medium text-orange-800 mb-1.5">
-            Corner distances from kitchen ({draftPointCount})
+            Corner distances from kitchen ({activeDistances.length})
           </p>
           <div className="flex flex-wrap gap-1.5">
-            {draftPointsInfo.map((info, index) => (
+            {activeDistances.map((info, index) => (
               <span
                 key={`${info.point.lat}-${info.point.lng}-${index}`}
                 className="rounded-full border border-orange-200 bg-white px-2 py-0.5 text-xs font-medium text-orange-700"
