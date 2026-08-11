@@ -99,15 +99,15 @@ export function PaymentAnalytics() {
           bgColor="border-emerald-100 bg-emerald-50"
         />
         <StatCard
-          label="COD Orders"
-          value={data.codOrders || 0}
+          label="COD Collection"
+          value={data.cod || 0}
           icon={DollarSign}
           color="bg-blue-500"
           bgColor="border-blue-100 bg-blue-50"
         />
         <StatCard
-          label="Online Orders"
-          value={data.onlineOrders || 0}
+          label="Online Payments"
+          value={data.online || 0}
           icon={CreditCard}
           color="bg-indigo-500"
           bgColor="border-indigo-100 bg-indigo-50"
