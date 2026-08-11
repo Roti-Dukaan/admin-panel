@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Volume2 } from "lucide-react";
@@ -65,7 +65,6 @@ import { useOrdersStore } from "../hooks/useOrders";
 import { useGlobalPendingOrderPoll } from "../hooks/useGlobalPendingOrderPoll";
 import { normalizeOrderStatus } from "../utils/status";
 import { NewOrderAlertModal } from "./NewOrderAlertModal";
-import { shouldEnableBranchOrderAlerts } from "@/lib/realtime/branch-order-alerts";
 
 /** Statuses where an order still counts as "new" — anything else auto-closes its alert. */
 const NEW_ORDER_STATUSES = new Set([
@@ -95,15 +94,13 @@ function ticketToAlertPayload(
 
 export function BranchOrderAlertProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const pathname = usePathname();
   const qc = useQueryClient();
   const { branchId: workspaceBranchId, isBranchManager } = useWorkspace();
   const isAuthenticated = useAdminAuthStore((s) => s.isAuthenticated);
   const accessToken = useAdminAuthStore((s) => s.accessToken);
   const userBranchId = useAdminAuthStore((s) => s.user?.branchId ?? s.branchId);
   const branchId = normalizeBranchId(workspaceBranchId ?? userBranchId);
-  const alertsActive = shouldEnableBranchOrderAlerts(pathname, { isBranchManager, isAuthenticated });
-  const missingBranchAssignment = alertsActive && isBranchManager && isAuthenticated && !branchId;
+  const missingBranchAssignment = isBranchManager && isAuthenticated && !branchId;
   // Newest alert first; older unhandled orders stay queued behind it.
   const [alerts, setAlerts] = useState<BranchOrderNewPayload[]>([]);
   /** Orders that must keep ringing until Start Preparing (survives dismiss). */
@@ -287,7 +284,7 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
 
   // Poll pending kitchen orders on every page — not only /branch/kitchen.
   useGlobalPendingOrderPoll(
-    alertsActive && isAuthenticated && !!accessToken,
+    isBranchManager && isAuthenticated && !!accessToken,
     branchId,
     (payload) => showAlertRef.current(payload, { forceAlert: true, broadcast: true }),
   );
@@ -305,29 +302,29 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
   }, [ensureRinging]);
 
   useEffect(() => {
-    if (!alertsActive || !isAuthenticated) {
+    if (!isBranchManager || !isAuthenticated) {
       stopOrderRing();
       setAlerts([]);
       setRingingOrderIds([]);
       setSoundBlocked(false);
     }
-  }, [alertsActive, isAuthenticated]);
+  }, [isBranchManager, isAuthenticated]);
 
   useEffect(() => {
-    if (!alertsActive || !isAuthenticated || !accessToken) return;
+    if (!isBranchManager || !isAuthenticated || !accessToken) return;
 
     preloadOrderAudio();
     unlockAudio();
     connectRealtime(accessToken);
-  }, [alertsActive, isAuthenticated, accessToken]);
+  }, [isBranchManager, isAuthenticated, accessToken]);
 
   useEffect(() => {
-    if (!alertsActive || !isAuthenticated || !accessToken) return;
+    if (!isBranchManager || !isAuthenticated || !accessToken) return;
     ensureRealtimeAuth(accessToken);
-  }, [alertsActive, isAuthenticated, accessToken]);
+  }, [isBranchManager, isAuthenticated, accessToken]);
 
   useEffect(() => {
-    if (!alertsActive || !isAuthenticated || !accessToken) return;
+    if (!isBranchManager || !isAuthenticated || !accessToken) return;
 
     let refreshTimer: ReturnType<typeof setTimeout> | null = null;
     const scheduleOrdersRefresh = () => {
@@ -432,7 +429,7 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
       offBroadcast();
       if (refreshTimer) clearTimeout(refreshTimer);
     };
-  }, [alertsActive, isAuthenticated, accessToken]);
+  }, [isBranchManager, isAuthenticated, accessToken]);
 
   useEffect(() => {
     if (ringingOrderIds.length === 0) return;

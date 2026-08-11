@@ -5,10 +5,8 @@ import { usePathname } from "next/navigation"
 import { SidebarProvider } from "@/components/layout/sidebar-provider"
 import { AdminAuthGuard } from "@/features/admin-auth/components/AdminAuthGuard"
 import { BranchOrderAlertProvider } from "@/features/orders/components/BranchOrderAlertProvider"
-import { useAdminAuthStore } from "@/features/admin-auth/store/admin-auth-store"
 import { useWorkspace } from "@/contexts/WorkspaceContext"
 import { hydrateAdminAuth } from "@/lib/auth/hydrate-admin-auth"
-import { shouldEnableBranchOrderAlerts } from "@/lib/realtime/branch-order-alerts"
 
 const SIDEBAR_ROUTES = [
   "/dashboard",
@@ -74,7 +72,6 @@ function isSidebarRoute(pathname: string): boolean {
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const { isBranchManager } = useWorkspace()
-  const isAuthenticated = useAdminAuthStore((s) => s.isAuthenticated)
   const showSidebar = isSidebarRoute(pathname)
   const needsAuth = showSidebar || isAuthGuardRoute(pathname)
   const [authReady, setAuthReady] = React.useState(false)
@@ -102,10 +99,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     children
   )
 
-  if (
-    shouldEnableBranchOrderAlerts(pathname, { isBranchManager, isAuthenticated }) &&
-    !isPublicRoute(pathname)
-  ) {
+  if (isBranchManager && !isPublicRoute(pathname)) {
     return <BranchOrderAlertProvider>{page}</BranchOrderAlertProvider>
   }
 
