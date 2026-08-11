@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Volume2 } from "lucide-react";
@@ -65,6 +65,7 @@ import { useOrdersStore } from "../hooks/useOrders";
 import { useGlobalPendingOrderPoll } from "../hooks/useGlobalPendingOrderPoll";
 import { normalizeOrderStatus } from "../utils/status";
 import { NewOrderAlertModal } from "./NewOrderAlertModal";
+import { shouldEnableBranchOrderAlerts } from "@/lib/realtime/branch-order-alerts";
 
 /** Statuses where an order still counts as "new" — anything else auto-closes its alert. */
 const NEW_ORDER_STATUSES = new Set([
@@ -94,13 +95,15 @@ function ticketToAlertPayload(
 
 export function BranchOrderAlertProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const pathname = usePathname();
   const qc = useQueryClient();
   const { branchId: workspaceBranchId, isBranchManager } = useWorkspace();
   const isAuthenticated = useAdminAuthStore((s) => s.isAuthenticated);
   const accessToken = useAdminAuthStore((s) => s.accessToken);
   const userBranchId = useAdminAuthStore((s) => s.user?.branchId ?? s.branchId);
   const branchId = normalizeBranchId(workspaceBranchId ?? userBranchId);
-  const missingBranchAssignment = isBranchManager && isAuthenticated && !branchId;
+  const alertsActive = shouldEnableBranchOrderAlerts(pathname, { isBranchManager, isAuthenticated });
+  const missingBranchAssignment = alertsActive && isBranchManager && isAuthenticated && !branchId;
   // Newest alert first; older unhandled orders stay queued behind it.
   const [alerts, setAlerts] = useState<BranchOrderNewPayload[]>([]);
   /** Orders that must keep ringing until Start Preparing (survives dismiss). */
@@ -284,7 +287,7 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
 
   // Poll pending kitchen orders on every page — not only /branch/kitchen.
   useGlobalPendingOrderPoll(
-    isBranchManager && isAuthenticated && !!accessToken,
+    alertsActive && isAuthenticated && !!accessToken,
     branchId,
     (payload) => showAlertRef.current(payload, { forceAlert: true, broadcast: true }),
   );
@@ -302,29 +305,29 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
   }, [ensureRinging]);
 
   useEffect(() => {
-    if (!isBranchManager || !isAuthenticated) {
+    if (!alertsActive || !isAuthenticated) {
       stopOrderRing();
       setAlerts([]);
       setRingingOrderIds([]);
       setSoundBlocked(false);
     }
-  }, [isBranchManager, isAuthenticated]);
+  }, [alertsActive, isAuthenticated]);
 
   useEffect(() => {
-    if (!isBranchManager || !isAuthenticated || !accessToken) return;
+    if (!alertsActive || !isAuthenticated || !accessToken) return;
 
     preloadOrderAudio();
     unlockAudio();
     connectRealtime(accessToken);
-  }, [isBranchManager, isAuthenticated, accessToken]);
+  }, [alertsActive, isAuthenticated, accessToken]);
 
   useEffect(() => {
-    if (!isBranchManager || !isAuthenticated || !accessToken) return;
+    if (!alertsActive || !isAuthenticated || !accessToken) return;
     ensureRealtimeAuth(accessToken);
-  }, [isBranchManager, isAuthenticated, accessToken]);
+  }, [alertsActive, isAuthenticated, accessToken]);
 
   useEffect(() => {
-    if (!isBranchManager || !isAuthenticated || !accessToken) return;
+    if (!alertsActive || !isAuthenticated || !accessToken) return;
 
     let refreshTimer: ReturnType<typeof setTimeout> | null = null;
     const scheduleOrdersRefresh = () => {
@@ -365,7 +368,6 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
 
       if (isScheduledBranchOrder(payload)) {
         placementSeen.current.add(payload.orderId);
-        return;
       }
 
       showAlertRef.current(payload);
@@ -414,7 +416,6 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
         scheduleOrdersRefresh();
         if (isScheduledBranchOrder(payload)) {
           placementSeen.current.add(payload.orderId);
-          return;
         }
         showAlertRef.current(payload, { broadcast: false });
       },
@@ -431,7 +432,7 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
       offBroadcast();
       if (refreshTimer) clearTimeout(refreshTimer);
     };
-  }, [isBranchManager, isAuthenticated, accessToken]);
+  }, [alertsActive, isAuthenticated, accessToken]);
 
   useEffect(() => {
     if (ringingOrderIds.length === 0) return;
@@ -524,7 +525,7 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-sm font-semibold text-gray-900">
-                {soundBlocked ? "Order alert is blocked" : "Enable order alert sound (works on localhost)"}
+                {soundBlocked ? "Order alert is blocked" : "Enable order alert sound"}
               </p>
               <p className="mt-0.5 text-xs text-gray-500">
                 {soundBlocked

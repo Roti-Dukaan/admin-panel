@@ -24,6 +24,7 @@ export function useGlobalPendingOrderPoll(
 
   const pollSeen = useRef<Set<string>>(new Set());
   const bootstrapped = useRef(false);
+  const sessionStartedAt = useRef<number | null>(null);
 
   const query = useQuery({
     queryKey: ["branch-manager", "global-pending-order-alerts", branchId],
@@ -44,14 +45,19 @@ export function useGlobalPendingOrderPoll(
     const items = query.data?.items;
     if (!items?.length) return;
 
+    if (sessionStartedAt.current === null) {
+      sessionStartedAt.current = Date.now();
+    }
+
     if (!bootstrapped.current) {
       for (const item of items) {
-        if (item.kitchenStatus === "PENDING") {
+        if (item.kitchenStatus !== "PENDING") continue;
+        const createdMs = new Date(item.orderCreatedAt).getTime();
+        if (createdMs < sessionStartedAt.current) {
           pollSeen.current.add(item.orderId);
         }
       }
       bootstrapped.current = true;
-      return;
     }
 
     for (const item of items) {

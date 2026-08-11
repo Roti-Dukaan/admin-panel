@@ -24,7 +24,7 @@ To deploy via Actions instead of Vercel Git integration, add Vercel secrets
 
 | Variable | Example (dev) |
 |----------|----------------|
-| `NEXT_PUBLIC_API_URL` | `https://backend-dev.rotidukaan.com` |
+| `NEXT_PUBLIC_API_URL` | Dev: `https://backend-dev.rotidukaan.com` · **Prod kitchen/admin:** `https://api.rotidukaan.com` |
 | `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | Your Maps JS key |
 | `NEXT_PUBLIC_GOOGLE_MAPS_KEY` | Same as above (alias) |
 
