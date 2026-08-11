@@ -30,3 +30,15 @@ export const STATUS_ACTION_LABELS: Record<string, string> = {
   "out-for-delivery": "Mark Out For Delivery",
   delivered: "Mark Delivered",
 }
+
+const NON_CANCELLABLE_STATUSES = new Set<OrderStatus>([
+  "delivered",
+  "cancelled",
+  "failed",
+  "refunded",
+])
+
+/** Whether admin/branch manager can cancel this order. */
+export function canCancelOrder(status: string): boolean {
+  return !NON_CANCELLABLE_STATUSES.has(normalizeOrderStatus(status))
+}

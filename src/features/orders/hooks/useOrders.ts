@@ -37,7 +37,7 @@ interface OrderStore {
   fetchOrders: () => Promise<void>;
   fetchStatistics: () => Promise<void>;
   updateOrderStatus: (orderId: string, status: OrderStatus) => Promise<void>;
-  cancelOrder: (orderId: string) => Promise<void>;
+  cancelOrder: (orderId: string, reason?: string) => Promise<void>;
   refreshAll: () => Promise<void>;
 }
 
@@ -169,16 +169,16 @@ export const useOrdersStore = create<OrderStore>((set, get) => ({
     }
   },
 
-  cancelOrder: async (orderId) => {
+  cancelOrder: async (orderId, reason = "Cancelled by admin") => {
     set({ updatingStatus: orderId });
     try {
-      await ordersApi.updateStatus(orderId, {
-        status: "CANCELLED",
-        remarks: "Cancelled by admin",
-      });
+      await ordersApi.cancel(orderId, reason);
       set((state) => ({
-        orders: state.orders.map((o) => o.id === orderId ? { ...o, status: "cancelled" } : o),
-        selectedOrder: state.selectedOrder?.id === orderId ? { ...state.selectedOrder, status: "cancelled" } : state.selectedOrder,
+        orders: state.orders.map((o) => (o.id === orderId ? { ...o, status: "cancelled" } : o)),
+        selectedOrder:
+          state.selectedOrder?.id === orderId
+            ? { ...state.selectedOrder, status: "cancelled" }
+            : state.selectedOrder,
         updatingStatus: null,
       }));
     } catch (error) {

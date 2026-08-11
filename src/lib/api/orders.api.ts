@@ -119,6 +119,14 @@ export const ordersApi = {
     return data.data;
   },
 
+  cancel: async (id: string, reason?: string) => {
+    const { data } = await apiClient.post<{ success: boolean; data: unknown }>(
+      `/admin/orders/${id}/cancel`,
+      { reason: reason ?? "Cancelled by admin" },
+    );
+    return data.data;
+  },
+
   getInvoice: async (id: string): Promise<InvoiceView> => {
     const { data } = await apiClient.get<{ success: boolean; data: InvoiceView }>(
       `/admin/orders/${id}/invoice`

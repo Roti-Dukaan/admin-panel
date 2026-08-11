@@ -5,6 +5,16 @@ import { Drawer, DrawerHeader, DrawerTitle, DrawerContent, DrawerFooter, DrawerC
 import { Button, buttonVariants } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { Separator } from "@/components/ui/separator"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import { OrderTimeline } from "./OrderTimeline"
 import { OrderItems } from "./OrderItems"
 import { CustomerCard } from "./CustomerCard"
@@ -19,6 +29,7 @@ import {
   NEXT_ORDER_STATUS,
   STATUS_ACTION_LABELS,
   normalizeOrderStatus,
+  canCancelOrder,
 } from "../utils/status"
 import { RefreshCw, ExternalLink, Truck } from "lucide-react"
 import { useQuery } from "@tanstack/react-query"
@@ -29,6 +40,8 @@ import { DeliveryTimeline } from "@/features/orders/delivery/DeliveryTimeline"
 
 export function OrderDrawer() {
   const { selectedOrder, drawerOpen, setDrawerOpen, setSelectedOrder, updateOrderStatus, cancelOrder, updatingStatus } = useOrdersStore()
+  const [showCancelDialog, setShowCancelDialog] = useState(false)
+  const [cancelReason, setCancelReason] = useState("Test order / cancelled by admin")
 
   const handleClose = () => {
     setDrawerOpen(false)
@@ -46,10 +59,12 @@ export function OrderDrawer() {
   }
 
   const handleCancel = async () => {
-    if (!selectedOrder) return
+    if (!selectedOrder || !cancelReason.trim()) return
     try {
-      await cancelOrder(selectedOrder.id)
+      await cancelOrder(selectedOrder.id, cancelReason.trim())
       toast.success("Order cancelled")
+      setShowCancelDialog(false)
+      handleClose()
     } catch {
       toast.error("Failed to cancel order")
     }
@@ -59,6 +74,7 @@ export function OrderDrawer() {
     ? normalizeOrderStatus(selectedOrder.status)
     : undefined
   const nextStatus = currentStatus ? NEXT_ORDER_STATUS[currentStatus] : undefined
+  const showCancel = currentStatus ? canCancelOrder(currentStatus) : false
 
   const { data: deliveryTracking, isLoading: deliveryLoading } = useQuery({
     queryKey: ["order-delivery", selectedOrder?.id],
@@ -151,10 +167,10 @@ export function OrderDrawer() {
                   {STATUS_ACTION_LABELS[nextStatus]}
                 </Button>
               )}
-              {selectedOrder.status !== "delivered" && selectedOrder.status !== "cancelled" && (
+              {showCancel && (
                 <Button
                   variant="destructive"
-                  onClick={handleCancel}
+                  onClick={() => setShowCancelDialog(true)}
                   disabled={updatingStatus === selectedOrder.id}
                 >
                   Cancel Order
@@ -164,6 +180,39 @@ export function OrderDrawer() {
           </DrawerFooter>
         </div>
       )}
+
+      <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Cancel order {selectedOrder?.orderNumber}</DialogTitle>
+            <DialogDescription>
+              This removes the order from the kitchen queue and marks it cancelled. This cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="order-cancel-reason">Reason</Label>
+            <Textarea
+              id="order-cancel-reason"
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value)}
+              placeholder="e.g. Test order, customer requested cancellation"
+              rows={3}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCancelDialog(false)} disabled={updatingStatus === selectedOrder?.id}>
+              Keep Order
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => void handleCancel()}
+              disabled={!cancelReason.trim() || updatingStatus === selectedOrder?.id}
+            >
+              {updatingStatus === selectedOrder?.id ? "Cancelling…" : "Confirm Cancel"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Drawer>
   )
 }

@@ -18,7 +18,9 @@ export function KitchenCard({
   now,
   onOpen,
   onAction,
+  onCancel,
   isUpdating,
+  isCancelling,
   isExiting,
 }: {
   order: KitchenOrderView;
@@ -26,7 +28,9 @@ export function KitchenCard({
   now: number;
   onOpen: () => void;
   onAction: (action: "preparing" | "ready") => void;
+  onCancel?: () => void;
   isUpdating: boolean;
+  isCancelling?: boolean;
   isExiting?: boolean;
 }) {
   const meta = STAGE_META[order.kitchenStatus];
@@ -190,6 +194,20 @@ export function KitchenCard({
             <CheckCircle2 className="h-4 w-4" />
             Ready For Pickup
           </div>
+        )}
+        {onCancel && (
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+            disabled={isUpdating || isCancelling}
+            onClick={(e) => {
+              e.stopPropagation();
+              onCancel();
+            }}
+          >
+            Cancel Order
+          </Button>
         )}
       </div>
     </div>

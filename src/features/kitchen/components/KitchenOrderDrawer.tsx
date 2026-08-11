@@ -18,7 +18,8 @@ import {
   IndianRupee,
 } from "lucide-react";
 import { DocumentQuickAction } from "@/features/documents";
-import { Drawer, DrawerHeader, DrawerTitle, DrawerContent, DrawerClose } from "@/components/ui/drawer";
+import { Drawer, DrawerHeader, DrawerTitle, DrawerContent, DrawerClose, DrawerFooter } from "@/components/ui/drawer";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -62,9 +63,13 @@ function DetailSkeleton() {
 export function KitchenOrderDrawer({
   order,
   onClose,
+  onCancel,
+  isCancelling,
 }: {
   order: KitchenOrderView | null;
   onClose: () => void;
+  onCancel?: () => void;
+  isCancelling?: boolean;
 }) {
   const open = !!order;
   const { data: detail, isLoading } = useKitchenOrderDetail(order?.orderId ?? null);
@@ -315,6 +320,20 @@ export function KitchenOrderDrawer({
           </div>
         )}
       </DrawerContent>
+
+      {onCancel && order && (
+        <DrawerFooter>
+          <Button
+            type="button"
+            variant="destructive"
+            className="w-full"
+            disabled={isCancelling}
+            onClick={onCancel}
+          >
+            {isCancelling ? "Cancelling…" : "Cancel Order"}
+          </Button>
+        </DrawerFooter>
+      )}
     </Drawer>
   );
 }

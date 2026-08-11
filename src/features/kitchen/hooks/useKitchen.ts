@@ -31,6 +31,7 @@ import {
   type BranchOrderNewPayload,
   type KitchenTicketCreatedPayload,
 } from "@/lib/realtime/events";
+import { ordersApi } from "@/lib/api/orders.api";
 import { resolveOrderAlert } from "@/lib/realtime/order-alert-actions";
 import { useAdminAuthStore } from "@/features/admin-auth/store/admin-auth-store";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
@@ -163,6 +164,25 @@ export function useKitchenStageMutation() {
           : "Order marked Ready for Pickup.",
       );
       qc.invalidateQueries({ queryKey: ["kitchen", "detail", data.orderId] });
+    },
+  });
+}
+
+/** Cancel an order from the kitchen board (removes it from the queue). */
+export function useKitchenCancelMutation() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ orderId, reason }: { orderId: string; reason?: string }) =>
+      ordersApi.cancel(orderId, reason),
+    onSuccess: (_data, variables) => {
+      resolveOrderAlert(variables.orderId);
+      qc.invalidateQueries({ queryKey: KITCHEN_QUERY_KEY });
+      qc.invalidateQueries({ queryKey: KITCHEN_DETAIL_QUERY_KEY });
+      toast.success("Order cancelled");
+    },
+    onError: () => {
+      toast.error("Failed to cancel order");
     },
   });
 }

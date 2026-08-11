@@ -70,7 +70,9 @@ export function KitchenColumn({
   detailMap,
   onOpen,
   onAction,
+  onCancel,
   updatingId,
+  cancellingId,
   isLoading,
 }: {
   stage: KitchenStage;
@@ -79,7 +81,9 @@ export function KitchenColumn({
   detailMap: Record<string, KitchenOrderDetail | undefined>;
   onOpen: (order: KitchenOrderView) => void;
   onAction: (orderId: string, action: "preparing" | "ready") => void;
+  onCancel: (order: KitchenOrderView) => void;
   updatingId: string | null;
+  cancellingId: string | null;
   isLoading: boolean;
 }) {
   const meta = STAGE_META[stage];
@@ -121,7 +125,9 @@ export function KitchenColumn({
               now={now}
               onOpen={() => onOpen(order)}
               onAction={(action) => onAction(order.orderId, action)}
+              onCancel={() => onCancel(order)}
               isUpdating={updatingId === order.orderId}
+              isCancelling={cancellingId === order.orderId}
               isExiting={exitingSet.has(order.orderId)}
             />
           ))
