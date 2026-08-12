@@ -19,6 +19,7 @@ import { compactTableCellClass, compactTableHeadClass } from "@/components/share
 import { toast } from "sonner";
 import { DeliveryStats } from "./DeliveryStats";
 import { DeliveryBranchFilter } from "./DeliveryBranchFilter";
+import { formatDeliverySlotLabel } from "@/lib/delivery-slot-display";
 import { cn } from "@/lib/utils";
 
 function customerName(delivery: Delivery): string {
@@ -33,7 +34,7 @@ function orderNumber(delivery: Delivery): string {
   return delivery.order?.orderNumber ?? delivery.orderId;
 }
 
-function formatDeliveryTime(delivery: Delivery): string {
+function getDeliveryProgressTime(delivery: Delivery): string | null {
   if (delivery.actualDeliveryAt) {
     return `✓ ${format(new Date(delivery.actualDeliveryAt), FNS_DATE_TIME)}`;
   }
@@ -43,7 +44,33 @@ function formatDeliveryTime(delivery: Delivery): string {
   if (delivery.estimatedPickupAt) {
     return `Pickup ${format(new Date(delivery.estimatedPickupAt), FNS_TIME)}`;
   }
-  return "—";
+  return null;
+}
+
+function formatScheduledSlot(delivery: Delivery): string | null {
+  const slot = delivery.order?.deliverySlot;
+  if (!slot) return null;
+  const window = formatDeliverySlotLabel(slot.startTime, slot.endTime);
+  return slot.name ? `${slot.name} (${window})` : window;
+}
+
+function DeliveryTimeCell({ delivery }: { delivery: Delivery }) {
+  const isScheduled = delivery.deliveryType === "SCHEDULED" || !!delivery.order?.deliverySlot;
+  const scheduledLabel = isScheduled ? formatScheduledSlot(delivery) : null;
+  const progressTime = getDeliveryProgressTime(delivery);
+
+  if (!scheduledLabel && !progressTime) {
+    return <span className="text-gray-400">—</span>;
+  }
+
+  return (
+    <div className="space-y-0.5">
+      {scheduledLabel && (
+        <p className="text-xs font-medium text-sky-700">{scheduledLabel}</p>
+      )}
+      {progressTime && <p className="text-xs text-gray-600">{progressTime}</p>}
+    </div>
+  );
 }
 
 const compactInputClass = "h-9 text-sm";
@@ -304,7 +331,7 @@ export function DeliveryListPage({
                 <TableHead className={compactTableHeadClass}>Customer</TableHead>
                 <TableHead className={cn(compactTableHeadClass, "w-28")}>Provider</TableHead>
                 <TableHead className={cn(compactTableHeadClass, "w-36")}>Status</TableHead>
-                <TableHead className={cn(compactTableHeadClass, "w-28")}>Time</TableHead>
+                <TableHead className={cn(compactTableHeadClass, "w-36")}>Time</TableHead>
                 <TableHead className={cn(compactTableHeadClass, "w-24")}>Rider</TableHead>
                 <TableHead className={cn(compactTableHeadClass, "w-14 text-right")} />
               </TableRow>
@@ -357,8 +384,8 @@ export function DeliveryListPage({
                     <TableCell className={compactTableCellClass}>
                       <DeliveryStatusBadge status={getStatusFromRow(delivery)} size="sm" />
                     </TableCell>
-                    <TableCell className={cn(compactTableCellClass, "whitespace-nowrap text-gray-600")}>
-                      {formatDeliveryTime(delivery)}
+                    <TableCell className={cn(compactTableCellClass, "whitespace-nowrap")}>
+                      <DeliveryTimeCell delivery={delivery} />
                     </TableCell>
                     <TableCell className={cn(compactTableCellClass, "truncate")}>
                       {delivery.riderName ? (
