@@ -18,13 +18,16 @@ import { Header } from "@/components/layout/header";
 import { PlansTable } from "@/features/subscription-plans/components/PlansTable";
 import { PlanEditor } from "@/features/subscription-plans/components/PlanEditor";
 import { DeleteConfirmation } from "@/features/subscription-plans/components/DeleteConfirmation";
+import { PackageEditor } from "@/features/subscription-packages/components/PackageEditor";
+import { packagesApi } from "@/features/subscription-packages/services/packages.api";
+import type { SubscriptionPackage } from "@/features/subscription-packages/types/subscription-package";
 
 const statCards = [
-  { key: "total", label: "Total Plans", icon: CreditCard, color: "text-blue-600", bg: "bg-blue-50" },
-  { key: "active", label: "Active Plans", icon: CheckCircle, color: "text-emerald-600", bg: "bg-emerald-50" },
-  { key: "inactive", label: "Inactive Plans", icon: CircleOff, color: "text-amber-600", bg: "bg-amber-50" },
-  { key: "weekly", label: "Weekly Plans", icon: CalendarDays, color: "text-orange-600", bg: "bg-orange-50" },
-  { key: "monthly", label: "Monthly Plans", icon: CalendarRange, color: "text-rose-600", bg: "bg-rose-50" },
+  { key: "total", label: "Total Packages", icon: CreditCard, color: "text-blue-600", bg: "bg-blue-50" },
+  { key: "active", label: "Active Packages", icon: CheckCircle, color: "text-emerald-600", bg: "bg-emerald-50" },
+  { key: "inactive", label: "Inactive Packages", icon: CircleOff, color: "text-amber-600", bg: "bg-amber-50" },
+  { key: "weekly", label: "Weekly", icon: CalendarDays, color: "text-orange-600", bg: "bg-orange-50" },
+  { key: "monthly", label: "Monthly", icon: CalendarRange, color: "text-rose-600", bg: "bg-rose-50" },
 ] as const;
 
 export default function SubscriptionPlansPage() {
@@ -45,17 +48,37 @@ export default function SubscriptionPlansPage() {
   const setSearchQuery = useSubscriptionPlanStore((s) => s.setSearchQuery);
   const statusFilter = useSubscriptionPlanStore((s) => s.statusFilter);
   const setStatusFilter = useSubscriptionPlanStore((s) => s.setStatusFilter);
-  const openCreateEditor = useSubscriptionPlanStore((s) => s.openCreateEditor);
+
+  const [packageEditorOpen, setPackageEditorOpen] = useState(false);
+  const [packageEditorMode, setPackageEditorMode] = useState<"create" | "edit" | "view">("create");
+  const [selectedPackage, setSelectedPackage] = useState<SubscriptionPackage | null>(null);
 
   useEffect(() => {
     loadPlans();
   }, [loadPlans]);
 
+  const openCreatePackage = () => {
+    setSelectedPackage(null);
+    setPackageEditorMode("create");
+    setPackageEditorOpen(true);
+  };
+
+  const openEditPackage = async (planId: string) => {
+    try {
+      const pkg = await packagesApi.getById(planId);
+      setSelectedPackage(pkg);
+      setPackageEditorMode("edit");
+      setPackageEditorOpen(true);
+    } catch {
+      // Packages without categories can still use legacy plan editor via table actions
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50/50">
       <Header
-        title="Subscription Plans"
-        subtitle="Create and manage recurring meal plans."
+        title="Subscription Packages"
+        subtitle="Create dynamic packages with category-level pricing. No package base price — customers select categories."
         actions={
           <>
             <button className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
@@ -73,11 +96,11 @@ export default function SubscriptionPlansPage() {
               Refresh
             </button>
             <button
-              onClick={openCreateEditor}
+              onClick={openCreatePackage}
               className="inline-flex items-center gap-2 rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-bold text-white hover:bg-gray-800 transition-colors"
             >
               <Plus className="h-4 w-4" />
-              Create Plan
+              Create Package
             </button>
           </>
         }
@@ -122,7 +145,7 @@ export default function SubscriptionPlansPage() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search plans..."
+                placeholder="Search packages..."
                 className="h-10 w-full rounded-xl border border-gray-200 bg-white pl-9 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-300"
               />
             </div>
@@ -152,10 +175,17 @@ export default function SubscriptionPlansPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.2 }}
         >
-          <PlansTable />
+          <PlansTable onEditPackage={openEditPackage} />
         </motion.div>
       </div>
 
+      <PackageEditor
+        open={packageEditorOpen}
+        mode={packageEditorMode}
+        selected={selectedPackage}
+        onClose={() => setPackageEditorOpen(false)}
+        onSaved={() => loadPlans()}
+      />
       <PlanEditor />
       <DeleteConfirmation />
     </div>

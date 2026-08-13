@@ -5,11 +5,11 @@ import { Plus, Loader2, Link2 } from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { SubscriptionMenuTable } from "@/features/subscription-menu/components/SubscriptionMenuTable";
 import { SubscriptionMenuDrawer } from "@/features/subscription-menu/components/SubscriptionMenuDrawer";
+import { MenuCategoryManager } from "@/features/subscription-menu/components/MenuCategoryManager";
 import { useSubscriptionMenuStore } from "@/features/subscription-menu/hooks/useSubscriptionMenu";
 import { useSubscriptionPlanStore } from "@/features/subscription-plans/hooks/useSubscriptionPlans";
 import { subscriptionMenuApi } from "@/features/subscription-menu/services/subscription-menu.api";
 import { toast } from "sonner";
-import { ROTI_TYPE_LABELS } from "@/features/subscription-menu/types/subscription-menu";
 
 export default function SubscriptionMenuPage() {
   const loadItems = useSubscriptionMenuStore((s) => s.loadItems);
@@ -66,23 +66,25 @@ export default function SubscriptionMenuPage() {
     <div className="min-h-screen bg-gray-50/50">
       <Header
         title="Subscription Menu"
-        subtitle="Manage roti catalogue for subscription plans — separate from one-time order menu."
+        subtitle="Manage subscription menu items by category — separate from one-time order menu."
         actions={
           <button
             onClick={openAddDrawer}
             className="inline-flex items-center gap-2 rounded-xl bg-gray-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-gray-800"
           >
             <Plus className="h-4 w-4" />
-            Add Roti
+            Add Item
           </button>
         }
       />
 
       <div className="space-y-6 p-6">
+        <MenuCategoryManager />
+
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
           <Stat label="Total Items" value={items.length} />
           <Stat label="Active" value={activeCount} />
-          <Stat label="Roti Types" value={new Set(items.map((i) => i.rotiType)).size} />
+          <Stat label="Categories" value={new Set(items.map((i) => i.categoryDefinitionId ?? i.category)).size} />
           <Stat label="Plans" value={plans.length} />
         </div>
 
@@ -127,7 +129,7 @@ export default function SubscriptionMenuPage() {
                         : "border-gray-200 bg-white text-gray-600 hover:border-orange-300"
                     }`}
                   >
-                    {ROTI_TYPE_LABELS[item.rotiType]} — {item.name}
+                    {item.categoryDefinition?.name ?? item.category} — {item.name}
                   </button>
                 );
               })}

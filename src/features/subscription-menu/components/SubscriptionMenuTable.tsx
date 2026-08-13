@@ -13,7 +13,7 @@ export function SubscriptionMenuTable({ items }: { items: SubscriptionMenuItem[]
   if (items.length === 0) {
     return (
       <div className="rounded-xl border border-dashed p-12 text-center text-sm text-gray-500">
-        No subscription menu items yet. Add Jowar, Ragi, or Wheat rotis to get started.
+        No subscription menu items yet. Add your first item to get started.
       </div>
     );
   }
@@ -24,6 +24,7 @@ export function SubscriptionMenuTable({ items }: { items: SubscriptionMenuItem[]
         <thead className="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">
           <tr>
             <th className="px-4 py-3">Name</th>
+            <th className="px-4 py-3">Category</th>
             <th className="px-4 py-3">Roti Type</th>
             <th className="px-4 py-3">Kitchen Label</th>
             <th className="px-4 py-3">Default Qty</th>
@@ -35,7 +36,12 @@ export function SubscriptionMenuTable({ items }: { items: SubscriptionMenuItem[]
           {items.map((item) => (
             <tr key={item.id} className="border-t border-gray-100 hover:bg-gray-50/60">
               <td className="px-4 py-3 font-medium text-gray-900">{item.name}</td>
-              <td className="px-4 py-3">{ROTI_TYPE_LABELS[item.rotiType]}</td>
+              <td className="px-4 py-3 text-gray-600">
+                {item.categoryDefinition?.name ?? item.category}
+              </td>
+              <td className="px-4 py-3">
+                {item.categoryDefinition?.requiresRotiType ? ROTI_TYPE_LABELS[item.rotiType] : "—"}
+              </td>
               <td className="px-4 py-3 text-gray-600">{item.kitchenLabel ?? "—"}</td>
               <td className="px-4 py-3">{item.defaultQty}</td>
               <td className="px-4 py-3">

@@ -12,6 +12,13 @@ export interface SubscriptionMenuItem {
   name: string;
   slug: string;
   category: string;
+  categoryDefinitionId?: string | null;
+  categoryDefinition?: {
+    id: string;
+    name: string;
+    slug: string;
+    requiresRotiType: boolean;
+  } | null;
   rotiType: RotiType;
   description?: string | null;
   image?: string | null;
@@ -39,6 +46,7 @@ export interface SubscriptionMenuItemForm {
   name: string;
   slug?: string;
   category?: string;
+  categoryDefinitionId?: string;
   rotiType: RotiType;
   description?: string;
   image?: string;
@@ -52,7 +60,8 @@ export interface SubscriptionMenuItemForm {
 export const EMPTY_MENU_ITEM: SubscriptionMenuItemForm = {
   name: "",
   slug: "",
-  category: "roti",
+  category: "",
+  categoryDefinitionId: "",
   rotiType: "WHEAT",
   description: "",
   active: true,
