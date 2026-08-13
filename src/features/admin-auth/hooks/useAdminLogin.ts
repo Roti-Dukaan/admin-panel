@@ -11,12 +11,14 @@ import {
   resolvePrimaryRole,
   workspaceFromRoles,
 } from "../utils/role-utils"
+import { isDevOtpVisible } from "@/lib/env"
 
 export function useAdminLogin() {
   const router = useRouter()
   const [step, setStep] = React.useState<AuthStep>("email")
   const [email, setEmail] = React.useState("")
   const [otp, setOtp] = React.useState("")
+  const [devOtpHint, setDevOtpHint] = React.useState<string | null>(null)
   const [isLoading, setIsLoading] = React.useState(false)
   const [isResending, setIsResending] = React.useState(false)
   const [countdown, setCountdown] = React.useState(0)
@@ -39,8 +41,11 @@ export function useAdminLogin() {
       setStep("otp")
       setCountdown(30)
       toast.success("OTP sent to your email")
-      if (result?.otp && process.env.NODE_ENV !== "production") {
-        toast.info(`Demo OTP: ${result.otp}`, { duration: 8000 })
+      if (result?.otp && isDevOtpVisible()) {
+        setDevOtpHint(result.otp)
+        toast.info(`Dev OTP: ${result.otp}`, { duration: 15000 })
+      } else {
+        setDevOtpHint(null)
       }
     } catch (err: any) {
       const message = err?.response?.data?.message || "Failed to send OTP"
@@ -93,8 +98,9 @@ export function useAdminLogin() {
       const result = await adminAuthApi.sendOtp(email)
       setCountdown(30)
       toast.success("OTP resent successfully")
-      if (result?.otp && process.env.NODE_ENV !== "production") {
-        toast.info(`Demo OTP: ${result.otp}`, { duration: 8000 })
+      if (result?.otp && isDevOtpVisible()) {
+        setDevOtpHint(result.otp)
+        toast.info(`Dev OTP: ${result.otp}`, { duration: 15000 })
       }
     } catch (err: any) {
       const message = err?.response?.data?.message || "Failed to resend OTP"
@@ -107,12 +113,14 @@ export function useAdminLogin() {
   const handleBack = React.useCallback(() => {
     setStep("email")
     setOtp("")
+    setDevOtpHint(null)
   }, [])
 
   return {
     step,
     email,
     otp,
+    devOtpHint,
     isLoading,
     isResending,
     countdown,

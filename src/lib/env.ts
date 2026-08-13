@@ -14,3 +14,10 @@ function resolveApiBaseUrl(): string {
 }
 
 export const API_BASE_URL = resolveApiBaseUrl();
+
+/** Dev/staging admin login: show OTP returned by the API on the verify screen. */
+export function isDevOtpVisible(): boolean {
+  if (process.env.NEXT_PUBLIC_SHOW_DEV_OTP === 'true') return true;
+  const api = API_BASE_URL.toLowerCase();
+  return api.includes('localhost') || api.includes('127.0.0.1') || api.includes('backend-dev');
+}

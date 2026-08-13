@@ -15,6 +15,7 @@ interface OtpStepProps {
   isResending: boolean
   countdown: number
   email: string
+  devOtpHint?: string | null
 }
 
 export function OtpStep({
@@ -27,6 +28,7 @@ export function OtpStep({
   isResending,
   countdown,
   email,
+  devOtpHint,
 }: OtpStepProps) {
   const inputRefs = React.useRef<(HTMLInputElement | null)[]>([])
 
@@ -88,6 +90,17 @@ export function OtpStep({
       </div>
 
       <div className="space-y-5">
+        {devOtpHint ? (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-center">
+            <p className="text-xs font-medium uppercase tracking-wide text-amber-700">
+              Dev login OTP
+            </p>
+            <p className="mt-1 font-mono text-2xl font-bold tracking-[0.35em] text-amber-900">
+              {devOtpHint}
+            </p>
+          </div>
+        ) : null}
+
         <div className="flex justify-between gap-2">
           {Array.from({ length: 6 }).map((_, i) => (
             <input

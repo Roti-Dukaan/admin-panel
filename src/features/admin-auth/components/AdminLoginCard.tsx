@@ -21,6 +21,7 @@ export function AdminLoginCard() {
     handleVerifyOtp,
     handleResendOtp,
     handleBack,
+    devOtpHint,
   } = useAdminLogin()
 
   return (
@@ -61,6 +62,7 @@ export function AdminLoginCard() {
             isResending={isResending}
             countdown={countdown}
             email={email}
+            devOtpHint={devOtpHint}
           />
         )}
       </AnimatePresence>
