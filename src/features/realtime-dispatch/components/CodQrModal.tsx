@@ -13,6 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { inHouseRiderApi, type InHouseCodStop } from "@/features/realtime-dispatch/services/in-house-cod.api";
+import { CodQrImage } from "@/features/realtime-dispatch/components/CodQrImage";
 
 type CodQrModalProps = {
   stop: InHouseCodStop;
@@ -32,7 +33,7 @@ export function CodQrModal({ stop, open, onClose, onPaid }: CodQrModalProps) {
   const statusQuery = useQuery({
     queryKey: ["cod-qr-status", stop.orderId],
     queryFn: () => inHouseRiderApi.getCodQrStatus(stop.orderId),
-    enabled: open,
+    enabled: open && (qrMutation.isSuccess || !!qrMutation.data),
     refetchInterval: (query) =>
       query.state.data?.status === "qr_paid" ? false : 5000,
   });
@@ -87,11 +88,11 @@ export function CodQrModal({ stop, open, onClose, onPaid }: CodQrModalProps) {
               <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
             </div>
           ) : qr?.qrImageUrl ? (
-            <img
-              src={qr.qrImageUrl}
-              alt="Scan to pay"
-              className="mx-auto h-64 w-64 rounded-xl border bg-white p-2"
-            />
+            <CodQrImage src={qr.qrImageUrl} size={280} />
+          ) : qrMutation.isError ? (
+            <p className="text-sm text-red-600">
+              {(qrMutation.error as Error)?.message || "Failed to create QR. Check Razorpay config and retry."}
+            </p>
           ) : (
             <p className="text-sm text-red-600">QR not available</p>
           )}
