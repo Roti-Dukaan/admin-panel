@@ -87,8 +87,8 @@ export function CodQrModal({ stop, open, onClose, onPaid }: CodQrModalProps) {
             <div className="flex justify-center py-10">
               <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
             </div>
-          ) : qr?.qrImageUrl ? (
-            <CodQrImage src={qr.qrImageUrl} size={280} />
+          ) : qr?.qrImageContent || qr?.qrImageUrl ? (
+            <CodQrImage content={qr.qrImageContent} fallbackSrc={qr.qrImageUrl} size={280} />
           ) : qrMutation.isError ? (
             <p className="text-sm text-red-600">
               {(qrMutation.error as Error)?.message || "Failed to create QR. Check Razorpay config and retry."}

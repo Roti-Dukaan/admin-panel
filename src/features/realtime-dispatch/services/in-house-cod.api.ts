@@ -59,6 +59,7 @@ export type InHouseCodStop = {
   codCollectionMethod?: "CASH" | "RAZORPAY_QR" | null;
   razorpayQrId?: string | null;
   qrImageUrl?: string | null;
+  qrImageContent?: string | null;
   qrExpiresAt?: string | null;
   codPaymentVerifiedAt?: string | null;
 };
