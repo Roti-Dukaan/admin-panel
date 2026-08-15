@@ -4,7 +4,16 @@ function unwrap<T>(promise: Promise<{ data: { success: boolean; data: T } }>): P
   return promise.then((res) => res.data.data);
 }
 
-export type CodCollectionStatus = "PENDING" | "COLLECTED" | "MISMATCH" | "NOT_COLLECTED";
+export type CodCollectionStatus =
+  | "PENDING"
+  | "QR_CREATED"
+  | "PAYMENT_PENDING"
+  | "QR_PAID"
+  | "CASH_COLLECTED"
+  | "COLLECTED"
+  | "MISMATCH"
+  | "NOT_COLLECTED"
+  | "FAILED";
 export type CodHandoverStatus = "PENDING" | "SUBMITTED" | "RECEIVED" | "RECONCILED";
 export type RiderWorkflowStatus =
   | "assigned"
@@ -47,6 +56,11 @@ export type InHouseCodStop = {
   requiresCodCollection: boolean;
   assigneeName?: string | null;
   codCollectionNote: string | null;
+  codCollectionMethod?: "CASH" | "RAZORPAY_QR" | null;
+  razorpayQrId?: string | null;
+  qrImageUrl?: string | null;
+  qrExpiresAt?: string | null;
+  codPaymentVerifiedAt?: string | null;
 };
 
 export type CodRiderRollup = {
@@ -161,4 +175,16 @@ export const inHouseRiderApi = {
 
   failed: (deliveryId: string, body: { failureReason: string; remarks?: string }) =>
     unwrap(apiClient.patch(`/delivery-boy/realtime/delivery/${deliveryId}/failed`, body)),
+
+  createCodQr: (orderId: string) =>
+    unwrap(apiClient.post(`/delivery-boy/realtime/orders/${orderId}/cod/qr`)),
+
+  getCodQrStatus: (orderId: string) =>
+    unwrap(apiClient.get(`/delivery-boy/realtime/orders/${orderId}/cod/qr/status`)),
+
+  closeCodQr: (orderId: string) =>
+    unwrap(apiClient.post(`/delivery-boy/realtime/orders/${orderId}/cod/qr/close`)),
+
+  confirmCodCash: (orderId: string, body: { collectedAmount: number; note?: string }) =>
+    unwrap(apiClient.post(`/delivery-boy/realtime/orders/${orderId}/cod/cash`, body)),
 };

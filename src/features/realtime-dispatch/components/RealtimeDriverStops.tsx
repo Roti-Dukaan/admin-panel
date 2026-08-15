@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { inHouseRiderApi, type InHouseCodStop } from "@/features/realtime-dispatch/services/in-house-cod.api";
+import { CodQrModal } from "@/features/realtime-dispatch/components/CodQrModal";
 
 type Tab = "today" | "completed" | "failed";
 
@@ -41,6 +42,40 @@ const WORKFLOW_LABELS: Record<string, { label: string; className: string }> = {
   cash_reconciled: { label: "Reconciled", className: "bg-emerald-100 text-emerald-800" },
   failed: { label: "Failed", className: "bg-red-100 text-red-800" },
 };
+
+function CashCollectModal({
+  stop,
+  open,
+  onClose,
+  onConfirm,
+  busy,
+}: {
+  stop: InHouseCodStop;
+  open: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  busy: boolean;
+}) {
+  const expected = stop.codExpectedAmount ?? stop.grandTotal;
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Collect cash — {stop.orderNumber}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3 text-sm">
+          <p>Expected amount: <strong>₹{expected}</strong></p>
+          <p>Did you collect ₹{expected} in cash?</p>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={busy}>Cancel</Button>
+          <Button disabled={busy} onClick={onConfirm}>Confirm cash collected</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 function DeliverModal({
   stop,
@@ -124,6 +159,8 @@ function DeliverModal({
 export function RealtimeDriverStops({ tab, date }: { tab: Tab; date?: string }) {
   const queryClient = useQueryClient();
   const [deliverStop, setDeliverStop] = React.useState<InHouseCodStop | null>(null);
+  const [qrStop, setQrStop] = React.useState<InHouseCodStop | null>(null);
+  const [cashStop, setCashStop] = React.useState<InHouseCodStop | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["realtime-driver", tab, date],
@@ -163,6 +200,19 @@ export function RealtimeDriverStops({ tab, date }: { tab: Tab; date?: string }) 
     onError: (err: Error) => toast.error(err?.message || "Update failed"),
   });
 
+  const cashMutation = useMutation({
+    mutationFn: (stop: InHouseCodStop) =>
+      inHouseRiderApi.confirmCodCash(stop.orderId, {
+        collectedAmount: stop.codExpectedAmount ?? stop.grandTotal,
+      }),
+    onSuccess: () => {
+      invalidate();
+      setCashStop(null);
+      toast.success("Cash collection confirmed");
+    },
+    onError: (err: Error) => toast.error(err?.message || "Cash confirmation failed"),
+  });
+
   const stops = (data?.stops ?? []).filter((stop) =>
     tab === "today" ? TODAY_VISIBLE_WORKFLOWS.has(stop.riderWorkflowStatus) : true,
   );
@@ -170,7 +220,8 @@ export function RealtimeDriverStops({ tab, date }: { tab: Tab; date?: string }) 
     pickedUpMutation.isPending ||
     arrivedMutation.isPending ||
     deliveredMutation.isPending ||
-    failedMutation.isPending;
+    failedMutation.isPending ||
+    cashMutation.isPending;
 
   if (isLoading && stops.length === 0) {
     return (
@@ -286,6 +337,17 @@ export function RealtimeDriverStops({ tab, date }: { tab: Tab; date?: string }) 
                 </Button>
               )}
 
+              {stop.isCod && stop.requiresCodCollection && (
+                <>
+                  <Button size="sm" variant="secondary" disabled={busy} onClick={() => setQrStop(stop)}>
+                    Show QR
+                  </Button>
+                  <Button size="sm" variant="outline" disabled={busy} onClick={() => setCashStop(stop)}>
+                    Collect Cash
+                  </Button>
+                </>
+              )}
+
               {stop.canMarkDelivered && (
                 <Button
                   size="sm"
@@ -324,6 +386,28 @@ export function RealtimeDriverStops({ tab, date }: { tab: Tab; date?: string }) 
           onConfirm={(collectedAmount, note) =>
             deliveredMutation.mutate({ id: deliverStop.id, collectedAmount, note })
           }
+        />
+      )}
+
+      {qrStop && (
+        <CodQrModal
+          stop={qrStop}
+          open={!!qrStop}
+          onClose={() => setQrStop(null)}
+          onPaid={() => {
+            invalidate();
+            setQrStop(null);
+          }}
+        />
+      )}
+
+      {cashStop && (
+        <CashCollectModal
+          stop={cashStop}
+          open={!!cashStop}
+          onClose={() => setCashStop(null)}
+          busy={cashMutation.isPending}
+          onConfirm={() => cashMutation.mutate(cashStop)}
         />
       )}
     </section>
