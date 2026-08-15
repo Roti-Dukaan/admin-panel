@@ -1,19 +1,4 @@
-import axios from 'axios';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || '/api';
-
-const api = axios.create({
-  baseURL: API_BASE,
-  headers: { 'Content-Type': 'application/json' },
-});
-
-api.interceptors.request.use((config) => {
-  if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('admin_token');
-    if (token) config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
+import { apiClient } from '@/lib/api/http';
 
 export interface OrderEscalationSettings {
   orderEscalationEnabled: boolean;
@@ -28,31 +13,31 @@ export interface OrderEscalationSettings {
 
 export const orderEscalationApi = {
   async getSettings() {
-    return api.get<{ success: true; data: OrderEscalationSettings }>(
-      '/v1/admin/order-escalation/settings',
+    return apiClient.get<{ success: true; data: OrderEscalationSettings }>(
+      '/admin/order-escalation/settings',
     );
   },
 
   async updateSettings(data: Partial<OrderEscalationSettings>) {
-    return api.patch<{ success: true; data: OrderEscalationSettings }>(
-      '/v1/admin/order-escalation/settings',
+    return apiClient.patch<{ success: true; data: OrderEscalationSettings }>(
+      '/admin/order-escalation/settings',
       data,
     );
   },
 
   async acceptOrder(orderId: string) {
-    return api.patch(`/v1/branch/orders/${orderId}/accept`);
+    return apiClient.patch(`/branch/orders/${orderId}/accept`);
   },
 
   async rejectOrder(orderId: string, reason: string) {
-    return api.patch(`/v1/branch/orders/${orderId}/reject`, { reason });
+    return apiClient.patch(`/branch/orders/${orderId}/reject`, { reason });
   },
 
   async acknowledgeEscalation(orderId: string) {
-    return api.post(`/v1/branch/orders/${orderId}/acknowledge-escalation`);
+    return apiClient.post(`/branch/orders/${orderId}/acknowledge-escalation`);
   },
 
   async getEscalationHistory(orderId: string) {
-    return api.get(`/v1/branch/orders/${orderId}/escalation-history`);
+    return apiClient.get(`/branch/orders/${orderId}/escalation-history`);
   },
 };
