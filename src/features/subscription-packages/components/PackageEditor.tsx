@@ -21,6 +21,7 @@ type CategoryForm = {
   categoryPrice: number;
   includedQuantityPerDelivery: number;
   maximumQuantityPerDelivery: number;
+  allowMultipleSelections: boolean;
   menuItemIds: string[];
 };
 
@@ -41,6 +42,7 @@ const emptyCategory = (): CategoryForm => ({
   categoryPrice: 0,
   includedQuantityPerDelivery: 1,
   maximumQuantityPerDelivery: 1,
+  allowMultipleSelections: false,
   menuItemIds: [],
 });
 
@@ -91,6 +93,8 @@ function packageToForm(pkg: SubscriptionPackage, definitions: MenuCategoryDefini
       categoryPrice: Number(found.categoryPrice),
       includedQuantityPerDelivery: found.includedQuantityPerDelivery,
       maximumQuantityPerDelivery: found.maximumQuantityPerDelivery,
+      allowMultipleSelections:
+        found.maximumChoicesPerDelivery == null || found.maximumChoicesPerDelivery > 1,
       menuItemIds: (found.menuItems ?? []).map((m) => m.menuItemId),
     };
   }
@@ -105,6 +109,7 @@ function formToPayload(form: PackageForm): CreateSubscriptionPackageInput {
       active: c.enabled,
       includedQuantityPerDelivery: Number(c.includedQuantityPerDelivery) || 1,
       maximumQuantityPerDelivery: Number(c.maximumQuantityPerDelivery) || 1,
+      maximumChoicesPerDelivery: c.allowMultipleSelections ? 999 : 1,
       menuItemIds: c.enabled ? c.menuItemIds : [],
     }))
     .filter((c) => c.active);
@@ -431,6 +436,26 @@ export function PackageEditor({ open, mode, selected, onClose, onSaved }: Packag
                           />
                         </label>
                       </div>
+
+                      <label className="flex items-start gap-2 text-sm text-gray-700">
+                        <input
+                          type="checkbox"
+                          disabled={isViewOnly}
+                          checked={c.allowMultipleSelections}
+                          onChange={(e) =>
+                            updateCategory(def.id, { allowMultipleSelections: e.target.checked })
+                          }
+                          className="mt-0.5"
+                        />
+                        <span>
+                          <span className="block font-medium text-gray-800">
+                            Allow multiple item selections
+                          </span>
+                          <span className="block text-xs text-gray-500">
+                            Off by default — customers pick one item in this category unless enabled.
+                          </span>
+                        </span>
+                      </label>
 
                       <div>
                         <p className="mb-2 text-sm font-medium text-gray-700">Allowed menu items</p>
