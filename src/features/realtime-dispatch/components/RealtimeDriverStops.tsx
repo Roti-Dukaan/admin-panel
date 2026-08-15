@@ -30,6 +30,17 @@ const TODAY_VISIBLE_WORKFLOWS = new Set([
   "cash_handover_pending",
 ]);
 
+const COD_COLLECTED_STATUSES = new Set([
+  "COLLECTED",
+  "CASH_COLLECTED",
+  "QR_PAID",
+  "MISMATCH",
+]);
+
+function isCodCollected(status: InHouseCodStop["codCollectionStatus"]): boolean {
+  return !!status && COD_COLLECTED_STATUSES.has(status);
+}
+
 const WORKFLOW_LABELS: Record<string, { label: string; className: string }> = {
   assigned: { label: "Assigned", className: "bg-blue-100 text-blue-800" },
   picked_up: { label: "Picked up", className: "bg-indigo-100 text-indigo-800" },
@@ -249,7 +260,8 @@ export function RealtimeDriverStops({ tab, date }: { tab: Tab; date?: string }) 
 
       {stops.map((stop) => {
         const ws = WORKFLOW_LABELS[stop.riderWorkflowStatus] ?? WORKFLOW_LABELS.assigned;
-        const isCodHighlight = stop.isCod && stop.requiresCodCollection;
+        const isCodHighlight =
+          stop.isCod && !isCodCollected(stop.codCollectionStatus) && stop.requiresCodCollection;
 
         return (
           <article
@@ -269,10 +281,16 @@ export function RealtimeDriverStops({ tab, date }: { tab: Tab; date?: string }) 
                   {ws.label}
                 </span>
                 {stop.isCod && (
-                  <Badge variant={stop.codCollectionStatus === "COLLECTED" ? "default" : "destructive"} className="gap-1">
+                  <Badge
+                    variant={isCodCollected(stop.codCollectionStatus) ? "default" : "destructive"}
+                    className={cn(
+                      "gap-1",
+                      isCodCollected(stop.codCollectionStatus) && "bg-emerald-600 hover:bg-emerald-600",
+                    )}
+                  >
                     <IndianRupee className="h-3 w-3" />
-                    ₹{stop.codExpectedAmount ?? stop.grandTotal}
-                    {stop.codCollectionStatus === "COLLECTED" ? " · OK" : " · Collect"}
+                    ₹{stop.codCollectedAmount ?? stop.codExpectedAmount ?? stop.grandTotal}
+                    {isCodCollected(stop.codCollectionStatus) ? " · Collected" : " · Collect"}
                   </Badge>
                 )}
               </div>
@@ -305,8 +323,14 @@ export function RealtimeDriverStops({ tab, date }: { tab: Tab; date?: string }) 
               </p>
             )}
 
+            {stop.riderWorkflowStatus === "cash_collected" && (
+              <p className="mt-2 rounded-lg bg-emerald-50 px-3 py-2 text-xs text-emerald-800">
+                COD collected — tap <strong>Delivered</strong> to complete this order.
+              </p>
+            )}
+
             <div className="mt-3 flex flex-wrap gap-2">
-              {stop.customerPhone && (
+              {stop.customerPhone && stop.riderWorkflowStatus !== "cash_collected" && (
                 <Button size="sm" variant="outline" href={`tel:${stop.customerPhone}`}>
                   <Phone className="mr-1 h-4 w-4" />
                   Call
@@ -331,7 +355,7 @@ export function RealtimeDriverStops({ tab, date }: { tab: Tab; date?: string }) 
                 </Button>
               )}
 
-              {(stop.riderWorkflowStatus === "picked_up" || stop.dispatchStatus === "PICKED_UP") && (
+              {stop.riderWorkflowStatus === "picked_up" && (
                 <Button size="sm" disabled={busy} onClick={() => arrivedMutation.mutate(stop.id)}>
                   Arrived
                 </Button>
