@@ -3,7 +3,7 @@
 import * as React from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
-import { Loader2, Mail, UserPlus, Users, X } from "lucide-react"
+import { Loader2, Mail, Phone, UserPlus, Users, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -16,6 +16,7 @@ export function BranchTeamSection() {
   const queryClient = useQueryClient()
   const [name, setName] = React.useState("")
   const [email, setEmail] = React.useState("")
+  const [phone, setPhone] = React.useState("")
 
   const managersQuery = useQuery({
     queryKey: [...TEAM_QUERY_KEY, "managers"],
@@ -33,6 +34,7 @@ export function BranchTeamSection() {
       toast.success(data.message)
       setName("")
       setEmail("")
+      setPhone("")
       queryClient.invalidateQueries({ queryKey: TEAM_QUERY_KEY })
     },
     onError: (error: any) => {
@@ -57,8 +59,14 @@ export function BranchTeamSection() {
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault()
-    if (!name.trim() || !email.trim()) {
-      toast.error("Name and email are required")
+    if (!name.trim() || !email.trim() || !phone.trim()) {
+      toast.error("Name, email, and phone are required")
+      return
+    }
+
+    const normalizedPhone = phone.replace(/[\s()-]/g, "")
+    if (!/^(\+91)?[6-9]\d{9}$/.test(normalizedPhone) && !/^[6-9]\d{9}$/.test(normalizedPhone)) {
+      toast.error("Enter a valid 10-digit mobile number")
       return
     }
 
@@ -72,7 +80,7 @@ export function BranchTeamSection() {
       return
     }
 
-    inviteMutation.mutate({ name: name.trim(), email: normalizedEmail })
+    inviteMutation.mutate({ name: name.trim(), email: normalizedEmail, phone: phone.trim() })
   }
 
   return (
@@ -108,6 +116,12 @@ export function BranchTeamSection() {
                   <div>
                     <p className="font-medium text-gray-900">{manager.name || "Unnamed manager"}</p>
                     <p className="text-sm text-gray-500">{manager.email}</p>
+                    {manager.phone && (
+                      <p className="text-sm text-gray-500 flex items-center gap-1 mt-0.5">
+                        <Phone className="h-3.5 w-3.5" />
+                        {manager.phone}
+                      </p>
+                    )}
                   </div>
                   <span className="rounded-full bg-green-50 px-3 py-1 text-xs font-medium text-green-700">
                     Active
@@ -158,7 +172,7 @@ export function BranchTeamSection() {
           Add Manager
         </h3>
         <p className="text-sm text-gray-500 mb-5">
-          New managers receive BRANCH_MANAGER access for this branch and can log in with OTP.
+          New managers receive BRANCH_MANAGER access for this branch and can log in with OTP. Add a phone number so they receive escalation calls when orders are not accepted within 1 minute.
         </p>
 
         <form onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2">
@@ -180,6 +194,19 @@ export function BranchTeamSection() {
               onChange={(e) => setEmail(normalizeEmail(e.target.value))}
               placeholder="manager@example.com"
             />
+          </div>
+          <div className="space-y-2 sm:col-span-2">
+            <Label htmlFor="manager-phone">Phone Number</Label>
+            <Input
+              id="manager-phone"
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="9876543210"
+            />
+            <p className="text-xs text-gray-500">
+              Used for automated voice calls when a new order is not accepted in time.
+            </p>
           </div>
           <div className="sm:col-span-2">
             <Button

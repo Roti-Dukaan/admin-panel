@@ -4,6 +4,7 @@ export interface BranchManagerUser {
   id: string
   email: string
   name: string | null
+  phone: string | null
   createdAt: string
 }
 
@@ -19,6 +20,7 @@ export interface BranchManagerInvitation {
 export interface InviteBranchManagerPayload {
   name: string
   email: string
+  phone: string
 }
 
 export interface InviteBranchManagerResponse {
