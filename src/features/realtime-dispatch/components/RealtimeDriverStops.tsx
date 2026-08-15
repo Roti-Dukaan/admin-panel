@@ -167,8 +167,15 @@ function DeliverModal({
   );
 }
 
-export function RealtimeDriverStops({ tab, date }: { tab: Tab; date?: string }) {
+const LIVE_TABS: { id: Tab; label: string }[] = [
+  { id: "today", label: "Active" },
+  { id: "completed", label: "Past Orders" },
+  { id: "failed", label: "Failed" },
+];
+
+export function RealtimeDriverStops({ date }: { date?: string }) {
   const queryClient = useQueryClient();
+  const [tab, setTab] = React.useState<Tab>("today");
   const [deliverStop, setDeliverStop] = React.useState<InHouseCodStop | null>(null);
   const [qrStop, setQrStop] = React.useState<InHouseCodStop | null>(null);
   const [cashStop, setCashStop] = React.useState<InHouseCodStop | null>(null);
@@ -176,7 +183,7 @@ export function RealtimeDriverStops({ tab, date }: { tab: Tab; date?: string }) 
   const { data, isLoading } = useQuery({
     queryKey: ["realtime-driver", tab, date],
     queryFn: () => inHouseRiderApi.myDeliveries({ tab, date }),
-    refetchInterval: 30000,
+    refetchInterval: tab === "today" ? 30000 : false,
   });
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["realtime-driver"] });
@@ -234,29 +241,55 @@ export function RealtimeDriverStops({ tab, date }: { tab: Tab; date?: string }) 
     failedMutation.isPending ||
     cashMutation.isPending;
 
-  if (isLoading && stops.length === 0) {
-    return (
-      <div className="flex justify-center py-6">
-        <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
-      </div>
-    );
-  }
-
-  if (stops.length === 0) return null;
+  const emptyMessage =
+    tab === "today"
+      ? "No active realtime orders for this date."
+      : tab === "completed"
+        ? "No completed orders for this date."
+        : "No failed orders for this date.";
 
   return (
     <section className="mb-6 space-y-3">
+      <div className="flex gap-1 overflow-x-auto border-b border-gray-200">
+        {LIVE_TABS.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => setTab(item.id)}
+            className={cn(
+              "whitespace-nowrap px-3 py-2 text-xs font-medium",
+              tab === item.id ? "border-b-2 border-orange-500 text-orange-600" : "text-gray-500",
+            )}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
+
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-orange-700">
+        <h3 className="text-sm font-semibold text-orange-700">
           Realtime orders ({stops.length})
-        </h2>
-        {data?.counts.codPending ? (
+        </h3>
+        {tab === "today" && data?.counts.codPending ? (
           <Badge variant="destructive" className="gap-1">
             <IndianRupee className="h-3 w-3" />
             {data.counts.codPending} COD pending
           </Badge>
         ) : null}
       </div>
+
+      {isLoading && stops.length === 0 ? (
+        <div className="flex justify-center py-6">
+          <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+        </div>
+      ) : stops.length === 0 ? (
+        <p className="rounded-xl border border-dashed border-gray-200 bg-white p-4 text-center text-sm text-gray-500">
+          {emptyMessage}
+        </p>
+      ) : null}
+
+      {stops.length === 0 ? null : (
+        <>
 
       {stops.map((stop) => {
         const ws = WORKFLOW_LABELS[stop.riderWorkflowStatus] ?? WORKFLOW_LABELS.assigned;
@@ -330,7 +363,7 @@ export function RealtimeDriverStops({ tab, date }: { tab: Tab; date?: string }) 
             )}
 
             <div className="mt-3 flex flex-wrap gap-2">
-              {stop.customerPhone && stop.riderWorkflowStatus !== "cash_collected" && (
+              {stop.customerPhone && (tab === "today" || tab === "failed") && stop.riderWorkflowStatus !== "cash_collected" && (
                 <Button size="sm" variant="outline" href={`tel:${stop.customerPhone}`}>
                   <Phone className="mr-1 h-4 w-4" />
                   Call
@@ -349,19 +382,20 @@ export function RealtimeDriverStops({ tab, date }: { tab: Tab; date?: string }) 
                 </Button>
               )}
 
-              {stop.riderWorkflowStatus === "assigned" && (
+              {tab === "today" && stop.riderWorkflowStatus === "assigned" && (
                 <Button size="sm" disabled={busy} onClick={() => pickedUpMutation.mutate(stop.id)}>
                   Picked up
                 </Button>
               )}
 
-              {stop.riderWorkflowStatus === "picked_up" && (
+              {tab === "today" && stop.riderWorkflowStatus === "picked_up" && (
                 <Button size="sm" disabled={busy} onClick={() => arrivedMutation.mutate(stop.id)}>
                   Arrived
                 </Button>
               )}
 
-              {stop.isCod &&
+              {tab === "today" &&
+                stop.isCod &&
                 stop.requiresCodCollection &&
                 (stop.riderWorkflowStatus === "arrived" ||
                   stop.riderWorkflowStatus === "cash_collection_pending") && (
@@ -375,7 +409,7 @@ export function RealtimeDriverStops({ tab, date }: { tab: Tab; date?: string }) 
                   </>
                 )}
 
-              {stop.canMarkDelivered && (
+              {tab === "today" && stop.canMarkDelivered && (
                 <Button
                   size="sm"
                   className="bg-emerald-600 hover:bg-emerald-700"
@@ -386,7 +420,7 @@ export function RealtimeDriverStops({ tab, date }: { tab: Tab; date?: string }) 
                 </Button>
               )}
 
-              {stop.canMarkFailed && (
+              {tab === "today" && stop.canMarkFailed && (
                 <Button
                   size="sm"
                   variant="destructive"
@@ -436,6 +470,8 @@ export function RealtimeDriverStops({ tab, date }: { tab: Tab; date?: string }) 
           busy={cashMutation.isPending}
           onConfirm={() => cashMutation.mutate(cashStop)}
         />
+      )}
+        </>
       )}
     </section>
   );

@@ -399,7 +399,7 @@ export function DriverRouteView() {
         <DriverSubscriptionRouteSection date={date} />
         <div>
           <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-gray-700">Live orders</h2>
-          <RealtimeDriverStops tab="today" date={date} />
+          <RealtimeDriverStops date={date} />
         </div>
       </div>
     </div>
