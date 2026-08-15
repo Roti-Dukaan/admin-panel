@@ -68,6 +68,7 @@ export function KitchenColumn({
   orders,
   now,
   detailMap,
+  customerOrderCounts,
   onOpen,
   onAction,
   onCancel,
@@ -79,6 +80,7 @@ export function KitchenColumn({
   orders: KitchenOrderView[];
   now: number;
   detailMap: Record<string, KitchenOrderDetail | undefined>;
+  customerOrderCounts: Map<string, { count: number; name: string }>;
   onOpen: (order: KitchenOrderView) => void;
   onAction: (orderId: string, action: "preparing" | "ready") => void;
   onCancel: (order: KitchenOrderView) => void;
@@ -123,6 +125,9 @@ export function KitchenColumn({
               order={order}
               detail={detailMap[order.orderId]}
               now={now}
+              customerOrderCount={
+                order.customer?.id ? customerOrderCounts.get(order.customer.id)?.count : undefined
+              }
               onOpen={() => onOpen(order)}
               onAction={(action) => onAction(order.orderId, action)}
               onCancel={() => onCancel(order)}

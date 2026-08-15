@@ -16,6 +16,7 @@ export function KitchenCard({
   order,
   detail,
   now,
+  customerOrderCount,
   onOpen,
   onAction,
   onCancel,
@@ -26,6 +27,7 @@ export function KitchenCard({
   order: KitchenOrderView;
   detail?: KitchenOrderDetail;
   now: number;
+  customerOrderCount?: number;
   onOpen: () => void;
   onAction: (action: "preparing" | "ready") => void;
   onCancel?: () => void;
@@ -82,6 +84,11 @@ export function KitchenCard({
         <span className={cn("rounded-full px-2 py-0.5 text-[11px] font-semibold", badge.bgClass, badge.textClass)}>
           {badge.label}
         </span>
+        {customerOrderCount != null && customerOrderCount > 1 && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-violet-50 px-2 py-0.5 text-[11px] font-semibold text-violet-700 ring-1 ring-violet-100">
+            {customerOrderCount} orders by {order.customer?.name ?? "Guest"}
+          </span>
+        )}
         {isPaid && <Badge variant="success" className="gap-1">PAID</Badge>}
         {isCod && <Badge variant="warning" className="gap-1">COD</Badge>}
         {isScheduled && slotWindow ? (

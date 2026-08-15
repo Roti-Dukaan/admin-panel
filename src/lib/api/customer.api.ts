@@ -22,12 +22,14 @@ export interface ApiCustomer {
   branchId: string | null;
   branch: ApiCustomerBranch | null;
   subscriptionPlanName?: string | null;
+  activeKitchenOrderCount?: number;
 }
 
 export interface ApiCustomerDetail extends ApiCustomer {
   profileImage: string | null;
   dateOfBirth: string | null;
   _count: { orders: number; addresses: number };
+  activeKitchenOrderCount?: number;
 }
 
 export interface ApiCustomerAddress {
@@ -52,6 +54,39 @@ export interface ApiCustomerAddress {
   isServiceable: boolean;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface ApiCustomerOrder {
+  id: string;
+  orderNumber: string;
+  status: string;
+  paymentMethod: string | null;
+  deliveryType: string | null;
+  grandTotal: number;
+  totalQuantity: number;
+  itemCount: number;
+  createdAt: string;
+  deliveredAt: string | null;
+  items: Array<{ foodNameSnapshot: string; quantity: number }>;
+}
+
+export interface ApiCustomerCartItem {
+  id: string;
+  foodNameSnapshot: string;
+  categorySnapshot: string | null;
+  quantity: number;
+  lineTotal: number;
+}
+
+export interface ApiCustomerCart {
+  id: string;
+  totalItems: number;
+  totalQuantity: number;
+  grandTotal: number;
+  paymentMethod: string | null;
+  specialInstructions: string | null;
+  updatedAt: string;
+  items: ApiCustomerCartItem[];
 }
 
 export interface CustomerQueryParams {
@@ -91,6 +126,19 @@ export const customerApi = {
 
   async getAddresses(customerId: string): Promise<ApiResponse<{ customer: { id: string; fullName: string | null; email: string | null; phone: string | null }; addresses: ApiCustomerAddress[]; total: number }>> {
     const { data } = await apiClient.get(`/admin/customers/${customerId}/addresses`);
+    return data;
+  },
+
+  async getOrders(
+    customerId: string,
+    params?: { page?: number; limit?: number },
+  ): Promise<ApiResponse<PaginatedData<ApiCustomerOrder>>> {
+    const { data } = await apiClient.get(`/admin/customers/${customerId}/orders`, { params });
+    return data;
+  },
+
+  async getCart(customerId: string): Promise<ApiResponse<{ cart: ApiCustomerCart | null }>> {
+    const { data } = await apiClient.get(`/admin/customers/${customerId}/cart`);
     return data;
   },
 };

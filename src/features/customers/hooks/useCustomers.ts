@@ -63,6 +63,7 @@ function mapCustomer(c: ApiCustomer): Customer {
     branchId: c.branchId,
     branch: c.branch,
     subscriptionPlanName: c.subscriptionPlanName ?? null,
+    activeKitchenOrderCount: c.activeKitchenOrderCount ?? 0,
   };
 }
 
@@ -195,6 +196,8 @@ export const useCustomerStore = create<CustomerStore>((set, get) => ({
           branchId: c.branchId,
           branch: c.branch,
           subscriptionPlanName: c.subscriptionPlanName ?? null,
+          activeKitchenOrderCount: c.activeKitchenOrderCount ?? 0,
+          totalOrderCount: c._count?.orders ?? 0,
         },
         loading: false,
       });

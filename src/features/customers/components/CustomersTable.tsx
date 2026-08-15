@@ -13,6 +13,7 @@ import { ArrowUpDown, ArrowUp, ArrowDown, Eye, ChevronLeft, ChevronRight } from 
 import { useCustomerStore } from "../hooks/useCustomers";
 import { Customer } from "../types/customer";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
+import { CustomerOrderCountBadge } from "@/features/kitchen/components/CustomerOrderCountBadge";
 
 function formatDate(ts: string) {
   return new Date(ts).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
@@ -68,6 +69,11 @@ export function CustomersTable() {
               <div className="min-w-0">
                 <p className="text-sm font-semibold text-gray-900 truncate">{c.name}</p>
                 <p className="text-xs text-gray-500 truncate">{c.phone || c.email}</p>
+                {(c.activeKitchenOrderCount ?? 0) > 1 && (
+                  <div className="mt-1">
+                    <CustomerOrderCountBadge count={c.activeKitchenOrderCount ?? 0} customerName={c.name} />
+                  </div>
+                )}
               </div>
             </div>
           );

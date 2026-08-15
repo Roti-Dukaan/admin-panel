@@ -361,16 +361,19 @@ export function RealtimeDriverStops({ tab, date }: { tab: Tab; date?: string }) 
                 </Button>
               )}
 
-              {stop.isCod && stop.requiresCodCollection && (
-                <>
-                  <Button size="sm" variant="secondary" disabled={busy} onClick={() => setQrStop(stop)}>
-                    Show QR
-                  </Button>
-                  <Button size="sm" variant="outline" disabled={busy} onClick={() => setCashStop(stop)}>
-                    Collect Cash
-                  </Button>
-                </>
-              )}
+              {stop.isCod &&
+                stop.requiresCodCollection &&
+                (stop.riderWorkflowStatus === "arrived" ||
+                  stop.riderWorkflowStatus === "cash_collection_pending") && (
+                  <>
+                    <Button size="sm" variant="secondary" disabled={busy} onClick={() => setQrStop(stop)}>
+                      Show QR
+                    </Button>
+                    <Button size="sm" variant="outline" disabled={busy} onClick={() => setCashStop(stop)}>
+                      Collect Cash
+                    </Button>
+                  </>
+                )}
 
               {stop.canMarkDelivered && (
                 <Button

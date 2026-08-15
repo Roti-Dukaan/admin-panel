@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   BellRing,
   ChefHat,
@@ -12,6 +12,8 @@ import {
   User,
   Volume2,
 } from "lucide-react";
+import { CustomerOrderCountBadge } from "@/features/kitchen/components/CustomerOrderCountBadge";
+import { countActiveKitchenOrdersForCustomer } from "@/features/kitchen/utils/customer-order-count";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -58,6 +60,7 @@ export function NewOrderAlertModal({
   onEnableSound,
   enablingSound,
 }: NewOrderAlertModalProps) {
+  const qc = useQueryClient();
   const [elapsedLabel, setElapsedLabel] = useState("Just now");
 
   const { data: detail } = useQuery({
@@ -83,6 +86,11 @@ export function NewOrderAlertModal({
 
   const customerName = detail?.customer?.name ?? detail?.address?.customerName;
   const customerPhone = detail?.customer?.phone ?? detail?.address?.phoneNumber;
+  const customerId = detail?.customer?.id;
+  const customerActiveOrderCount = useMemo(
+    () => countActiveKitchenOrdersForCustomer(qc, customerId, alert?.orderId),
+    [qc, customerId, alert?.orderId, detail],
+  );
   const deliveryType = detail?.deliveryType;
   const addressLine = detail?.address
     ? [detail.address.addressLine1, detail.address.landmark, detail.address.city]
@@ -187,9 +195,12 @@ export function NewOrderAlertModal({
           {(customerName || customerPhone || addressLine || deliveryType) && (
             <div className="rounded-xl border border-gray-100 bg-white p-4 space-y-2">
               {customerName && (
-                <div className="flex items-center gap-2 text-sm text-gray-800">
+                <div className="flex flex-wrap items-center gap-2 text-sm text-gray-800">
                   <User className="h-4 w-4 shrink-0 text-gray-400" />
                   <span className="font-medium">{customerName}</span>
+                  {customerName && customerActiveOrderCount > 1 && (
+                    <CustomerOrderCountBadge count={customerActiveOrderCount} customerName={customerName} />
+                  )}
                 </div>
               )}
               {customerPhone && (

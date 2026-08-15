@@ -9,6 +9,7 @@ export function KitchenKanban({
   byStage,
   now,
   detailMap,
+  customerOrderCounts,
   onOpen,
   onAction,
   onCancel,
@@ -19,6 +20,7 @@ export function KitchenKanban({
   byStage: Record<KitchenStage, KitchenOrderView[]>;
   now: number;
   detailMap: Record<string, KitchenOrderDetail | undefined>;
+  customerOrderCounts: Map<string, { count: number; name: string }>;
   onOpen: (order: KitchenOrderView) => void;
   onAction: (orderId: string, action: "preparing" | "ready") => void;
   onCancel: (order: KitchenOrderView) => void;
@@ -35,6 +37,7 @@ export function KitchenKanban({
           orders={byStage[stage]}
           now={now}
           detailMap={detailMap}
+          customerOrderCounts={customerOrderCounts}
           onOpen={onOpen}
           onAction={onAction}
           onCancel={onCancel}

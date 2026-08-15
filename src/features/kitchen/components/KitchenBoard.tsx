@@ -27,6 +27,7 @@ import { KitchenOrderDrawer } from "./KitchenOrderDrawer";
 import { SubscriptionLoadCard } from "./SubscriptionLoadCard";
 import { STAGES } from "../types/kitchen";
 import type { KitchenOrderView, KitchenStage, DeliveryKind, PaymentFilter, PrepTimeFilter } from "../types/kitchen";
+import { buildCustomerActiveOrderCounts } from "../utils/customer-order-count";
 
 function ErrorState({ onRetry }: { onRetry: () => void }) {
   return (
@@ -100,6 +101,11 @@ export function KitchenBoard() {
     for (const o of filtered) map[o.kitchenStatus].push(o);
     return map;
   }, [filtered]);
+
+  const customerOrderCounts = useMemo(
+    () => buildCustomerActiveOrderCounts(filtered),
+    [filtered],
+  );
 
   const counts = useMemo(
     () => ({
@@ -232,6 +238,7 @@ const isLoading = query.isLoading;
             byStage={byStage}
             now={now}
             detailMap={detailMap}
+            customerOrderCounts={customerOrderCounts}
             onOpen={setSelected}
             onAction={handleAction}
             onCancel={handleCancelRequest}

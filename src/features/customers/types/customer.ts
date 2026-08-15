@@ -21,6 +21,8 @@ export interface Customer {
   branchId: string | null;
   branch: CustomerBranch | null;
   subscriptionPlanName?: string | null;
+  activeKitchenOrderCount?: number;
+  totalOrderCount?: number;
 }
 
 export type CustomerDatePreset = "today" | "yesterday" | "7d" | "30d" | "this-month" | "custom" | "all"
