@@ -106,7 +106,9 @@ export function PaymentCard({ payment }: PaymentCardProps) {
                 <Hash className="h-3.5 w-3.5" />
                 Transaction ID
               </span>
-              <span className="font-mono text-xs">{payment.transactionId}</span>
+              <span className={payment.transactionId === "Collected Cash" ? "text-xs font-medium" : "font-mono text-xs"}>
+                {payment.transactionId}
+              </span>
             </div>
           )}
           {payment.gateway && (

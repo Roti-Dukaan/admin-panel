@@ -181,11 +181,15 @@ export function OrdersTable({ onViewDetails }: OrdersTableProps) {
                 </TableCell>
                 <TableCell>
                   {order.payment?.transactionId ? (
-                    <span className="text-xs font-mono text-muted-foreground" title={order.payment.transactionId}>
-                      {order.payment.transactionId.length > 16
-                        ? order.payment.transactionId.slice(0, 16) + "..."
-                        : order.payment.transactionId}
-                    </span>
+                    order.payment.transactionId === "Collected Cash" ? (
+                      <span className="text-xs text-muted-foreground">Collected Cash</span>
+                    ) : (
+                      <span className="text-xs font-mono text-muted-foreground" title={order.payment.transactionId}>
+                        {order.payment.transactionId.length > 16
+                          ? order.payment.transactionId.slice(0, 16) + "..."
+                          : order.payment.transactionId}
+                      </span>
+                    )
                   ) : (
                     <span className="text-xs text-muted-foreground">—</span>
                   )}
