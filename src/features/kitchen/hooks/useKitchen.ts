@@ -22,13 +22,16 @@ import {
   KITCHEN_QUERY_KEY,
   KITCHEN_DETAIL_QUERY_KEY,
   handleBranchOrderNew,
+  handleBranchOrderStatusUpdated,
   handleKitchenTicketCreated,
+  removeKitchenOrderFromCache,
 } from "../utils/kitchen-realtime-sync";
 import { ensureNotificationPermission, unlockAudio } from "@/lib/realtime/notify";
 import { useRealtimeFallbackPollInterval } from "@/lib/realtime/useRealtimeFallbackPollInterval";
 import {
   REALTIME_EVENTS,
   type BranchOrderNewPayload,
+  type BranchOrderUpdatedPayload,
   type KitchenTicketCreatedPayload,
 } from "@/lib/realtime/events";
 import { ordersApi } from "@/lib/api/orders.api";
@@ -177,11 +180,19 @@ export function useKitchenCancelMutation() {
       ordersApi.cancel(orderId, reason),
     onSuccess: (_data, variables) => {
       resolveOrderAlert(variables.orderId);
+      removeKitchenOrderFromCache(qc, variables.orderId);
       qc.invalidateQueries({ queryKey: KITCHEN_QUERY_KEY });
       qc.invalidateQueries({ queryKey: KITCHEN_DETAIL_QUERY_KEY });
       toast.success("Order cancelled");
     },
-    onError: () => {
+    onError: (error: Error, variables) => {
+      const message = error?.message ?? "";
+      if (message.includes("Invalid status transition") || message.includes("already cancelled")) {
+        removeKitchenOrderFromCache(qc, variables.orderId);
+        void qc.invalidateQueries({ queryKey: KITCHEN_QUERY_KEY });
+        toast.info("Order was already cancelled — board refreshed");
+        return;
+      }
       toast.error("Failed to cancel order");
     },
   });
@@ -237,11 +248,18 @@ export function useKitchenRealtime(options?: {
       onNewOrderRef.current?.(payload);
     });
 
+    const offBranchUpdated = onRealtime(REALTIME_EVENTS.BRANCH_ORDER_UPDATED, (raw) => {
+      const payload = raw as BranchOrderUpdatedPayload;
+      if (isBranchManager && !branchIdsMatch(branchId, payload.branchId)) return;
+      handleBranchOrderStatusUpdated(qc, payload.orderId, payload.status);
+    });
+
     return () => {
       offConnect();
       offDisconnect();
       offBranchNew();
       offCreated();
+      offBranchUpdated();
     };
   }, [accessToken, branchId, isBranchManager, qc]);
 

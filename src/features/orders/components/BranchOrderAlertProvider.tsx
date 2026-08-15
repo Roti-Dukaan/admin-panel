@@ -50,6 +50,7 @@ import { useAdminAuthStore } from "@/features/admin-auth/store/admin-auth-store"
 import { useKitchenStageMutation } from "@/features/kitchen/hooks/useKitchen";
 import {
   handleBranchOrderNew,
+  handleBranchOrderStatusUpdated,
   handleKitchenDeliveryUpdated,
   handleKitchenTicketCreated,
   handleKitchenTicketUpdated,
@@ -389,6 +390,8 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
         patchKitchenStageInCache(qcRef.current, payload.orderId, "PREPARING", payload.occurredAt);
       } else if (nextStatus === "ready-for-pickup") {
         patchKitchenStageInCache(qcRef.current, payload.orderId, "READY_FOR_PICKUP", payload.occurredAt);
+      } else if (nextStatus === "cancelled" || nextStatus === "failed") {
+        handleBranchOrderStatusUpdated(qcRef.current, payload.orderId, payload.status);
       }
       scheduleOrdersRefresh();
     });

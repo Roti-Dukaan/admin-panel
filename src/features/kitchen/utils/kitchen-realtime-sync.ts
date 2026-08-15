@@ -156,7 +156,7 @@ export function patchKitchenStageInCache(
   });
 }
 
-export function removeDeliveredKitchenOrder(qc: QueryClient, orderId: string): void {
+export function removeKitchenOrderFromCache(qc: QueryClient, orderId: string): void {
   qc.setQueriesData<KitchenOrderListResponse>({ queryKey: KITCHEN_QUERY_KEY }, (old) => {
     if (!old) return old;
     if (!old.items.some((it) => it.orderId === orderId)) return old;
@@ -166,6 +166,17 @@ export function removeDeliveredKitchenOrder(qc: QueryClient, orderId: string): v
       total: Math.max(0, old.total - 1),
     };
   });
+  qc.setQueriesData<Record<string, KitchenOrderDetail>>({ queryKey: KITCHEN_DETAIL_QUERY_KEY }, (old) => {
+    if (!old?.[orderId]) return old;
+    const next = { ...old };
+    delete next[orderId];
+    return next;
+  });
+}
+
+/** @deprecated Use removeKitchenOrderFromCache */
+export function removeDeliveredKitchenOrder(qc: QueryClient, orderId: string): void {
+  removeKitchenOrderFromCache(qc, orderId);
 }
 
 /** Background enrich for active kitchen list observers — no invalidate (keeps optimistic rows). */
@@ -210,6 +221,17 @@ export function handleKitchenDeliveryUpdated(
   payload: DeliveryUpdatedPayload,
 ): void {
   if (payload.status === "DELIVERED") {
-    removeDeliveredKitchenOrder(qc, payload.orderId);
+    removeKitchenOrderFromCache(qc, payload.orderId);
+  }
+}
+
+export function handleBranchOrderStatusUpdated(
+  qc: QueryClient,
+  orderId: string,
+  status: string,
+): void {
+  const normalized = status.toLowerCase().replace(/_/g, "-");
+  if (normalized === "cancelled" || normalized === "failed" || normalized === "delivered" || normalized === "refunded") {
+    removeKitchenOrderFromCache(qc, orderId);
   }
 }
