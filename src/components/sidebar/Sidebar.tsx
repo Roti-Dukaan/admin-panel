@@ -187,7 +187,7 @@ export function Sidebar({ collapsed = false, onToggle, mobileOpen = false, onMob
         {!collapsed ? (
           <Link href={homeHref} className="flex items-center gap-2.5 group min-w-0" title={workspaceDetail ?? workspaceLabel}>
             <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full ring-2 ring-orange-500/20 group-hover:ring-orange-500/40 transition-all">
-              <img src="/roti_dukaan_logo.jpg" alt="Roti Dukaan" className="h-full w-full object-cover" />
+              <img src="/roti-dukaan-logo.png" alt="Roti Dukaan" className="h-full w-full object-cover" />
             </div>
             <div className="flex min-w-0 flex-col">
               <span className="text-[15px] font-bold text-gray-900 leading-tight">Roti Dukaan</span>
@@ -196,7 +196,7 @@ export function Sidebar({ collapsed = false, onToggle, mobileOpen = false, onMob
           </Link>
         ) : (
           <Link href={homeHref} className="h-9 w-9 shrink-0 overflow-hidden rounded-full ring-2 ring-orange-500/20 hover:ring-orange-500/40 transition-all" title={workspaceDetail ?? workspaceLabel}>
-            <img src="/roti_dukaan_logo.jpg" alt="Roti Dukaan" className="h-full w-full object-cover" />
+            <img src="/roti-dukaan-logo.png" alt="Roti Dukaan" className="h-full w-full object-cover" />
           </Link>
         )}
       </div>
@@ -273,7 +273,7 @@ export function Sidebar({ collapsed = false, onToggle, mobileOpen = false, onMob
             <div className="flex h-16 items-center justify-between border-b border-gray-100 px-5">
               <Link href={homeHref} className="flex items-center gap-2.5 min-w-0" onClick={onMobileClose} title={workspaceDetail ?? workspaceLabel}>
                 <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full ring-2 ring-orange-500/20">
-                  <img src="/roti_dukaan_logo.jpg" alt="Roti Dukaan" className="h-full w-full object-cover" />
+                  <img src="/roti-dukaan-logo.png" alt="Roti Dukaan" className="h-full w-full object-cover" />
                 </div>
                 <div className="flex min-w-0 flex-col">
                   <span className="text-[15px] font-bold text-gray-900 leading-tight">Roti Dukaan</span>

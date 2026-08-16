@@ -2,7 +2,7 @@ export function DocumentBrandHeader({ subtitle }: { subtitle: string }) {
   return (
     <header className="thermal-brand-header">
       <img
-        src="/roti_dukaan_logo.jpg"
+        src="/roti-dukaan-logo.png"
         alt="Roti Dukaan"
         className="thermal-brand-logo"
         width={36}
