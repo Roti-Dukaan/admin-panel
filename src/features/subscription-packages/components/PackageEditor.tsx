@@ -129,6 +129,25 @@ function formToPayload(form: PackageForm): CreateSubscriptionPackageInput {
   };
 }
 
+function withDefaultMenuItems(
+  form: PackageForm,
+  definitions: MenuCategoryDefinition[],
+  items: SubscriptionMenuItem[],
+): PackageForm {
+  const categories = { ...form.categories };
+  for (const def of definitions) {
+    const cat = categories[def.id];
+    if (!cat?.enabled || cat.menuItemIds.length) continue;
+    const ids = items
+      .filter((m) => (m.categoryDefinitionId ?? m.categoryDefinition?.id) === def.id)
+      .map((m) => m.id);
+    if (ids.length) {
+      categories[def.id] = { ...cat, menuItemIds: ids };
+    }
+  }
+  return { ...form, categories };
+}
+
 interface PackageEditorProps {
   open: boolean;
   mode: "create" | "edit" | "view";
@@ -155,7 +174,11 @@ export function PackageEditor({ open, mode, selected, onClose, onSaved }: Packag
       .then(([defs, items]) => {
         setCategoryDefinitions(defs);
         setMenuItems(items);
-        setForm(selected ? packageToForm(selected, defs) : emptyForm(defs));
+        setForm(
+          selected
+            ? packageToForm(selected, defs)
+            : withDefaultMenuItems(emptyForm(defs), defs, items),
+        );
       })
       .catch(() => {
         setCategoryDefinitions([]);
