@@ -102,8 +102,8 @@ function packageToForm(pkg: SubscriptionPackage, definitions: MenuCategoryDefini
 }
 
 function formToPayload(form: PackageForm): CreateSubscriptionPackageInput {
-  const categories: PackageCategoryInput[] = Object.entries(form.categories)
-    .map(([categoryDefinitionId, c]) => ({
+  const categories: PackageCategoryInput[] = Object.entries(form.categories).map(
+    ([categoryDefinitionId, c]) => ({
       categoryDefinitionId,
       categoryPrice: Number(c.categoryPrice) || 0,
       active: c.enabled,
@@ -113,8 +113,8 @@ function formToPayload(form: PackageForm): CreateSubscriptionPackageInput {
         ? Math.max(c.menuItemIds.length, 1)
         : 1,
       menuItemIds: c.enabled ? c.menuItemIds : [],
-    }))
-    .filter((c) => c.active);
+    }),
+  );
 
   return {
     name: form.name.trim(),
@@ -406,7 +406,12 @@ export function PackageEditor({ open, mode, selected, onClose, onSaved }: Packag
                       type="checkbox"
                       disabled={isViewOnly}
                       checked={c.enabled}
-                      onChange={(e) => updateCategory(def.id, { enabled: e.target.checked })}
+                      onChange={(e) =>
+                        updateCategory(def.id, {
+                          enabled: e.target.checked,
+                          ...(e.target.checked ? {} : { menuItemIds: [] }),
+                        })
+                      }
                     />
                     {def.name}
                   </label>
