@@ -34,7 +34,13 @@ import {
 import { useSubscriptionPlanStore } from "@/features/subscription-plans/hooks/useSubscriptionPlans";
 import { TableActionsMenu } from "@/components/ui/table-actions-menu";
 
-export function PlansTable({ onEditPackage }: { onEditPackage?: (planId: string) => void }) {
+export function PlansTable({
+  onEditPackage,
+  onViewPackage,
+}: {
+  onEditPackage?: (planId: string) => void;
+  onViewPackage?: (planId: string) => void;
+}) {
   const allPlans = useSubscriptionPlanStore((s) => s.plans);
   const loading = useSubscriptionPlanStore((s) => s.loading);
   const searchQuery = useSubscriptionPlanStore((s) => s.searchQuery);
@@ -216,7 +222,8 @@ export function PlansTable({ onEditPackage }: { onEditPackage?: (planId: string)
             >
               <button
                 onClick={() => {
-                  openViewEditor(plan);
+                  if (onViewPackage) onViewPackage(plan.id);
+                  else openViewEditor(plan);
                   setOpenDropdown(null);
                 }}
                 className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
@@ -267,7 +274,7 @@ export function PlansTable({ onEditPackage }: { onEditPackage?: (planId: string)
         },
       },
     ],
-    [openDropdown, openViewEditor, openEditEditor, onEditPackage, duplicatePlan, toggleActive, openDeleteModal]
+    [openDropdown, openViewEditor, openEditEditor, onEditPackage, onViewPackage, duplicatePlan, toggleActive, openDeleteModal]
   );
 
   const table = useReactTable({

@@ -74,6 +74,18 @@ export default function SubscriptionPlansPage() {
     }
   };
 
+  const openViewPackage = async (planId: string) => {
+    try {
+      const pkg = await packagesApi.getById(planId);
+      setSelectedPackage(pkg);
+      setPackageEditorMode("view");
+      setPackageEditorOpen(true);
+    } catch {
+      const plan = plans.find((p) => p.id === planId);
+      if (plan) useSubscriptionPlanStore.getState().openViewEditor(plan);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50/50">
       <Header
@@ -175,7 +187,7 @@ export default function SubscriptionPlansPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.2 }}
         >
-          <PlansTable onEditPackage={openEditPackage} />
+          <PlansTable onEditPackage={openEditPackage} onViewPackage={openViewPackage} />
         </motion.div>
       </div>
 

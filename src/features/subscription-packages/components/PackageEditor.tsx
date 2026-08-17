@@ -265,10 +265,16 @@ export function PackageEditor({ open, mode, selected, onClose, onSaved }: Packag
             </button>
             <div>
               <h2 className="text-lg font-bold text-gray-900">
-                {mode === "create" ? "Create Package" : mode === "edit" ? "Edit Package" : "View Package"}
+                {mode === "create"
+                  ? "Create Package"
+                  : mode === "edit"
+                    ? `Edit: ${form.name || "Package"}`
+                    : `View: ${form.name || "Package"}`}
               </h2>
               <p className="text-sm text-gray-500">
-                Dynamic package with category-level pricing for the full {form.billingCycle === "WEEKLY" ? "week" : "month"}
+                {isViewOnly
+                  ? "View-only mode"
+                  : `Dynamic package with category-level pricing for the full ${form.billingCycle === "WEEKLY" ? "week" : "month"}`}
               </p>
             </div>
           </div>
