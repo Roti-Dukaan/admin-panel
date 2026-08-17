@@ -55,6 +55,24 @@ function isStopArrived(stop: SubscriptionRouteBatchStop): boolean {
   return stop.stopAssignmentStatus === "ARRIVED" || stop.dispatchStatus === "ARRIVED";
 }
 
+function isStopBeforePickup(stop: SubscriptionRouteBatchStop): boolean {
+  if (stop.navigationTarget === "branch") return true;
+  if (stop.navigationTarget === "customer") return false;
+  const key = stop.stopAssignmentStatus ?? "";
+  return !key || key === "ASSIGNED" || key === "ROUTE_READY";
+}
+
+function isStopPickedUp(stop: SubscriptionRouteBatchStop): boolean {
+  if (isStopBeforePickup(stop)) return false;
+  const key = stop.stopAssignmentStatus ?? "";
+  return (
+    key === "PICKED_UP" ||
+    key === "OUT_FOR_DELIVERY" ||
+    isStopArrived(stop) ||
+    key === "DELIVERED"
+  );
+}
+
 function SubscriptionStopCard({
   stop,
   isNext,
@@ -63,7 +81,9 @@ function SubscriptionStopCard({
 }: {
   stop: SubscriptionRouteBatchStop;
   isNext?: boolean;
-  onAction: (action: "ARRIVED" | "DELIVERED" | "FAILED" | "CUSTOMER_UNAVAILABLE") => void;
+  onAction: (
+    action: "PICKED_UP" | "ARRIVED" | "DELIVERED" | "FAILED" | "CUSTOMER_UNAVAILABLE",
+  ) => void;
   busy: boolean;
 }) {
   const status = getStopStatusLabel(stop);
@@ -103,7 +123,14 @@ function SubscriptionStopCard({
 
       <p className="mt-2 flex items-start gap-1.5 text-sm text-gray-600">
         <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-gray-400" />
-        {stop.address}
+        {isStopBeforePickup(stop) ? (
+          <span>
+            <span className="font-medium text-orange-700">Pickup at branch: </span>
+            {stop.branchName ?? stop.branchAddress ?? "Branch"}
+          </span>
+        ) : (
+          stop.address
+        )}
       </p>
 
       <div className="mt-2 space-y-0.5">
@@ -129,26 +156,33 @@ function SubscriptionStopCard({
           <a href={stop.googleMapsUrl} target="_blank" rel="noopener noreferrer">
             <Button size="sm" variant="outline" type="button">
               <Navigation className="mr-1 h-4 w-4" />
-              Maps
+              {isStopBeforePickup(stop) ? "Branch" : "Customer"}
             </Button>
           </a>
         )}
         {!["DELIVERED", "FAILED", "CUSTOMER_UNAVAILABLE", "RESCHEDULED"].includes(statusKey) && (
           <>
-            {!isStopArrived(stop) && (
+            {isStopBeforePickup(stop) && (
+              <Button type="button" size="sm" disabled={busy} onClick={() => onAction("PICKED_UP")}>
+                Picked up
+              </Button>
+            )}
+            {isStopPickedUp(stop) && !isStopArrived(stop) && (
               <Button type="button" size="sm" disabled={busy} onClick={() => onAction("ARRIVED")}>
                 Arrived
               </Button>
             )}
-            <Button
-              type="button"
-              size="sm"
-              className="bg-emerald-600 hover:bg-emerald-700"
-              disabled={busy}
-              onClick={() => onAction("DELIVERED")}
-            >
-              Delivered
-            </Button>
+            {isStopArrived(stop) && (
+              <Button
+                type="button"
+                size="sm"
+                className="bg-emerald-600 hover:bg-emerald-700"
+                disabled={busy}
+                onClick={() => onAction("DELIVERED")}
+              >
+                Delivered
+              </Button>
+            )}
             <Button
               type="button"
               size="sm"
@@ -251,7 +285,7 @@ export function DriverSubscriptionRouteSection({ date }: { date: string }) {
 
   const handleAction = async (
     stopId: string,
-    status: "ARRIVED" | "DELIVERED" | "FAILED" | "CUSTOMER_UNAVAILABLE",
+    status: "PICKED_UP" | "ARRIVED" | "DELIVERED" | "FAILED" | "CUSTOMER_UNAVAILABLE",
   ) => {
     try {
       if (status === "FAILED" || status === "CUSTOMER_UNAVAILABLE") {

@@ -44,6 +44,10 @@ export interface DriverDeliveryStop {
   dispatchStatus: string;
   assignmentStatus?: string;
   googleMapsUrl: string;
+  navigationTarget?: "branch" | "customer";
+  branchName?: string | null;
+  branchAddress?: string | null;
+  branchGoogleMapsUrl?: string | null;
   arrivedAt: string | null;
   deliveredAt: string | null;
   failedAt: string | null;
