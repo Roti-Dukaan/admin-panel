@@ -268,7 +268,15 @@ export function SubscriptionAssignmentPanel({
 
   const handleAssignSelf = async (deliveryId: string) => {
     try {
-      await assignOneSelf.mutateAsync(deliveryId);
+      const result = await bulkAssignSelf.mutateAsync({
+        deliveryIds: [deliveryId],
+        date,
+        slotId,
+      });
+      if (result.routeBatch) {
+        setLastCreatedBatch(result.routeBatch);
+        setActiveBatchId(result.routeBatch.id);
+      }
       toast.success("Assigned to you");
     } catch (err: unknown) {
       toast.error(extractError(err, "Self assignment failed"));
