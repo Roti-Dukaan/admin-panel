@@ -32,6 +32,29 @@ import { RealtimeDriverStops } from "@/features/realtime-dispatch/components/Rea
 
 type Tab = "today" | "completed" | "failed" | "summary";
 
+const STOP_STATUS_LABELS: Record<string, string> = {
+  ASSIGNED: "Assigned",
+  ROUTE_READY: "Route ready",
+  PICKED_UP: "Picked up",
+  ARRIVED: "Arrived",
+  OUT_FOR_DELIVERY: "Out for delivery",
+  DELIVERED: "Delivered",
+  FAILED: "Failed",
+  CUSTOMER_UNAVAILABLE: "Unavailable",
+  RESCHEDULED: "Rescheduled",
+  UNASSIGNED: "Unassigned",
+};
+
+function getStopStatusLabel(stop: SubscriptionRouteBatchStop): string {
+  if (isStopArrived(stop)) return "Arrived";
+  const raw = stop.stopAssignmentStatus ?? stop.dispatchStatus ?? "";
+  return STOP_STATUS_LABELS[raw] ?? raw.replace(/_/g, " ");
+}
+
+function isStopArrived(stop: SubscriptionRouteBatchStop): boolean {
+  return stop.stopAssignmentStatus === "ARRIVED" || stop.dispatchStatus === "ARRIVED";
+}
+
 function SubscriptionStopCard({
   stop,
   isNext,
@@ -40,10 +63,11 @@ function SubscriptionStopCard({
 }: {
   stop: SubscriptionRouteBatchStop;
   isNext?: boolean;
-  onAction: (action: "PICKED_UP" | "DELIVERED" | "FAILED" | "CUSTOMER_UNAVAILABLE") => void;
+  onAction: (action: "ARRIVED" | "DELIVERED" | "FAILED" | "CUSTOMER_UNAVAILABLE") => void;
   busy: boolean;
 }) {
-  const status = stop.stopAssignmentStatus ?? stop.dispatchStatus;
+  const status = getStopStatusLabel(stop);
+  const statusKey = stop.stopAssignmentStatus ?? stop.dispatchStatus ?? "";
 
   return (
     <article
@@ -109,11 +133,13 @@ function SubscriptionStopCard({
             </Button>
           </a>
         )}
-        {!["DELIVERED", "FAILED", "CUSTOMER_UNAVAILABLE", "RESCHEDULED"].includes(status ?? "") && (
+        {!["DELIVERED", "FAILED", "CUSTOMER_UNAVAILABLE", "RESCHEDULED"].includes(statusKey) && (
           <>
-            <Button type="button" size="sm" disabled={busy} onClick={() => onAction("PICKED_UP")}>
-              Arrived
-            </Button>
+            {!isStopArrived(stop) && (
+              <Button type="button" size="sm" disabled={busy} onClick={() => onAction("ARRIVED")}>
+                Arrived
+              </Button>
+            )}
             <Button
               type="button"
               size="sm"
@@ -225,7 +251,7 @@ export function DriverSubscriptionRouteSection({ date }: { date: string }) {
 
   const handleAction = async (
     stopId: string,
-    status: "PICKED_UP" | "DELIVERED" | "FAILED" | "CUSTOMER_UNAVAILABLE",
+    status: "ARRIVED" | "DELIVERED" | "FAILED" | "CUSTOMER_UNAVAILABLE",
   ) => {
     try {
       if (status === "FAILED" || status === "CUSTOMER_UNAVAILABLE") {
