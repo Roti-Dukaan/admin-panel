@@ -64,6 +64,7 @@ export interface SubscriptionPackage {
   availableDeliveryDays: string[] | null;
   availableDeliverySlots: string[] | null;
   selectionCutoffHours: number;
+  allowCustomerCategorySelection?: boolean;
   branchId: string | null;
   categories: PackageCategory[];
   finalPrice?: number;
@@ -103,6 +104,7 @@ export interface CreateSubscriptionPackageInput {
   availableDeliveryDays?: string[];
   availableDeliverySlots?: string[];
   selectionCutoffHours?: number;
+  allowCustomerCategorySelection?: boolean;
   skipEnabled?: boolean;
   monthlySkipLimit?: number;
   weeklySkipLimit?: number;

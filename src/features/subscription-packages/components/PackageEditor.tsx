@@ -34,6 +34,7 @@ type PackageForm = {
   active: boolean;
   displayOrder: number;
   selectionCutoffHours: number;
+  allowCustomerCategorySelection: boolean;
   categories: Record<string, CategoryForm>;
 };
 
@@ -70,6 +71,7 @@ function emptyForm(definitions: MenuCategoryDefinition[] = []): PackageForm {
     active: true,
     displayOrder: 0,
     selectionCutoffHours: 24,
+    allowCustomerCategorySelection: false,
     categories: buildEmptyCategories(definitions),
   };
 }
@@ -84,6 +86,7 @@ function packageToForm(pkg: SubscriptionPackage, definitions: MenuCategoryDefini
   base.active = pkg.active ?? pkg.isActive;
   base.displayOrder = pkg.displayOrder;
   base.selectionCutoffHours = pkg.selectionCutoffHours ?? 24;
+  base.allowCustomerCategorySelection = pkg.allowCustomerCategorySelection ?? false;
 
   for (const found of pkg.categories ?? []) {
     const key = found.categoryDefinitionId ?? found.categoryDefinition?.id;
@@ -125,6 +128,7 @@ function formToPayload(form: PackageForm): CreateSubscriptionPackageInput {
     active: form.active,
     displayOrder: Number(form.displayOrder) || 0,
     selectionCutoffHours: Number(form.selectionCutoffHours) || 24,
+    allowCustomerCategorySelection: form.allowCustomerCategorySelection,
     availableDeliveryDays: [],
     availableDeliverySlots: [],
     categories,
@@ -383,6 +387,25 @@ export function PackageEditor({ open, mode, selected, onClose, onSaved }: Packag
                 onChange={(e) => setForm((f) => ({ ...f, active: e.target.checked }))}
               />
               Active
+            </label>
+            <label className="flex items-start gap-2 text-sm">
+              <input
+                type="checkbox"
+                disabled={isViewOnly}
+                checked={form.allowCustomerCategorySelection}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, allowCustomerCategorySelection: e.target.checked }))
+                }
+                className="mt-0.5"
+              />
+              <span>
+                <span className="block font-medium text-gray-700">
+                  Let customers choose categories at checkout
+                </span>
+                <span className="block text-xs text-gray-500">
+                  When off, all enabled categories are included and customers cannot toggle them.
+                </span>
+              </span>
             </label>
           </section>
 
