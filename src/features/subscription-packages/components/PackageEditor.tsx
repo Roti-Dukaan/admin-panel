@@ -7,6 +7,7 @@ import { subscriptionMenuApi } from "@/features/subscription-menu/services/subsc
 import { subscriptionMenuCategoriesApi } from "@/features/subscription-menu/services/subscription-menu-categories.api";
 import type { SubscriptionMenuItem } from "@/features/subscription-menu/types/subscription-menu";
 import { packagesApi } from "../services/packages.api";
+import { DescriptionBulletTextarea } from "@/components/ui/description-bullet-textarea";
 import {
   CreateSubscriptionPackageInput,
   MenuCategoryDefinition,
@@ -28,6 +29,7 @@ type CategoryForm = {
 type PackageForm = {
   name: string;
   description: string;
+  badge: string;
   billingCycle: SubscriptionPlanType;
   validityDays: number;
   deliveriesPerCycle: number;
@@ -65,6 +67,7 @@ function emptyForm(definitions: MenuCategoryDefinition[] = []): PackageForm {
   return {
     name: "",
     description: "",
+    badge: "",
     billingCycle: "MONTHLY",
     validityDays: 30,
     deliveriesPerCycle: 30,
@@ -80,6 +83,7 @@ function packageToForm(pkg: SubscriptionPackage, definitions: MenuCategoryDefini
   const base = emptyForm(definitions);
   base.name = pkg.name;
   base.description = pkg.description ?? "";
+  base.badge = pkg.badge ?? "";
   base.billingCycle = pkg.billingCycle ?? pkg.type;
   base.validityDays = pkg.validityDays;
   base.deliveriesPerCycle = pkg.deliveriesPerCycle;
@@ -122,6 +126,7 @@ function formToPayload(form: PackageForm): CreateSubscriptionPackageInput {
   return {
     name: form.name.trim(),
     description: form.description.trim() || undefined,
+    badge: form.badge.trim() || undefined,
     billingCycle: form.billingCycle,
     validityDays: Number(form.validityDays),
     deliveriesPerCycle: Number(form.deliveriesPerCycle),
@@ -316,12 +321,10 @@ export function PackageEditor({ open, mode, selected, onClose, onSaved }: Packag
             </label>
             <label className="block text-sm">
               <span className="mb-1 block font-medium text-gray-700">Description</span>
-              <textarea
+              <DescriptionBulletTextarea
                 disabled={isViewOnly}
                 value={form.description}
-                onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-                className="w-full rounded-xl border border-gray-200 px-3 py-2.5"
-                rows={2}
+                onChange={(description) => setForm((f) => ({ ...f, description }))}
               />
             </label>
             <div className="grid grid-cols-2 gap-3">
@@ -394,6 +397,42 @@ export function PackageEditor({ open, mode, selected, onClose, onSaved }: Packag
               />
               Active
             </label>
+            <div className="space-y-2">
+              <label className="flex items-start gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  disabled={isViewOnly}
+                  checked={form.badge.trim().length > 0}
+                  onChange={(e) =>
+                    setForm((f) => ({
+                      ...f,
+                      badge: e.target.checked ? "Most Popular" : "",
+                    }))
+                  }
+                  className="mt-0.5"
+                />
+                <span>
+                  <span className="block font-medium text-gray-700">
+                    Show &quot;Most Popular&quot; label
+                  </span>
+                  <span className="block text-xs text-gray-500">
+                    Highlights this plan on the user panel with a badge and accent border.
+                  </span>
+                </span>
+              </label>
+              {form.badge.trim().length > 0 && (
+                <label className="block text-sm">
+                  <span className="mb-1 block font-medium text-gray-700">Label text</span>
+                  <input
+                    disabled={isViewOnly}
+                    value={form.badge}
+                    onChange={(e) => setForm((f) => ({ ...f, badge: e.target.value }))}
+                    className="w-full rounded-xl border border-gray-200 px-3 py-2.5"
+                    placeholder="Most Popular"
+                  />
+                </label>
+              )}
+            </div>
             <label className="flex items-start gap-2 text-sm">
               <input
                 type="checkbox"

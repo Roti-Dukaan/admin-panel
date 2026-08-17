@@ -53,6 +53,7 @@ export interface SubscriptionPackage {
   description: string | null;
   type: SubscriptionPlanType;
   billingCycle: SubscriptionPlanType;
+  badge?: string | null;
   active: boolean;
   isActive: boolean;
   displayOrder: number;
@@ -95,6 +96,7 @@ export interface CreateSubscriptionPackageInput {
   name: string;
   slug?: string;
   description?: string;
+  badge?: string;
   billingCycle: SubscriptionPlanType;
   validityDays: number;
   deliveriesPerCycle: number;

@@ -19,6 +19,7 @@ import {
   PlanDiscountType,
   CarryForwardMode,
 } from "@/features/subscription-plans/types/subscription-plan";
+import { DescriptionBulletTextarea } from "@/components/ui/description-bullet-textarea";
 import { useSubscriptionPlanStore } from "@/features/subscription-plans/hooks/useSubscriptionPlans";
 
 type PlanFormState = CreateSubscriptionPlanInput & { itemRulesJson: string };
@@ -363,12 +364,10 @@ export function PlanEditor() {
 
                 <div>
                   <label className="mb-2 block text-sm font-semibold text-gray-900">Description</label>
-                  <textarea
+                  <DescriptionBulletTextarea
                     value={localForm.description ?? ""}
-                    onChange={(e) => updateField("description", e.target.value)}
+                    onChange={(description) => updateField("description", description)}
                     disabled={isViewOnly}
-                    rows={2}
-                    className="w-full resize-none rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm"
                   />
                 </div>
 
