@@ -38,8 +38,10 @@ export interface SubscriptionKitchenSummary {
     packCount: number;
     rotiCount: number;
     rotiTypeTotals: Array<{ rotiType: string; quantity: number }>;
+    itemTotals?: Array<{ subscriptionMenuItemId?: string; name: string; rotiType?: string; quantity: number }>;
   }>;
   rotiTypeTotals: Array<{ rotiType: string; quantity: number }>;
+  itemTotals?: Array<{ subscriptionMenuItemId?: string; name: string; rotiType?: string; quantity: number }>;
 }
 
 export interface SubscriptionPrepRow {

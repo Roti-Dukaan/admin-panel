@@ -23,10 +23,18 @@ export function KitchenRotiSummaryPanel({ date }: { date: string }) {
 
   if (!data) return null;
 
+  const itemTotals = (data.itemTotals ?? []) as Array<{ name: string; quantity: number }>;
   const rotiTotals = (data.rotiTypeTotals ?? []) as Array<{ rotiType: string; quantity: number }>;
+  const displayItems = itemTotals.length
+    ? itemTotals
+    : rotiTotals.map((row) => ({
+        name: ROTI_LABELS[row.rotiType] ?? row.rotiType,
+        quantity: row.quantity,
+      }));
   const bySlot = (data.bySlot ?? []) as Array<{
     slotName: string;
     deliveryCount: number;
+    itemTotals?: Array<{ name: string; quantity: number }>;
     rotiTypeTotals?: Array<{ rotiType: string; quantity: number }>;
   }>;
 
@@ -36,17 +44,17 @@ export function KitchenRotiSummaryPanel({ date }: { date: string }) {
         <div className="mb-3 flex items-center gap-2">
           <ChefHat className="h-4 w-4 text-orange-500" />
           <h3 className="text-sm font-bold uppercase tracking-wide text-gray-700">
-            Roti Production by Type
+            Menu Prep Totals
           </h3>
         </div>
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          {rotiTotals.length === 0 ? (
-            <p className="col-span-full text-sm text-gray-500">No roti totals for this date.</p>
+          {displayItems.length === 0 ? (
+            <p className="col-span-full text-sm text-gray-500">No menu totals for this date.</p>
           ) : (
-            rotiTotals.map((row) => (
-              <div key={row.rotiType} className="rounded-lg bg-gray-50 p-3 text-center">
+            displayItems.map((row) => (
+              <div key={row.name} className="rounded-lg bg-gray-50 p-3 text-center">
                 <p className="text-xl font-bold text-gray-900">{row.quantity}</p>
-                <p className="text-xs text-gray-500">{ROTI_LABELS[row.rotiType] ?? row.rotiType}</p>
+                <p className="text-xs text-gray-500">{row.name}</p>
               </div>
             ))
           )}
@@ -63,12 +71,18 @@ export function KitchenRotiSummaryPanel({ date }: { date: string }) {
             <span className="text-xs text-gray-500">{slot.deliveryCount} deliveries</span>
           </div>
           <div className="flex flex-wrap gap-2">
-            {(slot.rotiTypeTotals ?? []).map((row) => (
+            {(slot.itemTotals?.length
+              ? slot.itemTotals
+              : (slot.rotiTypeTotals ?? []).map((row) => ({
+                  name: ROTI_LABELS[row.rotiType] ?? row.rotiType,
+                  quantity: row.quantity,
+                }))
+            ).map((row) => (
               <span
-                key={row.rotiType}
+                key={row.name}
                 className="rounded-full bg-orange-50 px-3 py-1 text-xs font-medium text-orange-800"
               >
-                {ROTI_LABELS[row.rotiType] ?? row.rotiType}: {row.quantity}
+                {row.quantity} {row.name}
               </span>
             ))}
           </div>

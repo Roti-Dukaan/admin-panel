@@ -51,6 +51,21 @@ export function SubscriptionStats({ stats }: { stats: SubscriptionStatsData }) {
 export function SubscriptionPrepSummary({ summary }: { summary: SubscriptionKitchenSummary | undefined }) {
   if (!summary) return null;
 
+  const topItems = summary.itemTotals?.length
+    ? summary.itemTotals
+    : summary.rotiTypeTotals.map((row) => ({
+        name: ROTI_TYPE_LABELS[row.rotiType] ?? row.rotiType,
+        quantity: row.quantity,
+      }));
+
+  const slotItems = (slot: SubscriptionKitchenSummary["bySlot"][number]) =>
+    slot.itemTotals?.length
+      ? slot.itemTotals
+      : slot.rotiTypeTotals.map((row) => ({
+          name: ROTI_TYPE_LABELS[row.rotiType] ?? row.rotiType,
+          quantity: row.quantity,
+        }));
+
   return (
     <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
       <div className="mb-3 flex items-center justify-between gap-3">
@@ -63,13 +78,13 @@ export function SubscriptionPrepSummary({ summary }: { summary: SubscriptionKitc
       </div>
 
       <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
-        {summary.rotiTypeTotals.length === 0 ? (
+        {topItems.length === 0 ? (
           <p className="col-span-full text-sm text-gray-500">No active subscription prep for this date.</p>
         ) : (
-          summary.rotiTypeTotals.map((row) => (
-            <div key={row.rotiType} className="rounded-lg bg-gray-50 p-3 text-center">
+          topItems.map((row) => (
+            <div key={row.name} className="rounded-lg bg-gray-50 p-3 text-center">
               <p className="text-xl font-bold text-gray-900">{row.quantity}</p>
-              <p className="text-xs text-gray-500">{ROTI_TYPE_LABELS[row.rotiType] ?? row.rotiType}</p>
+              <p className="text-xs text-gray-500">{row.name}</p>
             </div>
           ))
         )}
@@ -82,16 +97,16 @@ export function SubscriptionPrepSummary({ summary }: { summary: SubscriptionKitc
               <div>
                 <p className="text-sm font-semibold text-gray-800">{slot.slotName}</p>
                 <p className="text-xs text-gray-500">
-                  {slot.deliveryCount} deliveries · {slot.rotiCount} rotis
+                  {slot.deliveryCount} deliveries · {slot.rotiCount} items
                 </p>
               </div>
               <div className="flex flex-wrap gap-1.5">
-                {slot.rotiTypeTotals.map((row) => (
+                {slotItems(slot).map((row) => (
                   <span
-                    key={row.rotiType}
+                    key={row.name}
                     className="rounded-full bg-orange-50 px-2.5 py-0.5 text-xs font-medium text-orange-800"
                   >
-                    {ROTI_TYPE_LABELS[row.rotiType] ?? row.rotiType}: {row.quantity}
+                    {row.quantity} {row.name}
                   </span>
                 ))}
               </div>
