@@ -46,6 +46,7 @@ export function SubscriptionsTable({ subscriptions, loading, onSelect }: Subscri
         <TableHeader>
           <TableRow className="bg-muted/50 hover:bg-muted/50">
             <TableHead>Customer</TableHead>
+            <TableHead>Subscription ID</TableHead>
             <TableHead>Plan</TableHead>
             <TableHead>Frequency</TableHead>
             <TableHead>Status</TableHead>
@@ -76,6 +77,9 @@ export function SubscriptionsTable({ subscriptions, loading, onSelect }: Subscri
                     <p className="text-xs text-muted-foreground">{sub.customer?.phone || "—"}</p>
                   </div>
                 </div>
+              </TableCell>
+              <TableCell className="font-mono text-xs text-muted-foreground">
+                {sub.subscriptionNumber ?? "—"}
               </TableCell>
               <TableCell>
                 <p className="text-sm font-medium text-foreground">{sub.planName}</p>

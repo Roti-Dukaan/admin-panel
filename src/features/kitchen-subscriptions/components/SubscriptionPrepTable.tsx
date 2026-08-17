@@ -84,6 +84,7 @@ export function SubscriptionPrepTable({
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>Delivery ID</TableHead>
               <TableHead>Customer</TableHead>
               <TableHead>Phone</TableHead>
               <TableHead>Area / Address</TableHead>
@@ -106,6 +107,9 @@ export function SubscriptionPrepTable({
 
               return (
                 <TableRow key={row.id}>
+                  <TableCell className="whitespace-nowrap font-mono text-xs text-gray-700">
+                    {row.deliveryNumber ?? "—"}
+                  </TableCell>
                   <TableCell>
                     <div className="min-w-[120px]">
                       <p className="text-sm font-medium text-gray-900">{row.customerName}</p>

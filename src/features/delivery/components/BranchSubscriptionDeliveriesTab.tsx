@@ -40,7 +40,9 @@ function dispatchLabel(status: string): { label: string; className: string } {
 
 type SubscriptionTrackingRow = {
   id: string;
+  deliveryNumber: string | null;
   subscriptionId: string;
+  subscriptionNumber: string | null;
   customerName: string;
   customerPhone: string;
   address: string;
@@ -71,7 +73,9 @@ function toTrackingRows(
     const assignment = assigneeMap.get(row.id);
     return {
       id: row.id,
+      deliveryNumber: row.deliveryNumber ?? null,
       subscriptionId: row.subscriptionId,
+      subscriptionNumber: row.subscriptionNumber ?? null,
       customerName: row.customerName,
       customerPhone: row.customerPhone,
       address: row.address,
@@ -217,7 +221,8 @@ export function BranchSubscriptionDeliveriesTab({
           <Table>
             <TableHeader>
               <TableRow className="border-b border-gray-200 bg-gray-50 hover:bg-gray-50">
-                <TableHead className={cn(compactTableHeadClass, "w-[9rem]")}>Subscription ID</TableHead>
+                <TableHead className={cn(compactTableHeadClass, "w-[9rem]")}>Delivery ID</TableHead>
+                <TableHead className={cn(compactTableHeadClass, "w-[9rem]")}>Subscription</TableHead>
                 <TableHead className={compactTableHeadClass}>Customer</TableHead>
                 <TableHead className={compactTableHeadClass}>Address</TableHead>
                 <TableHead className={cn(compactTableHeadClass, "w-20")}>Slot</TableHead>
@@ -230,7 +235,7 @@ export function BranchSubscriptionDeliveriesTab({
             <TableBody>
               {rows.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="py-10 text-center text-sm text-gray-500">
+                  <TableCell colSpan={9} className="py-10 text-center text-sm text-gray-500">
                     No subscription deliveries for {format(new Date(`${date}T12:00:00`), "MMM d, yyyy")}
                   </TableCell>
                 </TableRow>
@@ -247,15 +252,34 @@ export function BranchSubscriptionDeliveriesTab({
                         <div className="flex items-center gap-1.5">
                           <span
                             className="truncate font-mono text-sm text-gray-900"
-                            title={row.subscriptionId}
+                            title={row.deliveryNumber ?? row.id}
                           >
-                            {row.subscriptionId}
+                            {row.deliveryNumber ?? "—"}
                           </span>
-                          <CopyTextButton
-                            text={row.subscriptionId}
-                            label="Subscription ID copied!"
-                            title="Copy subscription ID"
-                          />
+                          {row.deliveryNumber ? (
+                            <CopyTextButton
+                              text={row.deliveryNumber}
+                              label="Delivery ID copied!"
+                              title="Copy delivery ID"
+                            />
+                          ) : null}
+                        </div>
+                      </TableCell>
+                      <TableCell className={compactTableCellClass}>
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            className="truncate font-mono text-sm text-gray-900"
+                            title={row.subscriptionNumber ?? row.subscriptionId}
+                          >
+                            {row.subscriptionNumber ?? "—"}
+                          </span>
+                          {row.subscriptionNumber ? (
+                            <CopyTextButton
+                              text={row.subscriptionNumber}
+                              label="Subscription ID copied!"
+                              title="Copy subscription ID"
+                            />
+                          ) : null}
                         </div>
                       </TableCell>
                       <TableCell className={cn(compactTableCellClass, "max-w-[140px]")}>

@@ -22,6 +22,8 @@ export interface AssignableStaff extends DeliveryBoy {
 
 export interface DriverDeliveryStop {
   id: string;
+  deliveryNumber?: string;
+  subscriptionNumber?: string;
   routeSequence: number | null;
   customerName: string;
   customerPhone: string;

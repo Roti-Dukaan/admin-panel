@@ -46,6 +46,7 @@ export interface SubscriptionKitchenSummary {
 
 export interface SubscriptionPrepRow {
   id: string;
+  deliveryNumber?: string;
   deliveryDate: string;
   source: "SUBSCRIPTION_DELIVERY";
   orderId?: string | null;
@@ -67,6 +68,7 @@ export interface SubscriptionPrepRow {
   dispatchStatus: SubscriptionDispatchStatus;
   planName: string | null;
   subscriptionId: string;
+  subscriptionNumber?: string | null;
 }
 
 export interface SubscriptionDispatchRow {

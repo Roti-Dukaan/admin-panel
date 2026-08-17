@@ -24,11 +24,16 @@ export function SubscriptionDispatchTicket({ row }: { row: SubscriptionPrepRow }
       <div className="thermal-divider" />
       <div className="thermal-section-title">Subscription Delivery</div>
       <div className="thermal-row">
-        <strong>Delivery ID:</strong> {row.id.slice(0, 8).toUpperCase()}
+        <strong>Delivery ID:</strong> {row.deliveryNumber ?? row.id.slice(0, 8).toUpperCase()}
       </div>
+      {row.subscriptionNumber ? (
+        <div className="thermal-row">
+          <strong>Subscription:</strong> {row.subscriptionNumber}
+        </div>
+      ) : null}
       {row.orderNumber ? (
         <div className="thermal-row">
-          <strong>Order ID:</strong> {row.orderNumber}
+          <strong>Fulfillment Order:</strong> {row.orderNumber}
         </div>
       ) : null}
       <div className="thermal-row">

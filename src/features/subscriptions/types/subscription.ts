@@ -55,6 +55,7 @@ export interface SubscriptionMeals {
 
 export interface SubscriptionEntity {
   id: string;
+  subscriptionNumber?: string;
   customerId: string;
   planId: string | null;
   planName: string;
