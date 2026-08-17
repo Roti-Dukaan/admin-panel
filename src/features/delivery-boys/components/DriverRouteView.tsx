@@ -61,6 +61,9 @@ function SubscriptionStopCard({
           )}
           <div>
             <h3 className="font-semibold text-gray-900">{stop.customerName}</h3>
+            {stop.deliveryNumber && (
+              <p className="text-xs font-medium text-orange-700">Order ID: {stop.deliveryNumber}</p>
+            )}
             <p className="text-xs text-gray-500">
               {stop.slot?.name ?? "Slot"}
               {stop.slot?.startTime
