@@ -346,7 +346,13 @@ export function PackageEditor({ open, mode, selected, onClose, onSaved }: Packag
                 </select>
               </label>
               <label className="block text-sm">
-                <span className="mb-1 block font-medium text-gray-700">Selection cutoff (hours before delivery)</span>
+                <span className="mb-1 block font-medium text-gray-700">
+                  Selection cutoff (hours before delivery day starts)
+                </span>
+                <span className="mb-2 block text-xs text-gray-500">
+                  Counted from midnight IST on the delivery date, not from the slot time. Example: 2 hours
+                  for 18 Aug → cutoff 17 Aug, 10:00 PM IST.
+                </span>
                 <input
                   disabled={isViewOnly}
                   type="number"
