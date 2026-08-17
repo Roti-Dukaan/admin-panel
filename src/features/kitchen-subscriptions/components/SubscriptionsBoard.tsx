@@ -22,7 +22,7 @@ import {
 import { SubscriptionStats, SubscriptionPrepSummary } from "./SubscriptionStats";
 import { SubscriptionPrepTable } from "./SubscriptionPrepTable";
 import { SubscriptionDispatchTicketModal } from "./SubscriptionDispatchTicketModal";
-import type { SubscriptionPrepRow } from "../types/kitchen-subscriptions";
+import type { SubscriptionKitchenSummary, SubscriptionPrepRow } from "../types/kitchen-subscriptions";
 
 function ErrorState({ onRetry }: { onRetry: () => void }) {
   return (
@@ -67,7 +67,57 @@ export function SubscriptionsBoard() {
     return slots.map((slot) => ({ id: slot.slotId, name: slot.slotName }));
   }, [summaryQuery.data]);
 
+  const filteredSummary = useMemo((): SubscriptionKitchenSummary | undefined => {
+    const summary = summaryQuery.data;
+    if (!summary) return undefined;
+    if (slotId === "all") return summary;
+
+    const slot = summary.bySlot.find((s) => s.slotId === slotId);
+    if (!slot) {
+      return {
+        ...summary,
+        totalDeliveries: 0,
+        totalPacks: 0,
+        totalRotis: 0,
+        totalCustomers: 0,
+        itemTotals: [],
+        rotiTypeTotals: [],
+        bySlot: [],
+        statusCounts: {
+          pending: 0,
+          preparing: 0,
+          packed: 0,
+          readyForDispatch: 0,
+        },
+      };
+    }
+
+    return {
+      ...summary,
+      totalDeliveries: slot.deliveryCount,
+      totalPacks: slot.packCount,
+      totalRotis: slot.rotiCount,
+      totalCustomers: slot.customerCount,
+      itemTotals: slot.itemTotals ?? [],
+      rotiTypeTotals: slot.rotiTypeTotals,
+      bySlot: [],
+    };
+  }, [summaryQuery.data, slotId]);
+
   const stats = useMemo(() => {
+    if (slotId !== "all") {
+      const rows = prepQuery.data ?? [];
+      return {
+        pending: rows.filter((r) => r.prepStatus === "PENDING").length,
+        preparing: rows.filter((r) => r.prepStatus === "PREPARING").length,
+        packed: rows.filter((r) => r.prepStatus === "PACKED").length,
+        readyForDispatch: rows.filter((r) => r.prepStatus === "READY").length,
+        total: rows.length,
+        totalRotis: rows.reduce((sum, r) => sum + r.totalQuantity, 0),
+        totalPacks: rows.length,
+      };
+    }
+
     const counts = summaryQuery.data?.statusCounts;
     return {
       pending: counts?.pending ?? 0,
@@ -78,7 +128,7 @@ export function SubscriptionsBoard() {
       totalRotis: summaryQuery.data?.totalRotis ?? 0,
       totalPacks: summaryQuery.data?.totalPacks ?? 0,
     };
-  }, [summaryQuery.data]);
+  }, [prepQuery.data, slotId, summaryQuery.data]);
 
   const handleRefresh = () => {
     summaryQuery.refetch();
@@ -161,7 +211,7 @@ export function SubscriptionsBoard() {
       </div>
 
       <SubscriptionStats stats={stats} />
-      <SubscriptionPrepSummary summary={summaryQuery.data} />
+      <SubscriptionPrepSummary summary={filteredSummary} slotFilterActive={slotId !== "all"} />
 
       <SubscriptionPrepTable
         rows={prepQuery.data ?? []}

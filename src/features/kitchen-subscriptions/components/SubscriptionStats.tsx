@@ -48,7 +48,13 @@ export function SubscriptionStats({ stats }: { stats: SubscriptionStatsData }) {
   );
 }
 
-export function SubscriptionPrepSummary({ summary }: { summary: SubscriptionKitchenSummary | undefined }) {
+export function SubscriptionPrepSummary({
+  summary,
+  slotFilterActive = false,
+}: {
+  summary: SubscriptionKitchenSummary | undefined;
+  slotFilterActive?: boolean;
+}) {
   if (!summary) return null;
 
   const topItems = summary.itemTotals?.length
@@ -90,7 +96,7 @@ export function SubscriptionPrepSummary({ summary }: { summary: SubscriptionKitc
         )}
       </div>
 
-      {summary.bySlot.length > 0 && (
+      {summary.bySlot.length > 0 && !slotFilterActive && (
         <div className="mt-4 space-y-2 border-t border-gray-100 pt-3">
           {summary.bySlot.map((slot) => (
             <div key={slot.slotId} className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-gray-50 px-3 py-2">
