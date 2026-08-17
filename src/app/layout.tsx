@@ -11,6 +11,10 @@ import "./globals.css"
 export const metadata: Metadata = {
   title: "Roti Dukaan Admin",
   description: "Admin panel for Roti Dukaan",
+  icons: {
+    icon: [{ url: "/roti_dukaan_logo.png", sizes: "32x32", type: "image/png" }],
+    apple: [{ url: "/roti_dukaan_logo.png", sizes: "180x180", type: "image/png" }],
+  },
 }
 
 export default function RootLayout({

@@ -78,7 +78,7 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
           <Link href="/dashboard" className="flex items-center gap-2.5 group">
             <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full ring-2 ring-orange-500/20 group-hover:ring-orange-500/40 transition-all">
               <img
-                src="/roti_dukaan_logo.jpg"
+                src="/roti_dukaan_logo.png"
                 alt="Roti Dukaan"
                 className="h-full w-full object-cover"
               />
@@ -93,7 +93,7 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
         ) : (
           <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full ring-2 ring-orange-500/20">
             <img
-              src="/roti_dukaan_logo.jpg"
+              src="/roti_dukaan_logo.png"
               alt="Roti Dukaan"
               className="h-full w-full object-cover"
             />
