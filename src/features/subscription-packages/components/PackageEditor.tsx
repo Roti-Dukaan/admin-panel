@@ -109,7 +109,9 @@ function formToPayload(form: PackageForm): CreateSubscriptionPackageInput {
       active: c.enabled,
       includedQuantityPerDelivery: Number(c.includedQuantityPerDelivery) || 1,
       maximumQuantityPerDelivery: Number(c.maximumQuantityPerDelivery) || 1,
-      maximumChoicesPerDelivery: c.allowMultipleSelections ? 999 : 1,
+      maximumChoicesPerDelivery: c.allowMultipleSelections
+        ? Math.max(c.menuItemIds.length, 1)
+        : 1,
       menuItemIds: c.enabled ? c.menuItemIds : [],
     }))
     .filter((c) => c.active);
