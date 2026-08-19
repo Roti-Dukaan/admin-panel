@@ -602,6 +602,10 @@ export function PlanEditor() {
                   </div>
                   <div>
                     <label className="mb-2 block text-sm font-semibold text-gray-900">Skip Cutoff (hours)</label>
+                    <p className="mb-2 text-xs text-gray-500">
+                      Hours before the delivery slot start time (IST). Example: 12 hours before an 8:30 PM
+                      dinner slot → skip by 8:30 AM that day.
+                    </p>
                     <input
                       type="number"
                       value={localForm.skipCutoffHours ?? 12}
