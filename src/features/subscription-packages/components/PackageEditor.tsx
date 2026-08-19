@@ -37,6 +37,11 @@ type PackageForm = {
   displayOrder: number;
   selectionCutoffHours: number;
   allowCustomerCategorySelection: boolean;
+  skipEnabled: boolean;
+  weeklySkipLimit: number;
+  monthlySkipLimit: number;
+  maxSkipDaysPerCycle: number;
+  skipCutoffHours: number;
   categories: Record<string, CategoryForm>;
 };
 
@@ -75,6 +80,11 @@ function emptyForm(definitions: MenuCategoryDefinition[] = []): PackageForm {
     displayOrder: 0,
     selectionCutoffHours: 24,
     allowCustomerCategorySelection: false,
+    skipEnabled: true,
+    weeklySkipLimit: 1,
+    monthlySkipLimit: 2,
+    maxSkipDaysPerCycle: 2,
+    skipCutoffHours: 12,
     categories: buildEmptyCategories(definitions),
   };
 }
@@ -91,6 +101,11 @@ function packageToForm(pkg: SubscriptionPackage, definitions: MenuCategoryDefini
   base.displayOrder = pkg.displayOrder;
   base.selectionCutoffHours = pkg.selectionCutoffHours ?? 24;
   base.allowCustomerCategorySelection = pkg.allowCustomerCategorySelection ?? false;
+  base.skipEnabled = pkg.skipEnabled ?? true;
+  base.weeklySkipLimit = pkg.weeklySkipLimit ?? 1;
+  base.monthlySkipLimit = pkg.monthlySkipLimit ?? 2;
+  base.maxSkipDaysPerCycle = pkg.maxSkipDaysPerCycle ?? 2;
+  base.skipCutoffHours = pkg.skipCutoffHours ?? 12;
 
   for (const found of pkg.categories ?? []) {
     const key = found.categoryDefinitionId ?? found.categoryDefinition?.id;
@@ -134,6 +149,11 @@ function formToPayload(form: PackageForm): CreateSubscriptionPackageInput {
     displayOrder: Number(form.displayOrder) || 0,
     selectionCutoffHours: Number(form.selectionCutoffHours) || 24,
     allowCustomerCategorySelection: form.allowCustomerCategorySelection,
+    skipEnabled: form.skipEnabled,
+    weeklySkipLimit: Number(form.weeklySkipLimit) || 0,
+    monthlySkipLimit: Number(form.monthlySkipLimit) || 0,
+    maxSkipDaysPerCycle: Number(form.maxSkipDaysPerCycle) || 0,
+    skipCutoffHours: Number(form.skipCutoffHours) || 12,
     availableDeliveryDays: [],
     availableDeliverySlots: [],
     categories,
@@ -452,6 +472,69 @@ export function PackageEditor({ open, mode, selected, onClose, onSaved }: Packag
                 </span>
               </span>
             </label>
+          </section>
+
+          <section className="space-y-3 rounded-xl border border-blue-100 bg-blue-50/40 p-4">
+            <h3 className="text-sm font-bold uppercase tracking-wide text-blue-600">Skip configuration</h3>
+            <label className="inline-flex items-center gap-2 text-sm font-medium text-gray-700">
+              <input
+                type="checkbox"
+                disabled={isViewOnly}
+                checked={form.skipEnabled}
+                onChange={(e) => setForm((f) => ({ ...f, skipEnabled: e.target.checked }))}
+              />
+              Allow customers to skip deliveries
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              <label className="block text-sm">
+                <span className="mb-1 block font-medium text-gray-700">Weekly skip limit</span>
+                <input
+                  disabled={isViewOnly || !form.skipEnabled}
+                  type="number"
+                  min={0}
+                  value={form.weeklySkipLimit}
+                  onChange={(e) => setForm((f) => ({ ...f, weeklySkipLimit: Number(e.target.value) }))}
+                  className="w-full rounded-xl border border-gray-200 px-3 py-2.5 disabled:bg-gray-100"
+                />
+              </label>
+              <label className="block text-sm">
+                <span className="mb-1 block font-medium text-gray-700">Monthly skip limit</span>
+                <input
+                  disabled={isViewOnly || !form.skipEnabled}
+                  type="number"
+                  min={0}
+                  value={form.monthlySkipLimit}
+                  onChange={(e) => setForm((f) => ({ ...f, monthlySkipLimit: Number(e.target.value) }))}
+                  className="w-full rounded-xl border border-gray-200 px-3 py-2.5 disabled:bg-gray-100"
+                />
+              </label>
+              <label className="block text-sm">
+                <span className="mb-1 block font-medium text-gray-700">Max skip days / cycle</span>
+                <input
+                  disabled={isViewOnly || !form.skipEnabled}
+                  type="number"
+                  min={0}
+                  value={form.maxSkipDaysPerCycle}
+                  onChange={(e) => setForm((f) => ({ ...f, maxSkipDaysPerCycle: Number(e.target.value) }))}
+                  className="w-full rounded-xl border border-gray-200 px-3 py-2.5 disabled:bg-gray-100"
+                />
+              </label>
+              <label className="block text-sm">
+                <span className="mb-1 block font-medium text-gray-700">Skip cutoff (hours)</span>
+                <span className="mb-2 block text-xs text-gray-500">
+                  Hours before the delivery slot start time (IST). Example: 12 hours before an 8:30 PM
+                  dinner slot → skip by 8:30 AM that day.
+                </span>
+                <input
+                  disabled={isViewOnly || !form.skipEnabled}
+                  type="number"
+                  min={0}
+                  value={form.skipCutoffHours}
+                  onChange={(e) => setForm((f) => ({ ...f, skipCutoffHours: Number(e.target.value) }))}
+                  className="w-full rounded-xl border border-gray-200 px-3 py-2.5 disabled:bg-gray-100"
+                />
+              </label>
+            </div>
           </section>
 
           <section className="space-y-4">
