@@ -37,6 +37,13 @@ export const branchDeliveryApi = {
     return data.data;
   },
 
+  getByOrderId: async (orderId: string): Promise<Delivery> => {
+    const { data } = await apiClient.get<{ success: boolean; data: Delivery }>(
+      `/branch-manager/deliveries/order/${orderId}`
+    );
+    return data.data;
+  },
+
   getStats: async (): Promise<DeliveryStatistics> => {
     const { data } = await apiClient.get<{ success: boolean; data: DeliveryStatistics }>(
       "/branch-manager/deliveries/stats"
