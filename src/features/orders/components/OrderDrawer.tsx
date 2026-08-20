@@ -34,11 +34,14 @@ import {
 import { RefreshCw, ExternalLink, Truck } from "lucide-react"
 import { useQuery } from "@tanstack/react-query"
 import { deliveryApi } from "@/features/delivery/services/delivery.api"
+import { branchDeliveryApi } from "@/features/delivery/services/branch-delivery.api"
+import { useWorkspace } from "@/contexts/WorkspaceContext"
 import { DeliveryStatusBadge } from "@/features/delivery/components/DeliveryStatusBadge"
 import { DeliveryInformation } from "@/features/orders/delivery/DeliveryInformation"
 import { DeliveryTimeline } from "@/features/orders/delivery/DeliveryTimeline"
 
 export function OrderDrawer() {
+  const { isBranchManager } = useWorkspace()
   const { selectedOrder, drawerOpen, setDrawerOpen, setSelectedOrder, updateOrderStatus, cancelOrder, updatingStatus } = useOrdersStore()
   const [showCancelDialog, setShowCancelDialog] = useState(false)
   const [cancelReason, setCancelReason] = useState("Test order / cancelled by admin")
@@ -77,8 +80,11 @@ export function OrderDrawer() {
   const showCancel = currentStatus ? canCancelOrder(currentStatus) : false
 
   const { data: deliveryTracking, isLoading: deliveryLoading } = useQuery({
-    queryKey: ["order-delivery", selectedOrder?.id],
-    queryFn: () => deliveryApi.getByOrderId(selectedOrder!.id),
+    queryKey: ["order-delivery", selectedOrder?.id, isBranchManager],
+    queryFn: () =>
+      isBranchManager
+        ? branchDeliveryApi.getByOrderId(selectedOrder!.id)
+        : deliveryApi.getByOrderId(selectedOrder!.id),
     enabled: !!selectedOrder?.id,
   })
 
