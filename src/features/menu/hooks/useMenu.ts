@@ -37,7 +37,9 @@ function toFormData(dto: Record<string, unknown>, imageFile: File): FormData {
   Object.entries(dto).forEach(([key, value]) => {
     if (value === undefined || value === null) return;
     if (Array.isArray(value)) {
-      value.forEach((item) => fd.append(key, String(item)));
+      // An empty array still needs a field so the backend can tell "clear it" from "not sent".
+      if (value.length === 0) fd.append(key, '');
+      else value.forEach((item) => fd.append(key, String(item)));
       return;
     }
     fd.append(key, String(value));

@@ -4,7 +4,8 @@ export type Availability = 'available' | 'unavailable' | 'out-of-stock';
 
 export type HealthTag = 'high-protein' | 'high-fiber' | 'healthy' | 'gluten-free' | 'vegan' | 'homemade' | 'kids-friendly';
 
-export type CustomerLabel = 'chef-special' | 'best-seller' | 'new' | 'recommended' | 'popular';
+/** Mirrors the CustomerLabel enum persisted by the backend. */
+export type CustomerLabel = 'CHEF_SPECIAL' | 'BEST_SELLER' | 'NEW' | 'RECOMMENDED' | 'POPULAR';
 
 export type FoodType = 'VEG' | 'NON_VEG' | 'EGG';
 
@@ -122,9 +123,9 @@ export const HEALTH_TAG_CONFIG: Record<HealthTag, { label: string; emoji: string
 };
 
 export const CUSTOMER_LABEL_CONFIG: Record<CustomerLabel, { label: string; color: string; bgColor: string }> = {
-  'chef-special': { label: 'Chef Special', color: 'text-amber-700', bgColor: 'bg-amber-50' },
-  'best-seller': { label: 'Best Seller', color: 'text-orange-700', bgColor: 'bg-orange-50' },
-  new: { label: 'New', color: 'text-blue-700', bgColor: 'bg-blue-50' },
-  recommended: { label: 'Recommended', color: 'text-emerald-700', bgColor: 'bg-emerald-50' },
-  popular: { label: 'Popular', color: 'text-violet-700', bgColor: 'bg-violet-50' },
+  CHEF_SPECIAL: { label: 'Chef Special', color: 'text-amber-700', bgColor: 'bg-amber-50' },
+  BEST_SELLER: { label: 'Best Seller', color: 'text-orange-700', bgColor: 'bg-orange-50' },
+  NEW: { label: 'New', color: 'text-blue-700', bgColor: 'bg-blue-50' },
+  RECOMMENDED: { label: 'Recommended', color: 'text-emerald-700', bgColor: 'bg-emerald-50' },
+  POPULAR: { label: 'Popular', color: 'text-violet-700', bgColor: 'bg-violet-50' },
 };
