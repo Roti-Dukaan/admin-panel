@@ -35,6 +35,12 @@ function toFormData(dto: Record<string, unknown>, imageFile: File): FormData {
   const fd = new FormData();
   Object.entries(dto).forEach(([key, value]) => {
     if (value === undefined || value === null) return;
+    if (Array.isArray(value)) {
+      // An empty array still needs a field so the backend can tell "clear it" from "not sent".
+      if (value.length === 0) fd.append(key, '');
+      else value.forEach((entry) => fd.append(key, String(entry)));
+      return;
+    }
     fd.append(key, String(value));
   });
   fd.append('image', imageFile);
@@ -61,7 +67,7 @@ function mapApiFoodItemToFoodItem(api: ApiFoodItem, categories: Category[]): Foo
       servingSize: api.servingSize || '',
     },
     healthTags: [],
-    customerLabels: api.isFeatured ? ['chef-special'] : [],
+    customerLabels: api.customerLabels ?? [],
     availability: !api.isAvailable ? 'unavailable' : 'available',
     foodType: api.foodType ?? (api.isVeg ? 'VEG' : 'NON_VEG'),
     isFeatured: api.isFeatured,
@@ -273,6 +279,7 @@ export const useMenuStore = create<MenuStore>((set, get) => ({
         foodType: data.foodType,
         isVeg: data.foodType === 'VEG',
         isFeatured: data.isFeatured,
+        customerLabels: data.customerLabels,
         isAvailable: data.availability === 'available',
         calories: parseNutritionValue(data.calories),
         protein: parseNutritionValue(data.protein),
@@ -310,6 +317,7 @@ export const useMenuStore = create<MenuStore>((set, get) => ({
         foodType: data.foodType,
         isVeg: data.foodType === 'VEG',
         isFeatured: data.isFeatured,
+        customerLabels: data.customerLabels,
         isAvailable: data.availability === 'available',
         calories: parseNutritionValue(data.calories),
         protein: parseNutritionValue(data.protein),

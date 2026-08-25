@@ -60,6 +60,7 @@ export interface ApiFoodItem {
   isVeg: boolean;
   foodType?: 'VEG' | 'NON_VEG' | 'EGG';
   isFeatured: boolean;
+  customerLabels?: ('CHEF_SPECIAL' | 'BEST_SELLER' | 'NEW' | 'RECOMMENDED' | 'POPULAR')[];
   isAvailable: boolean;
   isSubscriptionAvailable: boolean;
   preparationTime: number;
