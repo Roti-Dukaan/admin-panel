@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { FoodItem, FoodItemFormData, MenuFilters, Availability, HealthTag, Category, HEALTH_TAG_CONFIG } from '../types/menu';
+import { FoodItem, FoodItemFormData, MenuFilters, Availability, HealthTag, Category, HEALTH_TAG_CONFIG, CUSTOMER_LABEL_CONFIG, CustomerLabel } from '../types/menu';
 import { categoryApi } from '@/lib/api/category.api';
 import { foodItemApi } from '@/lib/api/food.api';
 import type { ApiCategory, ApiFoodItem } from '@/lib/types/api';
@@ -35,6 +35,10 @@ function toFormData(dto: Record<string, unknown>, imageFile: File): FormData {
   const fd = new FormData();
   Object.entries(dto).forEach(([key, value]) => {
     if (value === undefined || value === null) return;
+    if (Array.isArray(value)) {
+      value.forEach((item) => fd.append(key, String(item)));
+      return;
+    }
     fd.append(key, String(value));
   });
   fd.append('image', imageFile);
@@ -50,6 +54,17 @@ function healthTagsFromApi(tags?: string[]): HealthTag[] {
 
 function healthTagsToApi(tags: HealthTag[]): string[] {
   return tags.map((tag) => tag.replace(/-/g, '_').toUpperCase());
+}
+
+function customerLabelsFromApi(labels?: string[]): CustomerLabel[] {
+  if (!labels?.length) return [];
+  return labels
+    .map((label) => label.toLowerCase().replace(/_/g, '-') as CustomerLabel)
+    .filter((label) => label in CUSTOMER_LABEL_CONFIG);
+}
+
+function customerLabelsToApi(labels: CustomerLabel[]): string[] {
+  return labels.map((label) => label.replace(/-/g, '_').toUpperCase());
 }
 
 function mapApiFoodItemToFoodItem(api: ApiFoodItem, categories: Category[]): FoodItem {
@@ -72,7 +87,7 @@ function mapApiFoodItemToFoodItem(api: ApiFoodItem, categories: Category[]): Foo
       servingSize: api.servingSize || '',
     },
     healthTags: healthTagsFromApi(api.healthTags),
-    customerLabels: api.customerLabels ?? [],
+    customerLabels: customerLabelsFromApi(api.customerLabels),
     availability: !api.isAvailable ? 'unavailable' : 'available',
     foodType: api.foodType ?? (api.isVeg ? 'VEG' : 'NON_VEG'),
     isFeatured: api.isFeatured,
@@ -284,7 +299,7 @@ export const useMenuStore = create<MenuStore>((set, get) => ({
         foodType: data.foodType,
         isVeg: data.foodType === 'VEG',
         isFeatured: data.isFeatured,
-        customerLabels: data.customerLabels,
+        customerLabels: customerLabelsToApi(data.customerLabels),
         healthTags: healthTagsToApi(data.healthTags),
         isAvailable: data.availability === 'available',
         calories: parseNutritionValue(data.calories),
@@ -323,7 +338,7 @@ export const useMenuStore = create<MenuStore>((set, get) => ({
         foodType: data.foodType,
         isVeg: data.foodType === 'VEG',
         isFeatured: data.isFeatured,
-        customerLabels: data.customerLabels,
+        customerLabels: customerLabelsToApi(data.customerLabels),
         healthTags: healthTagsToApi(data.healthTags),
         isAvailable: data.availability === 'available',
         calories: parseNutritionValue(data.calories),
