@@ -21,6 +21,7 @@ function mapApiCategoryToCategory(api: ApiCategory): Category {
     emoji: '🍽️',
     color: 'text-gray-700',
     bgColor: 'bg-gray-100',
+    imageUrl: api.imageUrl ? resolveImageUrl(api.imageUrl) : undefined,
     sortOrder: api.displayOrder,
     createdAt: new Date(api.createdAt).getTime(),
   };
@@ -135,8 +136,8 @@ interface MenuStore {
   openCategoryModal: () => void;
   closeCategoryModal: () => void;
 
-  addCategory: (data: { name: string; slug: string; emoji: string; color: string; bgColor: string }) => Promise<void>;
-  updateCategory: (id: string, data: Partial<Category>) => Promise<void>;
+  addCategory: (data: { name: string; slug: string; emoji: string; color: string; bgColor: string }, imageFile?: File) => Promise<void>;
+  updateCategory: (id: string, data: Partial<Category>, imageFile?: File) => Promise<void>;
   deleteCategory: (id: string) => Promise<void>;
 
   addFood: (data: FoodItemFormData, imageFile?: File) => Promise<string>;
@@ -246,10 +247,11 @@ export const useMenuStore = create<MenuStore>((set, get) => ({
   openCategoryModal: () => set({ categoryModalOpen: true }),
   closeCategoryModal: () => set({ categoryModalOpen: false }),
 
-  addCategory: async (data) => {
+  addCategory: async (data, imageFile) => {
     try {
       const formData = new FormData();
       formData.append('name', data.name);
+      if (imageFile) formData.append('image', imageFile);
       await categoryApi.create(formData);
       // Reload categories
       const catRes = await categoryApi.list({ limit: 100, sort: 'displayOrder', order: 'asc' });
@@ -261,10 +263,11 @@ export const useMenuStore = create<MenuStore>((set, get) => ({
     }
   },
 
-  updateCategory: async (id, data) => {
+  updateCategory: async (id, data, imageFile) => {
     try {
       const formData = new FormData();
       if (data.name) formData.append('name', data.name);
+      if (imageFile) formData.append('image', imageFile);
       await categoryApi.update(id, formData);
       const catRes = await categoryApi.list({ limit: 100, sort: 'displayOrder', order: 'asc' });
       const categories = (catRes.data?.items || []).map(mapApiCategoryToCategory);

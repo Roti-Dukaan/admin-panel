@@ -5,31 +5,86 @@ import { motion, AnimatePresence } from "motion/react";
 import { X, Plus, GripVertical, Trash2, Edit3, Check } from "lucide-react";
 import { useMenuStore } from "../hooks/useMenu";
 import { Category, EMOJI_OPTIONS, COLOR_OPTIONS } from "../types/menu";
+import { FoodImageUploader } from "./FoodImageUploader";
+
+const CATEGORY_IMAGE_HINT = [
+  "Recommended: 800 x 800 px",
+  "Square image works best",
+  "Formats: PNG, JPG, WebP, SVG | Max: 2MB",
+];
+
+function resetAddForm() {
+  return { name: "", emoji: "🌾", color: COLOR_OPTIONS[0].value, bgColor: COLOR_OPTIONS[0].bg };
+}
 
 export function CategoryManager() {
   const { categoryModalOpen, closeCategoryModal, categories, addCategory, updateCategory, deleteCategory } = useMenuStore();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
-  const [form, setForm] = useState({ name: "", emoji: "🌾", color: COLOR_OPTIONS[0].value, bgColor: COLOR_OPTIONS[0].bg });
+  const [form, setForm] = useState(resetAddForm());
   const [editForm, setEditForm] = useState({ name: "", emoji: "", color: "", bgColor: "" });
+  const [addImageFile, setAddImageFile] = useState<File | null>(null);
+  const [addImagePreview, setAddImagePreview] = useState("");
+  const [editImageFile, setEditImageFile] = useState<File | null>(null);
+  const [editImagePreview, setEditImagePreview] = useState("");
+  const [saving, setSaving] = useState(false);
 
   const sorted = [...categories].sort((a, b) => a.sortOrder - b.sortOrder);
 
+  const handleAddImageSelect = (file: File) => {
+    setAddImageFile(file);
+    setAddImagePreview(URL.createObjectURL(file));
+  };
+
+  const handleEditImageSelect = (file: File) => {
+    setEditImageFile(file);
+    setEditImagePreview(URL.createObjectURL(file));
+  };
+
+  const clearAddImage = () => {
+    setAddImageFile(null);
+    setAddImagePreview("");
+  };
+
+  const clearEditImage = () => {
+    setEditImageFile(null);
+    setEditImagePreview("");
+  };
+
   const handleAdd = async () => {
     if (!form.name.trim()) return;
+    setSaving(true);
     try {
-      await addCategory({ name: form.name.trim(), slug: "", emoji: form.emoji, color: form.color, bgColor: form.bgColor });
-      setForm({ name: "", emoji: "🌾", color: COLOR_OPTIONS[0].value, bgColor: COLOR_OPTIONS[0].bg });
+      await addCategory(
+        { name: form.name.trim(), slug: "", emoji: form.emoji, color: form.color, bgColor: form.bgColor },
+        addImageFile ?? undefined,
+      );
+      setForm(resetAddForm());
+      clearAddImage();
       setShowAddForm(false);
     } catch {
       // error already logged in store
+    } finally {
+      setSaving(false);
     }
   };
 
-  const handleUpdate = (cat: Category) => {
+  const handleUpdate = async (cat: Category) => {
     if (!editForm.name.trim()) return;
-    updateCategory(cat.id, { name: editForm.name.trim(), emoji: editForm.emoji, color: editForm.color, bgColor: editForm.bgColor });
-    setEditingId(null);
+    setSaving(true);
+    try {
+      await updateCategory(
+        cat.id,
+        { name: editForm.name.trim(), emoji: editForm.emoji, color: editForm.color, bgColor: editForm.bgColor },
+        editImageFile ?? undefined,
+      );
+      setEditingId(null);
+      clearEditImage();
+    } catch {
+      // error already logged in store
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleDelete = (cat: Category) => {
@@ -39,6 +94,19 @@ export function CategoryManager() {
   const startEdit = (cat: Category) => {
     setEditingId(cat.id);
     setEditForm({ name: cat.name, emoji: cat.emoji, color: cat.color, bgColor: cat.bgColor });
+    setEditImageFile(null);
+    setEditImagePreview(cat.imageUrl || "");
+  };
+
+  const cancelAdd = () => {
+    setShowAddForm(false);
+    setForm(resetAddForm());
+    clearAddImage();
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    clearEditImage();
   };
 
   return (
@@ -83,6 +151,18 @@ export function CategoryManager() {
                         placeholder="Category name"
                         autoFocus
                       />
+                      <FoodImageUploader
+                        title="Category Image"
+                        recommendations={CATEGORY_IMAGE_HINT}
+                        accept="image/jpeg,image/png,image/webp,image/svg+xml"
+                        compact
+                        value={editImagePreview}
+                        onChange={(url) => {
+                          setEditImagePreview(url);
+                          if (!url) clearEditImage();
+                        }}
+                        onFileSelect={handleEditImageSelect}
+                      />
                       <div>
                         <p className="mb-1.5 text-xs font-medium text-gray-500">Emoji</p>
                         <div className="flex flex-wrap gap-1">
@@ -120,12 +200,13 @@ export function CategoryManager() {
                       <div className="flex items-center gap-2 pt-1">
                         <button
                           onClick={() => handleUpdate(cat)}
-                          className="inline-flex items-center gap-1 rounded-lg bg-gray-900 px-3 py-1.5 text-xs font-bold text-white hover:bg-gray-800"
+                          disabled={saving}
+                          className="inline-flex items-center gap-1 rounded-lg bg-gray-900 px-3 py-1.5 text-xs font-bold text-white hover:bg-gray-800 disabled:opacity-50"
                         >
-                          <Check className="h-3 w-3" /> Save
+                          <Check className="h-3 w-3" /> {saving ? "Saving…" : "Save"}
                         </button>
                         <button
-                          onClick={() => setEditingId(null)}
+                          onClick={cancelEdit}
                           className="rounded-lg px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-100"
                         >
                           Cancel
@@ -138,7 +219,15 @@ export function CategoryManager() {
                         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">
                           <GripVertical className="h-4 w-4" />
                         </div>
-                        <span className="text-xl">{cat.emoji}</span>
+                        {cat.imageUrl ? (
+                          <img
+                            src={cat.imageUrl}
+                            alt={cat.name}
+                            className="h-9 w-9 rounded-lg object-cover ring-1 ring-gray-200"
+                          />
+                        ) : (
+                          <span className="text-xl">{cat.emoji}</span>
+                        )}
                         <div>
                           <span className={`text-sm font-semibold ${cat.color}`}>{cat.name}</span>
                           <span className="ml-2 text-[11px] text-gray-400">{cat.slug}</span>
@@ -174,6 +263,18 @@ export function CategoryManager() {
                   className="h-9 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 focus:border-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-300"
                   placeholder="Category name"
                   autoFocus
+                />
+                <FoodImageUploader
+                  title="Category Image"
+                  recommendations={CATEGORY_IMAGE_HINT}
+                  accept="image/jpeg,image/png,image/webp,image/svg+xml"
+                  compact
+                  value={addImagePreview}
+                  onChange={(url) => {
+                    setAddImagePreview(url);
+                    if (!url) clearAddImage();
+                  }}
+                  onFileSelect={handleAddImageSelect}
                 />
                 <div>
                   <p className="mb-1.5 text-xs font-medium text-gray-500">Emoji</p>
@@ -212,12 +313,13 @@ export function CategoryManager() {
                 <div className="flex items-center gap-2 pt-1">
                   <button
                     onClick={handleAdd}
-                    className="inline-flex items-center gap-1 rounded-lg bg-gray-900 px-3 py-1.5 text-xs font-bold text-white hover:bg-gray-800"
+                    disabled={saving}
+                    className="inline-flex items-center gap-1 rounded-lg bg-gray-900 px-3 py-1.5 text-xs font-bold text-white hover:bg-gray-800 disabled:opacity-50"
                   >
-                    <Plus className="h-3 w-3" /> Add Category
+                    <Plus className="h-3 w-3" /> {saving ? "Adding…" : "Add Category"}
                   </button>
                   <button
-                    onClick={() => { setShowAddForm(false); setForm({ name: "", emoji: "🌾", color: COLOR_OPTIONS[0].value, bgColor: COLOR_OPTIONS[0].bg }); }}
+                    onClick={cancelAdd}
                     className="rounded-lg px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-100"
                   >
                     Cancel
