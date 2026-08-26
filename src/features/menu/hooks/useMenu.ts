@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { FoodItem, FoodItemFormData, MenuFilters, Availability, HealthTag, Category } from '../types/menu';
+import { FoodItem, FoodItemFormData, MenuFilters, Availability, HealthTag, Category, HEALTH_TAG_CONFIG } from '../types/menu';
 import { categoryApi } from '@/lib/api/category.api';
 import { foodItemApi } from '@/lib/api/food.api';
 import type { ApiCategory, ApiFoodItem } from '@/lib/types/api';
@@ -41,6 +41,17 @@ function toFormData(dto: Record<string, unknown>, imageFile: File): FormData {
   return fd;
 }
 
+function healthTagsFromApi(tags?: string[]): HealthTag[] {
+  if (!tags?.length) return [];
+  return tags
+    .map((tag) => tag.toLowerCase().replace(/_/g, '-') as HealthTag)
+    .filter((tag) => tag in HEALTH_TAG_CONFIG);
+}
+
+function healthTagsToApi(tags: HealthTag[]): string[] {
+  return tags.map((tag) => tag.replace(/-/g, '_').toUpperCase());
+}
+
 function mapApiFoodItemToFoodItem(api: ApiFoodItem, categories: Category[]): FoodItem {
   const category = categories.find(c => c.id === api.categoryId);
   return {
@@ -60,8 +71,8 @@ function mapApiFoodItemToFoodItem(api: ApiFoodItem, categories: Category[]): Foo
       fiber: api.fiber != null ? Number(api.fiber) : 0,
       servingSize: api.servingSize || '',
     },
-    healthTags: [],
-    customerLabels: api.isFeatured ? ['chef-special'] : [],
+    healthTags: healthTagsFromApi(api.healthTags),
+    customerLabels: api.customerLabels ?? [],
     availability: !api.isAvailable ? 'unavailable' : 'available',
     foodType: api.foodType ?? (api.isVeg ? 'VEG' : 'NON_VEG'),
     isFeatured: api.isFeatured,
@@ -273,6 +284,8 @@ export const useMenuStore = create<MenuStore>((set, get) => ({
         foodType: data.foodType,
         isVeg: data.foodType === 'VEG',
         isFeatured: data.isFeatured,
+        customerLabels: data.customerLabels,
+        healthTags: healthTagsToApi(data.healthTags),
         isAvailable: data.availability === 'available',
         calories: parseNutritionValue(data.calories),
         protein: parseNutritionValue(data.protein),
@@ -310,6 +323,8 @@ export const useMenuStore = create<MenuStore>((set, get) => ({
         foodType: data.foodType,
         isVeg: data.foodType === 'VEG',
         isFeatured: data.isFeatured,
+        customerLabels: data.customerLabels,
+        healthTags: healthTagsToApi(data.healthTags),
         isAvailable: data.availability === 'available',
         calories: parseNutritionValue(data.calories),
         protein: parseNutritionValue(data.protein),
