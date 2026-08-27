@@ -85,6 +85,8 @@ export function CreateSubscriptionPlanDrawer({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [planImageFile, setPlanImageFile] = useState<File | null>(null);
+  const [imageUploading, setImageUploading] = useState(false);
 
   const isViewOnly = mode === "view";
 
@@ -94,6 +96,7 @@ export function CreateSubscriptionPlanDrawer({
     setErrors({});
     setForm(selected ? packageToForm(selected) : emptyPlanBuilderForm());
     setPlanId(selected?.id ?? null);
+    setPlanImageFile(null);
     setExpanded({ details: true, mealOptions: false, schedule: false, rules: false });
 
     Promise.all([
@@ -161,12 +164,22 @@ export function CreateSubscriptionPlanDrawer({
     setGlobalError(null);
     try {
       const payload = formToPayload(form, publish);
-      if (planId) {
-        await planBuilderApi.save(planId, payload);
+      let savedPlanId = planId;
+
+      if (savedPlanId) {
+        await planBuilderApi.save(savedPlanId, payload);
       } else {
         const created = await planBuilderApi.create(payload);
+        savedPlanId = created.id;
         setPlanId(created.id);
       }
+
+      if (planImageFile && savedPlanId) {
+        setImageUploading(true);
+        await planBuilderApi.uploadPlanImage(savedPlanId, planImageFile);
+        setPlanImageFile(null);
+      }
+
       onSaved();
       onClose();
     } catch (err) {
@@ -176,6 +189,7 @@ export function CreateSubscriptionPlanDrawer({
       setGlobalError(String(message));
     } finally {
       setSaving(false);
+      setImageUploading(false);
     }
   };
 
@@ -220,7 +234,9 @@ export function CreateSubscriptionPlanDrawer({
                 form={form}
                 disabled={isViewOnly}
                 errors={errors}
+                imageUploading={imageUploading}
                 onChange={(patch) => setForm((prev) => ({ ...prev, ...patch }))}
+                onImageFileSelect={setPlanImageFile}
               />
             </CollapsibleSection>
 
