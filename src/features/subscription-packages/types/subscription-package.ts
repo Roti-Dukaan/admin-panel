@@ -111,6 +111,12 @@ export interface SubscriptionPackage {
   foodItemIds?: string[];
   allowedFoodItems?: AllowedFoodItemLink[];
   customizationRules?: PlanCustomizationRules | Record<string, PlanCategoryLimits> | null;
+  planImageUrl?: string | null;
+  durationValue?: number;
+  durationUnit?: "DAYS" | "WEEKS" | "MONTHS";
+  publishStatus?: "DRAFT" | "ACTIVE" | "INACTIVE";
+  planBuilderConfig?: import("./plan-builder").PlanBuilderConfig | null;
+  validityDays?: number;
 }
 
 export interface CreateSubscriptionPackageInput {

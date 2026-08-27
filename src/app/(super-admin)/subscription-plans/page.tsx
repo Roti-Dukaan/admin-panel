@@ -18,8 +18,7 @@ import { Header } from "@/components/layout/header";
 import { PlansTable } from "@/features/subscription-plans/components/PlansTable";
 import { PlanEditor } from "@/features/subscription-plans/components/PlanEditor";
 import { DeleteConfirmation } from "@/features/subscription-plans/components/DeleteConfirmation";
-import { PackageEditor } from "@/features/subscription-packages/components/PackageEditor";
-import { MealSlotsDialog } from "@/features/subscription-packages/components/MealSlotsDialog";
+import { CreateSubscriptionPlanDrawer } from "@/features/subscription-packages/components/plan-builder/CreateSubscriptionPlanDrawer";
 import { packagesApi } from "@/features/subscription-packages/services/packages.api";
 import type { SubscriptionPackage } from "@/features/subscription-packages/types/subscription-package";
 
@@ -53,9 +52,6 @@ export default function SubscriptionPlansPage() {
   const [packageEditorOpen, setPackageEditorOpen] = useState(false);
   const [packageEditorMode, setPackageEditorMode] = useState<"create" | "edit" | "view">("create");
   const [selectedPackage, setSelectedPackage] = useState<SubscriptionPackage | null>(null);
-  const [mealSlotsOpen, setMealSlotsOpen] = useState(false);
-  const [mealSlotsPlanId, setMealSlotsPlanId] = useState<string | null>(null);
-  const [mealSlotsPlanName, setMealSlotsPlanName] = useState("");
 
   useEffect(() => {
     loadPlans();
@@ -74,7 +70,7 @@ export default function SubscriptionPlansPage() {
       setPackageEditorMode("edit");
       setPackageEditorOpen(true);
     } catch {
-      // Packages without categories can still use legacy plan editor via table actions
+      // fallback handled in table
     }
   };
 
@@ -90,17 +86,15 @@ export default function SubscriptionPlansPage() {
     }
   };
 
-  const openConfigureMealSlots = (planId: string, planName: string) => {
-    setMealSlotsPlanId(planId);
-    setMealSlotsPlanName(planName);
-    setMealSlotsOpen(true);
+  const openConfigureMealSlots = async (planId: string, _planName: string) => {
+    await openEditPackage(planId);
   };
 
   return (
     <div className="min-h-screen bg-gray-50/50">
       <Header
-        title="Subscription Packages"
-        subtitle="Create dynamic packages with category-level pricing. No package base price — customers select categories."
+        title="Subscription Plans"
+        subtitle="Create configurable subscription plans with meal options, schedules, and rules."
         actions={
           <>
             <button className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
@@ -122,7 +116,7 @@ export default function SubscriptionPlansPage() {
               className="inline-flex items-center gap-2 rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-bold text-white hover:bg-gray-800 transition-colors"
             >
               <Plus className="h-4 w-4" />
-              Create Package
+              Create Subscription Plan
             </button>
           </>
         }
@@ -205,22 +199,12 @@ export default function SubscriptionPlansPage() {
         </motion.div>
       </div>
 
-      <PackageEditor
+      <CreateSubscriptionPlanDrawer
         open={packageEditorOpen}
         mode={packageEditorMode}
         selected={selectedPackage}
         onClose={() => setPackageEditorOpen(false)}
         onSaved={() => loadPlans()}
-      />
-      <MealSlotsDialog
-        open={mealSlotsOpen}
-        planId={mealSlotsPlanId}
-        planName={mealSlotsPlanName}
-        onClose={() => {
-          setMealSlotsOpen(false);
-          setMealSlotsPlanId(null);
-          setMealSlotsPlanName("");
-        }}
       />
       <PlanEditor />
       <DeleteConfirmation />
