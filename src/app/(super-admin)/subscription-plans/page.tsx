@@ -19,6 +19,7 @@ import { PlansTable } from "@/features/subscription-plans/components/PlansTable"
 import { PlanEditor } from "@/features/subscription-plans/components/PlanEditor";
 import { DeleteConfirmation } from "@/features/subscription-plans/components/DeleteConfirmation";
 import { PackageEditor } from "@/features/subscription-packages/components/PackageEditor";
+import { MealSlotsDialog } from "@/features/subscription-packages/components/MealSlotsDialog";
 import { packagesApi } from "@/features/subscription-packages/services/packages.api";
 import type { SubscriptionPackage } from "@/features/subscription-packages/types/subscription-package";
 
@@ -52,6 +53,9 @@ export default function SubscriptionPlansPage() {
   const [packageEditorOpen, setPackageEditorOpen] = useState(false);
   const [packageEditorMode, setPackageEditorMode] = useState<"create" | "edit" | "view">("create");
   const [selectedPackage, setSelectedPackage] = useState<SubscriptionPackage | null>(null);
+  const [mealSlotsOpen, setMealSlotsOpen] = useState(false);
+  const [mealSlotsPlanId, setMealSlotsPlanId] = useState<string | null>(null);
+  const [mealSlotsPlanName, setMealSlotsPlanName] = useState("");
 
   useEffect(() => {
     loadPlans();
@@ -84,6 +88,12 @@ export default function SubscriptionPlansPage() {
       const plan = plans.find((p) => p.id === planId);
       if (plan) useSubscriptionPlanStore.getState().openViewEditor(plan);
     }
+  };
+
+  const openConfigureMealSlots = (planId: string, planName: string) => {
+    setMealSlotsPlanId(planId);
+    setMealSlotsPlanName(planName);
+    setMealSlotsOpen(true);
   };
 
   return (
@@ -187,7 +197,11 @@ export default function SubscriptionPlansPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.2 }}
         >
-          <PlansTable onEditPackage={openEditPackage} onViewPackage={openViewPackage} />
+          <PlansTable
+            onEditPackage={openEditPackage}
+            onViewPackage={openViewPackage}
+            onConfigureMealSlots={openConfigureMealSlots}
+          />
         </motion.div>
       </div>
 
@@ -197,6 +211,16 @@ export default function SubscriptionPlansPage() {
         selected={selectedPackage}
         onClose={() => setPackageEditorOpen(false)}
         onSaved={() => loadPlans()}
+      />
+      <MealSlotsDialog
+        open={mealSlotsOpen}
+        planId={mealSlotsPlanId}
+        planName={mealSlotsPlanName}
+        onClose={() => {
+          setMealSlotsOpen(false);
+          setMealSlotsPlanId(null);
+          setMealSlotsPlanName("");
+        }}
       />
       <PlanEditor />
       <DeleteConfirmation />

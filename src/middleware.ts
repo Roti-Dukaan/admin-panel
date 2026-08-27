@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-const SUPER_ADMIN_PATHS = ['/dashboard', '/orders', '/deliveries', '/menu', '/subscription-menu', '/customers', '/subscription-plans', '/subscriptions', '/delivery-slots', '/dispatch', '/reports', '/settings', '/areas', '/audit-logs', '/branches', '/cities', '/branch-inventory', '/subscription-operations', '/admin', '/support', '/coupons', '/contact-messages', '/cms', '/mobile-app']
+const SUPER_ADMIN_PATHS = ['/dashboard', '/orders', '/deliveries', '/menu', '/customers', '/subscription-plans', '/subscriptions', '/delivery-slots', '/dispatch', '/reports', '/settings', '/areas', '/audit-logs', '/branches', '/cities', '/branch-inventory', '/subscription-operations', '/admin', '/support', '/coupons', '/contact-messages', '/cms', '/mobile-app']
 const BRANCH_PATHS = ['/branch/dashboard', '/branch/orders', '/branch/kitchen', '/branch/subscription-dispatch', '/branch/production', '/branch/menu', '/branch/inventory', '/branch/delivery', '/branch/dispatch', '/branch/delivery-boys', '/branch/customers', '/branch/team', '/branch/reports', '/branch/profile', '/branch/support']
 const DELIVERY_BOY_PATHS = ['/delivery']
 
@@ -96,7 +96,6 @@ export const config = {
     '/orders/:path*',
     '/deliveries/:path*',
     '/menu/:path*',
-    '/subscription-menu/:path*',
     '/customers/:path*',
     '/subscription-plans/:path*',
     '/subscriptions/:path*',

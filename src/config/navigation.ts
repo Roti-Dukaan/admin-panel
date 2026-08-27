@@ -14,7 +14,6 @@ export const SUPER_ADMIN_NAVIGATION: NavItem[] = [
   { label: "Orders", href: "/orders", icon: ShoppingBag },
   { label: "Deliveries", href: "/deliveries", icon: Truck },
   { label: "Menu Items", href: "/menu", icon: ClipboardList, roles: ['OWNER', 'ADMIN'] },
-  { label: "Subscription Menu", href: "/subscription-menu", icon: UtensilsCrossed, roles: ['OWNER', 'ADMIN'] },
   { label: "Customers", href: "/customers", icon: Users, roles: ['OWNER', 'ADMIN'] },
   { label: "Subscription Plans", href: "/subscription-plans", icon: CreditCard, roles: ['OWNER', 'ADMIN'] },
   { label: "Delivery Slots", href: "/delivery-slots", icon: Clock, roles: ['OWNER', 'ADMIN'] },

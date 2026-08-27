@@ -24,15 +24,11 @@ import {
   ToggleLeft,
   LifeBuoy,
   FolderOpen,
-  Wheat,
   Ticket,
   Mail,
   Bell,
   LayoutGrid,
   Smartphone,
-  CalendarClock,
-  ChefHat,
-  SlidersHorizontal,
 } from "lucide-react"
 import { useSidebar } from "./hooks/useSidebar"
 import { SidebarGroup } from "./SidebarGroup"
@@ -76,26 +72,12 @@ const MAIN_ADMIN_NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    id: "subscriptions",
-    title: "Subscriptions",
-    roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'],
-    items: [
-      { label: "Dashboard", href: "/subscription-dashboard", icon: LayoutDashboard, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
-      { label: "Plans", href: "/subscription-plans", icon: CalendarDays, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
-      { label: "Subscription Menu", href: "/subscription-menu", icon: Wheat, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
-      { label: "Meal Schedules", href: "/subscription-meal-schedules", icon: CalendarClock, disabled: true, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
-      { label: "Subscribers", href: "/subscriptions", icon: Users, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
-      { label: "Deliveries", href: "/subscription-operations", icon: Truck, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
-      { label: "Production", href: "/admin/subscription-production", icon: ChefHat, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
-      { label: "Settings", href: "/subscription-settings", icon: SlidersHorizontal, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
-    ],
-  },
-  {
     id: "customers",
     title: "Customers",
     roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'],
     items: [
       { label: "Customers", href: "/customers", icon: Users, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
+      { label: "Subscription Plans", href: "/subscription-plans", icon: CalendarDays, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
     ],
   },
   {

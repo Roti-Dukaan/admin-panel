@@ -3,9 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { isAxiosError } from "axios";
 import { ArrowLeft, Save } from "lucide-react";
-import { subscriptionMenuApi } from "@/features/subscription-menu/services/subscription-menu.api";
 import { subscriptionMenuCategoriesApi } from "@/features/subscription-menu/services/subscription-menu-categories.api";
-import type { SubscriptionMenuItem } from "@/features/subscription-menu/types/subscription-menu";
+import { MealSlotsPanel } from "./MealSlotsPanel";
 import { packagesApi } from "../services/packages.api";
 import { DescriptionBulletTextarea } from "@/components/ui/description-bullet-textarea";
 import {
@@ -23,7 +22,7 @@ type CategoryForm = {
   includedQuantityPerDelivery: number;
   maximumQuantityPerDelivery: number;
   allowMultipleSelections: boolean;
-  menuItemIds: string[];
+  maximumChoicesPerDelivery: number;
 };
 
 type PackageForm = {
@@ -51,7 +50,7 @@ const emptyCategory = (): CategoryForm => ({
   includedQuantityPerDelivery: 1,
   maximumQuantityPerDelivery: 1,
   allowMultipleSelections: false,
-  menuItemIds: [],
+  maximumChoicesPerDelivery: 1,
 });
 
 function buildEmptyCategories(definitions: MenuCategoryDefinition[]): Record<string, CategoryForm> {
@@ -63,6 +62,8 @@ function buildEmptyCategories(definitions: MenuCategoryDefinition[]): Record<str
       categoryPrice: def.slug === "roti" ? 500 : def.slug === "curry" ? 800 : 0,
       includedQuantityPerDelivery: def.slug === "roti" ? 4 : 1,
       maximumQuantityPerDelivery: def.slug === "roti" ? 8 : def.slug === "curry" ? 2 : 3,
+      allowMultipleSelections: def.slug === "roti",
+      maximumChoicesPerDelivery: def.slug === "roti" ? 2 : 1,
     };
   }
   return categories;
@@ -110,14 +111,14 @@ function packageToForm(pkg: SubscriptionPackage, definitions: MenuCategoryDefini
   for (const found of pkg.categories ?? []) {
     const key = found.categoryDefinitionId ?? found.categoryDefinition?.id;
     if (!key) continue;
+    const maxChoices = found.maximumChoicesPerDelivery ?? 1;
     base.categories[key] = {
       enabled: found.active,
       categoryPrice: Number(found.categoryPrice),
       includedQuantityPerDelivery: found.includedQuantityPerDelivery,
       maximumQuantityPerDelivery: found.maximumQuantityPerDelivery,
-      allowMultipleSelections:
-        found.maximumChoicesPerDelivery == null || found.maximumChoicesPerDelivery > 1,
-      menuItemIds: (found.menuItems ?? []).map((m) => m.menuItemId),
+      allowMultipleSelections: maxChoices > 1,
+      maximumChoicesPerDelivery: maxChoices,
     };
   }
   return base;
@@ -132,9 +133,10 @@ function formToPayload(form: PackageForm): CreateSubscriptionPackageInput {
       includedQuantityPerDelivery: Number(c.includedQuantityPerDelivery) || 1,
       maximumQuantityPerDelivery: Number(c.maximumQuantityPerDelivery) || 1,
       maximumChoicesPerDelivery: c.allowMultipleSelections
-        ? Math.max(c.menuItemIds.length, 1)
+        ? Math.max(Number(c.maximumChoicesPerDelivery) || 2, 2)
         : 1,
-      menuItemIds: c.enabled ? c.menuItemIds : [],
+      // Clear legacy subscription-menu links; dishes come from the live menu.
+      menuItemIds: [],
     }),
   );
 
@@ -160,25 +162,6 @@ function formToPayload(form: PackageForm): CreateSubscriptionPackageInput {
   };
 }
 
-function withDefaultMenuItems(
-  form: PackageForm,
-  definitions: MenuCategoryDefinition[],
-  items: SubscriptionMenuItem[],
-): PackageForm {
-  const categories = { ...form.categories };
-  for (const def of definitions) {
-    const cat = categories[def.id];
-    if (!cat?.enabled || cat.menuItemIds.length) continue;
-    const ids = items
-      .filter((m) => (m.categoryDefinitionId ?? m.categoryDefinition?.id) === def.id)
-      .map((m) => m.id);
-    if (ids.length) {
-      categories[def.id] = { ...cat, menuItemIds: ids };
-    }
-  }
-  return { ...form, categories };
-}
-
 interface PackageEditorProps {
   open: boolean;
   mode: "create" | "edit" | "view";
@@ -190,7 +173,6 @@ interface PackageEditorProps {
 export function PackageEditor({ open, mode, selected, onClose, onSaved }: PackageEditorProps) {
   const [form, setForm] = useState<PackageForm>(emptyForm());
   const [categoryDefinitions, setCategoryDefinitions] = useState<MenuCategoryDefinition[]>([]);
-  const [menuItems, setMenuItems] = useState<SubscriptionMenuItem[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const isViewOnly = mode === "view";
@@ -198,22 +180,14 @@ export function PackageEditor({ open, mode, selected, onClose, onSaved }: Packag
   useEffect(() => {
     if (!open) return;
     setError(null);
-    Promise.all([
-      subscriptionMenuCategoriesApi.list(true),
-      subscriptionMenuApi.list(true),
-    ])
-      .then(([defs, items]) => {
+    subscriptionMenuCategoriesApi
+      .list(true)
+      .then((defs) => {
         setCategoryDefinitions(defs);
-        setMenuItems(items);
-        setForm(
-          selected
-            ? packageToForm(selected, defs)
-            : withDefaultMenuItems(emptyForm(defs), defs, items),
-        );
+        setForm(selected ? packageToForm(selected, defs) : emptyForm(defs));
       })
       .catch(() => {
         setCategoryDefinitions([]);
-        setMenuItems([]);
         setForm(selected ? packageToForm(selected, []) : emptyForm());
       });
   }, [open, selected]);
@@ -242,14 +216,6 @@ export function PackageEditor({ open, mode, selected, onClose, onSaved }: Packag
         },
       },
     }));
-  };
-
-  const toggleMenuItem = (categoryDefinitionId: string, menuItemId: string) => {
-    const current = form.categories[categoryDefinitionId]?.menuItemIds ?? [];
-    const next = current.includes(menuItemId)
-      ? current.filter((id) => id !== menuItemId)
-      : [...current, menuItemId];
-    updateCategory(categoryDefinitionId, { menuItemIds: next });
   };
 
   const onSave = async () => {
@@ -546,16 +512,19 @@ export function PackageEditor({ open, mode, selected, onClose, onSaved }: Packag
                 Catalogue sum: ₹{previewTotal.toLocaleString("en-IN")}
               </p>
             </div>
+            <div className="rounded-xl border border-emerald-100 bg-emerald-50/60 px-4 py-3 text-sm text-emerald-900">
+              <p className="font-semibold">Meals come from the live menu</p>
+              <p className="mt-1 text-emerald-800/90">
+                Customers see items from <strong>Menu Items</strong> and branch availability at
+                customization time. Configure pricing and selection limits here — not individual dishes.
+              </p>
+            </div>
             <p className="text-xs text-gray-500">
               No package base price. Customers pay the sum of selected category prices for the full cycle.
-              Menu items have no individual prices.
             </p>
 
             {categoryDefinitions.map((def) => {
               const c = form.categories[def.id] ?? emptyCategory();
-              const itemsForCat = menuItems.filter(
-                (m) => (m.categoryDefinitionId ?? m.categoryDefinition?.id) === def.id,
-              );
               return (
                 <div key={def.id} className="rounded-2xl border border-gray-200 p-4">
                   <label className="flex items-center gap-2 text-sm font-bold text-gray-900">
@@ -563,12 +532,7 @@ export function PackageEditor({ open, mode, selected, onClose, onSaved }: Packag
                       type="checkbox"
                       disabled={isViewOnly}
                       checked={c.enabled}
-                      onChange={(e) =>
-                        updateCategory(def.id, {
-                          enabled: e.target.checked,
-                          ...(e.target.checked ? {} : { menuItemIds: [] }),
-                        })
-                      }
+                      onChange={(e) => updateCategory(def.id, { enabled: e.target.checked })}
                     />
                     {def.name}
                   </label>
@@ -630,7 +594,12 @@ export function PackageEditor({ open, mode, selected, onClose, onSaved }: Packag
                           disabled={isViewOnly}
                           checked={c.allowMultipleSelections}
                           onChange={(e) =>
-                            updateCategory(def.id, { allowMultipleSelections: e.target.checked })
+                            updateCategory(def.id, {
+                              allowMultipleSelections: e.target.checked,
+                              maximumChoicesPerDelivery: e.target.checked
+                                ? Math.max(c.maximumChoicesPerDelivery, 2)
+                                : 1,
+                            })
                           }
                           className="mt-0.5"
                         />
@@ -644,34 +613,43 @@ export function PackageEditor({ open, mode, selected, onClose, onSaved }: Packag
                         </span>
                       </label>
 
-                      <div>
-                        <p className="mb-2 text-sm font-medium text-gray-700">Allowed menu items</p>
-                        {itemsForCat.length === 0 ? (
-                          <p className="text-xs text-gray-500">
-                            No menu items in this category yet. Add them under Subscription Menu.
-                          </p>
-                        ) : (
-                          <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
-                            {itemsForCat.map((item) => (
-                              <label key={item.id} className="flex items-center gap-2 text-sm text-gray-700">
-                                <input
-                                  type="checkbox"
-                                  disabled={isViewOnly}
-                                  checked={c.menuItemIds.includes(item.id)}
-                                  onChange={() => toggleMenuItem(def.id, item.id)}
-                                />
-                                {item.name}
-                              </label>
-                            ))}
-                          </div>
-                        )}
-                      </div>
+                      {c.allowMultipleSelections && (
+                        <label className="block text-sm">
+                          <span className="mb-1 block font-medium text-gray-700">
+                            Max different items per delivery
+                          </span>
+                          <input
+                            disabled={isViewOnly}
+                            type="number"
+                            min={2}
+                            value={c.maximumChoicesPerDelivery}
+                            onChange={(e) =>
+                              updateCategory(def.id, {
+                                maximumChoicesPerDelivery: Number(e.target.value),
+                              })
+                            }
+                            className="w-full rounded-xl border border-gray-200 px-3 py-2.5"
+                          />
+                        </label>
+                      )}
                     </div>
                   )}
                 </div>
               );
             })}
           </section>
+
+          {selected?.id ? (
+            <MealSlotsPanel planId={selected.id} readOnly={isViewOnly} />
+          ) : (
+            <section className="rounded-xl border border-dashed border-violet-200 bg-violet-50/40 p-4 text-sm text-violet-900">
+              <p className="font-semibold">Meal slots & bundles</p>
+              <p className="mt-1 text-violet-800/90">
+                Save the package first, then reopen it to configure Lunch/Dinner slots and combo
+                bundles for mobile checkout.
+              </p>
+            </section>
+          )}
         </div>
       </div>
     </div>

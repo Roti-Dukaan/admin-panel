@@ -19,6 +19,7 @@ import {
   Copy,
   Power,
   Trash2,
+  UtensilsCrossed,
   ArrowUpDown,
   ChevronLeft,
   ChevronRight,
@@ -37,9 +38,11 @@ import { TableActionsMenu } from "@/components/ui/table-actions-menu";
 export function PlansTable({
   onEditPackage,
   onViewPackage,
+  onConfigureMealSlots,
 }: {
   onEditPackage?: (planId: string) => void;
   onViewPackage?: (planId: string) => void;
+  onConfigureMealSlots?: (planId: string, planName: string) => void;
 }) {
   const allPlans = useSubscriptionPlanStore((s) => s.plans);
   const loading = useSubscriptionPlanStore((s) => s.loading);
@@ -240,6 +243,17 @@ export function PlansTable({
               >
                 <Pencil className="h-4 w-4 text-gray-400" /> Edit Package
               </button>
+              {onConfigureMealSlots && (
+                <button
+                  onClick={() => {
+                    onConfigureMealSlots(plan.id, plan.name);
+                    setOpenDropdown(null);
+                  }}
+                  className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-violet-700 hover:bg-violet-50"
+                >
+                  <UtensilsCrossed className="h-4 w-4 text-violet-500" /> Configure meal slots
+                </button>
+              )}
               <button
                 onClick={() => {
                   duplicatePlan(plan);
@@ -274,7 +288,7 @@ export function PlansTable({
         },
       },
     ],
-    [openDropdown, openViewEditor, openEditEditor, onEditPackage, onViewPackage, duplicatePlan, toggleActive, openDeleteModal]
+    [openDropdown, openViewEditor, openEditEditor, onEditPackage, onViewPackage, onConfigureMealSlots, duplicatePlan, toggleActive, openDeleteModal]
   );
 
   const table = useReactTable({

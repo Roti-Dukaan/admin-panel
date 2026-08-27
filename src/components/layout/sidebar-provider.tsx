@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils"
 
 const SIDEBAR_ROUTES = [
   "/dashboard", "/orders", "/kitchen", "/kitchen-production", "/deliveries", "/menu",
-  "/subscription-menu", "/customers", "/subscription-plans", "/subscriptions",
+  "/customers", "/subscription-plans", "/subscriptions",
   "/subscription-operations", "/delivery-slots", "/reports", "/settings", "/admin",
   "/audit-logs", "/branches", "/cities", "/areas", "/branch/dashboard", "/branch/orders",
   "/branch/kitchen", "/branch/subscription-dispatch", "/branch/production", "/branch/menu",
