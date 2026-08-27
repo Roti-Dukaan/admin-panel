@@ -18,6 +18,8 @@ const SIDEBAR_ROUTES = [
   "/subscription-plans",
   "/subscriptions",
   "/subscription-operations",
+  "/subscription-dashboard",
+  "/subscription-settings",
   "/delivery-slots",
   "/reports",
   "/settings",

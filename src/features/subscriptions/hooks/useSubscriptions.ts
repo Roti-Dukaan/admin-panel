@@ -2,6 +2,7 @@ import { create } from "zustand";
 import React from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { subscriptionsApi } from "../services/subscriptions.api";
+import { subscriptionOverviewApi } from "../services/subscription-overview.api";
 import { connectRealtime, disconnectRealtime, onRealtime } from "@/lib/realtime/socket";
 import { useOpsBranchStore } from "./useOpsBranch";
 import type {
@@ -90,6 +91,14 @@ export function useSubscriptionDashboard() {
   return useQuery({
     queryKey: ["admin-subscriptions-dashboard"],
     queryFn: () => subscriptionsApi.getDashboard(),
+    staleTime: 30_000,
+  });
+}
+
+export function useSubscriptionOverview(date?: string) {
+  return useQuery({
+    queryKey: ["admin-subscriptions-overview", date ?? "today"],
+    queryFn: () => subscriptionOverviewApi.get(date),
     staleTime: 30_000,
   });
 }
