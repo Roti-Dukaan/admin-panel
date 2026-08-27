@@ -28,6 +28,7 @@ import {
   Ticket,
   Mail,
   Bell,
+  LayoutGrid,
   Smartphone,
 } from "lucide-react"
 import { useSidebar } from "./hooks/useSidebar"
@@ -120,6 +121,7 @@ const MAIN_ADMIN_NAV_GROUPS: NavGroup[] = [
     items: [
       { label: "Homepage Banners", href: "/cms", icon: FolderOpen, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
       { label: "Mobile App Banners", href: "/mobile-app/banners", icon: Smartphone, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
+      { label: "Home Page CMS", href: "/mobile-app/home-page", icon: LayoutGrid, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
       { label: "Contact Messages", href: "/contact-messages", icon: Mail, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
     ],
   },
