@@ -3,7 +3,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { isAxiosError } from "axios";
 import { Plus, Pencil, Trash2, Clock, UtensilsCrossed } from "lucide-react";
+import { DeliverySlotTimeInput } from "@/components/delivery/DeliverySlotTimeInput";
 import { deliverySlotsApi, type DeliverySlot } from "@/lib/api/delivery-slots.api";
+import {
+  formatDeliverySlotLabel,
+  formatDeliverySlotWindow,
+} from "@/lib/delivery-slot-display";
 import { mealSlotsApi } from "../services/meal-slots.api";
 import {
   CUTOFF_MODE_OPTIONS,
@@ -161,12 +166,10 @@ function CutoffFields({
           className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
         />
       ) : (
-        <input
+        <DeliverySlotTimeInput
           disabled={disabled}
-          type="time"
           value={time}
-          onChange={(e) => onTimeChange(e.target.value)}
-          className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+          onChange={onTimeChange}
         />
       )}
     </div>
@@ -416,7 +419,8 @@ export function MealSlotsPanel({ planId, readOnly = false }: MealSlotsPanelProps
                   </p>
                 </div>
                 <p className="mt-1 text-sm text-gray-600">
-                  ₹{slot.basePrice.toLocaleString("en-IN")} · {slot.deliveryWindow || "No window"}
+                  ₹{slot.basePrice.toLocaleString("en-IN")} ·{" "}
+                  {slot.deliveryWindow ? formatDeliverySlotWindow(slot.deliveryWindow) : "No window"}
                 </p>
                 <p className="mt-1 flex items-center gap-1 text-xs text-gray-500">
                   <Clock className="h-3 w-3" />
@@ -559,7 +563,7 @@ export function MealSlotsPanel({ planId, readOnly = false }: MealSlotsPanelProps
                   <option value="">Select slot…</option>
                   {deliverySlots.map((slot) => (
                     <option key={slot.id} value={slot.id}>
-                      {slot.name} ({slot.startTime}–{slot.endTime})
+                      {slot.name} ({formatDeliverySlotLabel(slot.startTime, slot.endTime)})
                     </option>
                   ))}
                 </select>

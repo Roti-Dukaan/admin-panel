@@ -2,11 +2,12 @@
 
 import { Plus, Trash2 } from "lucide-react";
 import type { DeliverySlot } from "@/lib/api/delivery-slots.api";
+import { formatDeliverySlotLabel } from "@/lib/delivery-slot-display";
 import type { MealOptionConfig, PlanBuilderConfig } from "../../types/plan-builder";
 import { emptyMealOption } from "../../types/plan-builder";
 
 function formatSlotWindow(slot: DeliverySlot): string {
-  return `${slot.startTime} – ${slot.endTime}`;
+  return formatDeliverySlotLabel(slot.startTime, slot.endTime);
 }
 
 interface MealOptionsSectionProps {

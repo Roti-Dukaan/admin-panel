@@ -1,6 +1,5 @@
 "use client";
 
-import { format } from "date-fns";
 import {
   X,
   User,
@@ -23,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { formatIstDateTime } from "@/lib/date";
 import { useKitchenOrderDetail } from "../hooks/useKitchen";
 import { PreparationTimer } from "./PreparationTimer";
 import { DeliveryStatusCard } from "./DeliveryStatusCard";
@@ -121,14 +121,14 @@ export function KitchenOrderDrawer({
             <Section icon={Package} title="Order Information">
               <Row label="Order Number" value={detail.orderNumber} />
               <Row label="Ticket Number" value={detail.ticketNumber} />
-              <Row label="Created" value={format(new Date(detail.orderCreatedAt), "dd MMM yyyy, hh:mm a")} />
+              <Row label="Created" value={formatIstDateTime(detail.orderCreatedAt)} />
               <Row
                 label="Started Preparing"
-                value={detail.startedPreparingAt ? format(new Date(detail.startedPreparingAt), "dd MMM yyyy, hh:mm a") : "—"}
+                value={detail.startedPreparingAt ? formatIstDateTime(detail.startedPreparingAt) : "—"}
               />
               <Row
                 label="Ready At"
-                value={detail.readyAt ? format(new Date(detail.readyAt), "dd MMM yyyy, hh:mm a") : "—"}
+                value={detail.readyAt ? formatIstDateTime(detail.readyAt) : "—"}
               />
             </Section>
 
@@ -302,7 +302,7 @@ export function KitchenOrderDrawer({
                     <div className="text-xs">
                       <p className="font-medium text-gray-700">{entry.status}</p>
                       <p className="text-gray-400">
-                        {format(new Date(entry.createdAt), "dd MMM yyyy, hh:mm a")} · {entry.createdByType}
+                        {formatIstDateTime(entry.createdAt)} · {entry.createdByType}
                       </p>
                       {entry.remarks ? <p className="text-gray-500">{entry.remarks}</p> : null}
                     </div>

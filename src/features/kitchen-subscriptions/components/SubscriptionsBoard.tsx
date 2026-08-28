@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import { format } from "date-fns";
+import { todayDateKey } from "@/lib/date";
 import { AlertTriangle, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,7 +51,7 @@ function withPrepStarted(row: SubscriptionPrepRow): SubscriptionPrepRow {
 }
 
 export function SubscriptionsBoard() {
-  const [date, setDate] = useState(() => format(new Date(), "yyyy-MM-dd"));
+  const [date, setDate] = useState(() => todayDateKey());
   const [search, setSearch] = useState("");
   const [slotId, setSlotId] = useState("all");
   const [ticketRow, setTicketRow] = useState<SubscriptionPrepRow | null>(null);

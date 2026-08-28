@@ -1,6 +1,65 @@
 // Lightweight IST date helpers (matches backend ist-date.util).
 
 const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
+export const IST_TIME_ZONE = "Asia/Kolkata";
+
+export type DateValue = Date | string | number;
+
+function dateForDisplay(value: DateValue): Date {
+  if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return new Date(`${value}T00:00:00+05:30`);
+  }
+  return value instanceof Date ? value : new Date(value);
+}
+
+/** Format an instant in IST. Date-only keys remain on their stated calendar day. */
+export function formatInIst(
+  value: DateValue,
+  options: Intl.DateTimeFormatOptions,
+): string {
+  const date = dateForDisplay(value);
+  if (Number.isNaN(date.getTime())) return "—";
+  return new Intl.DateTimeFormat("en-IN", {
+    ...options,
+    timeZone: IST_TIME_ZONE,
+  })
+    .format(date)
+    .replace(/\b(am|pm)\b/gi, (period) => period.toUpperCase());
+}
+
+export function formatIstDate(
+  value: DateValue,
+  options: Intl.DateTimeFormatOptions = {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  },
+): string {
+  return formatInIst(value, options);
+}
+
+export function formatIstTime(value: DateValue, includeSeconds = false): string {
+  return formatInIst(value, {
+    hour: "numeric",
+    minute: "2-digit",
+    second: includeSeconds ? "2-digit" : undefined,
+    hour12: true,
+  });
+}
+
+export function formatIstDateTime(
+  value: DateValue,
+  options: Intl.DateTimeFormatOptions = {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  },
+): string {
+  return formatInIst(value, options);
+}
 
 /** YYYY-MM-DD in IST. */
 export function toDateKey(date: Date = new Date()): string {

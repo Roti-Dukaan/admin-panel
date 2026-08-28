@@ -1,5 +1,6 @@
 "use client";
 
+import { DeliverySlotTimeInput } from "@/components/delivery/DeliverySlotTimeInput";
 import type { PlanBuilderForm, PlanRulesConfig } from "../../types/plan-builder";
 
 interface PlanRulesSectionProps {
@@ -27,16 +28,14 @@ export function PlanRulesSection({ rules, disabled, onChange }: PlanRulesSection
             />
             Allow customer meal customization
           </label>
-          <label className="block text-sm">
+          <div className="block text-sm">
             <span className="mb-1 block font-medium text-gray-700">Modification Cutoff Time</span>
-            <input
-              type="time"
+            <DeliverySlotTimeInput
               disabled={disabled}
               value={rules.mealCustomization.modificationCutoffTime}
-              onChange={(e) => patch("mealCustomization", { modificationCutoffTime: e.target.value })}
-              className="w-full rounded-xl border border-gray-200 px-3 py-2"
+              onChange={(value) => patch("mealCustomization", { modificationCutoffTime: value })}
             />
-          </label>
+          </div>
           <label className="block text-sm">
             <span className="mb-1 block font-medium text-gray-700">Cutoff Type</span>
             <select
@@ -200,16 +199,14 @@ export function PlanRulesSection({ rules, disabled, onChange }: PlanRulesSection
               />
             </label>
           )}
-          <label className="block text-sm">
+          <div className="block text-sm">
             <span className="mb-1 block font-medium text-gray-700">Booking Cutoff Time</span>
-            <input
-              type="time"
+            <DeliverySlotTimeInput
               disabled={disabled}
               value={rules.subscriptionStart.bookingCutoffTime}
-              onChange={(e) => patch("subscriptionStart", { bookingCutoffTime: e.target.value })}
-              className="w-full rounded-xl border border-gray-200 px-3 py-2"
+              onChange={(value) => patch("subscriptionStart", { bookingCutoffTime: value })}
             />
-          </label>
+          </div>
         </div>
       </div>
     </div>

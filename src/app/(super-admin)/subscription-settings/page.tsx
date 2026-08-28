@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { packagesApi } from "@/features/subscription-packages/services/packages.api";
 import type { SubscriptionPackage } from "@/features/subscription-packages/types/subscription-package";
+import { formatDeliverySlotTime } from "@/lib/delivery-slot-display";
 
 interface RuleForm {
   selectionCutoffHours: number;
@@ -42,10 +43,15 @@ function describeCutoff(hours: number): string {
   const days = Math.floor(hours / 24);
   const remainder = hours % 24;
   const clock = `${String((24 - remainder) % 24).padStart(2, "0")}:00`;
+  const displayClock = formatDeliverySlotTime(clock);
   if (remainder === 0) {
-    return days === 1 ? "Previous day, 00:00" : `${days} days before, 00:00`;
+    return days === 1
+      ? `Previous day, ${displayClock}`
+      : `${days} days before, ${displayClock}`;
   }
-  return days === 0 ? `Previous day, ${clock}` : `${days + 1} days before, ${clock}`;
+  return days === 0
+    ? `Previous day, ${displayClock}`
+    : `${days + 1} days before, ${displayClock}`;
 }
 
 function NumberField({

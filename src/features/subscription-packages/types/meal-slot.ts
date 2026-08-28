@@ -1,3 +1,5 @@
+import { formatDeliverySlotTime } from "@/lib/delivery-slot-display";
+
 export type MealType = "BREAKFAST" | "LUNCH" | "DINNER" | "SNACK";
 export type MealSlotStatus = "ACTIVE" | "INACTIVE";
 export type CutoffMode = "previous_day" | "same_day" | "hours_before";
@@ -90,5 +92,6 @@ export function defaultCutoffRule(mode: CutoffMode = "previous_day"): CutoffRule
 export function formatCutoffRule(rule: CutoffRule | null | undefined): string {
   if (!rule) return "—";
   if (rule.mode === "hours_before") return `${rule.hours ?? 24}h before slot`;
-  return `${rule.mode === "previous_day" ? "Prev day" : "Same day"} ${rule.time ?? ""}`.trim();
+  const time = rule.time ? formatDeliverySlotTime(rule.time) : "";
+  return `${rule.mode === "previous_day" ? "Prev day" : "Same day"} ${time}`.trim();
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { format } from "date-fns";
+import { todayDateKey } from "@/lib/date";
 import { formatDeliverySlotLabel } from "@/lib/delivery-slot-display";
 import {
   AlertTriangle,
@@ -424,7 +424,7 @@ export function DriverSubscriptionRouteSection({ date }: { date: string }) {
 export function DriverRouteView() {
   const router = useRouter();
   const logout = useAdminAuthStore((s) => s.logout);
-  const [date, setDate] = React.useState(() => format(new Date(), "yyyy-MM-dd"));
+  const [date, setDate] = React.useState(() => todayDateKey());
 
   const handleLogout = () => {
     logout();
