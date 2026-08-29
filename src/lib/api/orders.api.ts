@@ -120,9 +120,14 @@ export const ordersApi = {
   },
 
   cancel: async (id: string, reason?: string) => {
+    const reasonDetails = reason?.trim() || 'Cancelled by Roti Dukaan operations';
     const { data } = await apiClient.post<{ success: boolean; data: unknown }>(
       `/admin/orders/${id}/cancel`,
-      { reason: reason ?? "Cancelled by admin" },
+      {
+        reasonCategory: 'OPERATIONAL_OTHER',
+        reasonDetails,
+        customerVisibleNote: reasonDetails,
+      },
     );
     return data.data;
   },

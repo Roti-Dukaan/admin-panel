@@ -10,6 +10,7 @@ import {
   dismissSupportTicketAlerts,
   markSupportTicketViewed,
 } from "@/features/support/utils/support-ticket-alerts";
+import { SupportRefundPanel } from "@/features/support/components/SupportRefundPanel";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -452,6 +453,13 @@ export default function TicketDetailPage() {
               </CardContent>
             </Card>
           )}
+
+          <SupportRefundPanel
+            ticketId={ticketId}
+            orderId={ticket.orderId ?? ticket.order?.id}
+            orderNumber={ticket.order?.orderNumber}
+            customerName={ticket.customer?.name}
+          />
 
           {/* Branch Details */}
           {ticket.branch && (
