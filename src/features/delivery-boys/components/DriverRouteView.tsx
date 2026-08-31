@@ -134,11 +134,15 @@ function SubscriptionStopCard({
       </p>
 
       <div className="mt-2 space-y-0.5">
-        {stop.items.map((item, i) => (
-          <p key={i} className="text-xs text-gray-700">
-            {item.quantity}× {item.name}
-          </p>
-        ))}
+        {stop.items.length === 0 ? (
+          <p className="text-xs italic text-gray-400">No items listed</p>
+        ) : (
+          stop.items.map((item, i) => (
+            <p key={i} className="text-xs font-medium text-gray-700">
+              {item.quantity}× {item.name}
+            </p>
+          ))
+        )}
       </div>
 
       {stop.notes && <p className="mt-2 text-xs italic text-gray-500">Note: {stop.notes}</p>}
