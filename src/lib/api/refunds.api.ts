@@ -1,6 +1,10 @@
 import { apiClient } from './http';
 import type { ApiResponse, PaginatedData } from '../types/api';
 
+function unwrap<T>(response: { data: ApiResponse<T> }): T {
+  return response.data.data;
+}
+
 export type RefundStatus =
   | 'DRAFT'
   | 'REQUESTED'
@@ -52,41 +56,51 @@ export interface RefundEligibility {
 }
 
 export const refundsApi = {
-  list(params?: Record<string, string | number | undefined>) {
-    return apiClient.get<ApiResponse<PaginatedData<RefundRecord>>>('/admin/refunds', { params });
+  async list(params?: Record<string, string | number | undefined>) {
+    return unwrap(await apiClient.get<PaginatedData<RefundRecord>>('/admin/refunds', { params }));
   },
-  getById(refundId: string) {
-    return apiClient.get<ApiResponse<RefundRecord>>(`/admin/refunds/${refundId}`);
+  async getById(refundId: string) {
+    return unwrap(await apiClient.get<RefundRecord>(`/admin/refunds/${refundId}`));
   },
-  getEligibility(orderId: string) {
-    return apiClient.get<ApiResponse<RefundEligibility>>(`/admin/orders/${orderId}/refund-eligibility`);
+  async getEligibility(orderId: string) {
+    return unwrap(await apiClient.get<RefundEligibility>(`/admin/orders/${orderId}/refund-eligibility`));
   },
-  preview(ticketId: string, body: Record<string, unknown>) {
-    return apiClient.post<ApiResponse<Record<string, unknown>>>(
-      `/admin/support/tickets/${ticketId}/refunds/preview`,
-      body,
+  async preview(ticketId: string, body: Record<string, unknown>) {
+    return unwrap(
+      await apiClient.post<Record<string, unknown>>(
+        `/admin/support/tickets/${ticketId}/refunds/preview`,
+        body,
+      ),
     );
   },
-  create(ticketId: string, body: Record<string, unknown>) {
-    return apiClient.post<ApiResponse<RefundRecord>>(
-      `/admin/support/tickets/${ticketId}/refunds`,
-      body,
+  async create(ticketId: string, body: Record<string, unknown>) {
+    return unwrap(
+      await apiClient.post<RefundRecord>(
+        `/admin/support/tickets/${ticketId}/refunds`,
+        body,
+      ),
     );
   },
-  approve(ticketId: string, refundId: string) {
-    return apiClient.post<ApiResponse<RefundRecord>>(
-      `/admin/support/tickets/${ticketId}/refunds/${refundId}/approve`,
+  async approve(ticketId: string, refundId: string) {
+    return unwrap(
+      await apiClient.post<RefundRecord>(
+        `/admin/support/tickets/${ticketId}/refunds/${refundId}/approve`,
+      ),
     );
   },
-  reject(ticketId: string, refundId: string, reason?: string) {
-    return apiClient.post<ApiResponse<RefundRecord>>(
-      `/admin/support/tickets/${ticketId}/refunds/${refundId}/reject`,
-      { reason },
+  async reject(ticketId: string, refundId: string, reason?: string) {
+    return unwrap(
+      await apiClient.post<RefundRecord>(
+        `/admin/support/tickets/${ticketId}/refunds/${refundId}/reject`,
+        { reason },
+      ),
     );
   },
-  listForTicket(ticketId: string) {
-    return apiClient.get<ApiResponse<PaginatedData<RefundRecord>>>(
-      `/admin/support/tickets/${ticketId}/refunds`,
+  async listForTicket(ticketId: string) {
+    return unwrap(
+      await apiClient.get<PaginatedData<RefundRecord>>(
+        `/admin/support/tickets/${ticketId}/refunds`,
+      ),
     );
   },
 };

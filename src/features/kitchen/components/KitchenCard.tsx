@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { User, Phone, Zap, Clock, Package, IndianRupee, AlertCircle, Play, CheckCircle2, ChefHat } from "lucide-react";
 import { DocumentQuickAction } from "@/features/documents";

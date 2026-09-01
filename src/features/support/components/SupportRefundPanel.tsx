@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { refundsApi, type RefundEligibility, type RefundRecord } from "@/lib/api/refunds.api";
@@ -16,6 +16,19 @@ const REASONS = [
   "OTHER",
 ] as const;
 
+function formatInr(amount?: number) {
+  if (amount == null || Number.isNaN(amount)) return "—";
+  return amount.toLocaleString("en-IN", { maximumFractionDigits: 2 });
+}
+
+function extractApiError(error: unknown, fallback: string) {
+  if (error && typeof error === "object" && "response" in error) {
+    const message = (error as { response?: { data?: { message?: string } } }).response?.data?.message;
+    if (message) return message;
+  }
+  return error instanceof Error ? error.message : fallback;
+}
+
 export function SupportRefundPanel({
   ticketId,
   orderId,
@@ -29,6 +42,8 @@ export function SupportRefundPanel({
 }) {
   const [eligibility, setEligibility] = useState<RefundEligibility | null>(null);
   const [refunds, setRefunds] = useState<RefundRecord[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const [refundType, setRefundType] = useState<"PARTIAL_SUPPORT_REFUND" | "FULL_SUPPORT_REFUND">(
     "PARTIAL_SUPPORT_REFUND",
@@ -40,10 +55,12 @@ export function SupportRefundPanel({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     if (!orderId) return;
+    setLoading(true);
+    setLoadError(null);
     try {
-      const [{ data: eligibilityData }, { data: refundData }] = await Promise.all([
+      const [eligibilityData, refundData] = await Promise.all([
         refundsApi.getEligibility(orderId),
         refundsApi.listForTicket(ticketId),
       ]);
@@ -51,12 +68,17 @@ export function SupportRefundPanel({
       setRefunds(refundData.items ?? []);
     } catch (e) {
       console.error(e);
+      setLoadError(extractApiError(e, "Could not load refund eligibility"));
+      setEligibility(null);
+      setRefunds([]);
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [orderId, ticketId]);
 
   useEffect(() => {
-    load();
-  }, [ticketId, orderId]);
+    void load();
+  }, [load]);
 
   if (!orderId) return null;
 
@@ -68,18 +90,24 @@ export function SupportRefundPanel({
         orderId,
         refundType,
         reasonCategory,
-        reasonDetails,
-        customerVisibleNote: customerNote || undefined,
+        reasonDetails: reasonDetails.trim(),
+        customerVisibleNote: customerNote.trim() || undefined,
       };
       if (refundType === "PARTIAL_SUPPORT_REFUND") {
         body.requestedAmount = Number(amount);
       }
+      if (!reasonDetails.trim()) {
+        setError("Reason details are required");
+        return;
+      }
       await refundsApi.create(ticketId, body);
       setOpen(false);
       setAmount("");
+      setReasonDetails("");
+      setCustomerNote("");
       await load();
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Failed to create refund");
+      setError(extractApiError(e, "Failed to create refund"));
     } finally {
       setSubmitting(false);
     }
@@ -91,11 +119,16 @@ export function SupportRefundPanel({
         <CardTitle className="text-sm font-semibold text-gray-700">Refunds</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3 text-sm">
+        {loading && <p className="text-xs text-gray-500">Checking refund eligibility…</p>}
+        {loadError && <p className="text-xs text-red-600">{loadError}</p>}
         {eligibility && (
           <div className="space-y-1 text-xs text-gray-600">
             <p>Order: {orderNumber ?? orderId}</p>
             <p>Customer: {customerName ?? "—"}</p>
-            <p>Remaining refundable: ₹{eligibility.remainingRefundableAmount}</p>
+            <p>Remaining refundable: ₹{formatInr(eligibility.remainingRefundableAmount)}</p>
+            {!eligibility.eligible && eligibility.reason ? (
+              <p className="text-amber-700">{eligibility.reason}</p>
+            ) : null}
           </div>
         )}
         {refunds.length > 0 && (
@@ -107,7 +140,7 @@ export function SupportRefundPanel({
                   <p className="text-gray-500">{refund.reasonCategory.replaceAll("_", " ")}</p>
                 </div>
                 <div className="text-right">
-                  <p>₹{refund.refundedAmount ?? refund.requestedAmount}</p>
+                  <p>₹{formatInr(refund.refundedAmount ?? refund.requestedAmount)}</p>
                   <p className="text-gray-500">{refund.status}</p>
                 </div>
               </div>
@@ -115,7 +148,12 @@ export function SupportRefundPanel({
           </div>
         )}
         {!open ? (
-          <Button size="sm" variant="outline" onClick={() => setOpen(true)} disabled={!eligibility?.eligible}>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setOpen(true)}
+            disabled={loading || !eligibility?.eligible}
+          >
             Issue Refund
           </Button>
         ) : (
@@ -134,6 +172,8 @@ export function SupportRefundPanel({
                 <label className="text-xs font-medium text-gray-500">Amount (₹)</label>
                 <input
                   type="number"
+                  min="1"
+                  max={eligibility?.remainingRefundableAmount}
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                   className="h-9 w-full rounded-lg border border-gray-200 px-2 text-sm"

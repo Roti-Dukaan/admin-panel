@@ -14,7 +14,7 @@ export default function RefundsPage() {
   const load = async () => {
     setLoading(true);
     try {
-      const { data } = await refundsApi.list({ limit: 50 });
+      const data = await refundsApi.list({ limit: 50 });
       setItems(data.items ?? []);
     } catch (error) {
       console.error("Failed to load refunds", error);
