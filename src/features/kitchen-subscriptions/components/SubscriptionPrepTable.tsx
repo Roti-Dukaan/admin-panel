@@ -28,7 +28,7 @@ function StatusBadge({
   );
 }
 
-function RotiList({ items }: { items: SubscriptionPrepRow["selectedRotis"] }) {
+function MenuList({ items }: { items: SubscriptionPrepRow["selectedRotis"] }) {
   if (items.length === 0) return <span className="text-xs text-gray-400">—</span>;
   return (
     <div className="space-y-0.5">
@@ -36,6 +36,9 @@ function RotiList({ items }: { items: SubscriptionPrepRow["selectedRotis"] }) {
         <p key={`${item.name}-${idx}`} className="text-xs text-gray-700">
           {item.quantity}× {item.name}
           {item.rotiType ? ` (${ROTI_TYPE_LABELS[item.rotiType] ?? item.rotiType})` : ""}
+          {item.isDefault ? (
+            <span className="ml-1 text-[10px] font-medium text-amber-600">(default)</span>
+          ) : null}
         </p>
       ))}
     </div>
@@ -89,7 +92,7 @@ export function SubscriptionPrepTable({
               <TableHead>Phone</TableHead>
               <TableHead>Area / Address</TableHead>
               <TableHead>Slot</TableHead>
-              <TableHead>Selected Rotis</TableHead>
+              <TableHead>Selected Menu</TableHead>
               <TableHead>Qty</TableHead>
               <TableHead>Notes</TableHead>
               <TableHead>Prep</TableHead>
@@ -132,7 +135,7 @@ export function SubscriptionPrepTable({
                     )}
                   </TableCell>
                   <TableCell className="min-w-[160px]">
-                    <RotiList items={row.selectedRotis} />
+                    <MenuList items={row.selectedRotis} />
                   </TableCell>
                   <TableCell className="font-semibold tabular-nums">{row.totalQuantity}</TableCell>
                   <TableCell className="max-w-[140px] truncate text-xs text-gray-500">{row.notes || "—"}</TableCell>
