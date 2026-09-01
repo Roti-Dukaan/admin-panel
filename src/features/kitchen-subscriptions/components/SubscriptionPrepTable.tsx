@@ -1,12 +1,14 @@
 "use client";
 
-import { ChefHat, Package, Printer, Truck } from "lucide-react";
+import { ChefHat, Package, Printer } from "lucide-react";
 import { formatDeliverySlotLabel } from "@/lib/delivery-slot-display";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
+import type { AssignableStaff, DriverDeliveryStop } from "@/features/delivery-boys/types/delivery-boys";
 import type { SubscriptionPrepRow } from "../types/kitchen-subscriptions";
+import { SubscriptionPrepDispatchActions } from "./SubscriptionPrepDispatchActions";
 import {
   ROTI_TYPE_LABELS,
   PREP_STATUS_META,
@@ -49,18 +51,30 @@ export function SubscriptionPrepTable({
   rows,
   onPrep,
   onPack,
-  onDispatch,
   onPrintTicket,
   updatingId,
   isLoading,
+  staff,
+  dispatchById,
+  assignBusyId,
+  onAssign,
+  onAssignSelf,
+  onUnassign,
+  onReassign,
 }: {
   rows: SubscriptionPrepRow[];
   onPrep: (id: string) => void;
   onPack: (id: string) => void;
-  onDispatch: (id: string) => void;
   onPrintTicket: (row: SubscriptionPrepRow) => void;
   updatingId: string | null;
   isLoading: boolean;
+  staff: AssignableStaff[];
+  dispatchById: Map<string, DriverDeliveryStop>;
+  assignBusyId: string | null;
+  onAssign: (deliveryId: string, assigneeUserId: string) => Promise<void>;
+  onAssignSelf: (deliveryId: string) => Promise<void>;
+  onUnassign: (deliveryId: string) => Promise<void>;
+  onReassign: (deliveryId: string, assigneeUserId: string) => Promise<void>;
 }) {
   if (isLoading && rows.length === 0) {
     return (
@@ -107,6 +121,8 @@ export function SubscriptionPrepTable({
               const packMeta = PACKING_STATUS_META[row.packingStatus] ?? PACKING_STATUS_META.PENDING;
               const dispatchMeta = DISPATCH_STATUS_META[row.dispatchStatus] ?? DISPATCH_STATUS_META.PENDING;
               const isUpdating = updatingId === row.id;
+              const dispatchInfo = dispatchById.get(row.id);
+              const showAssignActions = row.packingStatus === "PACKED" && row.dispatchStatus !== "DELIVERED";
 
               return (
                 <TableRow key={row.id}>
@@ -146,7 +162,14 @@ export function SubscriptionPrepTable({
                     <StatusBadge label={packMeta.label} className={packMeta.className} />
                   </TableCell>
                   <TableCell>
-                    <StatusBadge label={dispatchMeta.label} className={dispatchMeta.className} />
+                    <div className="space-y-1">
+                      <StatusBadge label={dispatchMeta.label} className={dispatchMeta.className} />
+                      {dispatchInfo?.assigneeName ? (
+                        <p className="text-[11px] font-medium text-indigo-700">
+                          {dispatchInfo.assigneeName}
+                        </p>
+                      ) : null}
+                    </div>
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex flex-wrap justify-end gap-1.5">
@@ -189,18 +212,18 @@ export function SubscriptionPrepTable({
                           </Button>
                         </>
                       ) : null}
-                      {row.dispatchStatus === "READY" && (
-                        <Button
-                          type="button"
-                          size="sm"
-                          className="h-8 gap-1 bg-indigo-600 hover:bg-indigo-700"
-                          disabled={isUpdating}
-                          onClick={() => onDispatch(row.id)}
-                        >
-                          <Truck className="h-3.5 w-3.5" />
-                          Handover
-                        </Button>
-                      )}
+                      {showAssignActions ? (
+                        <SubscriptionPrepDispatchActions
+                          row={row}
+                          dispatchInfo={dispatchInfo}
+                          staff={staff}
+                          busy={assignBusyId === row.id}
+                          onAssign={onAssign}
+                          onAssignSelf={onAssignSelf}
+                          onUnassign={onUnassign}
+                          onReassign={onReassign}
+                        />
+                      ) : null}
                     </div>
                   </TableCell>
                 </TableRow>
