@@ -20,7 +20,7 @@ interface PaymentStatsResponse {
 }
 
 /** Convert a date preset (IST-aware) into [dateFrom, dateTo] ISO instants. */
-function resolvePaymentDateRange(
+export function resolvePaymentDateRange(
   dateFilter: string | undefined,
   customDateFrom?: string,
   customDateTo?: string,
@@ -73,11 +73,15 @@ function toBackendPaymentMethod(method: string): string {
 function mapBackendStatus(status: string): Payment['paymentStatus'] {
   const map: Record<string, Payment['paymentStatus']> = {
     CAPTURED: 'paid',
+    COLLECTED: 'paid',
+    SETTLED: 'paid',
     AUTHORIZED: 'authorized',
     CREATED: 'pending',
     PAYMENT_PENDING: 'pending',
+    PENDING_COLLECTION: 'pending',
     FAILED: 'failed',
     REFUNDED: 'refunded',
+    PARTIALLY_REFUNDED: 'refunded',
     CANCELLED: 'cancelled',
   };
   return map[status] ?? 'pending';
@@ -95,7 +99,7 @@ function mapBackendPayment(backend: any): Payment {
   return {
     id: backend.id,
     paymentId: backend.paymentReference || backend.id,
-    orderId: backend.order?.orderNumber || backend.checkoutReference || '—',
+    orderId: backend.orderNumber || backend.order?.orderNumber || backend.checkoutReference || '—',
     customerName: backend.customerName || backend.customer?.fullName || backend.customer?.name || 'Guest',
     customerPhone: backend.customerPhone || backend.customer?.phone || '',
     customerEmail: backend.customerEmail || backend.customer?.email || '',

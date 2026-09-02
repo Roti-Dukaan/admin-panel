@@ -1,6 +1,5 @@
 "use client";
 
-import { useMemo } from "react";
 import { motion } from "motion/react";
 import { usePaymentStore } from "../hooks/usePayments";
 import { COD_COLLECTION_STATUS_CONFIG } from "../types/payment";
@@ -13,8 +12,7 @@ function formatDateTime(ts: number | null) {
 }
 
 export function CodTable() {
-  const getFilteredCodRecords = usePaymentStore((s) => s.getFilteredCodRecords);
-  const records = useMemo(() => getFilteredCodRecords(), [getFilteredCodRecords]);
+  const records = usePaymentStore((s) => s.codRecords);
 
   return (
     <motion.div

@@ -52,8 +52,9 @@ const statCards = [
 ];
 
 export function PaymentsStats() {
+  const payments = usePaymentStore((s) => s.payments);
   const getStats = usePaymentStore((s) => s.getStats);
-  const stats = useMemo(() => getStats(), [getStats]);
+  const stats = useMemo(() => getStats(), [payments, getStats]);
 
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">

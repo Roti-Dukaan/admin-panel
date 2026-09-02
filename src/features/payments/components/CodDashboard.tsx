@@ -12,8 +12,9 @@ function formatCurrency(value: number) {
 }
 
 export function CodDashboard() {
+  const codRecords = usePaymentStore((s) => s.codRecords);
   const getCodStats = usePaymentStore((s) => s.getCodStats);
-  const stats = useMemo(() => getCodStats(), [getCodStats]);
+  const stats = useMemo(() => getCodStats(), [codRecords, getCodStats]);
 
   const cards = [
     { label: "COD Orders Today", value: stats.codOrdersToday, icon: Banknote, color: "text-amber-600", bg: "bg-amber-50", format: "number" as const },
