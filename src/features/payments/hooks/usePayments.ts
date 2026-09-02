@@ -4,7 +4,7 @@ import { PAYMENT_METHOD_CONFIG } from '../types/payment';
 import { paymentsApi, resolvePaymentDateRange } from '@/lib/api/payments.api';
 
 interface PaymentStats {
-  todayRevenue: number;
+  totalRevenue: number;
   onlinePayments: number;
   cashOnDelivery: number;
   pendingPayments: number;
@@ -32,6 +32,7 @@ interface PaymentStore {
   selectedPayment: Payment | null;
 
   setFilters: (filters: Partial<PaymentFilters>) => void;
+  setDateRange: (preset: string, startDate?: string, endDate?: string) => void;
   clearFilters: () => void;
   refresh: () => Promise<void>;
 
@@ -145,7 +146,35 @@ export const usePaymentStore = create<PaymentStore>((set, get) => ({
 
   setFilters: (newFilters) => set((state) => ({ filters: { ...state.filters, ...newFilters } })),
 
-  clearFilters: () => set({ filters: { ...initialFilters } }),
+  setDateRange: (preset, startDate = '', endDate = '') => {
+    const presetMap: Record<string, PaymentFilters['dateFilter']> = {
+      today: 'today',
+      yesterday: 'yesterday',
+      '7d': 'last_7_days',
+      '30d': 'last_30_days',
+      'this-month': 'this_month',
+      custom: 'custom',
+    };
+    set((state) => ({
+      filters: {
+        ...state.filters,
+        dateFilter: presetMap[preset] ?? 'last_30_days',
+        customDateFrom: startDate,
+        customDateTo: endDate,
+      },
+    }));
+  },
+
+  clearFilters: () =>
+    set((state) => ({
+      filters: {
+        ...state.filters,
+        search: '',
+        status: 'all',
+        method: 'all',
+        gateway: 'all',
+      },
+    })),
 
   openPaymentDrawer: (payment) => set({ drawerOpen: true, selectedPayment: payment }),
 
@@ -204,23 +233,19 @@ export const usePaymentStore = create<PaymentStore>((set, get) => ({
   },
 
   getStats: () => {
-    const { payments } = get();
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
-    const todayTs = todayStart.getTime();
-
-    const todayPayments = payments.filter((p) => p.transactionTime >= todayTs && p.paymentStatus === 'paid');
-    const allPaid = payments.filter((p) => p.paymentStatus === 'paid');
+    const { payments, filters } = get();
+    const scoped = applyDateFilter(payments, filters);
+    const allPaid = scoped.filter((p) => p.paymentStatus === 'paid');
 
     return {
-      todayRevenue: todayPayments.reduce((sum, p) => sum + p.amount, 0),
+      totalRevenue: allPaid.reduce((sum, p) => sum + p.amount, 0),
       onlinePayments: allPaid.filter((p) => p.paymentMethod !== 'cod').reduce((sum, p) => sum + p.amount, 0),
       cashOnDelivery: allPaid.filter((p) => p.paymentMethod === 'cod').reduce((sum, p) => sum + p.amount, 0),
-      pendingPayments: payments.filter((p) => p.paymentStatus === 'pending').reduce((sum, p) => sum + p.amount, 0),
-      failedPayments: payments.filter((p) => p.paymentStatus === 'failed').reduce((sum, p) => sum + p.amount, 0),
-      refundedAmount: payments.filter((p) => p.paymentStatus === 'refunded').reduce((sum, p) => sum + p.amount, 0),
+      pendingPayments: scoped.filter((p) => p.paymentStatus === 'pending').reduce((sum, p) => sum + p.amount, 0),
+      failedPayments: scoped.filter((p) => p.paymentStatus === 'failed').reduce((sum, p) => sum + p.amount, 0),
+      refundedAmount: scoped.filter((p) => p.paymentStatus === 'refunded').reduce((sum, p) => sum + p.amount, 0),
       averageOrderValue: allPaid.length > 0 ? Math.round(allPaid.reduce((sum, p) => sum + p.amount, 0) / allPaid.length) : 0,
-      totalTransactions: payments.length,
+      totalTransactions: scoped.length,
     };
   },
 

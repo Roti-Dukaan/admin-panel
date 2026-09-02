@@ -45,6 +45,11 @@ export function resolvePaymentDateRange(
       return { dateFrom: new Date(startOfTodayUtc.getTime() - dayMs).toISOString(), dateTo: startOfTodayUtc.toISOString() };
     case 'last_7_days':
       return { dateFrom: new Date(startOfTodayUtc.getTime() - 7 * dayMs).toISOString(), dateTo: new Date(startOfTodayUtc.getTime() + dayMs).toISOString() };
+    case 'this_month': {
+      const startOfMonthIst = new Date(istNow.getFullYear(), istNow.getMonth(), 1, 0, 0, 0, 0);
+      const startOfMonthUtc = new Date(startOfMonthIst.getTime() - istNow.getTime() + now.getTime());
+      return { dateFrom: startOfMonthUtc.toISOString(), dateTo: new Date(startOfTodayUtc.getTime() + dayMs).toISOString() };
+    }
     case 'last_30_days':
     default:
       return { dateFrom: new Date(startOfTodayUtc.getTime() - 30 * dayMs).toISOString(), dateTo: new Date(startOfTodayUtc.getTime() + dayMs).toISOString() };
