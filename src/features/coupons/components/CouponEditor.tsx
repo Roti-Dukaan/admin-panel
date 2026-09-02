@@ -60,9 +60,8 @@ function buildSavePayload(form: CreateCouponInput, mode: "create" | "edit"): Cre
   };
 
   if (mode === "edit") {
-    const { code: _code, ...updatePayload } = payload;
     return {
-      ...updatePayload,
+      ...payload,
       totalUsageLimit: form.totalUsageLimit ?? null,
       perUserUsageLimit: form.perUserUsageLimit ?? null,
       maxDiscountAmount:
@@ -203,8 +202,6 @@ export function CouponEditor({
                 id="code"
                 value={form.code}
                 onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })}
-                readOnly={mode === "edit"}
-                className={mode === "edit" ? "bg-gray-50" : undefined}
                 required
               />
             </div>

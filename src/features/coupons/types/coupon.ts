@@ -43,7 +43,7 @@ export interface CreateCouponInput {
   autoApply?: boolean;
 }
 
-export type UpdateCouponInput = Partial<Omit<CreateCouponInput, "code">> & {
+export type UpdateCouponInput = Partial<CreateCouponInput> & {
   totalUsageLimit?: number | null;
   perUserUsageLimit?: number | null;
   maxDiscountAmount?: number | null;
