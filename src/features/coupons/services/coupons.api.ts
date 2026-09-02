@@ -1,6 +1,25 @@
 import { apiClient } from "@/lib/api/http";
 import { Coupon, CreateCouponInput, UpdateCouponInput } from "../types/coupon";
 
+function coerceNumber(value: unknown, fallback = 0): number {
+  if (value == null || value === "") return fallback;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function coerceIsoDate(value: unknown): string {
+  if (value == null || value === "") return "";
+  if (typeof value === "string") return value;
+  if (typeof value === "number") {
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? "" : date.toISOString();
+  }
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? "" : value.toISOString();
+  }
+  return String(value);
+}
+
 function normalizeCoupon(raw: Record<string, unknown>): Coupon {
   return {
     id: String(raw.id),
@@ -8,13 +27,13 @@ function normalizeCoupon(raw: Record<string, unknown>): Coupon {
     title: String(raw.title),
     description: (raw.description as string | null) ?? null,
     discountType: raw.discountType as Coupon["discountType"],
-    discountValue: Number(raw.discountValue),
-    minOrderValue: Number(raw.minOrderValue ?? 0),
-    maxDiscountAmount: raw.maxDiscountAmount != null ? Number(raw.maxDiscountAmount) : null,
-    totalUsageLimit: raw.totalUsageLimit != null ? Number(raw.totalUsageLimit) : null,
-    perUserUsageLimit: raw.perUserUsageLimit != null ? Number(raw.perUserUsageLimit) : null,
-    validFrom: String(raw.validFrom),
-    validTill: String(raw.validTill),
+    discountValue: coerceNumber(raw.discountValue),
+    minOrderValue: coerceNumber(raw.minOrderValue, 0),
+    maxDiscountAmount: raw.maxDiscountAmount != null ? coerceNumber(raw.maxDiscountAmount) : null,
+    totalUsageLimit: raw.totalUsageLimit != null ? coerceNumber(raw.totalUsageLimit) : null,
+    perUserUsageLimit: raw.perUserUsageLimit != null ? coerceNumber(raw.perUserUsageLimit) : null,
+    validFrom: coerceIsoDate(raw.validFrom),
+    validTill: coerceIsoDate(raw.validTill),
     active: Boolean(raw.active),
     applicableOrderTypes: Array.isArray(raw.applicableOrderTypes)
       ? (raw.applicableOrderTypes as string[])
@@ -24,9 +43,9 @@ function normalizeCoupon(raw: Record<string, unknown>): Coupon {
       : null,
     firstOrderOnly: Boolean(raw.firstOrderOnly),
     autoApply: Boolean(raw.autoApply),
-    usageCount: Number(raw.usageCount ?? 0),
-    createdAt: String(raw.createdAt),
-    updatedAt: String(raw.updatedAt),
+    usageCount: coerceNumber(raw.usageCount, 0),
+    createdAt: coerceIsoDate(raw.createdAt),
+    updatedAt: coerceIsoDate(raw.updatedAt),
   };
 }
 

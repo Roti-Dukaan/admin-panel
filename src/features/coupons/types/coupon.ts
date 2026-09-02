@@ -43,7 +43,11 @@ export interface CreateCouponInput {
   autoApply?: boolean;
 }
 
-export type UpdateCouponInput = Partial<CreateCouponInput>;
+export type UpdateCouponInput = Partial<Omit<CreateCouponInput, "code">> & {
+  totalUsageLimit?: number | null;
+  perUserUsageLimit?: number | null;
+  maxDiscountAmount?: number | null;
+};
 
 export function formatCouponValue(coupon: Pick<Coupon, "discountType" | "discountValue">): string {
   return coupon.discountType === "FLAT"
