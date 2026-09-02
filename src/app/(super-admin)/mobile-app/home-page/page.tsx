@@ -146,7 +146,7 @@ export default function MobileAppHomePageCmsPage() {
   return (
     <div className="min-h-screen bg-gray-50/50">
       <Header
-        title="Home Page CMS"
+        title="Mobile App CMS"
         subtitle="Manage the mobile app home page with dynamic sections."
         actions={
           <Button onClick={() => setAddOpen(true)} className="inline-flex items-center gap-2 rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-bold text-white hover:bg-gray-800">
