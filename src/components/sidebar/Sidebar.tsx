@@ -95,10 +95,10 @@ const MAIN_ADMIN_NAV_GROUPS: NavGroup[] = [
     title: "Marketing / Growth",
     roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'],
     items: [
-      { label: "Referral Campaigns", href: "/referrals/campaigns", icon: Gift, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
-      { label: "Referral Tracking", href: "/referrals/tracking", icon: UserPlus, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
-      { label: "Referral Fraud Review", href: "/referrals/fraud-review", icon: Shield, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
-      { label: "Referral Reports", href: "/referrals/reports", icon: BarChart3, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
+      { label: "Campaigns", href: "/referrals/campaigns", icon: Gift, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
+      { label: "Tracking", href: "/referrals/tracking", icon: UserPlus, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
+      { label: "Fraud Review", href: "/referrals/fraud-review", icon: Shield, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
+      { label: "Reports", href: "/referrals/reports", icon: BarChart3, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
     ],
   },
   {

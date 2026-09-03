@@ -14,7 +14,7 @@ const SIDEBAR_ROUTES = [
   "/branch/inventory", "/branch/delivery", "/branch/dispatch", "/branch/delivery-boys",
   "/branch/customers", "/branch/team", "/branch/reports", "/branch/profile",
   "/branch-inventory", "/support", "/branch/support", "/dispatch", "/cms", "/cms/banners", "/mobile-app", "/contact-messages",
-  "/coupons", "/finance",
+  "/coupons", "/referrals", "/finance",
 ]
 
 interface SidebarContextValue {

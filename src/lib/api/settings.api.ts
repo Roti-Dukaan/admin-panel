@@ -45,6 +45,7 @@ export interface PaymentConfigData {
   razorpayEnabled: boolean;
   razorpayKeyId: string | null;
   razorpayKeySecret: string | null;
+  maxWalletPerOrderAmount?: number;
 }
 
 export interface DeliveryConfigData {
