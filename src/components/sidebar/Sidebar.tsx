@@ -28,6 +28,7 @@ import {
   Mail,
   Bell,
   LayoutGrid,
+  Gift,
 } from "lucide-react"
 import { useSidebar } from "./hooks/useSidebar"
 import { SidebarGroup } from "./SidebarGroup"
@@ -87,6 +88,17 @@ const MAIN_ADMIN_NAV_GROUPS: NavGroup[] = [
       { label: "Cities", href: "/cities", icon: Building2, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
       { label: "Areas", href: "/areas", icon: MapPin, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
       { label: "Branches", href: "/branches", icon: Store, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
+    ],
+  },
+  {
+    id: "growth",
+    title: "Marketing / Growth",
+    roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'],
+    items: [
+      { label: "Referral Campaigns", href: "/referrals/campaigns", icon: Gift, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
+      { label: "Referral Tracking", href: "/referrals/tracking", icon: UserPlus, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
+      { label: "Referral Fraud Review", href: "/referrals/fraud-review", icon: Shield, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
+      { label: "Referral Reports", href: "/referrals/reports", icon: BarChart3, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
     ],
   },
   {

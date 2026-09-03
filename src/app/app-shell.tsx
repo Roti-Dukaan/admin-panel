@@ -48,6 +48,7 @@ const SIDEBAR_ROUTES = [
   "/mobile-app",
   "/contact-messages",
   "/coupons",
+  "/referrals",
   "/finance",
 ]
 
