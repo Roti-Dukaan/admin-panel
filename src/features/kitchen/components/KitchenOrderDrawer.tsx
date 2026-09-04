@@ -133,9 +133,9 @@ export function KitchenOrderDrawer({
             </Section>
 
             <Section icon={User} title="Customer Information">
-              <Row label="Name" value={detail.customer?.name ?? "Guest"} />
+              <Row label="Account name" value={detail.customer?.name ?? "Guest"} />
               <Row
-                label="Phone"
+                label="Account phone"
                 value={
                   <span className="inline-flex items-center gap-1">
                     <Phone className="h-3.5 w-3.5 text-gray-400" />
@@ -158,13 +158,29 @@ export function KitchenOrderDrawer({
 
             <Section icon={MapPin} title="Delivery Address">
               {detail.address ? (
-                <p className="leading-relaxed text-gray-700">
-                  {detail.address.addressLine1}
-                  {detail.address.addressLine2 ? `, ${detail.address.addressLine2}` : ""}
-                  {detail.address.landmark ? ` (${detail.address.landmark})` : ""}
-                  <br />
-                  {detail.address.city}, {detail.address.state} – {detail.address.pincode}
-                </p>
+                <div className="space-y-2 leading-relaxed text-gray-700">
+                  {(detail.address.customerName || detail.address.phoneNumber) && (
+                    <div className="rounded-lg bg-amber-50 border border-amber-100 px-3 py-2">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-amber-800">
+                        Receiver
+                      </p>
+                      <p className="font-medium text-gray-900">
+                        {detail.address.customerName || "—"}
+                      </p>
+                      <p className="text-sm text-gray-600 inline-flex items-center gap-1">
+                        <Phone className="h-3.5 w-3.5 text-gray-400" />
+                        {detail.address.phoneNumber || "—"}
+                      </p>
+                    </div>
+                  )}
+                  <p>
+                    {detail.address.addressLine1}
+                    {detail.address.addressLine2 ? `, ${detail.address.addressLine2}` : ""}
+                    {detail.address.landmark ? ` (${detail.address.landmark})` : ""}
+                    <br />
+                    {detail.address.city}, {detail.address.state} – {detail.address.pincode}
+                  </p>
+                </div>
               ) : (
                 <p className="text-gray-400">No address captured.</p>
               )}
