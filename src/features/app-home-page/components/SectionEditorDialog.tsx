@@ -78,7 +78,7 @@ export function SectionEditorDialog({
   useEffect(() => {
     if (!open) return;
     citiesApi.getAllActive().then((res) => setCities(res.data?.data ?? [])).catch(() => setCities([]));
-    categoryApi.list({ limit: 100, isActive: true }).then((res) => setCategories(res.data?.items ?? [])).catch(() => setCategories([]));
+    categoryApi.list({ limit: 100, status: 'active', sort: 'displayOrder', order: 'asc' }).then((res) => setCategories(res.data?.items ?? [])).catch(() => setCategories([]));
   }, [open]);
 
   const productIds = useMemo(() => (config.productIds as string[] | undefined) ?? [], [config.productIds]);

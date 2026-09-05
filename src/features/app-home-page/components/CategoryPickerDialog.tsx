@@ -31,7 +31,7 @@ export function CategoryPickerDialog({ open, onOpenChange, selectedIds, onDone }
     setSelected(selectedIds);
     setLoading(true);
     categoryApi
-      .list({ limit: 100, isActive: true })
+      .list({ limit: 100, status: 'active', sort: 'displayOrder', order: 'asc' })
       .then((res) => setCategories(res.data?.items ?? []))
       .finally(() => setLoading(false));
   }, [open, selectedIds]);
@@ -81,8 +81,13 @@ export function CategoryPickerDialog({ open, onOpenChange, selectedIds, onDone }
           <Button
             type="button"
             onClick={() => {
-              const picked = categories.filter((c) => selected.includes(c.id));
-              onDone(selected, picked);
+              const picked = categories
+                .filter((c) => selected.includes(c.id))
+                .sort((a, b) => a.displayOrder - b.displayOrder || a.name.localeCompare(b.name));
+              onDone(
+                picked.map((c) => c.id),
+                picked,
+              );
               onOpenChange(false);
             }}
           >
