@@ -1,7 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { X, Plus, GripVertical, Trash2, Edit3, Check } from "lucide-react";
 import { useMenuStore } from "../hooks/useMenu";
 import { Category, EMOJI_OPTIONS, COLOR_OPTIONS } from "../types/menu";
@@ -18,7 +35,15 @@ function resetAddForm() {
 }
 
 export function CategoryManager() {
-  const { categoryModalOpen, closeCategoryModal, categories, addCategory, updateCategory, deleteCategory } = useMenuStore();
+  const {
+    categoryModalOpen,
+    closeCategoryModal,
+    categories,
+    addCategory,
+    updateCategory,
+    deleteCategory,
+    reorderCategories,
+  } = useMenuStore();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [form, setForm] = useState(resetAddForm());
@@ -28,8 +53,17 @@ export function CategoryManager() {
   const [editImageFile, setEditImageFile] = useState<File | null>(null);
   const [editImagePreview, setEditImagePreview] = useState("");
   const [saving, setSaving] = useState(false);
+  const [reorderError, setReorderError] = useState<string | null>(null);
 
-  const sorted = [...categories].sort((a, b) => a.sortOrder - b.sortOrder);
+  const sorted = useMemo(
+    () => [...categories].sort((a, b) => a.sortOrder - b.sortOrder || a.createdAt - b.createdAt),
+    [categories],
+  );
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
 
   const handleAddImageSelect = (file: File) => {
     setAddImageFile(file);
@@ -109,6 +143,27 @@ export function CategoryManager() {
     clearEditImage();
   };
 
+  const onDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id || editingId) return;
+
+    const oldIndex = sorted.findIndex((cat) => cat.id === active.id);
+    const newIndex = sorted.findIndex((cat) => cat.id === over.id);
+    if (oldIndex < 0 || newIndex < 0) return;
+
+    const reordered = arrayMove(sorted, oldIndex, newIndex).map((cat, index) => ({
+      id: cat.id,
+      displayOrder: index,
+    }));
+
+    setReorderError(null);
+    try {
+      await reorderCategories(reordered);
+    } catch {
+      setReorderError("Failed to save category order. Please try again.");
+    }
+  };
+
   return (
     <AnimatePresence>
       {categoryModalOpen && (
@@ -126,134 +181,117 @@ export function CategoryManager() {
             exit={{ opacity: 0, scale: 0.95 }}
             className="fixed left-1/2 top-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-white shadow-2xl"
           >
-            {/* Header */}
             <div className="flex items-center justify-between border-b px-6 py-4">
               <div>
                 <h2 className="text-lg font-bold text-gray-900">Manage Categories</h2>
-                <p className="text-sm text-gray-500">{categories.length} categories</p>
+                <p className="text-sm text-gray-500">
+                  {categories.length} categories · drag to reorder
+                </p>
               </div>
               <button onClick={closeCategoryModal} className="rounded-lg p-2 hover:bg-gray-100">
                 <X className="h-5 w-5 text-gray-500" />
               </button>
             </div>
 
-            {/* Category List */}
-            <div className="max-h-[400px] overflow-y-auto px-6 py-4 space-y-2">
-              {sorted.map((cat) => (
-                <div key={cat.id} className="group">
-                  {editingId === cat.id ? (
-                    <div className="rounded-xl border border-blue-200 bg-blue-50/50 p-4 space-y-3">
-                      <input
-                        type="text"
-                        value={editForm.name}
-                        onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                        className="h-9 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 focus:border-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-300"
-                        placeholder="Category name"
-                        autoFocus
-                      />
-                      <FoodImageUploader
-                        title="Category Image"
-                        recommendations={CATEGORY_IMAGE_HINT}
-                        accept="image/jpeg,image/png,image/webp,image/svg+xml"
-                        compact
-                        value={editImagePreview}
-                        onChange={(url) => {
-                          setEditImagePreview(url);
-                          if (!url) clearEditImage();
-                        }}
-                        onFileSelect={handleEditImageSelect}
-                      />
-                      <div>
-                        <p className="mb-1.5 text-xs font-medium text-gray-500">Emoji</p>
-                        <div className="flex flex-wrap gap-1">
-                          {EMOJI_OPTIONS.map((emoji) => (
-                            <button
-                              key={emoji}
-                              type="button"
-                              onClick={() => setEditForm({ ...editForm, emoji })}
-                              className={`flex h-8 w-8 items-center justify-center rounded-lg text-sm transition-all ${
-                                editForm.emoji === emoji ? "bg-gray-900 ring-2 ring-gray-900" : "bg-gray-100 hover:bg-gray-200"
-                              }`}
-                            >
-                              {emoji}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                      <div>
-                        <p className="mb-1.5 text-xs font-medium text-gray-500">Color</p>
-                        <div className="flex flex-wrap gap-1.5">
-                          {COLOR_OPTIONS.map((opt) => (
-                            <button
-                              key={opt.value}
-                              type="button"
-                              onClick={() => setEditForm({ ...editForm, color: opt.value, bgColor: opt.bg })}
-                              className={`flex h-8 w-8 items-center justify-center rounded-lg text-sm transition-all ${
-                                editForm.color === opt.value ? "ring-2 ring-gray-900" : "hover:ring-1 hover:ring-gray-300"
-                              } ${opt.bg}`}
-                            >
-                              <span className={`text-xs font-bold ${opt.value}`}>A</span>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 pt-1">
-                        <button
-                          onClick={() => handleUpdate(cat)}
-                          disabled={saving}
-                          className="inline-flex items-center gap-1 rounded-lg bg-gray-900 px-3 py-1.5 text-xs font-bold text-white hover:bg-gray-800 disabled:opacity-50"
-                        >
-                          <Check className="h-3 w-3" /> {saving ? "Saving…" : "Save"}
-                        </button>
-                        <button
-                          onClick={cancelEdit}
-                          className="rounded-lg px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-100"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-between rounded-xl border border-gray-100 bg-white px-4 py-3 hover:border-gray-200 hover:shadow-sm transition-all">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <GripVertical className="h-4 w-4" />
-                        </div>
-                        {cat.imageUrl ? (
-                          <img
-                            src={cat.imageUrl}
-                            alt={cat.name}
-                            className="h-9 w-9 rounded-lg object-cover ring-1 ring-gray-200"
-                          />
+            {reorderError ? (
+              <div className="mx-6 mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+                {reorderError}
+              </div>
+            ) : null}
+
+            <div className="max-h-[400px] overflow-y-auto px-6 py-4">
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+                <SortableContext items={sorted.map((cat) => cat.id)} strategy={verticalListSortingStrategy}>
+                  <div className="space-y-2">
+                    {sorted.map((cat, index) => (
+                      <div key={cat.id}>
+                        {editingId === cat.id ? (
+                          <div className="rounded-xl border border-blue-200 bg-blue-50/50 p-4 space-y-3">
+                            <input
+                              type="text"
+                              value={editForm.name}
+                              onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                              className="h-9 w-full rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 focus:border-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-300"
+                              placeholder="Category name"
+                              autoFocus
+                            />
+                            <FoodImageUploader
+                              title="Category Image"
+                              recommendations={CATEGORY_IMAGE_HINT}
+                              accept="image/jpeg,image/png,image/webp,image/svg+xml"
+                              compact
+                              value={editImagePreview}
+                              onChange={(url) => {
+                                setEditImagePreview(url);
+                                if (!url) clearEditImage();
+                              }}
+                              onFileSelect={handleEditImageSelect}
+                            />
+                            <div>
+                              <p className="mb-1.5 text-xs font-medium text-gray-500">Emoji</p>
+                              <div className="flex flex-wrap gap-1">
+                                {EMOJI_OPTIONS.map((emoji) => (
+                                  <button
+                                    key={emoji}
+                                    type="button"
+                                    onClick={() => setEditForm({ ...editForm, emoji })}
+                                    className={`flex h-8 w-8 items-center justify-center rounded-lg text-sm transition-all ${
+                                      editForm.emoji === emoji ? "bg-gray-900 ring-2 ring-gray-900" : "bg-gray-100 hover:bg-gray-200"
+                                    }`}
+                                  >
+                                    {emoji}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                            <div>
+                              <p className="mb-1.5 text-xs font-medium text-gray-500">Color</p>
+                              <div className="flex flex-wrap gap-1.5">
+                                {COLOR_OPTIONS.map((opt) => (
+                                  <button
+                                    key={opt.value}
+                                    type="button"
+                                    onClick={() => setEditForm({ ...editForm, color: opt.value, bgColor: opt.bg })}
+                                    className={`flex h-8 w-8 items-center justify-center rounded-lg text-sm transition-all ${
+                                      editForm.color === opt.value ? "ring-2 ring-gray-900" : "hover:ring-1 hover:ring-gray-300"
+                                    } ${opt.bg}`}
+                                  >
+                                    <span className={`text-xs font-bold ${opt.value}`}>A</span>
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 pt-1">
+                              <button
+                                onClick={() => handleUpdate(cat)}
+                                disabled={saving}
+                                className="inline-flex items-center gap-1 rounded-lg bg-gray-900 px-3 py-1.5 text-xs font-bold text-white hover:bg-gray-800 disabled:opacity-50"
+                              >
+                                <Check className="h-3 w-3" /> {saving ? "Saving…" : "Save"}
+                              </button>
+                              <button
+                                onClick={cancelEdit}
+                                className="rounded-lg px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-100"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
                         ) : (
-                          <span className="text-xl">{cat.emoji}</span>
+                          <SortableCategoryRow
+                            cat={cat}
+                            index={index}
+                            onEdit={() => startEdit(cat)}
+                            onDelete={() => handleDelete(cat)}
+                          />
                         )}
-                        <div>
-                          <span className={`text-sm font-semibold ${cat.color}`}>{cat.name}</span>
-                          <span className="ml-2 text-[11px] text-gray-400">{cat.slug}</span>
-                        </div>
                       </div>
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          onClick={() => startEdit(cat)}
-                          className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
-                        >
-                          <Edit3 className="h-3.5 w-3.5" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(cat)}
-                          className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ))}
+                    ))}
+                  </div>
+                </SortableContext>
+              </DndContext>
             </div>
 
-            {/* Add Form */}
             {showAddForm && (
               <div className="mx-6 mb-4 rounded-xl border border-dashed border-gray-300 bg-gray-50 p-4 space-y-3">
                 <input
@@ -328,7 +366,6 @@ export function CategoryManager() {
               </div>
             )}
 
-            {/* Footer */}
             <div className="border-t px-6 py-4">
               {!showAddForm ? (
                 <button
@@ -343,5 +380,71 @@ export function CategoryManager() {
         </>
       )}
     </AnimatePresence>
+  );
+}
+
+function SortableCategoryRow({
+  cat,
+  index,
+  onEdit,
+  onDelete,
+}: {
+  cat: Category;
+  index: number;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: cat.id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`group flex items-center justify-between rounded-xl border bg-white px-4 py-3 transition-all ${
+        isDragging ? "border-gray-300 shadow-md ring-2 ring-gray-200" : "border-gray-100 hover:border-gray-200 hover:shadow-sm"
+      }`}
+    >
+      <div className="flex min-w-0 items-center gap-3">
+        <button
+          type="button"
+          {...attributes}
+          {...listeners}
+          className="flex h-8 w-8 shrink-0 cursor-grab items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 active:cursor-grabbing"
+          aria-label={`Drag to reorder ${cat.name}`}
+        >
+          <GripVertical className="h-4 w-4" />
+        </button>
+        <span className="w-5 shrink-0 text-xs font-bold text-gray-400">{index + 1}</span>
+        {cat.imageUrl ? (
+          <img src={cat.imageUrl} alt={cat.name} className="h-9 w-9 shrink-0 rounded-lg object-cover ring-1 ring-gray-200" />
+        ) : (
+          <span className="shrink-0 text-xl">{cat.emoji}</span>
+        )}
+        <div className="min-w-0">
+          <span className={`text-sm font-semibold ${cat.color}`}>{cat.name}</span>
+          <span className="ml-2 text-[11px] text-gray-400">{cat.slug}</span>
+        </div>
+      </div>
+      <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+        <button
+          type="button"
+          onClick={onEdit}
+          className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+        >
+          <Edit3 className="h-3.5 w-3.5" />
+        </button>
+        <button
+          type="button"
+          onClick={onDelete}
+          className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600"
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </button>
+      </div>
+    </div>
   );
 }

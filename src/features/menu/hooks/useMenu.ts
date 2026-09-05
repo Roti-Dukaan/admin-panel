@@ -139,6 +139,7 @@ interface MenuStore {
   addCategory: (data: { name: string; slug: string; emoji: string; color: string; bgColor: string }, imageFile?: File) => Promise<void>;
   updateCategory: (id: string, data: Partial<Category>, imageFile?: File) => Promise<void>;
   deleteCategory: (id: string) => Promise<void>;
+  reorderCategories: (items: { id: string; displayOrder: number }[]) => Promise<void>;
 
   addFood: (data: FoodItemFormData, imageFile?: File) => Promise<string>;
   updateFood: (id: string, data: FoodItemFormData, imageFile?: File) => Promise<void>;
@@ -286,6 +287,25 @@ export const useMenuStore = create<MenuStore>((set, get) => ({
       set({ categories });
     } catch (error) {
       console.error('Failed to delete category:', error);
+      throw error;
+    }
+  },
+
+  reorderCategories: async (items) => {
+    const previous = get().categories;
+    const orderMap = new Map(items.map((item) => [item.id, item.displayOrder]));
+    const categories = [...get().categories]
+      .map((category) => ({
+        ...category,
+        sortOrder: orderMap.get(category.id) ?? category.sortOrder,
+      }))
+      .sort((a, b) => a.sortOrder - b.sortOrder || a.createdAt - b.createdAt);
+    set({ categories });
+    try {
+      await categoryApi.reorder(items);
+    } catch (error) {
+      set({ categories: previous });
+      console.error('Failed to reorder categories:', error);
       throw error;
     }
   },
