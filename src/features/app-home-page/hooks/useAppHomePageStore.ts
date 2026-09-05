@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { appHomePageApi } from '@/lib/api/app-home-page.api';
+import { extractApiError } from '@/lib/api/extract-api-error';
 import type {
   AppHomePageSection,
   AppHomePageSectionForm,
@@ -49,8 +50,7 @@ export const useAppHomePageStore = create<AppHomePageStore>((set, get) => ({
       set({ sections, loading: false });
       await get().loadPreview(get().previewLocation);
     } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : 'Failed to load sections';
-      set({ loading: false, error: message });
+      set({ loading: false, error: extractApiError(e, 'Failed to load sections') });
     }
   },
 
@@ -80,8 +80,7 @@ export const useAppHomePageStore = create<AppHomePageStore>((set, get) => ({
       await get().loadSections();
       return true;
     } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : 'Failed to create section';
-      set({ saving: false, error: message });
+      set({ saving: false, error: extractApiError(e, 'Failed to create section') });
       return false;
     }
   },
@@ -94,8 +93,7 @@ export const useAppHomePageStore = create<AppHomePageStore>((set, get) => ({
       await get().loadSections();
       return true;
     } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : 'Failed to update section';
-      set({ saving: false, error: message });
+      set({ saving: false, error: extractApiError(e, 'Failed to update section') });
       return false;
     }
   },
@@ -108,8 +106,7 @@ export const useAppHomePageStore = create<AppHomePageStore>((set, get) => ({
       await get().loadSections();
       return true;
     } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : 'Failed to delete section';
-      set({ deleting: false, error: message });
+      set({ deleting: false, error: extractApiError(e, 'Failed to delete section') });
       return false;
     }
   },
@@ -127,7 +124,7 @@ export const useAppHomePageStore = create<AppHomePageStore>((set, get) => ({
       set({ successMessage: 'Section order saved' });
       await get().loadPreview(get().previewLocation);
     } catch (e: unknown) {
-      set({ sections: previous, error: e instanceof Error ? e.message : 'Failed to reorder sections' });
+      set({ sections: previous, error: extractApiError(e, 'Failed to reorder sections') });
     }
   },
 

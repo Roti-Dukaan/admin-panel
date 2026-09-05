@@ -84,11 +84,11 @@ export default function MobileAppHomePageCmsPage() {
   }, [loadSections]);
 
   useEffect(() => {
-    if (successMessage || error) {
+    if (successMessage) {
       const t = setTimeout(clearMessages, 3000);
       return () => clearTimeout(t);
     }
-  }, [successMessage, error, clearMessages]);
+  }, [successMessage, clearMessages]);
 
   useEffect(() => {
     if (addSectionType) {
@@ -239,11 +239,13 @@ export default function MobileAppHomePageCmsPage() {
           if (!open) {
             setEditingSection(null);
             setAddSectionType(null);
+            clearMessages();
           }
         }}
         sectionType={editorType}
         section={editingSection}
         saving={saving}
+        saveError={error}
         onSave={handleSave}
       />
 

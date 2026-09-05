@@ -147,3 +147,17 @@ export function defaultConfigForType(type: AppHomePageSectionType): Record<strin
       return {};
   }
 }
+
+export const APP_HOME_BANNER_MAX_SIZE_MB = 3;
+export const APP_HOME_BANNER_ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
+
+export function validateAppHomeBannerImage(file: File): string | null {
+  if (!APP_HOME_BANNER_ALLOWED_TYPES.includes(file.type as (typeof APP_HOME_BANNER_ALLOWED_TYPES)[number])) {
+    return `Unsupported file type. Allowed: JPG, PNG, WEBP`;
+  }
+  const sizeMb = file.size / (1024 * 1024);
+  if (sizeMb > APP_HOME_BANNER_MAX_SIZE_MB) {
+    return `File size (${sizeMb.toFixed(2)}MB) exceeds limit of ${APP_HOME_BANNER_MAX_SIZE_MB}MB`;
+  }
+  return null;
+}

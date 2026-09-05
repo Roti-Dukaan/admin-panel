@@ -17,7 +17,7 @@ import type {
   AppHomePageSectionForm,
   AppHomePageSectionType,
 } from "@/features/app-home-page/types/app-home-page";
-import { defaultConfigForType, sectionTypeLabel } from "@/features/app-home-page/types/app-home-page";
+import { defaultConfigForType, sectionTypeLabel, APP_HOME_BANNER_MAX_SIZE_MB, validateAppHomeBannerImage } from "@/features/app-home-page/types/app-home-page";
 import { CategoryPickerDialog } from "./CategoryPickerDialog";
 import { ProductPickerDialog } from "./ProductPickerDialog";
 
@@ -27,6 +27,7 @@ interface SectionEditorDialogProps {
   sectionType: AppHomePageSectionType;
   section?: AppHomePageSection | null;
   saving?: boolean;
+  saveError?: string | null;
   onSave: (payload: AppHomePageSectionForm, bannerImage?: File | null) => Promise<void>;
 }
 
@@ -36,6 +37,7 @@ export function SectionEditorDialog({
   sectionType,
   section,
   saving,
+  saveError,
   onSave,
 }: SectionEditorDialogProps) {
   const isEdit = !!section;
@@ -48,12 +50,14 @@ export function SectionEditorDialog({
   const [cities, setCities] = useState<City[]>([]);
   const [categories, setCategories] = useState<ApiCategory[]>([]);
   const [bannerFile, setBannerFile] = useState<File | null>(null);
+  const [bannerFileError, setBannerFileError] = useState<string | null>(null);
   const [productPickerOpen, setProductPickerOpen] = useState(false);
   const [categoryPickerOpen, setCategoryPickerOpen] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     setBannerFile(null);
+    setBannerFileError(null);
     if (section) {
       setTitle(section.title ?? String(section.config?.title ?? ""));
       setConfig({ ...defaultConfigForType(section.sectionType), ...section.config });
@@ -82,7 +86,28 @@ export function SectionEditorDialog({
 
   const updateConfig = (patch: Record<string, unknown>) => setConfig((prev) => ({ ...prev, ...patch }));
 
+  const handleBannerFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] ?? null;
+    if (!file) {
+      setBannerFile(null);
+      setBannerFileError(null);
+      return;
+    }
+
+    const validationError = validateAppHomeBannerImage(file);
+    if (validationError) {
+      setBannerFile(null);
+      setBannerFileError(validationError);
+      e.target.value = "";
+      return;
+    }
+
+    setBannerFileError(null);
+    setBannerFile(file);
+  };
+
   const handleSubmit = async (publish: boolean) => {
+    if (bannerFileError) return;
     const payload: AppHomePageSectionForm = {
       sectionType: section?.sectionType ?? sectionType,
       title: title || undefined,
@@ -108,6 +133,12 @@ export function SectionEditorDialog({
             <DialogTitle>{isEdit ? "Edit" : "Create"} {sectionTypeLabel(sectionType)} Section</DialogTitle>
           </DialogHeader>
 
+          {(saveError || bannerFileError) && (
+            <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {bannerFileError ?? saveError}
+            </div>
+          )}
+
           <div className="space-y-4">
             <Field label="Section Title">
               <input value={title} onChange={(e) => setTitle(e.target.value)} className="field-input" placeholder="Weekend Sale" />
@@ -115,7 +146,19 @@ export function SectionEditorDialog({
 
             {needsBannerImage && (
               <Field label="Banner Image">
-                <input type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => setBannerFile(e.target.files?.[0] ?? null)} />
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={handleBannerFileChange}
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  Max {APP_HOME_BANNER_MAX_SIZE_MB}MB · JPG, PNG, WEBP
+                </p>
+                {bannerFile && (
+                  <p className="mt-1 text-xs text-gray-600">
+                    Selected: {bannerFile.name} ({(bannerFile.size / (1024 * 1024)).toFixed(2)}MB)
+                  </p>
+                )}
                 {String(config.bannerImage ?? "") && (
                   <img src={String(config.bannerImage)} alt="" className="mt-2 h-24 w-full rounded-lg object-cover" />
                 )}
@@ -294,8 +337,8 @@ export function SectionEditorDialog({
 
           <DialogFooter className="gap-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button type="button" variant="outline" disabled={saving} onClick={() => void handleSubmit(false)}>Save Draft</Button>
-            <Button type="button" disabled={saving} onClick={() => void handleSubmit(true)}>
+            <Button type="button" variant="outline" disabled={saving || !!bannerFileError} onClick={() => void handleSubmit(false)}>Save Draft</Button>
+            <Button type="button" disabled={saving || !!bannerFileError} onClick={() => void handleSubmit(true)}>
               {saving ? "Saving..." : "Publish"}
             </Button>
           </DialogFooter>
