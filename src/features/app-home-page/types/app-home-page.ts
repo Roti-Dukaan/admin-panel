@@ -140,6 +140,7 @@ export function defaultConfigForType(type: AppHomePageSectionType): Record<strin
         bannerImage: '',
         actionType: 'offer',
         actionTarget: '',
+        actionUrl: null,
       };
     case 'PRICE_BAND':
       return { title: 'Under ₹99', priceBand: 99, productIds: [], products: [], displayMode: 'grid', maxItems: 8 };

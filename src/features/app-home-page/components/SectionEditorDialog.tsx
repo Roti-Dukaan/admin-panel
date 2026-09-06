@@ -175,49 +175,69 @@ export function SectionEditorDialog({
                   />
                 </Field>
                 {sectionType === "BANNER" && (
-                  <>
-                    <Field label="CTA Text">
-                      <input
-                        value={String(config.ctaText ?? "")}
-                        onChange={(e) => updateConfig({ ctaText: e.target.value })}
-                        className="field-input"
-                      />
-                    </Field>
-                    <Field label="Action Type">
-                      <select
-                        value={String(config.actionType ?? "category")}
-                        onChange={(e) => updateConfig({ actionType: e.target.value })}
-                        className="field-input"
-                      >
-                        <option value="category">Category</option>
-                        <option value="product">Product</option>
-                        <option value="offer">Offer</option>
-                        <option value="external">External URL</option>
-                      </select>
-                    </Field>
-                    <Field label="Action Target">
-                      {String(config.actionType) === "category" ? (
-                        <select
-                          value={String(config.actionTarget ?? "")}
-                          onChange={(e) => updateConfig({ actionTarget: e.target.value })}
-                          className="field-input"
-                        >
-                          <option value="">Select category</option>
-                          {categories.map((c) => (
-                            <option key={c.id} value={c.slug}>{c.name}</option>
-                          ))}
-                        </select>
-                      ) : (
-                        <input
-                          value={String(config.actionTarget ?? "")}
-                          onChange={(e) => updateConfig({ actionTarget: e.target.value })}
-                          className="field-input"
-                          placeholder="Target ID or URL"
-                        />
-                      )}
-                    </Field>
-                  </>
+                  <Field label="CTA Text">
+                    <input
+                      value={String(config.ctaText ?? "")}
+                      onChange={(e) => updateConfig({ ctaText: e.target.value })}
+                      className="field-input"
+                    />
+                  </Field>
                 )}
+                <Field label="Tap Action">
+                  <select
+                    value={String(config.actionType ?? (sectionType === "OFFERS" ? "offer" : "category"))}
+                    onChange={(e) => updateConfig({ actionType: e.target.value, actionTarget: "" })}
+                    className="field-input"
+                  >
+                    <option value="category">Category page</option>
+                    <option value="product">Product page</option>
+                    <option value="offer">Coupons / offers</option>
+                    <option value="subscription">Subscriptions</option>
+                    <option value="menu">Full menu</option>
+                    <option value="external">External URL</option>
+                  </select>
+                </Field>
+                <Field label={String(config.actionType) === "external" ? "External URL" : "Action Target"}>
+                  {String(config.actionType) === "category" ? (
+                    <select
+                      value={String(config.actionTarget ?? "")}
+                      onChange={(e) => updateConfig({ actionTarget: e.target.value })}
+                      className="field-input"
+                    >
+                      <option value="">Select category</option>
+                      {categories.map((c) => (
+                        <option key={c.id} value={c.slug}>{c.name}</option>
+                      ))}
+                    </select>
+                  ) : String(config.actionType) === "menu" ? (
+                    <input value="Opens full menu" className="field-input bg-gray-50" readOnly />
+                  ) : String(config.actionType) === "offer" || String(config.actionType) === "subscription" ? (
+                    <input
+                      value={String(config.actionType) === "offer" ? "Opens coupons page" : "Opens subscriptions"}
+                      className="field-input bg-gray-50"
+                      readOnly
+                    />
+                  ) : (
+                    <input
+                      value={String(config.actionTarget ?? config.actionUrl ?? "")}
+                      onChange={(e) =>
+                        updateConfig(
+                          String(config.actionType) === "external"
+                            ? { actionUrl: e.target.value, actionTarget: e.target.value }
+                            : { actionTarget: e.target.value },
+                        )
+                      }
+                      className="field-input"
+                      placeholder={
+                        String(config.actionType) === "external"
+                          ? "https://example.com"
+                          : String(config.actionType) === "product"
+                            ? "Product slug or ID"
+                            : "Target ID or URL"
+                      }
+                    />
+                  )}
+                </Field>
               </>
             )}
 
