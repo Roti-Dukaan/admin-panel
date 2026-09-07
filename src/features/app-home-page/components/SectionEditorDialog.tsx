@@ -16,8 +16,18 @@ import type {
   AppHomePageSection,
   AppHomePageSectionForm,
   AppHomePageSectionType,
+  BannerSlide,
+  BannerUploadFiles,
 } from "@/features/app-home-page/types/app-home-page";
-import { defaultConfigForType, sectionTypeLabel, APP_HOME_BANNER_MAX_SIZE_MB, validateAppHomeBannerImage } from "@/features/app-home-page/types/app-home-page";
+import {
+  bannerConfigFromSlides,
+  defaultConfigForType,
+  normalizeBannerSlides,
+  sectionTypeLabel,
+  APP_HOME_BANNER_MAX_SIZE_MB,
+  validateAppHomeBannerImage,
+} from "@/features/app-home-page/types/app-home-page";
+import { BannerSlidesEditor } from "./BannerSlidesEditor";
 import { CategoryPickerDialog } from "./CategoryPickerDialog";
 import { ProductPickerDialog } from "./ProductPickerDialog";
 
@@ -28,7 +38,7 @@ interface SectionEditorDialogProps {
   section?: AppHomePageSection | null;
   saving?: boolean;
   saveError?: string | null;
-  onSave: (payload: AppHomePageSectionForm, bannerImage?: File | null) => Promise<void>;
+  onSave: (payload: AppHomePageSectionForm, files?: BannerUploadFiles) => Promise<void>;
 }
 
 export function SectionEditorDialog({
@@ -51,6 +61,9 @@ export function SectionEditorDialog({
   const [categories, setCategories] = useState<ApiCategory[]>([]);
   const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [bannerFileError, setBannerFileError] = useState<string | null>(null);
+  const [bannerSlides, setBannerSlides] = useState<BannerSlide[]>([]);
+  const [bannerSlideFiles, setBannerSlideFiles] = useState<Record<number, File>>({});
+  const [bannerSlideFileErrors, setBannerSlideFileErrors] = useState<Record<number, string>>({});
   const [productPickerOpen, setProductPickerOpen] = useState(false);
   const [categoryPickerOpen, setCategoryPickerOpen] = useState(false);
 
@@ -58,9 +71,13 @@ export function SectionEditorDialog({
     if (!open) return;
     setBannerFile(null);
     setBannerFileError(null);
+    setBannerSlideFiles({});
+    setBannerSlideFileErrors({});
     if (section) {
       setTitle(section.title ?? String(section.config?.title ?? ""));
-      setConfig({ ...defaultConfigForType(section.sectionType), ...section.config });
+      const mergedConfig = { ...defaultConfigForType(section.sectionType), ...section.config };
+      setConfig(mergedConfig);
+      setBannerSlides(normalizeBannerSlides(mergedConfig));
       setIsActive(section.isActive);
       setStartAt(section.startAt ? toLocalInput(section.startAt) : "");
       setEndAt(section.endAt ? toLocalInput(section.endAt) : "");
@@ -68,6 +85,7 @@ export function SectionEditorDialog({
     } else {
       setTitle("");
       setConfig(defaultConfigForType(sectionType));
+      setBannerSlides(normalizeBannerSlides(defaultConfigForType(sectionType)));
       setIsActive(true);
       setStartAt("");
       setEndAt("");
@@ -108,22 +126,37 @@ export function SectionEditorDialog({
 
   const handleSubmit = async (publish: boolean) => {
     if (bannerFileError) return;
+    if (Object.keys(bannerSlideFileErrors).length > 0) return;
+
+    const isBannerSection = (section?.sectionType ?? sectionType) === "BANNER";
+    const nextConfig = isBannerSection
+      ? bannerConfigFromSlides(bannerSlides)
+      : {
+          ...config,
+          title: config.title ?? title,
+        };
+
     const payload: AppHomePageSectionForm = {
       sectionType: section?.sectionType ?? sectionType,
       title: title || undefined,
-      config: {
-        ...config,
-        title: config.title ?? title,
-      },
+      config: nextConfig,
       isActive: publish ? isActive : false,
       startAt: startAt ? new Date(startAt).toISOString() : undefined,
       endAt: endAt ? new Date(endAt).toISOString() : undefined,
       targetLocations,
     };
-    await onSave(payload, bannerFile);
+
+    const files: BannerUploadFiles | undefined = isBannerSection
+      ? { bannerSlideFiles: bannerSlideFiles }
+      : needsBannerImage && bannerFile
+        ? { bannerImage: bannerFile }
+        : undefined;
+
+    await onSave(payload, files);
   };
 
-  const needsBannerImage = sectionType === "BANNER" || sectionType === "OFFERS";
+  const needsBannerImage = sectionType === "OFFERS";
+  const isMultiBannerSection = sectionType === "BANNER";
 
   return (
     <>
@@ -133,9 +166,9 @@ export function SectionEditorDialog({
             <DialogTitle>{isEdit ? "Edit" : "Create"} {sectionTypeLabel(sectionType)} Section</DialogTitle>
           </DialogHeader>
 
-          {(saveError || bannerFileError) && (
+          {(saveError || bannerFileError || Object.keys(bannerSlideFileErrors).length > 0) && (
             <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-              {bannerFileError ?? saveError}
+              {bannerFileError ?? Object.values(bannerSlideFileErrors)[0] ?? saveError}
             </div>
           )}
 
@@ -143,6 +176,32 @@ export function SectionEditorDialog({
             <Field label="Section Title">
               <input value={title} onChange={(e) => setTitle(e.target.value)} className="field-input" placeholder="Weekend Sale" />
             </Field>
+
+            {isMultiBannerSection && (
+              <BannerSlidesEditor
+                slides={bannerSlides}
+                categories={categories}
+                slideFiles={bannerSlideFiles}
+                fileErrors={bannerSlideFileErrors}
+                onSlidesChange={setBannerSlides}
+                onSlideFileChange={(index, file) => {
+                  setBannerSlideFiles((prev) => {
+                    const next = { ...prev };
+                    if (file) next[index] = file;
+                    else delete next[index];
+                    return next;
+                  });
+                }}
+                onFileError={(index, error) => {
+                  setBannerSlideFileErrors((prev) => {
+                    const next = { ...prev };
+                    if (error) next[index] = error;
+                    else delete next[index];
+                    return next;
+                  });
+                }}
+              />
+            )}
 
             {needsBannerImage && (
               <Field label="Banner Image">
@@ -165,7 +224,7 @@ export function SectionEditorDialog({
               </Field>
             )}
 
-            {(sectionType === "BANNER" || sectionType === "OFFERS") && (
+            {sectionType === "OFFERS" && (
               <>
                 <Field label="Display Title">
                   <input
@@ -174,18 +233,9 @@ export function SectionEditorDialog({
                     className="field-input"
                   />
                 </Field>
-                {sectionType === "BANNER" && (
-                  <Field label="CTA Text">
-                    <input
-                      value={String(config.ctaText ?? "")}
-                      onChange={(e) => updateConfig({ ctaText: e.target.value })}
-                      className="field-input"
-                    />
-                  </Field>
-                )}
                 <Field label="Tap Action">
                   <select
-                    value={String(config.actionType ?? (sectionType === "OFFERS" ? "offer" : "category"))}
+                    value={String(config.actionType ?? "offer")}
                     onChange={(e) => updateConfig({ actionType: e.target.value, actionTarget: "" })}
                     className="field-input"
                   >
@@ -357,8 +407,8 @@ export function SectionEditorDialog({
 
           <DialogFooter className="gap-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button type="button" variant="outline" disabled={saving || !!bannerFileError} onClick={() => void handleSubmit(false)}>Save Draft</Button>
-            <Button type="button" disabled={saving || !!bannerFileError} onClick={() => void handleSubmit(true)}>
+            <Button type="button" variant="outline" disabled={saving || !!bannerFileError || Object.keys(bannerSlideFileErrors).length > 0} onClick={() => void handleSubmit(false)}>Save Draft</Button>
+            <Button type="button" disabled={saving || !!bannerFileError || Object.keys(bannerSlideFileErrors).length > 0} onClick={() => void handleSubmit(true)}>
               {saving ? "Saving..." : "Publish"}
             </Button>
           </DialogFooter>

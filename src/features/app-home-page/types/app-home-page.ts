@@ -73,6 +73,11 @@ export function sectionSummary(section: AppHomePageSection): string {
   switch (section.sectionType) {
     case 'BANNER':
     case 'OFFERS':
+      if (section.sectionType === 'BANNER' || section.type === 'banner') {
+        const slides = normalizeBannerSlides(cfg);
+        if (slides.length > 1) return `${slides.length} banners`;
+        return String(slides[0]?.title ?? section.title ?? 'Banner');
+      }
       return String(cfg.title ?? section.title ?? 'Untitled banner');
     case 'CATEGORY_GRID': {
       const cats = (cfg.categories as { name?: string }[] | undefined) ?? [];
@@ -102,17 +107,69 @@ export function sectionStatusLabel(section: AppHomePageSection): string {
   return 'Active';
 }
 
+export interface BannerSlide {
+  bannerImage: string;
+  title: string;
+  ctaText: string;
+  actionType: string;
+  actionTarget: string;
+  actionUrl?: string | null;
+}
+
+export interface BannerUploadFiles {
+  bannerImage?: File | null;
+  bannerSlideFiles?: Record<number, File>;
+}
+
+export function defaultBannerSlide(): BannerSlide {
+  return {
+    bannerImage: '',
+    title: '',
+    ctaText: 'Shop Now',
+    actionType: 'category',
+    actionTarget: '',
+    actionUrl: null,
+  };
+}
+
+export function normalizeBannerSlides(config: Record<string, unknown>): BannerSlide[] {
+  const slides = config.slides;
+  if (Array.isArray(slides) && slides.length > 0) {
+    return slides.map((raw) => {
+      const slide = (raw ?? {}) as Record<string, unknown>;
+      return {
+        bannerImage: String(slide.bannerImage ?? ''),
+        title: String(slide.title ?? ''),
+        ctaText: String(slide.ctaText ?? 'Shop Now'),
+        actionType: String(slide.actionType ?? 'category'),
+        actionTarget: String(slide.actionTarget ?? ''),
+        actionUrl: slide.actionUrl != null ? String(slide.actionUrl) : null,
+      };
+    });
+  }
+
+  if (config.bannerImage || config.title || config.ctaText) {
+    return [{
+      bannerImage: String(config.bannerImage ?? ''),
+      title: String(config.title ?? ''),
+      ctaText: String(config.ctaText ?? 'Shop Now'),
+      actionType: String(config.actionType ?? 'category'),
+      actionTarget: String(config.actionTarget ?? ''),
+      actionUrl: config.actionUrl != null ? String(config.actionUrl) : null,
+    }];
+  }
+
+  return [defaultBannerSlide()];
+}
+
+export function bannerConfigFromSlides(slides: BannerSlide[]): Record<string, unknown> {
+  return { slides };
+}
+
 export function defaultConfigForType(type: AppHomePageSectionType): Record<string, unknown> {
   switch (type) {
     case 'BANNER':
-      return {
-        bannerImage: '',
-        title: '',
-        ctaText: 'Shop Now',
-        actionType: 'category',
-        actionTarget: '',
-        actionUrl: null,
-      };
+      return bannerConfigFromSlides([defaultBannerSlide()]);
     case 'CATEGORY_GRID':
       return { categoryIds: [], categories: [], displayMode: 'grid', maxItems: 8 };
     case 'PRODUCT_CAROUSEL':

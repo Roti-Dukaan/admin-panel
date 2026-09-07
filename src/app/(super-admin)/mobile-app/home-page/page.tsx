@@ -40,7 +40,7 @@ import {
   sectionSummary,
   sectionTypeLabel,
 } from "@/features/app-home-page/types/app-home-page";
-import type { AppHomePageSection, AppHomePageSectionForm, AppHomePageSectionType } from "@/features/app-home-page/types/app-home-page";
+import type { AppHomePageSection, AppHomePageSectionForm, AppHomePageSectionType, BannerUploadFiles } from "@/features/app-home-page/types/app-home-page";
 import { citiesApi, type City } from "@/lib/api/master-data/cities.api";
 
 export default function MobileAppHomePageCmsPage() {
@@ -120,10 +120,10 @@ export default function MobileAppHomePageCmsPage() {
     setEditorOpen(true);
   };
 
-  const handleSave = async (payload: AppHomePageSectionForm, bannerImage?: File | null) => {
+  const handleSave = async (payload: AppHomePageSectionForm, files?: BannerUploadFiles) => {
     const ok = editingSection
-      ? await updateSection(editingSection.id, payload, bannerImage)
-      : await createSection(payload, bannerImage);
+      ? await updateSection(editingSection.id, payload, files)
+      : await createSection(payload, files);
     if (ok) {
       setEditorOpen(false);
       setAddSectionType(null);

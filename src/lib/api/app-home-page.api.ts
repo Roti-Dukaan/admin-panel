@@ -1,6 +1,10 @@
 import { apiClient } from './http';
 import type { ApiResponse } from '../types/api';
-import type { AppHomePageSection, AppHomePageSectionForm } from '@/features/app-home-page/types/app-home-page';
+import type {
+  AppHomePageSection,
+  AppHomePageSectionForm,
+  BannerUploadFiles,
+} from '@/features/app-home-page/types/app-home-page';
 
 export interface ReorderSectionsPayload {
   sectionOrder: { id: string; order: number }[];
@@ -16,6 +20,22 @@ function appendFormFields(form: FormData, payload: AppHomePageSectionForm) {
   if (payload.targetLocations?.length) {
     form.append('targetLocations', JSON.stringify(payload.targetLocations));
   }
+}
+
+function appendBannerFiles(form: FormData, files?: BannerUploadFiles) {
+  if (files?.bannerImage) {
+    form.append('bannerImage', files.bannerImage);
+  }
+  if (files?.bannerSlideFiles) {
+    for (const [index, file] of Object.entries(files.bannerSlideFiles)) {
+      form.append(`bannerImage_${index}`, file);
+    }
+  }
+}
+
+function hasBannerFiles(files?: BannerUploadFiles): boolean {
+  if (files?.bannerImage) return true;
+  return !!files?.bannerSlideFiles && Object.keys(files.bannerSlideFiles).length > 0;
 }
 
 export const appHomePageApi = {
@@ -34,11 +54,14 @@ export const appHomePageApi = {
     return data;
   },
 
-  async create(payload: AppHomePageSectionForm, bannerImage?: File | null): Promise<ApiResponse<AppHomePageSection>> {
-    if (bannerImage) {
+  async create(
+    payload: AppHomePageSectionForm,
+    files?: BannerUploadFiles,
+  ): Promise<ApiResponse<AppHomePageSection>> {
+    if (hasBannerFiles(files)) {
       const form = new FormData();
       appendFormFields(form, payload);
-      form.append('bannerImage', bannerImage);
+      appendBannerFiles(form, files);
       const { data } = await apiClient.post('/admin/home-page/sections', form, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
@@ -51,9 +74,9 @@ export const appHomePageApi = {
   async update(
     id: string,
     payload: Partial<AppHomePageSectionForm>,
-    bannerImage?: File | null,
+    files?: BannerUploadFiles,
   ): Promise<ApiResponse<AppHomePageSection>> {
-    if (bannerImage) {
+    if (hasBannerFiles(files)) {
       const form = new FormData();
       if (payload.sectionType) form.append('sectionType', payload.sectionType);
       if (payload.title !== undefined) form.append('title', payload.title);
@@ -62,7 +85,7 @@ export const appHomePageApi = {
       if (payload.startAt) form.append('startAt', payload.startAt);
       if (payload.endAt) form.append('endAt', payload.endAt);
       if (payload.targetLocations) form.append('targetLocations', JSON.stringify(payload.targetLocations));
-      form.append('bannerImage', bannerImage);
+      appendBannerFiles(form, files);
       const { data } = await apiClient.patch(`/admin/home-page/sections/${id}`, form, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });

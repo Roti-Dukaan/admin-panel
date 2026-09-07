@@ -5,6 +5,7 @@ import type {
   AppHomePageSection,
   AppHomePageSectionForm,
   AppHomePageSectionType,
+  BannerUploadFiles,
 } from '@/features/app-home-page/types/app-home-page';
 
 interface AppHomePageStore {
@@ -23,8 +24,8 @@ interface AppHomePageStore {
   setPreviewLocation: (location: string) => void;
   setEditingSection: (section: AppHomePageSection | null) => void;
   setAddSectionType: (type: AppHomePageSectionType | null) => void;
-  createSection: (payload: AppHomePageSectionForm, bannerImage?: File | null) => Promise<boolean>;
-  updateSection: (id: string, payload: Partial<AppHomePageSectionForm>, bannerImage?: File | null) => Promise<boolean>;
+  createSection: (payload: AppHomePageSectionForm, files?: BannerUploadFiles) => Promise<boolean>;
+  updateSection: (id: string, payload: Partial<AppHomePageSectionForm>, files?: BannerUploadFiles) => Promise<boolean>;
   deleteSection: (id: string) => Promise<boolean>;
   reorderSections: (items: { id: string; order: number }[]) => Promise<void>;
   clearMessages: () => void;
@@ -72,10 +73,10 @@ export const useAppHomePageStore = create<AppHomePageStore>((set, get) => ({
   setEditingSection: (section) => set({ editingSection: section }),
   setAddSectionType: (type) => set({ addSectionType: type }),
 
-  createSection: async (payload, bannerImage) => {
+  createSection: async (payload, files) => {
     set({ saving: true, error: null });
     try {
-      await appHomePageApi.create(payload, bannerImage);
+      await appHomePageApi.create(payload, files);
       set({ saving: false, successMessage: 'Section created', addSectionType: null });
       await get().loadSections();
       return true;
@@ -85,10 +86,10 @@ export const useAppHomePageStore = create<AppHomePageStore>((set, get) => ({
     }
   },
 
-  updateSection: async (id, payload, bannerImage) => {
+  updateSection: async (id, payload, files) => {
     set({ saving: true, error: null });
     try {
-      await appHomePageApi.update(id, payload, bannerImage);
+      await appHomePageApi.update(id, payload, files);
       set({ saving: false, successMessage: 'Section updated', editingSection: null });
       await get().loadSections();
       return true;

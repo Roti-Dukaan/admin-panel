@@ -1,7 +1,7 @@
 "use client";
 
 import type { AppHomePageSection } from '@/features/app-home-page/types/app-home-page';
-import { sectionTypeLabel } from '@/features/app-home-page/types/app-home-page';
+import { normalizeBannerSlides, sectionTypeLabel } from '@/features/app-home-page/types/app-home-page';
 
 interface MobilePreviewProps {
   location: string;
@@ -41,14 +41,24 @@ function PreviewBlock({ section }: { section: AppHomePageSection }) {
   const type = section.type ?? section.sectionType.toLowerCase();
 
   if (type === 'banner' || type === 'BANNER'.toLowerCase() || section.sectionType === 'BANNER') {
-    const image = String(cfg.bannerImage ?? '');
+    const slides = normalizeBannerSlides(cfg);
+    const firstImage = slides.find((slide) => slide.bannerImage)?.bannerImage ?? '';
     return (
       <div className="overflow-hidden rounded-xl bg-orange-100">
-        {image ? (
-          <img src={image} alt="" className="h-20 w-full object-cover" />
+        {firstImage ? (
+          <div className="relative">
+            <img src={firstImage} alt="" className="h-20 w-full object-cover" />
+            {slides.length > 1 && (
+              <div className="absolute bottom-1 left-0 right-0 flex justify-center gap-1">
+                {slides.map((_, i) => (
+                  <span key={i} className={`h-1.5 rounded-full ${i === 0 ? 'w-3 bg-orange-600' : 'w-1.5 bg-white/80'}`} />
+                ))}
+              </div>
+            )}
+          </div>
         ) : (
           <div className="flex h-20 items-center justify-center text-xs font-bold text-orange-700">
-            {String(cfg.title ?? section.title ?? 'SALE BANNER')}
+            {slides[0]?.title ?? section.title ?? 'SALE BANNER'}
           </div>
         )}
       </div>
