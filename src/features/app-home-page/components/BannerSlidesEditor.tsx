@@ -7,6 +7,7 @@ import type { BannerSlide } from "@/features/app-home-page/types/app-home-page";
 import {
   APP_HOME_BANNER_MAX_SIZE_MB,
   defaultBannerSlide,
+  defaultOffersSlide,
   validateAppHomeBannerImage,
 } from "@/features/app-home-page/types/app-home-page";
 
@@ -18,6 +19,7 @@ interface BannerSlidesEditorProps {
   onSlidesChange: (slides: BannerSlide[]) => void;
   onSlideFileChange: (index: number, file: File | null) => void;
   onFileError: (index: number, error: string | null) => void;
+  variant?: "banner" | "offers";
 }
 
 export function BannerSlidesEditor({
@@ -28,13 +30,17 @@ export function BannerSlidesEditor({
   onSlidesChange,
   onSlideFileChange,
   onFileError,
+  variant = "banner",
 }: BannerSlidesEditorProps) {
+  const isOffers = variant === "offers";
+  const newSlide = () => (isOffers ? defaultOffersSlide() : defaultBannerSlide());
+
   const updateSlide = (index: number, patch: Partial<BannerSlide>) => {
     onSlidesChange(slides.map((slide, i) => (i === index ? { ...slide, ...patch } : slide)));
   };
 
   const addSlide = () => {
-    onSlidesChange([...slides, defaultBannerSlide()]);
+    onSlidesChange([...slides, newSlide()]);
   };
 
   const removeSlide = (index: number) => {
@@ -69,7 +75,7 @@ export function BannerSlidesEditor({
       {slides.map((slide, index) => (
         <div key={index} className="rounded-xl border border-gray-200 bg-gray-50/80 p-4 space-y-3">
           <div className="flex items-center justify-between">
-            <p className="text-sm font-bold text-gray-700">Banner {index + 1}</p>
+            <p className="text-sm font-bold text-gray-700">{isOffers ? "Offer" : "Banner"} {index + 1}</p>
             {slides.length > 1 && (
               <Button
                 type="button"
@@ -111,18 +117,20 @@ export function BannerSlidesEditor({
               value={slide.title}
               onChange={(e) => updateSlide(index, { title: e.target.value })}
               className="field-input"
-              placeholder="30% OFF YOUR FIRST ORDER"
+              placeholder={isOffers ? "Festive Offers" : "30% OFF YOUR FIRST ORDER"}
             />
           </Field>
 
-          <Field label="CTA Text">
-            <input
-              value={slide.ctaText}
-              onChange={(e) => updateSlide(index, { ctaText: e.target.value })}
-              className="field-input"
-              placeholder="Shop Now"
-            />
-          </Field>
+          {!isOffers && (
+            <Field label="CTA Text">
+              <input
+                value={slide.ctaText}
+                onChange={(e) => updateSlide(index, { ctaText: e.target.value })}
+                className="field-input"
+                placeholder="Shop Now"
+              />
+            </Field>
+          )}
 
           <Field label="Tap Action">
             <select
@@ -186,7 +194,7 @@ export function BannerSlidesEditor({
 
       <Button type="button" variant="outline" onClick={addSlide} className="w-full">
         <Plus className="mr-2 h-4 w-4" />
-        Add Banner
+        Add {isOffers ? "Offer Banner" : "Banner"}
       </Button>
     </div>
   );

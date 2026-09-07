@@ -117,12 +117,24 @@ function PreviewBlock({ section }: { section: AppHomePageSection }) {
   }
 
   if (type === 'offers' || section.sectionType === 'OFFERS') {
-    const image = String(cfg.bannerImage ?? '');
+    const slides = normalizeBannerSlides(cfg);
+    const firstImage = slides.find((slide) => slide.bannerImage)?.bannerImage ?? '';
     return (
       <div className="overflow-hidden rounded-xl border border-orange-200 bg-orange-50">
-        {image ? <img src={image} alt="" className="h-16 w-full object-cover" /> : null}
+        {firstImage ? (
+          <div className="relative">
+            <img src={firstImage} alt="" className="h-16 w-full object-cover" />
+            {slides.length > 1 && (
+              <div className="absolute bottom-1 left-0 right-0 flex justify-center gap-1">
+                {slides.map((_, i) => (
+                  <span key={i} className={`h-1.5 rounded-full ${i === 0 ? 'w-3 bg-orange-600' : 'w-1.5 bg-white/80'}`} />
+                ))}
+              </div>
+            )}
+          </div>
+        ) : null}
         <div className="p-2 text-[10px] font-bold text-orange-800">
-          {String(cfg.title ?? section.title ?? 'Festive Offers')}
+          {slides[0]?.title ?? section.title ?? 'Festive Offers'}
         </div>
       </div>
     );

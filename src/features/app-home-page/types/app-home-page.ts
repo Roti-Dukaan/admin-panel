@@ -72,13 +72,17 @@ export function sectionSummary(section: AppHomePageSection): string {
   const cfg = section.config ?? {};
   switch (section.sectionType) {
     case 'BANNER':
-    case 'OFFERS':
-      if (section.sectionType === 'BANNER' || section.type === 'banner') {
+      {
         const slides = normalizeBannerSlides(cfg);
         if (slides.length > 1) return `${slides.length} banners`;
         return String(slides[0]?.title ?? section.title ?? 'Banner');
       }
-      return String(cfg.title ?? section.title ?? 'Untitled banner');
+    case 'OFFERS':
+      {
+        const slides = normalizeBannerSlides(cfg);
+        if (slides.length > 1) return `${slides.length} offer banners`;
+        return String(slides[0]?.title ?? section.title ?? 'Festive Offers');
+      }
     case 'CATEGORY_GRID': {
       const cats = (cfg.categories as { name?: string }[] | undefined) ?? [];
       const ids = (cfg.categoryIds as string[] | undefined) ?? [];
@@ -132,6 +136,17 @@ export function defaultBannerSlide(): BannerSlide {
   };
 }
 
+export function defaultOffersSlide(): BannerSlide {
+  return {
+    bannerImage: '',
+    title: 'Festive Offers',
+    ctaText: '',
+    actionType: 'offer',
+    actionTarget: '',
+    actionUrl: null,
+  };
+}
+
 export function normalizeBannerSlides(config: Record<string, unknown>): BannerSlide[] {
   const slides = config.slides;
   if (Array.isArray(slides) && slides.length > 0) {
@@ -140,7 +155,7 @@ export function normalizeBannerSlides(config: Record<string, unknown>): BannerSl
       return {
         bannerImage: String(slide.bannerImage ?? ''),
         title: String(slide.title ?? ''),
-        ctaText: String(slide.ctaText ?? 'Shop Now'),
+        ctaText: String(slide.ctaText ?? (slide.actionType === 'offer' ? '' : 'Shop Now')),
         actionType: String(slide.actionType ?? 'category'),
         actionTarget: String(slide.actionTarget ?? ''),
         actionUrl: slide.actionUrl != null ? String(slide.actionUrl) : null,
@@ -148,11 +163,11 @@ export function normalizeBannerSlides(config: Record<string, unknown>): BannerSl
     });
   }
 
-  if (config.bannerImage || config.title || config.ctaText) {
+  if (config.bannerImage || config.title || config.ctaText || config.actionType) {
     return [{
       bannerImage: String(config.bannerImage ?? ''),
       title: String(config.title ?? ''),
-      ctaText: String(config.ctaText ?? 'Shop Now'),
+      ctaText: String(config.ctaText ?? (config.actionType === 'offer' ? '' : 'Shop Now')),
       actionType: String(config.actionType ?? 'category'),
       actionTarget: String(config.actionTarget ?? ''),
       actionUrl: config.actionUrl != null ? String(config.actionUrl) : null,
@@ -192,13 +207,7 @@ export function defaultConfigForType(type: AppHomePageSectionType): Record<strin
         maxItems: 8,
       };
     case 'OFFERS':
-      return {
-        title: 'Festive Offers',
-        bannerImage: '',
-        actionType: 'offer',
-        actionTarget: '',
-        actionUrl: null,
-      };
+      return bannerConfigFromSlides([defaultOffersSlide()]);
     case 'PRICE_BAND':
       return { title: 'Under ₹99', priceBand: 99, productIds: [], products: [], displayMode: 'grid', maxItems: 8 };
     default:

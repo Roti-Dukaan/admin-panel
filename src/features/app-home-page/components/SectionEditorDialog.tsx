@@ -19,14 +19,7 @@ import type {
   BannerSlide,
   BannerUploadFiles,
 } from "@/features/app-home-page/types/app-home-page";
-import {
-  bannerConfigFromSlides,
-  defaultConfigForType,
-  normalizeBannerSlides,
-  sectionTypeLabel,
-  APP_HOME_BANNER_MAX_SIZE_MB,
-  validateAppHomeBannerImage,
-} from "@/features/app-home-page/types/app-home-page";
+import { defaultConfigForType, normalizeBannerSlides, bannerConfigFromSlides, sectionTypeLabel } from "@/features/app-home-page/types/app-home-page";
 import { BannerSlidesEditor } from "./BannerSlidesEditor";
 import { CategoryPickerDialog } from "./CategoryPickerDialog";
 import { ProductPickerDialog } from "./ProductPickerDialog";
@@ -59,8 +52,6 @@ export function SectionEditorDialog({
   const [targetLocations, setTargetLocations] = useState<string[]>([]);
   const [cities, setCities] = useState<City[]>([]);
   const [categories, setCategories] = useState<ApiCategory[]>([]);
-  const [bannerFile, setBannerFile] = useState<File | null>(null);
-  const [bannerFileError, setBannerFileError] = useState<string | null>(null);
   const [bannerSlides, setBannerSlides] = useState<BannerSlide[]>([]);
   const [bannerSlideFiles, setBannerSlideFiles] = useState<Record<number, File>>({});
   const [bannerSlideFileErrors, setBannerSlideFileErrors] = useState<Record<number, string>>({});
@@ -69,8 +60,6 @@ export function SectionEditorDialog({
 
   useEffect(() => {
     if (!open) return;
-    setBannerFile(null);
-    setBannerFileError(null);
     setBannerSlideFiles({});
     setBannerSlideFileErrors({});
     if (section) {
@@ -104,32 +93,12 @@ export function SectionEditorDialog({
 
   const updateConfig = (patch: Record<string, unknown>) => setConfig((prev) => ({ ...prev, ...patch }));
 
-  const handleBannerFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] ?? null;
-    if (!file) {
-      setBannerFile(null);
-      setBannerFileError(null);
-      return;
-    }
-
-    const validationError = validateAppHomeBannerImage(file);
-    if (validationError) {
-      setBannerFile(null);
-      setBannerFileError(validationError);
-      e.target.value = "";
-      return;
-    }
-
-    setBannerFileError(null);
-    setBannerFile(file);
-  };
-
   const handleSubmit = async (publish: boolean) => {
-    if (bannerFileError) return;
     if (Object.keys(bannerSlideFileErrors).length > 0) return;
 
-    const isBannerSection = (section?.sectionType ?? sectionType) === "BANNER";
-    const nextConfig = isBannerSection
+    const activeType = section?.sectionType ?? sectionType;
+    const isMultiSlideSection = activeType === "BANNER" || activeType === "OFFERS";
+    const nextConfig = isMultiSlideSection
       ? bannerConfigFromSlides(bannerSlides)
       : {
           ...config,
@@ -146,17 +115,14 @@ export function SectionEditorDialog({
       targetLocations,
     };
 
-    const files: BannerUploadFiles | undefined = isBannerSection
+    const files: BannerUploadFiles | undefined = isMultiSlideSection
       ? { bannerSlideFiles: bannerSlideFiles }
-      : needsBannerImage && bannerFile
-        ? { bannerImage: bannerFile }
-        : undefined;
+      : undefined;
 
     await onSave(payload, files);
   };
 
-  const needsBannerImage = sectionType === "OFFERS";
-  const isMultiBannerSection = sectionType === "BANNER";
+  const isMultiSlideSection = sectionType === "BANNER" || sectionType === "OFFERS";
 
   return (
     <>
@@ -166,9 +132,9 @@ export function SectionEditorDialog({
             <DialogTitle>{isEdit ? "Edit" : "Create"} {sectionTypeLabel(sectionType)} Section</DialogTitle>
           </DialogHeader>
 
-          {(saveError || bannerFileError || Object.keys(bannerSlideFileErrors).length > 0) && (
+          {(saveError || Object.keys(bannerSlideFileErrors).length > 0) && (
             <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-              {bannerFileError ?? Object.values(bannerSlideFileErrors)[0] ?? saveError}
+              {Object.values(bannerSlideFileErrors)[0] ?? saveError}
             </div>
           )}
 
@@ -177,12 +143,13 @@ export function SectionEditorDialog({
               <input value={title} onChange={(e) => setTitle(e.target.value)} className="field-input" placeholder="Weekend Sale" />
             </Field>
 
-            {isMultiBannerSection && (
+            {isMultiSlideSection && (
               <BannerSlidesEditor
                 slides={bannerSlides}
                 categories={categories}
                 slideFiles={bannerSlideFiles}
                 fileErrors={bannerSlideFileErrors}
+                variant={sectionType === "OFFERS" ? "offers" : "banner"}
                 onSlidesChange={setBannerSlides}
                 onSlideFileChange={(index, file) => {
                   setBannerSlideFiles((prev) => {
@@ -201,94 +168,6 @@ export function SectionEditorDialog({
                   });
                 }}
               />
-            )}
-
-            {needsBannerImage && (
-              <Field label="Banner Image">
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  onChange={handleBannerFileChange}
-                />
-                <p className="mt-1 text-xs text-gray-500">
-                  Max {APP_HOME_BANNER_MAX_SIZE_MB}MB · JPG, PNG, WEBP
-                </p>
-                {bannerFile && (
-                  <p className="mt-1 text-xs text-gray-600">
-                    Selected: {bannerFile.name} ({(bannerFile.size / (1024 * 1024)).toFixed(2)}MB)
-                  </p>
-                )}
-                {String(config.bannerImage ?? "") && (
-                  <img src={String(config.bannerImage)} alt="" className="mt-2 h-24 w-full rounded-lg object-cover" />
-                )}
-              </Field>
-            )}
-
-            {sectionType === "OFFERS" && (
-              <>
-                <Field label="Display Title">
-                  <input
-                    value={String(config.title ?? "")}
-                    onChange={(e) => updateConfig({ title: e.target.value })}
-                    className="field-input"
-                  />
-                </Field>
-                <Field label="Tap Action">
-                  <select
-                    value={String(config.actionType ?? "offer")}
-                    onChange={(e) => updateConfig({ actionType: e.target.value, actionTarget: "" })}
-                    className="field-input"
-                  >
-                    <option value="category">Category page</option>
-                    <option value="product">Product page</option>
-                    <option value="offer">Coupons / offers</option>
-                    <option value="subscription">Subscriptions</option>
-                    <option value="menu">Full menu</option>
-                    <option value="external">External URL</option>
-                  </select>
-                </Field>
-                <Field label={String(config.actionType) === "external" ? "External URL" : "Action Target"}>
-                  {String(config.actionType) === "category" ? (
-                    <select
-                      value={String(config.actionTarget ?? "")}
-                      onChange={(e) => updateConfig({ actionTarget: e.target.value })}
-                      className="field-input"
-                    >
-                      <option value="">Select category</option>
-                      {categories.map((c) => (
-                        <option key={c.id} value={c.slug}>{c.name}</option>
-                      ))}
-                    </select>
-                  ) : String(config.actionType) === "menu" ? (
-                    <input value="Opens full menu" className="field-input bg-gray-50" readOnly />
-                  ) : String(config.actionType) === "offer" || String(config.actionType) === "subscription" ? (
-                    <input
-                      value={String(config.actionType) === "offer" ? "Opens coupons page" : "Opens subscriptions"}
-                      className="field-input bg-gray-50"
-                      readOnly
-                    />
-                  ) : (
-                    <input
-                      value={String(config.actionTarget ?? config.actionUrl ?? "")}
-                      onChange={(e) =>
-                        updateConfig(
-                          String(config.actionType) === "external"
-                            ? { actionUrl: e.target.value, actionTarget: e.target.value }
-                            : { actionTarget: e.target.value },
-                        )
-                      }
-                      className="field-input"
-                      placeholder={
-                        String(config.actionType) === "external"
-                          ? "https://example.com"
-                          : String(config.actionType) === "product"
-                            ? "Product slug or ID"
-                            : "Target ID or URL"
-                      }
-                    />
-                  )}
-                </Field>
-              </>
             )}
 
             {sectionType === "CATEGORY_GRID" && (
@@ -407,8 +286,8 @@ export function SectionEditorDialog({
 
           <DialogFooter className="gap-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button type="button" variant="outline" disabled={saving || !!bannerFileError || Object.keys(bannerSlideFileErrors).length > 0} onClick={() => void handleSubmit(false)}>Save Draft</Button>
-            <Button type="button" disabled={saving || !!bannerFileError || Object.keys(bannerSlideFileErrors).length > 0} onClick={() => void handleSubmit(true)}>
+            <Button type="button" variant="outline" disabled={saving || Object.keys(bannerSlideFileErrors).length > 0} onClick={() => void handleSubmit(false)}>Save Draft</Button>
+            <Button type="button" disabled={saving || Object.keys(bannerSlideFileErrors).length > 0} onClick={() => void handleSubmit(true)}>
               {saving ? "Saving..." : "Publish"}
             </Button>
           </DialogFooter>
