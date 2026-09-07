@@ -11,6 +11,7 @@ import {
   defaultPlanRules,
   emptyPlanBuilderForm,
   emptyWeeklySchedule,
+  migratePlanBuilderConfig,
   type PlanBuilderForm,
   type PlanBuilderPayload,
   type Weekday,
@@ -33,7 +34,7 @@ interface CreateSubscriptionPlanDrawerProps {
 }
 
 function packageToForm(pkg: SubscriptionPackage): PlanBuilderForm {
-  const config = (pkg.planBuilderConfig ?? {}) as PlanBuilderForm["config"];
+  const config = migratePlanBuilderConfig((pkg.planBuilderConfig ?? {}) as PlanBuilderForm["config"]);
   return {
     planName: pkg.name,
     description: pkg.description ?? "",
@@ -42,6 +43,7 @@ function packageToForm(pkg: SubscriptionPackage): PlanBuilderForm {
     durationUnit: (pkg.durationUnit as PlanBuilderForm["durationUnit"]) ?? "DAYS",
     status: (pkg.publishStatus as PlanBuilderForm["status"]) ?? (pkg.active ? "ACTIVE" : "DRAFT"),
     config: {
+      ...config,
       mealOptions: (config.mealOptions ?? []).map((o) => ({
         ...o,
         weeklySchedule: o.weeklySchedule?.length ? o.weeklySchedule : emptyWeeklySchedule(),
@@ -249,6 +251,7 @@ export function CreateSubscriptionPlanDrawer({
               <MealOptionsSection
                 config={form.config}
                 deliverySlots={deliverySlots}
+                products={products}
                 disabled={isViewOnly}
                 errors={errors}
                 onChange={(config) => setForm((prev) => ({ ...prev, config }))}

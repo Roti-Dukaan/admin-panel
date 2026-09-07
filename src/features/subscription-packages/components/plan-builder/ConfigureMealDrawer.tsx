@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { Plus, Search, Trash2, X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Plus, Trash2, X } from "lucide-react";
 import type { ApiFoodItem } from "@/lib/types/api";
 import {
   SELECTION_RULE_OPTIONS,
@@ -37,44 +37,25 @@ export function ConfigureMealDrawer({
   onSave,
 }: ConfigureMealDrawerProps) {
   const [groups, setGroups] = useState<MealGroupConfig[]>([]);
-  const [search, setSearch] = useState("");
 
   useEffect(() => {
     if (!open || !mealOption || !day) {
       setGroups([]);
-      setSearch("");
       return;
     }
     const dayCfg = mealOption.weeklySchedule.find((d) => d.day === day);
     setGroups(dayCfg?.mealGroups?.length ? dayCfg.mealGroups.map((g) => ({ ...g })) : []);
-    setSearch("");
   }, [open, mealOption, day]);
 
   const dayLabel = WEEKDAYS.find((d) => d.key === day)?.label ?? day ?? "";
   const optionLabel = mealOption ? getMealOptionLabel(mealOption, mealOptionIndex) : "";
-
-  const filteredProducts = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return products;
-    return products.filter((p) => p.name.toLowerCase().includes(q));
-  }, [products, search]);
+  const allowedProducts = mealOption?.allowedProductIds ?? [];
+  const selectableProducts = products.filter((p) => allowedProducts.includes(p.id));
 
   if (!open || !mealOption || !day) return null;
 
   const updateGroup = (idx: number, patch: Partial<MealGroupConfig>) => {
     setGroups((prev) => prev.map((g, i) => (i === idx ? { ...g, ...patch } : g)));
-  };
-
-  const toggleProduct = (groupIdx: number, productId: string) => {
-    const group = groups[groupIdx];
-    const ids = group.allowedProductIds.includes(productId)
-      ? group.allowedProductIds.filter((id) => id !== productId)
-      : [...group.allowedProductIds, productId];
-    const defaultProductId =
-      group.defaultProductId && ids.includes(group.defaultProductId)
-        ? group.defaultProductId
-        : ids[0] ?? "";
-    updateGroup(groupIdx, { allowedProductIds: ids, defaultProductId });
   };
 
   const errPrefix = `mealOption.${mealOptionIndex}.${day}`;
@@ -95,6 +76,12 @@ export function ConfigureMealDrawer({
         </div>
 
         <div className="flex-1 space-y-4 overflow-y-auto p-5">
+          {allowedProducts.length === 0 && (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              Add allowed products in Meal Options &amp; Pricing before configuring this day.
+            </div>
+          )}
+
           {groups.map((group, gIdx) => (
             <div key={group.id} className="rounded-xl border border-gray-200 p-4">
               <div className="mb-3 flex items-center justify-between">
@@ -157,57 +144,24 @@ export function ConfigureMealDrawer({
                   />
                 </label>
 
-                <div>
-                  <p className="mb-2 text-sm font-medium text-gray-700">Allowed Products</p>
-                  <div className="relative mb-2">
-                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                    <input
-                      value={search}
-                      onChange={(e) => setSearch(e.target.value)}
-                      placeholder="Search product catalog..."
-                      className="h-9 w-full rounded-lg border border-gray-200 pl-9 pr-3 text-sm"
-                    />
-                  </div>
-                  <div className="max-h-36 space-y-1 overflow-y-auto rounded-lg border border-gray-100 p-2">
-                    {filteredProducts.map((product) => (
-                      <label
-                        key={product.id}
-                        className="flex cursor-pointer items-center gap-2 rounded px-2 py-1 hover:bg-gray-50"
-                      >
-                        <input
-                          type="checkbox"
-                          disabled={disabled}
-                          checked={group.allowedProductIds.includes(product.id)}
-                          onChange={() => toggleProduct(gIdx, product.id)}
-                        />
-                        <span className="flex-1 text-sm text-gray-800">{product.name}</span>
-                        <span className="text-xs text-gray-500">₹{product.discountPrice ?? product.basePrice}</span>
-                      </label>
-                    ))}
-                  </div>
-                  {errors[`${errPrefix}.group.${gIdx}.products`] && (
-                    <p className="mt-1 text-xs text-red-600">{errors[`${errPrefix}.group.${gIdx}.products`]}</p>
-                  )}
-                </div>
-
                 <label className="block text-sm">
                   <span className="mb-1 block font-medium text-gray-700">Default Product</span>
                   <select
-                    disabled={disabled}
+                    disabled={disabled || selectableProducts.length === 0}
                     value={group.defaultProductId}
                     onChange={(e) => updateGroup(gIdx, { defaultProductId: e.target.value })}
                     className="w-full rounded-xl border border-gray-200 px-3 py-2"
                   >
-                    <option value="">Select default</option>
-                    {group.allowedProductIds.map((id) => {
-                      const p = products.find((x) => x.id === id);
-                      return (
-                        <option key={id} value={id}>
-                          {p?.name ?? id}
-                        </option>
-                      );
-                    })}
+                    <option value="">Select product</option>
+                    {selectableProducts.map((product) => (
+                      <option key={product.id} value={product.id}>
+                        {product.name} — ₹{product.discountPrice ?? product.basePrice}
+                      </option>
+                    ))}
                   </select>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Choose from this meal option&apos;s allowed products
+                  </p>
                   {errors[`${errPrefix}.group.${gIdx}.default`] && (
                     <p className="mt-1 text-xs text-red-600">{errors[`${errPrefix}.group.${gIdx}.default`]}</p>
                   )}
@@ -219,8 +173,17 @@ export function ConfigureMealDrawer({
           {!disabled && (
             <button
               type="button"
-              onClick={() => setGroups((prev) => [...prev, emptyMealGroup()])}
-              className="inline-flex items-center gap-2 rounded-xl border border-dashed border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+              onClick={() =>
+                setGroups((prev) => [
+                  ...prev,
+                  {
+                    ...emptyMealGroup(),
+                    defaultProductId: allowedProducts[0] ?? "",
+                  },
+                ])
+              }
+              disabled={allowedProducts.length === 0}
+              className="inline-flex items-center gap-2 rounded-xl border border-dashed border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Plus className="h-4 w-4" />
               Add Meal Group

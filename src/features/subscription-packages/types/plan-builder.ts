@@ -27,7 +27,6 @@ export interface MealGroupConfig {
   groupName: string;
   selectionRule: SelectionRule;
   defaultProductId: string;
-  allowedProductIds: string[];
   quantity: number;
 }
 
@@ -42,6 +41,7 @@ export interface MealOptionConfig {
   name: string;
   price: number;
   allowedSchedulingSlotIds: string[];
+  allowedProductIds: string[];
   weeklySchedule: DayScheduleConfig[];
 }
 
@@ -116,7 +116,6 @@ export function emptyMealGroup(): MealGroupConfig {
     groupName: "",
     selectionRule: "CHOOSE_ONE",
     defaultProductId: "",
-    allowedProductIds: [],
     quantity: 1,
   };
 }
@@ -135,7 +134,43 @@ export function emptyMealOption(): MealOptionConfig {
     name: "",
     price: 0,
     allowedSchedulingSlotIds: [],
+    allowedProductIds: [],
     weeklySchedule: emptyWeeklySchedule(),
+  };
+}
+
+/** Migrate legacy per-group allowed products to meal-option level. */
+export function migrateMealOptionConfig(option: MealOptionConfig): MealOptionConfig {
+  type LegacyGroup = MealGroupConfig & { allowedProductIds?: string[] };
+  const collected = new Set<string>(option.allowedProductIds ?? []);
+  for (const day of option.weeklySchedule ?? []) {
+    for (const group of (day.mealGroups ?? []) as LegacyGroup[]) {
+      for (const id of group.allowedProductIds ?? []) collected.add(id);
+    }
+  }
+  const allowedProductIds = [...collected];
+
+  const weeklySchedule = (option.weeklySchedule ?? []).map((day) => ({
+    ...day,
+    mealGroups: (day.mealGroups ?? []).map((group) => ({
+      id: group.id,
+      groupName: group.groupName,
+      selectionRule: group.selectionRule,
+      quantity: group.quantity,
+      defaultProductId:
+        group.defaultProductId && allowedProductIds.includes(group.defaultProductId)
+          ? group.defaultProductId
+          : allowedProductIds[0] ?? "",
+    })),
+  }));
+
+  return { ...option, allowedProductIds, weeklySchedule };
+}
+
+export function migratePlanBuilderConfig(config: PlanBuilderConfig): PlanBuilderConfig {
+  return {
+    ...config,
+    mealOptions: (config.mealOptions ?? []).map(migrateMealOptionConfig),
   };
 }
 

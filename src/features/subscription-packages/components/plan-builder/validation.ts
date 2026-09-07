@@ -26,6 +26,9 @@ export function validateForPublish(form: PlanBuilderForm): ValidationErrors {
     if (!option.allowedSchedulingSlotIds.length) {
       errors[`${prefix}.slots`] = "Select at least one scheduling slot";
     }
+    if (!option.allowedProductIds.length) {
+      errors[`${prefix}.products`] = "Select at least one allowed product";
+    }
 
     option.weeklySchedule.forEach((day) => {
       if (!day.deliveryEnabled) return;
@@ -41,11 +44,8 @@ export function validateForPublish(form: PlanBuilderForm): ValidationErrors {
         }
         if (!group.defaultProductId) {
           errors[`${gKey}.default`] = "Default product is required";
-        } else if (!group.allowedProductIds.includes(group.defaultProductId)) {
+        } else if (!option.allowedProductIds.includes(group.defaultProductId)) {
           errors[`${gKey}.default`] = "Default must be in allowed products";
-        }
-        if (!group.allowedProductIds.length) {
-          errors[`${gKey}.products`] = "Select allowed products";
         }
         if (!group.quantity || group.quantity < 1) {
           errors[`${gKey}.quantity`] = "Quantity must be at least 1";

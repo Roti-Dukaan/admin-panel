@@ -3,8 +3,10 @@
 import { Plus, Trash2 } from "lucide-react";
 import type { DeliverySlot } from "@/lib/api/delivery-slots.api";
 import { formatDeliverySlotLabel } from "@/lib/delivery-slot-display";
+import type { ApiFoodItem } from "@/lib/types/api";
 import type { MealOptionConfig, PlanBuilderConfig } from "../../types/plan-builder";
 import { emptyMealOption } from "../../types/plan-builder";
+import { ProductCatalogPicker } from "./ProductCatalogPicker";
 
 function formatSlotWindow(slot: DeliverySlot): string {
   return formatDeliverySlotLabel(slot.startTime, slot.endTime);
@@ -13,6 +15,7 @@ function formatSlotWindow(slot: DeliverySlot): string {
 interface MealOptionsSectionProps {
   config: PlanBuilderConfig;
   deliverySlots: DeliverySlot[];
+  products: ApiFoodItem[];
   disabled?: boolean;
   errors: Record<string, string>;
   onChange: (config: PlanBuilderConfig) => void;
@@ -21,6 +24,7 @@ interface MealOptionsSectionProps {
 export function MealOptionsSection({
   config,
   deliverySlots,
+  products,
   disabled,
   errors,
   onChange,
@@ -40,6 +44,21 @@ export function MealOptionsSection({
       ? option.allowedSchedulingSlotIds.filter((id) => id !== slotId)
       : [...option.allowedSchedulingSlotIds, slotId];
     updateOption(idx, { allowedSchedulingSlotIds: ids });
+  };
+
+  const updateAllowedProducts = (idx: number, ids: string[]) => {
+    const option = config.mealOptions[idx];
+    const weeklySchedule = option.weeklySchedule.map((day) => ({
+      ...day,
+      mealGroups: day.mealGroups.map((group) => ({
+        ...group,
+        defaultProductId:
+          group.defaultProductId && ids.includes(group.defaultProductId)
+            ? group.defaultProductId
+            : ids[0] ?? "",
+      })),
+    }));
+    updateOption(idx, { allowedProductIds: ids, weeklySchedule });
   };
 
   return (
@@ -112,6 +131,14 @@ export function MealOptionsSection({
                 <p className="mt-1 text-xs text-red-600">{errors[`mealOption.${idx}.slots`]}</p>
               )}
             </div>
+
+            <ProductCatalogPicker
+              products={products}
+              selectedIds={option.allowedProductIds}
+              disabled={disabled}
+              error={errors[`mealOption.${idx}.products`]}
+              onChange={(ids) => updateAllowedProducts(idx, ids)}
+            />
           </div>
         </div>
       ))}
