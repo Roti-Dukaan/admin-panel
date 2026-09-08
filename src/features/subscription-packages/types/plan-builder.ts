@@ -22,18 +22,26 @@ export const SELECTION_RULE_OPTIONS: { value: SelectionRule; label: string }[] =
   { value: "FIXED", label: "Fixed (no choice)" },
 ];
 
-export interface MealGroupConfig {
+export interface MealGroupTemplate {
   id: string;
   groupName: string;
   selectionRule: SelectionRule;
-  defaultProductId: string;
+  allowedProductIds: string[];
   quantity: number;
+}
+
+/** Expanded group stored on each delivery day in API / legacy configs. */
+export interface MealGroupConfig extends MealGroupTemplate {
+  defaultProductId: string;
 }
 
 export interface DayScheduleConfig {
   day: Weekday;
   deliveryEnabled: boolean;
-  mealGroups: MealGroupConfig[];
+  /** Per-day default product for each universal meal group (groupId -> foodItemId). */
+  defaults: Record<string, string>;
+  /** Expanded groups — populated when loading legacy plans or saving to API. */
+  mealGroups?: MealGroupConfig[];
 }
 
 export interface MealOptionConfig {
@@ -41,7 +49,8 @@ export interface MealOptionConfig {
   name: string;
   price: number;
   allowedSchedulingSlotIds: string[];
-  allowedProductIds: string[];
+  /** Universal meal groups shared across all delivery days. */
+  mealGroups: MealGroupTemplate[];
   weeklySchedule: DayScheduleConfig[];
 }
 
@@ -110,21 +119,26 @@ export function createId(): string {
   return crypto.randomUUID();
 }
 
-export function emptyMealGroup(): MealGroupConfig {
+export function emptyMealGroupTemplate(): MealGroupTemplate {
   return {
     id: createId(),
     groupName: "",
     selectionRule: "CHOOSE_ONE",
-    defaultProductId: "",
+    allowedProductIds: [],
     quantity: 1,
   };
+}
+
+/** @deprecated use emptyMealGroupTemplate */
+export function emptyMealGroup(): MealGroupConfig {
+  return { ...emptyMealGroupTemplate(), defaultProductId: "" };
 }
 
 export function emptyWeeklySchedule(): DayScheduleConfig[] {
   return WEEKDAYS.map(({ key }) => ({
     day: key,
     deliveryEnabled: key !== "sun",
-    mealGroups: [],
+    defaults: {},
   }));
 }
 
@@ -134,43 +148,8 @@ export function emptyMealOption(): MealOptionConfig {
     name: "",
     price: 0,
     allowedSchedulingSlotIds: [],
-    allowedProductIds: [],
+    mealGroups: [],
     weeklySchedule: emptyWeeklySchedule(),
-  };
-}
-
-/** Migrate legacy per-group allowed products to meal-option level. */
-export function migrateMealOptionConfig(option: MealOptionConfig): MealOptionConfig {
-  type LegacyGroup = MealGroupConfig & { allowedProductIds?: string[] };
-  const collected = new Set<string>(option.allowedProductIds ?? []);
-  for (const day of option.weeklySchedule ?? []) {
-    for (const group of (day.mealGroups ?? []) as LegacyGroup[]) {
-      for (const id of group.allowedProductIds ?? []) collected.add(id);
-    }
-  }
-  const allowedProductIds = [...collected];
-
-  const weeklySchedule = (option.weeklySchedule ?? []).map((day) => ({
-    ...day,
-    mealGroups: (day.mealGroups ?? []).map((group) => ({
-      id: group.id,
-      groupName: group.groupName,
-      selectionRule: group.selectionRule,
-      quantity: group.quantity,
-      defaultProductId:
-        group.defaultProductId && allowedProductIds.includes(group.defaultProductId)
-          ? group.defaultProductId
-          : allowedProductIds[0] ?? "",
-    })),
-  }));
-
-  return { ...option, allowedProductIds, weeklySchedule };
-}
-
-export function migratePlanBuilderConfig(config: PlanBuilderConfig): PlanBuilderConfig {
-  return {
-    ...config,
-    mealOptions: (config.mealOptions ?? []).map(migrateMealOptionConfig),
   };
 }
 

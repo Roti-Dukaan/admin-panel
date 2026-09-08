@@ -10,12 +10,14 @@ import type { SubscriptionPackage } from "../../types/subscription-package";
 import {
   defaultPlanRules,
   emptyPlanBuilderForm,
-  emptyWeeklySchedule,
-  migratePlanBuilderConfig,
   type PlanBuilderForm,
   type PlanBuilderPayload,
   type Weekday,
 } from "../../types/plan-builder";
+import {
+  expandPlanBuilderConfigForApi,
+  normalizePlanBuilderConfig,
+} from "../../utils/plan-builder-schedule.util";
 import { planBuilderApi } from "../../services/plan-builder.api";
 import { CollapsibleSection } from "./CollapsibleSection";
 import { ConfigureMealDrawer } from "./ConfigureMealDrawer";
@@ -34,7 +36,7 @@ interface CreateSubscriptionPlanDrawerProps {
 }
 
 function packageToForm(pkg: SubscriptionPackage): PlanBuilderForm {
-  const config = migratePlanBuilderConfig((pkg.planBuilderConfig ?? {}) as PlanBuilderForm["config"]);
+  const config = (pkg.planBuilderConfig ?? {}) as PlanBuilderForm["config"];
   return {
     planName: pkg.name,
     description: pkg.description ?? "",
@@ -42,14 +44,10 @@ function packageToForm(pkg: SubscriptionPackage): PlanBuilderForm {
     durationValue: pkg.durationValue ?? pkg.validityDays ?? 30,
     durationUnit: (pkg.durationUnit as PlanBuilderForm["durationUnit"]) ?? "DAYS",
     status: (pkg.publishStatus as PlanBuilderForm["status"]) ?? (pkg.active ? "ACTIVE" : "DRAFT"),
-    config: {
-      ...config,
-      mealOptions: (config.mealOptions ?? []).map((o) => ({
-        ...o,
-        weeklySchedule: o.weeklySchedule?.length ? o.weeklySchedule : emptyWeeklySchedule(),
-      })),
+    config: normalizePlanBuilderConfig({
+      mealOptions: config.mealOptions ?? [],
       rules: { ...defaultPlanRules(), ...(config.rules ?? {}) },
-    },
+    }),
   };
 }
 
@@ -61,7 +59,7 @@ function formToPayload(form: PlanBuilderForm, publish: boolean): PlanBuilderPayl
     durationValue: form.durationValue,
     durationUnit: form.durationUnit,
     publishStatus: publish ? "ACTIVE" : form.status,
-    planBuilderConfig: form.config,
+    planBuilderConfig: expandPlanBuilderConfigForApi(form.config),
     publish,
   };
 }
@@ -121,8 +119,8 @@ export function CreateSubscriptionPlanDrawer({
     return form.config.mealOptions.findIndex((o) => o.id === configureTarget.mealOptionId);
   }, [configureTarget, form.config.mealOptions]);
 
-  const saveMealGroups = useCallback(
-    (mealGroups: PlanBuilderForm["config"]["mealOptions"][0]["weeklySchedule"][0]["mealGroups"]) => {
+  const saveDayDefaults = useCallback(
+    (defaults: Record<string, string>) => {
       if (!configureTarget) return;
       setForm((prev) => ({
         ...prev,
@@ -133,7 +131,7 @@ export function CreateSubscriptionPlanDrawer({
             return {
               ...option,
               weeklySchedule: option.weeklySchedule.map((day) =>
-                day.day === configureTarget.day ? { ...day, mealGroups } : day,
+                day.day === configureTarget.day ? { ...day, defaults } : day,
               ),
             };
           }),
@@ -326,7 +324,7 @@ export function CreateSubscriptionPlanDrawer({
         disabled={isViewOnly}
         errors={errors}
         onClose={() => setConfigureTarget(null)}
-        onSave={saveMealGroups}
+        onSave={saveDayDefaults}
       />
     </>
   );

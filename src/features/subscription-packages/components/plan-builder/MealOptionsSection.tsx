@@ -6,7 +6,7 @@ import { formatDeliverySlotLabel } from "@/lib/delivery-slot-display";
 import type { ApiFoodItem } from "@/lib/types/api";
 import type { MealOptionConfig, PlanBuilderConfig } from "../../types/plan-builder";
 import { emptyMealOption } from "../../types/plan-builder";
-import { ProductCatalogPicker } from "./ProductCatalogPicker";
+import { UniversalMealGroupsEditor } from "./UniversalMealGroupsEditor";
 
 function formatSlotWindow(slot: DeliverySlot): string {
   return formatDeliverySlotLabel(slot.startTime, slot.endTime);
@@ -44,21 +44,6 @@ export function MealOptionsSection({
       ? option.allowedSchedulingSlotIds.filter((id) => id !== slotId)
       : [...option.allowedSchedulingSlotIds, slotId];
     updateOption(idx, { allowedSchedulingSlotIds: ids });
-  };
-
-  const updateAllowedProducts = (idx: number, ids: string[]) => {
-    const option = config.mealOptions[idx];
-    const weeklySchedule = option.weeklySchedule.map((day) => ({
-      ...day,
-      mealGroups: day.mealGroups.map((group) => ({
-        ...group,
-        defaultProductId:
-          group.defaultProductId && ids.includes(group.defaultProductId)
-            ? group.defaultProductId
-            : ids[0] ?? "",
-      })),
-    }));
-    updateOption(idx, { allowedProductIds: ids, weeklySchedule });
   };
 
   return (
@@ -132,12 +117,13 @@ export function MealOptionsSection({
               )}
             </div>
 
-            <ProductCatalogPicker
+            <UniversalMealGroupsEditor
+              option={option}
+              optionIndex={idx}
               products={products}
-              selectedIds={option.allowedProductIds}
               disabled={disabled}
-              error={errors[`mealOption.${idx}.products`]}
-              onChange={(ids) => updateAllowedProducts(idx, ids)}
+              errors={errors}
+              onChange={(nextOption) => updateOption(idx, nextOption)}
             />
           </div>
         </div>
