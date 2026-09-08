@@ -251,6 +251,12 @@ export function CreateSubscriptionPlanDrawer({
                 errors={errors}
                 imageUploading={imageUploading}
                 onChange={(patch) => setForm((prev) => ({ ...prev, ...patch }))}
+                onConfigChange={(configPatch) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    config: { ...prev.config, ...configPatch },
+                  }))
+                }
                 onImageFileSelect={setPlanImageFile}
               />
             </CollapsibleSection>

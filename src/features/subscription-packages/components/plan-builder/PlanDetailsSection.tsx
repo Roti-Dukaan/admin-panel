@@ -11,6 +11,7 @@ interface PlanDetailsSectionProps {
   errors: Record<string, string>;
   imageUploading?: boolean;
   onChange: (patch: Partial<PlanBuilderForm>) => void;
+  onConfigChange: (patch: Partial<PlanBuilderForm["config"]>) => void;
   onImageFileSelect?: (file: File | null) => void;
 }
 
@@ -20,6 +21,7 @@ export function PlanDetailsSection({
   errors,
   imageUploading,
   onChange,
+  onConfigChange,
   onImageFileSelect,
 }: PlanDetailsSectionProps) {
   const [localPreview, setLocalPreview] = useState<string>("");
@@ -115,11 +117,7 @@ export function PlanDetailsSection({
         options={form.config.durationOptions ?? []}
         disabled={disabled}
         errors={errors}
-        onChange={(durationOptions) =>
-          onChange({
-            config: { ...form.config, durationOptions },
-          })
-        }
+        onChange={(durationOptions) => onConfigChange({ durationOptions })}
       />
 
       <label className="block text-sm">
