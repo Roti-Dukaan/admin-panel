@@ -133,12 +133,17 @@ export function UniversalMealGroupsEditor({
                   type="number"
                   min={0}
                   value={group.includedQuantity ?? group.quantity}
-                  onChange={(e) =>
+                  onChange={(e) => {
+                    const includedQuantity = Number(e.target.value);
+                    const maximumQuantity = group.maximumQuantity ?? group.quantity ?? includedQuantity;
                     updateGroup(gIdx, {
-                      includedQuantity: Number(e.target.value),
-                      quantity: Number(e.target.value),
-                    })
-                  }
+                      includedQuantity,
+                      quantity: includedQuantity,
+                      ...(group.allowPaidExtras && maximumQuantity <= includedQuantity
+                        ? { allowPaidExtras: false }
+                        : {}),
+                    });
+                  }}
                   className="w-full rounded-xl border border-gray-200 px-3 py-2"
                 />
                 <p className="mt-1 text-xs text-gray-500">Free per delivery</p>
@@ -150,27 +155,53 @@ export function UniversalMealGroupsEditor({
                   type="number"
                   min={1}
                   value={group.maximumQuantity ?? group.quantity}
-                  onChange={(e) =>
+                  onChange={(e) => {
+                    const maximumQuantity = Number(e.target.value);
+                    const includedQuantity = group.includedQuantity ?? group.quantity ?? 1;
                     updateGroup(gIdx, {
-                      maximumQuantity: Number(e.target.value),
-                      quantity: Number(e.target.value),
-                    })
-                  }
+                      maximumQuantity,
+                      quantity: maximumQuantity,
+                      ...(group.allowPaidExtras && maximumQuantity <= includedQuantity
+                        ? { allowPaidExtras: false }
+                        : {}),
+                    });
+                  }}
                   className="w-full rounded-xl border border-gray-200 px-3 py-2"
                 />
                 <p className="mt-1 text-xs text-gray-500">Hard cap per delivery</p>
               </label>
             </div>
+            {errors[`${errPrefix}.${gIdx}.quantity`] && (
+              <p className="text-xs text-red-600">{errors[`${errPrefix}.${gIdx}.quantity`]}</p>
+            )}
 
             <label className="flex items-center gap-2 text-sm">
               <input
                 type="checkbox"
                 disabled={disabled}
                 checked={group.allowPaidExtras ?? (group.maximumQuantity ?? group.quantity) > (group.includedQuantity ?? group.quantity)}
-                onChange={(e) => updateGroup(gIdx, { allowPaidExtras: e.target.checked })}
+                onChange={(e) => {
+                  const checked = e.target.checked;
+                  const includedQuantity = group.includedQuantity ?? group.quantity ?? 1;
+                  const maximumQuantity = group.maximumQuantity ?? group.quantity ?? includedQuantity;
+                  const patch: Partial<MealGroupTemplate> = { allowPaidExtras: checked };
+                  if (checked && maximumQuantity <= includedQuantity) {
+                    patch.maximumQuantity = includedQuantity + 1;
+                    patch.quantity = includedQuantity + 1;
+                  }
+                  updateGroup(gIdx, patch);
+                }}
               />
               <span className="font-medium text-gray-700">Allow paid extras above included qty</span>
             </label>
+            {(group.allowPaidExtras ?? false) &&
+              (group.maximumQuantity ?? group.quantity ?? 1) <=
+                (group.includedQuantity ?? group.quantity ?? 1) && (
+                <p className="text-xs text-amber-700">
+                  Max must be above included qty to charge for extras. Max will be raised automatically when
+                  you enable this.
+                </p>
+              )}
 
             {(group.allowPaidExtras ??
               (group.maximumQuantity ?? group.quantity) > (group.includedQuantity ?? group.quantity)) && (

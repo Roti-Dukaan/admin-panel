@@ -90,3 +90,51 @@ export function validateForPublish(form: PlanBuilderForm): ValidationErrors {
 
   return errors;
 }
+
+const MEAL_SCHEDULE_DAY_KEY = /^mealOption\.\d+\.(mon|tue|wed|thu|fri|sat|sun)/;
+
+export function formatValidationSummary(errors: ValidationErrors): string {
+  const messages = [...new Set(Object.values(errors).filter(Boolean))];
+  if (!messages.length) return "Fix validation errors before publishing";
+  if (messages.length === 1) return messages[0]!;
+  const preview = messages.slice(0, 3).join(" • ");
+  const extra = messages.length > 3 ? ` (+${messages.length - 3} more)` : "";
+  return `${messages.length} issues: ${preview}${extra}`;
+}
+
+export function getMealOptionsSectionError(errors: ValidationErrors): string | undefined {
+  if (errors.mealOptions) return errors.mealOptions;
+  const keys = Object.keys(errors).filter(
+    (key) => key.startsWith("mealOption.") && !MEAL_SCHEDULE_DAY_KEY.test(key),
+  );
+  if (!keys.length) return undefined;
+  return errors[keys[0]!] ?? `${keys.length} issue(s) in meal options`;
+}
+
+export function getScheduleSectionError(errors: ValidationErrors): string | undefined {
+  const keys = Object.keys(errors).filter((key) => MEAL_SCHEDULE_DAY_KEY.test(key));
+  if (!keys.length) return undefined;
+  return errors[keys[0]!] ?? `${keys.length} schedule issue(s)`;
+}
+
+export function getExpandedSectionsForErrors(errors: ValidationErrors) {
+  const keys = Object.keys(errors);
+  return {
+    details: keys.some((key) => key === "planName" || key === "durationOptions"),
+    mealOptions: keys.some((key) => key.startsWith("mealOption.") && !MEAL_SCHEDULE_DAY_KEY.test(key)),
+    schedule: keys.some((key) => MEAL_SCHEDULE_DAY_KEY.test(key)),
+    rules: false,
+  };
+}
+
+export function mergeExpandedSections(
+  current: { details: boolean; mealOptions: boolean; schedule: boolean; rules: boolean },
+  forErrors: ReturnType<typeof getExpandedSectionsForErrors>,
+) {
+  return {
+    details: current.details || forErrors.details,
+    mealOptions: current.mealOptions || forErrors.mealOptions,
+    schedule: current.schedule || forErrors.schedule,
+    rules: current.rules || forErrors.rules,
+  };
+}

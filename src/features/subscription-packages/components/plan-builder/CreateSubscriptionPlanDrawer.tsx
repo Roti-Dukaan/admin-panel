@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { isAxiosError } from "axios";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft } from "lucide-react";
+import { toast } from "sonner";
+import { extractApiError } from "@/lib/api/extract-api-error";
 import { foodItemApi } from "@/lib/api/food.api";
 import { deliverySlotsApi, type DeliverySlot } from "@/lib/api/delivery-slots.api";
 import type { ApiFoodItem } from "@/lib/types/api";
@@ -28,7 +29,14 @@ import { MealOptionsSection } from "./MealOptionsSection";
 import { MealScheduleSection } from "./MealScheduleSection";
 import { PlanDetailsSection } from "./PlanDetailsSection";
 import { PlanRulesSection } from "./PlanRulesSection";
-import { validateForPublish } from "./validation";
+import {
+  formatValidationSummary,
+  getExpandedSectionsForErrors,
+  getMealOptionsSectionError,
+  getScheduleSectionError,
+  mergeExpandedSections,
+  validateForPublish,
+} from "./validation";
 
 interface CreateSubscriptionPlanDrawerProps {
   open: boolean;
@@ -102,8 +110,17 @@ export function CreateSubscriptionPlanDrawer({
   const [saving, setSaving] = useState(false);
   const [planImageFile, setPlanImageFile] = useState<File | null>(null);
   const [imageUploading, setImageUploading] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   const isViewOnly = mode === "view";
+
+  const showError = useCallback((message: string) => {
+    setGlobalError(message);
+    toast.error(message, { duration: 6000 });
+    requestAnimationFrame(() => {
+      scrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -163,7 +180,9 @@ export function CreateSubscriptionPlanDrawer({
       const validationErrors = validateForPublish(form);
       setErrors(validationErrors);
       if (Object.keys(validationErrors).length) {
-        setGlobalError("Fix validation errors before publishing");
+        const summary = formatValidationSummary(validationErrors);
+        showError(summary);
+        setExpanded((prev) => mergeExpandedSections(prev, getExpandedSectionsForErrors(validationErrors)));
         return;
       }
     } else {
@@ -171,7 +190,10 @@ export function CreateSubscriptionPlanDrawer({
     }
 
     if (!form.planName.trim()) {
-      setGlobalError("Plan name is required");
+      const message = "Plan name is required";
+      setErrors({ planName: message });
+      setExpanded((prev) => ({ ...prev, details: true }));
+      showError(message);
       return;
     }
 
@@ -195,13 +217,12 @@ export function CreateSubscriptionPlanDrawer({
         setPlanImageFile(null);
       }
 
+      toast.success(publish ? "Plan published" : "Draft saved");
       onSaved();
       onClose();
     } catch (err) {
-      const message = isAxiosError(err)
-        ? (err.response?.data as { message?: string })?.message ?? err.message
-        : "Failed to save plan";
-      setGlobalError(String(message));
+      const message = extractApiError(err, publish ? "Failed to publish plan" : "Failed to save draft");
+      showError(message);
     } finally {
       setSaving(false);
       setImageUploading(false);
@@ -232,10 +253,14 @@ export function CreateSubscriptionPlanDrawer({
             </div>
           </div>
 
-          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 py-5">
+          <div ref={scrollRef} className="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 py-5">
             {globalError && (
-              <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                {globalError}
+              <div
+                role="alert"
+                className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+              >
+                <p className="font-semibold">Action required</p>
+                <p className="mt-1">{globalError}</p>
               </div>
             )}
 
@@ -265,7 +290,7 @@ export function CreateSubscriptionPlanDrawer({
               title="Meal Options & Pricing"
               expanded={expanded.mealOptions}
               onToggle={() => toggleSection("mealOptions")}
-              error={errors.mealOptions}
+              error={getMealOptionsSectionError(errors)}
             >
               <MealOptionsSection
                 config={form.config}
@@ -281,6 +306,7 @@ export function CreateSubscriptionPlanDrawer({
               title="Meal Schedule"
               expanded={expanded.schedule}
               onToggle={() => toggleSection("schedule")}
+              error={getScheduleSectionError(errors)}
             >
               <MealScheduleSection
                 config={form.config}
@@ -307,7 +333,16 @@ export function CreateSubscriptionPlanDrawer({
           </div>
 
           {!isViewOnly && (
-            <div className="sticky bottom-0 flex shrink-0 items-center justify-end gap-2 border-t border-gray-200 bg-white px-6 py-4">
+            <div className="sticky bottom-0 shrink-0 border-t border-gray-200 bg-white">
+              {globalError && (
+                <div
+                  role="alert"
+                  className="border-b border-red-100 bg-red-50 px-6 py-3 text-sm text-red-700"
+                >
+                  {globalError}
+                </div>
+              )}
+              <div className="flex items-center justify-end gap-2 px-6 py-4">
               <button
                 type="button"
                 onClick={onClose}
@@ -331,6 +366,7 @@ export function CreateSubscriptionPlanDrawer({
               >
                 {saving ? "Publishing…" : "Publish Plan"}
               </button>
+              </div>
             </div>
           )}
         </div>
