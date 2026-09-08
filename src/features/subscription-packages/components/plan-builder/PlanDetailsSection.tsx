@@ -121,6 +121,9 @@ export function PlanDetailsSection({
             onChange={(e) => onChange({ durationValue: Number(e.target.value) })}
             className="w-full rounded-xl border border-gray-200 px-3 py-2.5"
           />
+          <p className="mt-1 text-xs text-gray-500">
+            Number of deliveries in the plan. Off-days (e.g. Sunday) are skipped and the cycle extends automatically.
+          </p>
           {errors.durationValue && <p className="mt-1 text-xs text-red-600">{errors.durationValue}</p>}
         </label>
         <label className="block text-sm">
