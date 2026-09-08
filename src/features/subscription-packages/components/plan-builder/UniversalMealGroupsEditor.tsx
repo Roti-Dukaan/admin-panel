@@ -125,17 +125,75 @@ export function UniversalMealGroupsEditor({
               </select>
             </label>
 
-            <label className="block text-sm">
-              <span className="mb-1 block font-medium text-gray-700">Quantity</span>
+            <div className="grid grid-cols-2 gap-3">
+              <label className="block text-sm">
+                <span className="mb-1 block font-medium text-gray-700">Included qty</span>
+                <input
+                  disabled={disabled}
+                  type="number"
+                  min={0}
+                  value={group.includedQuantity ?? group.quantity}
+                  onChange={(e) =>
+                    updateGroup(gIdx, {
+                      includedQuantity: Number(e.target.value),
+                      quantity: Number(e.target.value),
+                    })
+                  }
+                  className="w-full rounded-xl border border-gray-200 px-3 py-2"
+                />
+                <p className="mt-1 text-xs text-gray-500">Free per delivery</p>
+              </label>
+              <label className="block text-sm">
+                <span className="mb-1 block font-medium text-gray-700">Max qty</span>
+                <input
+                  disabled={disabled}
+                  type="number"
+                  min={1}
+                  value={group.maximumQuantity ?? group.quantity}
+                  onChange={(e) =>
+                    updateGroup(gIdx, {
+                      maximumQuantity: Number(e.target.value),
+                      quantity: Number(e.target.value),
+                    })
+                  }
+                  className="w-full rounded-xl border border-gray-200 px-3 py-2"
+                />
+                <p className="mt-1 text-xs text-gray-500">Hard cap per delivery</p>
+              </label>
+            </div>
+
+            <label className="flex items-center gap-2 text-sm">
               <input
+                type="checkbox"
                 disabled={disabled}
-                type="number"
-                min={1}
-                value={group.quantity}
-                onChange={(e) => updateGroup(gIdx, { quantity: Number(e.target.value) })}
-                className="w-full rounded-xl border border-gray-200 px-3 py-2"
+                checked={group.allowPaidExtras ?? (group.maximumQuantity ?? group.quantity) > (group.includedQuantity ?? group.quantity)}
+                onChange={(e) => updateGroup(gIdx, { allowPaidExtras: e.target.checked })}
               />
+              <span className="font-medium text-gray-700">Allow paid extras above included qty</span>
             </label>
+
+            {(group.allowPaidExtras ??
+              (group.maximumQuantity ?? group.quantity) > (group.includedQuantity ?? group.quantity)) && (
+              <label className="block text-sm">
+                <span className="mb-1 block font-medium text-gray-700">
+                  Extra unit price (₹) — optional
+                </span>
+                <input
+                  disabled={disabled}
+                  type="number"
+                  min={0}
+                  step={1}
+                  value={group.extraUnitPrice ?? ""}
+                  placeholder="Uses menu item price if empty"
+                  onChange={(e) =>
+                    updateGroup(gIdx, {
+                      extraUnitPrice: e.target.value === "" ? null : Number(e.target.value),
+                    })
+                  }
+                  className="w-full rounded-xl border border-gray-200 px-3 py-2"
+                />
+              </label>
+            )}
 
             <div>
               <p className="mb-2 text-sm font-medium text-gray-700">Allowed Products</p>

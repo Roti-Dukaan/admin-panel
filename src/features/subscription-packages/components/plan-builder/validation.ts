@@ -50,8 +50,19 @@ export function validateForPublish(form: PlanBuilderForm): ValidationErrors {
       if (!group.allowedProductIds.length) {
         errors[`${gKey}.products`] = "Select allowed products";
       }
-      if (!group.quantity || group.quantity < 1) {
-        errors[`${gKey}.quantity`] = "Quantity must be at least 1";
+      const included = group.includedQuantity ?? group.quantity ?? 1;
+      const maximum = group.maximumQuantity ?? group.quantity ?? included;
+      if (included < 0) {
+        errors[`${gKey}.quantity`] = "Included quantity cannot be negative";
+      }
+      if (maximum < 1) {
+        errors[`${gKey}.quantity`] = "Maximum quantity must be at least 1";
+      }
+      if (maximum < included) {
+        errors[`${gKey}.quantity`] = "Maximum must be greater than or equal to included";
+      }
+      if (group.allowPaidExtras && maximum <= included) {
+        errors[`${gKey}.quantity`] = "Raise max above included to allow paid extras";
       }
     });
 

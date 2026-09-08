@@ -27,7 +27,16 @@ export interface MealGroupTemplate {
   groupName: string;
   selectionRule: SelectionRule;
   allowedProductIds: string[];
+  /** @deprecated use includedQuantity / maximumQuantity */
   quantity: number;
+  /** Free quantity per delivery for this group */
+  includedQuantity?: number;
+  /** Hard cap per delivery (can exceed included when paid extras enabled) */
+  maximumQuantity?: number;
+  /** Override price per extra unit; omit to use catalog item price */
+  extraUnitPrice?: number | null;
+  /** Allow charging for quantities above includedQuantity */
+  allowPaidExtras?: boolean;
 }
 
 /** Expanded group stored on each delivery day in API / legacy configs. */
@@ -135,6 +144,10 @@ export function emptyMealGroupTemplate(): MealGroupTemplate {
     selectionRule: "CHOOSE_ONE",
     allowedProductIds: [],
     quantity: 1,
+    includedQuantity: 1,
+    maximumQuantity: 1,
+    allowPaidExtras: false,
+    extraUnitPrice: null,
   };
 }
 
