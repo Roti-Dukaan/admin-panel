@@ -12,6 +12,7 @@ import {
   durationOptionsFromLegacy,
   emptyPlanBuilderForm,
   getDefaultDurationOption,
+  normalizeDurationOptionsForSave,
   type PlanBuilderForm,
   type PlanBuilderPayload,
   type Weekday,
@@ -39,10 +40,11 @@ interface CreateSubscriptionPlanDrawerProps {
 
 function packageToForm(pkg: SubscriptionPackage): PlanBuilderForm {
   const config = (pkg.planBuilderConfig ?? {}) as PlanBuilderForm["config"];
-  const durationOptions =
+  const durationOptions = normalizeDurationOptionsForSave(
     config.durationOptions?.length
       ? config.durationOptions
-      : durationOptionsFromLegacy(pkg.durationValue ?? pkg.validityDays ?? 30);
+      : durationOptionsFromLegacy(pkg.durationValue ?? pkg.validityDays ?? 30),
+  );
   const defaultTier = getDefaultDurationOption(durationOptions);
   return {
     planName: pkg.name,
@@ -60,7 +62,8 @@ function packageToForm(pkg: SubscriptionPackage): PlanBuilderForm {
 }
 
 function formToPayload(form: PlanBuilderForm, publish: boolean): PlanBuilderPayload {
-  const defaultTier = getDefaultDurationOption(form.config.durationOptions ?? []);
+  const durationOptions = normalizeDurationOptionsForSave(form.config.durationOptions ?? []);
+  const defaultTier = getDefaultDurationOption(durationOptions);
   return {
     name: form.planName.trim(),
     description: form.description.trim() || undefined,
@@ -68,7 +71,10 @@ function formToPayload(form: PlanBuilderForm, publish: boolean): PlanBuilderPayl
     durationValue: defaultTier?.days ?? form.durationValue,
     durationUnit: form.durationUnit,
     publishStatus: publish ? "ACTIVE" : form.status,
-    planBuilderConfig: expandPlanBuilderConfigForApi(form.config),
+    planBuilderConfig: expandPlanBuilderConfigForApi({
+      ...form.config,
+      durationOptions,
+    }),
     publish,
   };
 }

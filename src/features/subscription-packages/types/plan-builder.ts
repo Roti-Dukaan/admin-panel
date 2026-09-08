@@ -218,12 +218,31 @@ export function durationOptionsFromLegacy(days: number): DurationOptionConfig[] 
   ];
 }
 
+export function normalizeDurationOptionsForSave(
+  options: DurationOptionConfig[],
+): DurationOptionConfig[] {
+  const normalized = options
+    .map((option) => ({
+      ...option,
+      id: option.id || createId(),
+      days: Math.max(1, Math.round(Number(option.days) || 1)),
+      label: option.label?.trim() || `${Math.max(1, Math.round(Number(option.days) || 1))} Days`,
+      enabled: true,
+    }))
+    .sort((a, b) => a.days - b.days);
+
+  if (!normalized.length) return normalized;
+  if (!normalized.some((option) => option.isDefault)) {
+    normalized[0] = { ...normalized[0], isDefault: true };
+  }
+  return normalized;
+}
+
 export function getDefaultDurationOption(
   options: DurationOptionConfig[],
 ): DurationOptionConfig | undefined {
-  const enabled = options.filter((option) => option.enabled);
-  if (!enabled.length) return undefined;
-  return enabled.find((option) => option.isDefault) ?? enabled[0];
+  if (!options.length) return undefined;
+  return options.find((option) => option.isDefault) ?? options[0];
 }
 
 export function emptyPlanBuilderForm(): PlanBuilderForm {
