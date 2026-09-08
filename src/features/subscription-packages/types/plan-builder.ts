@@ -89,9 +89,19 @@ export interface PlanRulesConfig {
   subscriptionStart: SubscriptionStartRules;
 }
 
+export interface DurationOptionConfig {
+  id: string;
+  days: number;
+  price: number;
+  label: string;
+  enabled: boolean;
+  isDefault?: boolean;
+}
+
 export interface PlanBuilderConfig {
   mealOptions: MealOptionConfig[];
   rules: PlanRulesConfig;
+  durationOptions?: DurationOptionConfig[];
 }
 
 export interface PlanBuilderForm {
@@ -182,6 +192,43 @@ export function defaultPlanRules(): PlanRulesConfig {
   };
 }
 
+export function emptyDurationOption(days = 30): DurationOptionConfig {
+  return {
+    id: createId(),
+    days,
+    price: 0,
+    label: `${days} Days`,
+    enabled: true,
+    isDefault: true,
+  };
+}
+
+export function defaultDurationOptions(): DurationOptionConfig[] {
+  return [emptyDurationOption(30)];
+}
+
+export function durationOptionsFromLegacy(days: number, price = 0): DurationOptionConfig[] {
+  const normalizedDays = Math.max(1, Math.round(days));
+  return [
+    {
+      id: createId(),
+      days: normalizedDays,
+      price,
+      label: `${normalizedDays} Days`,
+      enabled: true,
+      isDefault: true,
+    },
+  ];
+}
+
+export function getDefaultDurationOption(
+  options: DurationOptionConfig[],
+): DurationOptionConfig | undefined {
+  const enabled = options.filter((option) => option.enabled);
+  if (!enabled.length) return undefined;
+  return enabled.find((option) => option.isDefault) ?? enabled[0];
+}
+
 export function emptyPlanBuilderForm(): PlanBuilderForm {
   return {
     planName: "",
@@ -193,6 +240,7 @@ export function emptyPlanBuilderForm(): PlanBuilderForm {
     config: {
       mealOptions: [],
       rules: defaultPlanRules(),
+      durationOptions: defaultDurationOptions(),
     },
   };
 }

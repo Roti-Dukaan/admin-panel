@@ -1,4 +1,5 @@
 import type { PlanBuilderForm } from "../../types/plan-builder";
+import { getDefaultDurationOption } from "../../types/plan-builder";
 import { isDayDefaultsComplete } from "../../utils/plan-builder-schedule.util";
 
 export type ValidationErrors = Record<string, string>;
@@ -9,9 +10,20 @@ export function validateForPublish(form: PlanBuilderForm): ValidationErrors {
   if (!form.planName.trim()) {
     errors.planName = "Plan name is required";
   }
-  if (!form.durationValue || form.durationValue < 1) {
-    errors.durationValue = "Duration is required";
+
+  const durationOptions = form.config.durationOptions ?? [];
+  if (!durationOptions.length) {
+    errors.durationOptions = "Add at least one duration option";
+  } else if (durationOptions.some((option) => !option.days || option.days < 1)) {
+    errors.durationOptions = "Each duration option must have at least 1 delivery";
+  } else if (new Set(durationOptions.map((option) => option.days)).size !== durationOptions.length) {
+    errors.durationOptions = "Each duration option must have a unique number of deliveries";
+  } else if (durationOptions.some((option) => !option.price || Number(option.price) <= 0)) {
+    errors.durationOptions = "Each duration option must have a price greater than 0";
+  } else if (!getDefaultDurationOption(durationOptions)) {
+    errors.durationOptions = "Select a default duration option";
   }
+
   if (!form.config.mealOptions.length) {
     errors.mealOptions = "Add at least one meal option";
   }

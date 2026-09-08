@@ -2,7 +2,8 @@
 
 import { useRef, useState } from "react";
 import { FoodImageUploader } from "@/features/menu/components/FoodImageUploader";
-import type { DurationUnit, PlanBuilderForm, PublishStatus } from "../../types/plan-builder";
+import type { PlanBuilderForm, PublishStatus } from "../../types/plan-builder";
+import { DurationOptionsEditor } from "./DurationOptionsEditor";
 
 interface PlanDetailsSectionProps {
   form: PlanBuilderForm;
@@ -110,36 +111,16 @@ export function PlanDetailsSection({
         </label>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <label className="block text-sm">
-          <span className="mb-1 block font-medium text-gray-700">Duration</span>
-          <input
-            disabled={disabled}
-            type="number"
-            min={1}
-            value={form.durationValue}
-            onChange={(e) => onChange({ durationValue: Number(e.target.value) })}
-            className="w-full rounded-xl border border-gray-200 px-3 py-2.5"
-          />
-          <p className="mt-1 text-xs text-gray-500">
-            Number of deliveries in the plan. Off-days (e.g. Sunday) are skipped and the cycle extends automatically.
-          </p>
-          {errors.durationValue && <p className="mt-1 text-xs text-red-600">{errors.durationValue}</p>}
-        </label>
-        <label className="block text-sm">
-          <span className="mb-1 block font-medium text-gray-700">Duration Unit</span>
-          <select
-            disabled={disabled}
-            value={form.durationUnit}
-            onChange={(e) => onChange({ durationUnit: e.target.value as DurationUnit })}
-            className="w-full rounded-xl border border-gray-200 px-3 py-2.5"
-          >
-            <option value="DAYS">Days</option>
-            <option value="WEEKS">Weeks</option>
-            <option value="MONTHS">Months</option>
-          </select>
-        </label>
-      </div>
+      <DurationOptionsEditor
+        options={form.config.durationOptions ?? []}
+        disabled={disabled}
+        errors={errors}
+        onChange={(durationOptions) =>
+          onChange({
+            config: { ...form.config, durationOptions },
+          })
+        }
+      />
 
       <label className="block text-sm">
         <span className="mb-1 block font-medium text-gray-700">Status</span>

@@ -9,7 +9,9 @@ import type { ApiFoodItem } from "@/lib/types/api";
 import type { SubscriptionPackage } from "../../types/subscription-package";
 import {
   defaultPlanRules,
+  durationOptionsFromLegacy,
   emptyPlanBuilderForm,
+  getDefaultDurationOption,
   type PlanBuilderForm,
   type PlanBuilderPayload,
   type Weekday,
@@ -37,26 +39,33 @@ interface CreateSubscriptionPlanDrawerProps {
 
 function packageToForm(pkg: SubscriptionPackage): PlanBuilderForm {
   const config = (pkg.planBuilderConfig ?? {}) as PlanBuilderForm["config"];
+  const durationOptions =
+    config.durationOptions?.length
+      ? config.durationOptions
+      : durationOptionsFromLegacy(pkg.durationValue ?? pkg.validityDays ?? 30);
+  const defaultTier = getDefaultDurationOption(durationOptions);
   return {
     planName: pkg.name,
     description: pkg.description ?? "",
     planImageUrl: pkg.planImageUrl ?? "",
-    durationValue: pkg.durationValue ?? pkg.validityDays ?? 30,
+    durationValue: defaultTier?.days ?? pkg.durationValue ?? pkg.validityDays ?? 30,
     durationUnit: (pkg.durationUnit as PlanBuilderForm["durationUnit"]) ?? "DAYS",
     status: (pkg.publishStatus as PlanBuilderForm["status"]) ?? (pkg.active ? "ACTIVE" : "DRAFT"),
     config: normalizePlanBuilderConfig({
       mealOptions: config.mealOptions ?? [],
       rules: { ...defaultPlanRules(), ...(config.rules ?? {}) },
+      durationOptions,
     }),
   };
 }
 
 function formToPayload(form: PlanBuilderForm, publish: boolean): PlanBuilderPayload {
+  const defaultTier = getDefaultDurationOption(form.config.durationOptions ?? []);
   return {
     name: form.planName.trim(),
     description: form.description.trim() || undefined,
     planImageUrl: form.planImageUrl.trim() || undefined,
-    durationValue: form.durationValue,
+    durationValue: defaultTier?.days ?? form.durationValue,
     durationUnit: form.durationUnit,
     publishStatus: publish ? "ACTIVE" : form.status,
     planBuilderConfig: expandPlanBuilderConfigForApi(form.config),
@@ -228,7 +237,7 @@ export function CreateSubscriptionPlanDrawer({
               title="Plan Details"
               expanded={expanded.details}
               onToggle={() => toggleSection("details")}
-              error={errors.planName || errors.durationValue}
+              error={errors.planName || errors.durationOptions}
             >
               <PlanDetailsSection
                 form={form}
