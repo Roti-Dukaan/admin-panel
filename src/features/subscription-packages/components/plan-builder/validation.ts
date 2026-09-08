@@ -18,8 +18,6 @@ export function validateForPublish(form: PlanBuilderForm): ValidationErrors {
     errors.durationOptions = "Each duration option must have at least 1 delivery";
   } else if (new Set(durationOptions.map((option) => option.days)).size !== durationOptions.length) {
     errors.durationOptions = "Each duration option must have a unique number of deliveries";
-  } else if (durationOptions.some((option) => !option.price || Number(option.price) <= 0)) {
-    errors.durationOptions = "Each duration option must have a price greater than 0";
   } else if (!getDefaultDurationOption(durationOptions)) {
     errors.durationOptions = "Select a default duration option";
   }
@@ -33,8 +31,8 @@ export function validateForPublish(form: PlanBuilderForm): ValidationErrors {
     if (!option.name.trim()) {
       errors[`${prefix}.name`] = "Meal option name is required";
     }
-    if (option.price == null || Number(option.price) < 0) {
-      errors[`${prefix}.price`] = "Price is required";
+    if (option.price == null || Number(option.price) <= 0) {
+      errors[`${prefix}.price`] = "Price per delivery must be greater than 0";
     }
     if (!option.allowedSchedulingSlotIds.length) {
       errors[`${prefix}.slots`] = "Select at least one scheduling slot";

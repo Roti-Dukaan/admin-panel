@@ -17,7 +17,6 @@ function emptyOption(days = 7): DurationOptionConfig {
   return {
     id: createId(),
     days,
-    price: 0,
     label: `${days} Days`,
     enabled: true,
     isDefault: false,
@@ -82,10 +81,10 @@ export function DurationOptionsEditor({
   return (
     <div className="space-y-3">
       <div>
-        <p className="text-sm font-medium text-gray-700">Duration options & pricing</p>
+        <p className="text-sm font-medium text-gray-700">Duration options</p>
         <p className="mt-1 text-xs text-gray-500">
-          Add one or more plan lengths (number of deliveries). Customers pick one at checkout.
-          Off-days (e.g. Sunday) are skipped — each option counts deliveries, not calendar days.
+          How many deliveries the customer can choose (e.g. 7, 15, 30). Pricing comes from meal
+          options below — total = per-meal price × selected duration.
         </p>
       </div>
 
@@ -95,7 +94,6 @@ export function DurationOptionsEditor({
             <tr>
               <th className="px-3 py-2.5 font-semibold">Deliveries</th>
               <th className="px-3 py-2.5 font-semibold">Label</th>
-              <th className="px-3 py-2.5 font-semibold">Price (₹)</th>
               <th className="px-3 py-2.5 font-semibold">Default</th>
               <th className="px-3 py-2.5 font-semibold" />
             </tr>
@@ -121,18 +119,6 @@ export function DurationOptionsEditor({
                     onChange={(e) => updateRow(row.id, { label: e.target.value })}
                     className="w-full min-w-[120px] rounded-lg border border-gray-200 px-2.5 py-1.5"
                     placeholder={`${row.days} Days`}
-                  />
-                </td>
-                <td className="px-3 py-3">
-                  <input
-                    disabled={disabled}
-                    type="number"
-                    min={0}
-                    step={1}
-                    value={row.price || ""}
-                    onChange={(e) => updateRow(row.id, { price: Number(e.target.value) })}
-                    className="w-full max-w-[120px] rounded-lg border border-gray-200 px-2.5 py-1.5"
-                    placeholder="0"
                   />
                 </td>
                 <td className="px-3 py-3">

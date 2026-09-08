@@ -77,7 +77,7 @@ export function MealOptionsSection({
             </label>
 
             <label className="block text-sm">
-              <span className="mb-1 block font-medium text-gray-700">Subscription Price (₹)</span>
+              <span className="mb-1 block font-medium text-gray-700">Price per delivery (₹)</span>
               <input
                 disabled={disabled}
                 type="number"
@@ -86,6 +86,9 @@ export function MealOptionsSection({
                 onChange={(e) => updateOption(idx, { price: Number(e.target.value) })}
                 className="w-full rounded-xl border border-gray-200 px-3 py-2.5"
               />
+              <p className="mt-1 text-xs text-gray-500">
+                Charged once per delivery day. Total = this price × plan duration × meals selected.
+              </p>
               {errors[`mealOption.${idx}.price`] && (
                 <p className="mt-1 text-xs text-red-600">{errors[`mealOption.${idx}.price`]}</p>
               )}

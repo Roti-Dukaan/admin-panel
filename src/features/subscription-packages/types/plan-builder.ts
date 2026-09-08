@@ -92,7 +92,6 @@ export interface PlanRulesConfig {
 export interface DurationOptionConfig {
   id: string;
   days: number;
-  price: number;
   label: string;
   enabled: boolean;
   isDefault?: boolean;
@@ -196,7 +195,6 @@ export function emptyDurationOption(days = 30): DurationOptionConfig {
   return {
     id: createId(),
     days,
-    price: 0,
     label: `${days} Days`,
     enabled: true,
     isDefault: true,
@@ -207,13 +205,12 @@ export function defaultDurationOptions(): DurationOptionConfig[] {
   return [emptyDurationOption(30)];
 }
 
-export function durationOptionsFromLegacy(days: number, price = 0): DurationOptionConfig[] {
+export function durationOptionsFromLegacy(days: number): DurationOptionConfig[] {
   const normalizedDays = Math.max(1, Math.round(days));
   return [
     {
       id: createId(),
       days: normalizedDays,
-      price,
       label: `${normalizedDays} Days`,
       enabled: true,
       isDefault: true,
