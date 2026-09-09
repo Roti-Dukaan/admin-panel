@@ -1,6 +1,7 @@
 "use client";
 
-import { Plus, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Loader2, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { ApiCategory } from "@/lib/types/api";
 import type { BannerSlide } from "@/features/app-home-page/types/app-home-page";
@@ -10,8 +11,9 @@ import {
   defaultBannerSlide,
   defaultOffersSlide,
   validateAppHomeBannerImage,
-  validateAppHomeBannerLottie,
+  validateAppHomeBannerLottieContent,
 } from "@/features/app-home-page/types/app-home-page";
+import { BannerLottiePreview } from "./BannerLottiePreview";
 
 interface BannerSlidesEditorProps {
   slides: BannerSlide[];
@@ -44,6 +46,14 @@ export function BannerSlidesEditor({
 }: BannerSlidesEditorProps) {
   const isOffers = variant === "offers";
   const newSlide = () => (isOffers ? defaultOffersSlide() : defaultBannerSlide());
+  const [lottiePreviewUrls, setLottiePreviewUrls] = useState<Record<number, string>>({});
+  const [lottieChecking, setLottieChecking] = useState<Record<number, boolean>>({});
+
+  useEffect(() => {
+    return () => {
+      Object.values(lottiePreviewUrls).forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [lottiePreviewUrls]);
 
   const updateSlide = (index: number, patch: Partial<BannerSlide>) => {
     onSlidesChange(slides.map((slide, i) => (i === index ? { ...slide, ...patch } : slide)));
@@ -82,25 +92,52 @@ export function BannerSlidesEditor({
     onSlideFileChange(index, file);
   };
 
-  const handleLottieFileChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+  const clearLottiePreview = (index: number) => {
+    setLottiePreviewUrls((prev) => {
+      const next = { ...prev };
+      const existing = next[index];
+      if (existing) URL.revokeObjectURL(existing);
+      delete next[index];
+      return next;
+    });
+  };
+
+  const handleLottieFileChange = async (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] ?? null;
     if (!file) {
       onSlideLottieFileChange(index, null);
       onLottieFileError(index, null);
+      clearLottiePreview(index);
       return;
     }
 
-    const validationError = validateAppHomeBannerLottie(file);
+    setLottieChecking((prev) => ({ ...prev, [index]: true }));
+    onLottieFileError(index, null);
+
+    const validationError = await validateAppHomeBannerLottieContent(file);
     if (validationError) {
       onSlideLottieFileChange(index, null);
       onLottieFileError(index, validationError);
+      clearLottiePreview(index);
       e.target.value = "";
+      setLottieChecking((prev) => {
+        const next = { ...prev };
+        delete next[index];
+        return next;
+      });
       return;
     }
 
-    onLottieFileError(index, null);
+    clearLottiePreview(index);
+    const previewUrl = URL.createObjectURL(file);
+    setLottiePreviewUrls((prev) => ({ ...prev, [index]: previewUrl }));
     onSlideLottieFileChange(index, file);
     updateSlide(index, { bannerLottie: "" });
+    setLottieChecking((prev) => {
+      const next = { ...prev };
+      delete next[index];
+      return next;
+    });
   };
 
   return (
@@ -126,24 +163,34 @@ export function BannerSlidesEditor({
           <Field label="Lottie animation (optional)">
             <input
               type="file"
-              accept=".json,application/json,text/json"
-              onChange={(e) => handleLottieFileChange(index, e)}
+              accept=".json,application/json,text/json,application/octet-stream"
+              onChange={(e) => void handleLottieFileChange(index, e)}
             />
             <p className="mt-1 text-xs text-gray-500">
               Upload a Lottie JSON file (max {APP_HOME_LOTTIE_MAX_SIZE_MB}MB). When set, the app plays this animation in the banner carousel.
             </p>
-            {slideLottieFiles[index] && (
-              <p className="mt-1 text-xs text-gray-600">
-                Selected: {slideLottieFiles[index].name} ({(slideLottieFiles[index].size / (1024 * 1024)).toFixed(2)}MB)
+            {lottieChecking[index] && (
+              <p className="mt-2 flex items-center gap-2 text-xs text-gray-600">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                Checking animation file…
               </p>
+            )}
+            {slideLottieFiles[index] && (
+              <div className="mt-2 space-y-2 rounded-lg border border-emerald-200 bg-emerald-50/60 p-2">
+                <p className="text-xs font-semibold text-emerald-800">
+                  Selected: {slideLottieFiles[index].name} ({(slideLottieFiles[index].size / (1024 * 1024)).toFixed(2)}MB)
+                </p>
+                {lottiePreviewUrls[index] && <BannerLottiePreview src={lottiePreviewUrls[index]} />}
+              </div>
             )}
             {lottieFileErrors[index] && (
               <p className="mt-1 text-xs text-red-600">{lottieFileErrors[index]}</p>
             )}
-            {slide.bannerLottie && !slideLottieFiles[index] && (
-              <p className="mt-1 truncate text-xs text-emerald-700">
-                Saved: {slide.bannerLottie}
-              </p>
+            {slide.bannerLottie?.trim() && !slideLottieFiles[index] && (
+              <div className="mt-2 space-y-2 rounded-lg border border-emerald-200 bg-emerald-50/60 p-2">
+                <p className="truncate text-xs font-semibold text-emerald-800">Saved animation</p>
+                <BannerLottiePreview src={slide.bannerLottie.trim()} />
+              </div>
             )}
             <div className="mt-2">
               <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-gray-400">Or paste URL</p>

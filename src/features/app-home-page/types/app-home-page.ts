@@ -238,19 +238,38 @@ export function validateAppHomeBannerImage(file: File): string | null {
   return null;
 }
 
-export function validateAppHomeBannerLottie(file: File): string | null {
-  const name = file.name.toLowerCase();
-  const looksLikeJson =
-    name.endsWith('.json') ||
-    file.type === 'application/json' ||
-    file.type === 'text/json' ||
-    file.type === '';
-  if (!looksLikeJson) {
-    return 'Please choose a Lottie JSON file';
-  }
+export function isLottieAnimationJson(value: unknown): value is Record<string, unknown> {
+  if (!value || typeof value !== 'object') return false;
+  const record = value as Record<string, unknown>;
+  return (
+    'layers' in record ||
+    'v' in record ||
+    'assets' in record ||
+    'fr' in record
+  );
+}
+
+export function validateAppHomeBannerLottieSize(file: File): string | null {
   const sizeMb = file.size / (1024 * 1024);
   if (sizeMb > APP_HOME_LOTTIE_MAX_SIZE_MB) {
     return `File size (${sizeMb.toFixed(2)}MB) exceeds limit of ${APP_HOME_LOTTIE_MAX_SIZE_MB}MB`;
   }
+  return null;
+}
+
+export async function validateAppHomeBannerLottieContent(file: File): Promise<string | null> {
+  const sizeError = validateAppHomeBannerLottieSize(file);
+  if (sizeError) return sizeError;
+
+  try {
+    const text = await file.text();
+    const parsed = JSON.parse(text) as unknown;
+    if (!isLottieAnimationJson(parsed)) {
+      return 'This JSON file is not a valid Lottie animation (export from LottieFiles / After Effects).';
+    }
+  } catch {
+    return 'Could not read this file as JSON.';
+  }
+
   return null;
 }
