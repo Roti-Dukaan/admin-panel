@@ -113,6 +113,8 @@ export function sectionStatusLabel(section: AppHomePageSection): string {
 
 export interface BannerSlide {
   bannerImage: string;
+  /** Lottie JSON URL (LottieFiles CDN) or leave empty to use banner image only */
+  bannerLottie?: string;
   title: string;
   ctaText: string;
   actionType: string;
@@ -128,6 +130,7 @@ export interface BannerUploadFiles {
 export function defaultBannerSlide(): BannerSlide {
   return {
     bannerImage: '',
+    bannerLottie: '',
     title: '',
     ctaText: 'Shop Now',
     actionType: 'category',
@@ -139,6 +142,7 @@ export function defaultBannerSlide(): BannerSlide {
 export function defaultOffersSlide(): BannerSlide {
   return {
     bannerImage: '',
+    bannerLottie: '',
     title: 'Festive Offers',
     ctaText: '',
     actionType: 'offer',
@@ -154,6 +158,7 @@ export function normalizeBannerSlides(config: Record<string, unknown>): BannerSl
       const slide = (raw ?? {}) as Record<string, unknown>;
       return {
         bannerImage: String(slide.bannerImage ?? ''),
+        bannerLottie: String(slide.bannerLottie ?? slide.lottieUrl ?? ''),
         title: String(slide.title ?? ''),
         ctaText: String(slide.ctaText ?? (slide.actionType === 'offer' ? '' : 'Shop Now')),
         actionType: String(slide.actionType ?? 'category'),
@@ -163,9 +168,10 @@ export function normalizeBannerSlides(config: Record<string, unknown>): BannerSl
     });
   }
 
-  if (config.bannerImage || config.title || config.ctaText || config.actionType) {
+  if (config.bannerImage || config.bannerLottie || config.title || config.ctaText || config.actionType) {
     return [{
       bannerImage: String(config.bannerImage ?? ''),
+      bannerLottie: String(config.bannerLottie ?? config.lottieUrl ?? ''),
       title: String(config.title ?? ''),
       ctaText: String(config.ctaText ?? (config.actionType === 'offer' ? '' : 'Shop Now')),
       actionType: String(config.actionType ?? 'category'),

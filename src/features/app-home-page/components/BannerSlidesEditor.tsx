@@ -90,6 +90,18 @@ export function BannerSlidesEditor({
             )}
           </div>
 
+          <Field label="Lottie animation URL (optional)">
+            <input
+              value={slide.bannerLottie ?? ""}
+              onChange={(e) => updateSlide(index, { bannerLottie: e.target.value })}
+              className="field-input"
+              placeholder="https://lottie.host/…/animation.json"
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              Paste a Lottie JSON URL from LottieFiles. When set, the app plays this animation in the banner carousel (image is optional fallback).
+            </p>
+          </Field>
+
           <Field label="Banner Image">
             <input
               type="file"
@@ -97,7 +109,7 @@ export function BannerSlidesEditor({
               onChange={(e) => handleFileChange(index, e)}
             />
             <p className="mt-1 text-xs text-gray-500">
-              Max {APP_HOME_BANNER_MAX_SIZE_MB}MB · JPG, PNG, WEBP
+              Max {APP_HOME_BANNER_MAX_SIZE_MB}MB · JPG, PNG, WEBP · optional if Lottie URL is set
             </p>
             {slideFiles[index] && (
               <p className="mt-1 text-xs text-gray-600">
