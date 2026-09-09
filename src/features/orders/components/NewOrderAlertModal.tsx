@@ -84,8 +84,8 @@ export function NewOrderAlertModal({
     detail?.items?.map((item) => `${item.quantity}× ${item.foodNameSnapshot}`) ??
     (alert ? parseItemsSummary(alert.itemsSummary) : []);
 
-  const customerName = detail?.customer?.name ?? detail?.address?.customerName;
-  const customerPhone = detail?.customer?.phone ?? detail?.address?.phoneNumber;
+  const customerName = detail?.address?.customerName ?? detail?.customer?.name;
+  const customerPhone = detail?.address?.phoneNumber ?? detail?.customer?.phone;
   const customerId = detail?.customer?.id;
   const customerActiveOrderCount = useMemo(
     () => countActiveKitchenOrdersForCustomer(qc, customerId, alert?.orderId),

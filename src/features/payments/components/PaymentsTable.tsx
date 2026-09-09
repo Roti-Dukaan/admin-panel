@@ -37,9 +37,11 @@ function getMethodLabel(method: PaymentMethodType) {
 }
 
 export function PaymentsTable() {
+  const paymentsData = usePaymentStore((s) => s.payments);
+  const filters = usePaymentStore((s) => s.filters);
   const getFilteredPayments = usePaymentStore((s) => s.getFilteredPayments);
   const openPaymentDrawer = usePaymentStore((s) => s.openPaymentDrawer);
-  const payments = useMemo(() => getFilteredPayments(), [getFilteredPayments]);
+  const payments = useMemo(() => getFilteredPayments(), [paymentsData, filters, getFilteredPayments]);
   const [sorting, setSorting] = useState<SortingState>([]);
 
   const columns = useMemo<ColumnDef<Payment>[]>(

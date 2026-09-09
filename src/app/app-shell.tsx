@@ -13,7 +13,6 @@ const SIDEBAR_ROUTES = [
   "/orders",
   "/deliveries",
   "/menu",
-  "/subscription-menu",
   "/customers",
   "/subscription-plans",
   "/subscriptions",
@@ -46,8 +45,11 @@ const SIDEBAR_ROUTES = [
   "/dispatch",
   "/cms",
   "/cms/banners",
+  "/mobile-app",
   "/contact-messages",
   "/coupons",
+  "/referrals",
+  "/finance",
 ]
 
 const PUBLIC_ROUTES = ["/login", "/invitations"]

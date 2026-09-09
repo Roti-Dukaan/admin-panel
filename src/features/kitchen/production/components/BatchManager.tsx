@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { DeliverySlotTimeInput } from "@/components/delivery/DeliverySlotTimeInput";
+import { formatDeliverySlotTime } from "@/lib/delivery-slot-display";
 import {
   Select,
   SelectContent,
@@ -67,7 +69,11 @@ export function BatchManager({
               </div>
               <div>
                 <div className="mb-1 text-xs text-muted-foreground">Start Time</div>
-                <Input value={startTime} onChange={(e) => setStartTime(e.target.value)} placeholder="06:00" className="w-28" />
+                <DeliverySlotTimeInput
+                  value={startTime}
+                  onChange={setStartTime}
+                  className="max-w-[18rem]"
+                />
               </div>
               <Button
                 disabled={!name || createBatch.isPending}
@@ -123,7 +129,7 @@ function BatchCard({ batch, canManage }: { batch: ProductionBatch; canManage: bo
           <CardTitle className="text-base">{batch.name}</CardTitle>
           <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
             <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 capitalize">
-              <Clock className="h-3 w-3" /> {batch.scheduledStartTime}
+              <Clock className="h-3 w-3" /> {formatDeliverySlotTime(batch.scheduledStartTime)}
             </span>
             <span className="capitalize">{batch.mealSlot}</span>
             {statusBadge(batch.status)}

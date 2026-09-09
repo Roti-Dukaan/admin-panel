@@ -24,10 +24,11 @@ import {
   ToggleLeft,
   LifeBuoy,
   FolderOpen,
-  Wheat,
   Ticket,
   Mail,
   Bell,
+  LayoutGrid,
+  Gift,
 } from "lucide-react"
 import { useSidebar } from "./hooks/useSidebar"
 import { SidebarGroup } from "./SidebarGroup"
@@ -67,7 +68,6 @@ const MAIN_ADMIN_NAV_GROUPS: NavGroup[] = [
     roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN', 'BRANCH_MANAGER'],
     items: [
       { label: "Menu Items", href: "/menu", icon: UtensilsCrossed, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
-      { label: "Subscription Menu", href: "/subscription-menu", icon: Wheat, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
       { label: "Availability Overview", href: "/admin/branch-menu-availability", icon: ToggleLeft, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
     ],
   },
@@ -91,11 +91,23 @@ const MAIN_ADMIN_NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
+    id: "growth",
+    title: "Marketing / Growth",
+    roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'],
+    items: [
+      { label: "Campaigns", href: "/referrals/campaigns", icon: Gift, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
+      { label: "Tracking", href: "/referrals/tracking", icon: UserPlus, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
+      { label: "Fraud Review", href: "/referrals/fraud-review", icon: Shield, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
+      { label: "Reports", href: "/referrals/reports", icon: BarChart3, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
+    ],
+  },
+  {
     id: "finance",
     title: "Finance",
     roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'],
     items: [
       { label: "Payments", href: "/admin/payments", icon: CreditCard, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
+      { label: "Refunds", href: "/finance/refunds", icon: CreditCard, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN', 'FINANCE'] },
       { label: "Coupons", href: "/coupons", icon: Ticket, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
       { label: "Reports & Analytics", href: "/reports", icon: BarChart3, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
     ],
@@ -117,7 +129,8 @@ const MAIN_ADMIN_NAV_GROUPS: NavGroup[] = [
     title: "CMS",
     roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'],
     items: [
-      { label: "Homepage Banners", href: "/cms", icon: FolderOpen, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
+      { label: "Website Banners", href: "/cms", icon: FolderOpen, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
+      { label: "Mobile App CMS", href: "/mobile-app/home-page", icon: LayoutGrid, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
       { label: "Contact Messages", href: "/contact-messages", icon: Mail, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
     ],
   },

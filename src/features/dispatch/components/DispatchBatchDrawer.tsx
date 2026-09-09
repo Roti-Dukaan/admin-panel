@@ -1,6 +1,6 @@
 "use client";
 
-import { format } from "date-fns";
+import { formatIstTime } from "@/lib/date";
 import { Truck, Package, MapPin, X, CircleCheck, CircleX, Clock, Navigation } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -79,7 +79,7 @@ export function DispatchBatchDrawer({ batch, onClose }: Props) {
               <div className="rounded-lg bg-gray-50 p-3">
                 <p className="text-xs text-gray-500">Est. Pickup</p>
                 <p className="font-semibold text-gray-900">
-                  {format(new Date(batch.estimatedPickupTime), "hh:mm a")}
+                  {formatIstTime(batch.estimatedPickupTime)}
                 </p>
               </div>
             )}

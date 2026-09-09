@@ -433,12 +433,14 @@ function TaxTab({ saving, onSubmit, data }: { saving: boolean; onSubmit: (d: Rec
 function PaymentTab({ saving, onSubmit, data }: { saving: boolean; onSubmit: (d: Record<string, unknown>) => Promise<void>; data: PaymentConfigData | null }) {
   const [form, setForm] = useState({
     cashOnDeliveryEnabled: true,
+    maxWalletPerOrderAmount: 0,
   });
 
   useEffect(() => {
     if (data) {
       setForm({
         cashOnDeliveryEnabled: data.cashOnDeliveryEnabled,
+        maxWalletPerOrderAmount: data.maxWalletPerOrderAmount ?? 0,
       });
     }
   }, [data]);
@@ -454,11 +456,26 @@ function PaymentTab({ saving, onSubmit, data }: { saving: boolean; onSubmit: (d:
       <div className="space-y-4">
         <Toggle checked={form.cashOnDeliveryEnabled} onChange={(v) => set("cashOnDeliveryEnabled", v)} label="Cash on Delivery (COD)" />
       </div>
+
+      <div className="border-t border-gray-100 pt-5 space-y-3">
+        <h4 className="text-sm font-bold text-gray-700">Wallet</h4>
+        <p className="text-sm text-gray-500">
+          Limit how much wallet credit a customer can use on one order. Remaining balance stays for later orders. Set 0 for no limit.
+        </p>
+        <Field label="Max wallet usable per order (₹)">
+          <Input
+            type="number"
+            value={form.maxWalletPerOrderAmount}
+            onChange={(v) => set("maxWalletPerOrderAmount", Number(v))}
+          />
+        </Field>
+      </div>
       <SaveButton
         saving={saving}
         onClick={() =>
           onSubmit({
             cashOnDeliveryEnabled: form.cashOnDeliveryEnabled,
+            maxWalletPerOrderAmount: Number(form.maxWalletPerOrderAmount) || 0,
           })
         }
       />

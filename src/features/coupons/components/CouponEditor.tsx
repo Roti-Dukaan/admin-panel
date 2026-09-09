@@ -12,7 +12,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Coupon, CouponDiscountType, CreateCouponInput } from "../types/coupon";
+import {
+  Coupon,
+  CouponDiscountType,
+  CouponOrderType,
+  CreateCouponInput,
+  UpdateCouponInput,
+} from "../types/coupon";
 
 interface BranchOption {
   id: string;
@@ -25,14 +31,54 @@ interface CouponEditorProps {
   coupon: Coupon | null;
   branches: BranchOption[];
   onClose: () => void;
-  onSave: (input: CreateCouponInput) => Promise<void>;
+  onSave: (input: CreateCouponInput | UpdateCouponInput) => Promise<void>;
 }
 
 function toLocalInputValue(iso: string | undefined): string {
   if (!iso) return "";
   const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function fromLocalInputValue(local: string): string | null {
+  if (!local.trim()) return null;
+  const d = new Date(local);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toISOString();
+}
+
+function buildSavePayload(form: CreateCouponInput, mode: "create" | "edit"): CreateCouponInput | UpdateCouponInput {
+  const validFrom = fromLocalInputValue(toLocalInputValue(form.validFrom)) ?? form.validFrom;
+  const validTill = fromLocalInputValue(toLocalInputValue(form.validTill)) ?? form.validTill;
+
+  const payload: CreateCouponInput = {
+    ...form,
+    code: form.code.trim().toUpperCase(),
+    title: form.title.trim(),
+    description: form.description?.trim() || undefined,
+    validFrom,
+    validTill,
+    applicableBranchIds: form.applicableBranchIds ?? [],
+    applicableOrderTypes: form.applicableOrderTypes?.length
+      ? form.applicableOrderTypes
+      : ["REALTIME_ONLY"],
+    maxDiscountAmount:
+      form.discountType === "PERCENTAGE" ? form.maxDiscountAmount : undefined,
+  };
+
+  if (mode === "edit") {
+    return {
+      ...payload,
+      totalUsageLimit: form.totalUsageLimit ?? null,
+      perUserUsageLimit: form.perUserUsageLimit ?? null,
+      maxDiscountAmount:
+        form.discountType === "PERCENTAGE" ? (form.maxDiscountAmount ?? null) : null,
+    } as UpdateCouponInput;
+  }
+
+  return payload;
 }
 
 export function CouponEditor({
@@ -44,6 +90,7 @@ export function CouponEditor({
   onSave,
 }: CouponEditorProps) {
   const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
   const [form, setForm] = useState<CreateCouponInput>({
     code: "",
     title: "",
@@ -55,12 +102,14 @@ export function CouponEditor({
     validTill: new Date(Date.now() + 30 * 86400000).toISOString(),
     active: true,
     applicableBranchIds: [],
+    applicableOrderTypes: ["REALTIME_ONLY"],
     firstOrderOnly: false,
     autoApply: false,
   });
 
   useEffect(() => {
     if (!open) return;
+    setFormError(null);
     if (coupon && mode === "edit") {
       setForm({
         code: coupon.code,
@@ -76,6 +125,9 @@ export function CouponEditor({
         validTill: coupon.validTill,
         active: coupon.active,
         applicableBranchIds: coupon.applicableBranchIds ?? [],
+        applicableOrderTypes: coupon.applicableOrderTypes?.length
+          ? coupon.applicableOrderTypes
+          : ["REALTIME_ONLY"],
         firstOrderOnly: coupon.firstOrderOnly,
         autoApply: coupon.autoApply,
       });
@@ -91,6 +143,7 @@ export function CouponEditor({
         validTill: new Date(Date.now() + 30 * 86400000).toISOString(),
         active: true,
         applicableBranchIds: [],
+        applicableOrderTypes: ["REALTIME_ONLY"],
         firstOrderOnly: false,
         autoApply: false,
       });
@@ -98,6 +151,19 @@ export function CouponEditor({
   }, [open, coupon, mode]);
 
   if (!open) return null;
+
+  const toggleOrderType = (orderType: CouponOrderType) => {
+    setForm((prev) => {
+      const current = prev.applicableOrderTypes ?? ["REALTIME_ONLY"];
+      const next = current.includes(orderType)
+        ? current.filter((type) => type !== orderType)
+        : [...current, orderType];
+      return {
+        ...prev,
+        applicableOrderTypes: next.length ? next : ["REALTIME_ONLY"],
+      };
+    });
+  };
 
   const toggleBranch = (branchId: string) => {
     setForm((prev) => {
@@ -111,14 +177,35 @@ export function CouponEditor({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError(null);
+
+    if (!form.title.trim()) {
+      setFormError("Title is required");
+      return;
+    }
+    if (!form.code.trim()) {
+      setFormError("Coupon code is required");
+      return;
+    }
+    if (!form.discountValue || form.discountValue <= 0) {
+      setFormError("Discount value must be greater than 0");
+      return;
+    }
+    if (!form.validFrom || !form.validTill) {
+      setFormError("Valid from and valid until are required");
+      return;
+    }
+    if (new Date(form.validTill) <= new Date(form.validFrom)) {
+      setFormError("Valid until must be after valid from");
+      return;
+    }
+
     setSaving(true);
     try {
-      await onSave({
-        ...form,
-        applicableBranchIds:
-          (form.applicableBranchIds?.length ?? 0) > 0 ? form.applicableBranchIds : undefined,
-      });
+      await onSave(buildSavePayload(form, mode));
       onClose();
+    } catch {
+      // Error toast is shown by the store; keep the editor open.
     } finally {
       setSaving(false);
     }
@@ -132,7 +219,7 @@ export function CouponEditor({
             <h2 className="text-lg font-bold text-gray-900">
               {mode === "create" ? "Create Coupon" : "Edit Coupon"}
             </h2>
-            <p className="text-sm text-gray-500">Realtime orders only</p>
+            <p className="text-sm text-gray-500">Choose which checkout flows can use this coupon</p>
           </div>
 
           <div className="flex-1 space-y-4 px-6 py-4">
@@ -271,9 +358,10 @@ export function CouponEditor({
                   id="validFrom"
                   type="datetime-local"
                   value={toLocalInputValue(form.validFrom)}
-                  onChange={(e) =>
-                    setForm({ ...form, validFrom: new Date(e.target.value).toISOString() })
-                  }
+                  onChange={(e) => {
+                    const iso = fromLocalInputValue(e.target.value);
+                    if (iso) setForm({ ...form, validFrom: iso });
+                  }}
                   required
                 />
               </div>
@@ -283,11 +371,34 @@ export function CouponEditor({
                   id="validTill"
                   type="datetime-local"
                   value={toLocalInputValue(form.validTill)}
-                  onChange={(e) =>
-                    setForm({ ...form, validTill: new Date(e.target.value).toISOString() })
-                  }
+                  onChange={(e) => {
+                    const iso = fromLocalInputValue(e.target.value);
+                    if (iso) setForm({ ...form, validTill: iso });
+                  }}
                   required
                 />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Applicable Order Types</Label>
+              <div className="space-y-2 rounded-lg border border-gray-200 p-3">
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={(form.applicableOrderTypes ?? ["REALTIME_ONLY"]).includes("REALTIME_ONLY")}
+                    onChange={() => toggleOrderType("REALTIME_ONLY")}
+                  />
+                  Live / cart orders
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={(form.applicableOrderTypes ?? []).includes("SUBSCRIPTION_ONLY")}
+                    onChange={() => toggleOrderType("SUBSCRIPTION_ONLY")}
+                  />
+                  Subscription checkout
+                </label>
               </div>
             </div>
 
@@ -320,7 +431,7 @@ export function CouponEditor({
                   checked={form.firstOrderOnly ?? false}
                   onCheckedChange={(firstOrderOnly) => setForm({ ...form, firstOrderOnly })}
                 />
-                First order only
+                First order / first subscription only
               </label>
               <label className="flex items-center gap-2 text-sm">
                 <Switch
@@ -331,6 +442,12 @@ export function CouponEditor({
               </label>
             </div>
           </div>
+
+          {formError ? (
+            <div className="mx-6 mb-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {formError}
+            </div>
+          ) : null}
 
           <div className="flex justify-end gap-2 border-t border-gray-200 px-6 py-4">
             <Button type="button" variant="outline" onClick={onClose}>

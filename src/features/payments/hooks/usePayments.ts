@@ -1,12 +1,10 @@
 import { create } from 'zustand';
 import type { Payment, PaymentFilters, CodRecord, FailedPayment, CodCollectionStatus, PaymentMethodType } from '../types/payment';
 import { PAYMENT_METHOD_CONFIG } from '../types/payment';
-import { paymentsApi } from '@/lib/api/payments.api';
-
-const now = Date.now();
+import { paymentsApi, resolvePaymentDateRange } from '@/lib/api/payments.api';
 
 interface PaymentStats {
-  todayRevenue: number;
+  totalRevenue: number;
   onlinePayments: number;
   cashOnDelivery: number;
   pendingPayments: number;
@@ -34,6 +32,7 @@ interface PaymentStore {
   selectedPayment: Payment | null;
 
   setFilters: (filters: Partial<PaymentFilters>) => void;
+  setDateRange: (preset: string, startDate?: string, endDate?: string) => void;
   clearFilters: () => void;
   refresh: () => Promise<void>;
 
@@ -60,20 +59,40 @@ const initialFilters: PaymentFilters = {
   customDateTo: '',
 };
 
+function shouldFilterStatusClientSide(status: PaymentFilters['status']): boolean {
+  return status === 'all' || status === 'paid' || status === 'pending';
+}
+
 async function fetchPayments(filters: PaymentFilters): Promise<Payment[]> {
   try {
     return await paymentsApi.list({
-      status: filters.status === 'all' ? undefined : filters.status,
+      status: shouldFilterStatusClientSide(filters.status) ? undefined : filters.status,
       method: filters.method === 'all' ? undefined : filters.method,
       gateway: filters.gateway === 'all' ? undefined : filters.gateway,
       search: filters.search || undefined,
+      dateFilter: filters.dateFilter,
+      customDateFrom: filters.customDateFrom,
+      customDateTo: filters.customDateTo,
       page: 1,
-      limit: 100,
+      limit: 200,
     });
   } catch (e) {
     console.error('Failed to fetch payments:', e);
     return [];
   }
+}
+
+function applyDateFilter(payments: Payment[], filters: PaymentFilters): Payment[] {
+  const { dateFrom, dateTo } = resolvePaymentDateRange(
+    filters.dateFilter,
+    filters.customDateFrom,
+    filters.customDateTo,
+  );
+  if (!dateFrom && !dateTo) return payments;
+
+  const startMs = dateFrom ? new Date(dateFrom).getTime() : 0;
+  const endMs = dateTo ? new Date(dateTo).getTime() : Number.MAX_SAFE_INTEGER;
+  return payments.filter((p) => p.transactionTime >= startMs && p.transactionTime < endMs);
 }
 
 /**
@@ -127,7 +146,35 @@ export const usePaymentStore = create<PaymentStore>((set, get) => ({
 
   setFilters: (newFilters) => set((state) => ({ filters: { ...state.filters, ...newFilters } })),
 
-  clearFilters: () => set({ filters: { ...initialFilters } }),
+  setDateRange: (preset, startDate = '', endDate = '') => {
+    const presetMap: Record<string, PaymentFilters['dateFilter']> = {
+      today: 'today',
+      yesterday: 'yesterday',
+      '7d': 'last_7_days',
+      '30d': 'last_30_days',
+      'this-month': 'this_month',
+      custom: 'custom',
+    };
+    set((state) => ({
+      filters: {
+        ...state.filters,
+        dateFilter: presetMap[preset] ?? 'last_30_days',
+        customDateFrom: startDate,
+        customDateTo: endDate,
+      },
+    }));
+  },
+
+  clearFilters: () =>
+    set((state) => ({
+      filters: {
+        ...state.filters,
+        search: '',
+        status: 'all',
+        method: 'all',
+        gateway: 'all',
+      },
+    })),
 
   openPaymentDrawer: (payment) => set({ drawerOpen: true, selectedPayment: payment }),
 
@@ -175,6 +222,8 @@ export const usePaymentStore = create<PaymentStore>((set, get) => ({
       filtered = filtered.filter((p) => p.gateway === filters.gateway);
     }
 
+    filtered = applyDateFilter(filtered, filters);
+
     return filtered;
   },
 
@@ -184,23 +233,19 @@ export const usePaymentStore = create<PaymentStore>((set, get) => ({
   },
 
   getStats: () => {
-    const { payments } = get();
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
-    const todayTs = todayStart.getTime();
-
-    const todayPayments = payments.filter((p) => p.transactionTime >= todayTs && p.paymentStatus === 'paid');
-    const allPaid = payments.filter((p) => p.paymentStatus === 'paid');
+    const { payments, filters } = get();
+    const scoped = applyDateFilter(payments, filters);
+    const allPaid = scoped.filter((p) => p.paymentStatus === 'paid');
 
     return {
-      todayRevenue: todayPayments.reduce((sum, p) => sum + p.amount, 0),
+      totalRevenue: allPaid.reduce((sum, p) => sum + p.amount, 0),
       onlinePayments: allPaid.filter((p) => p.paymentMethod !== 'cod').reduce((sum, p) => sum + p.amount, 0),
       cashOnDelivery: allPaid.filter((p) => p.paymentMethod === 'cod').reduce((sum, p) => sum + p.amount, 0),
-      pendingPayments: payments.filter((p) => p.paymentStatus === 'pending').reduce((sum, p) => sum + p.amount, 0),
-      failedPayments: payments.filter((p) => p.paymentStatus === 'failed').reduce((sum, p) => sum + p.amount, 0),
-      refundedAmount: payments.filter((p) => p.paymentStatus === 'refunded').reduce((sum, p) => sum + p.amount, 0),
+      pendingPayments: scoped.filter((p) => p.paymentStatus === 'pending').reduce((sum, p) => sum + p.amount, 0),
+      failedPayments: scoped.filter((p) => p.paymentStatus === 'failed').reduce((sum, p) => sum + p.amount, 0),
+      refundedAmount: scoped.filter((p) => p.paymentStatus === 'refunded').reduce((sum, p) => sum + p.amount, 0),
       averageOrderValue: allPaid.length > 0 ? Math.round(allPaid.reduce((sum, p) => sum + p.amount, 0) / allPaid.length) : 0,
-      totalTransactions: payments.length,
+      totalTransactions: scoped.length,
     };
   },
 
@@ -248,6 +293,7 @@ export const usePaymentStore = create<PaymentStore>((set, get) => ({
       buckets.push({ label, online: 0, cod: 0, total: 0 });
       const bucket = buckets[buckets.length - 1];
       for (const p of payments) {
+        if (p.paymentStatus !== 'paid') continue;
         if (p.transactionTime >= dayStart && p.transactionTime < dayStart + dayMs) {
           const amt = p.amount;
           bucket.total += amt;

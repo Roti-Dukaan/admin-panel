@@ -7,6 +7,7 @@ import {
   UpdateCouponInput,
 } from "../types/coupon";
 import { couponsApi } from "../services/coupons.api";
+import { extractApiError } from "@/lib/api/extract-api-error";
 
 interface CouponStore {
   coupons: Coupon[];
@@ -59,25 +60,40 @@ export const useCouponStore = create<CouponStore>((set, get) => ({
   closeEditor: () => set({ editorOpen: false, selectedCoupon: null }),
 
   createCoupon: async (input) => {
-    const created = await couponsApi.create(input);
-    set((s) => ({ coupons: [created, ...s.coupons] }));
-    toast.success("Coupon created");
+    try {
+      const created = await couponsApi.create(input);
+      set((s) => ({ coupons: [created, ...s.coupons] }));
+      toast.success("Coupon created");
+    } catch (error) {
+      toast.error(extractApiError(error, "Failed to create coupon"));
+      throw error;
+    }
   },
 
   updateCoupon: async (id, input) => {
-    const updated = await couponsApi.update(id, input);
-    set((s) => ({
-      coupons: s.coupons.map((c) => (c.id === id ? updated : c)),
-    }));
-    toast.success("Coupon updated");
+    try {
+      const updated = await couponsApi.update(id, input);
+      set((s) => ({
+        coupons: s.coupons.map((c) => (c.id === id ? updated : c)),
+      }));
+      toast.success("Coupon updated");
+    } catch (error) {
+      toast.error(extractApiError(error, "Failed to update coupon"));
+      throw error;
+    }
   },
 
   toggleActive: async (coupon) => {
-    const updated = await couponsApi.update(coupon.id, { active: !coupon.active });
-    set((s) => ({
-      coupons: s.coupons.map((c) => (c.id === coupon.id ? updated : c)),
-    }));
-    toast.success(updated.active ? "Coupon activated" : "Coupon deactivated");
+    try {
+      const updated = await couponsApi.update(coupon.id, { active: !coupon.active });
+      set((s) => ({
+        coupons: s.coupons.map((c) => (c.id === coupon.id ? updated : c)),
+      }));
+      toast.success(updated.active ? "Coupon activated" : "Coupon deactivated");
+    } catch (error) {
+      toast.error(extractApiError(error, "Failed to update coupon status"));
+      throw error;
+    }
   },
 
   getFilteredCoupons: () => {

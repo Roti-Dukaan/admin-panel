@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Plus, RefreshCw, Search, Ticket } from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { useCouponStore } from "@/features/coupons/hooks/useCoupons";
+import { CreateCouponInput } from "@/features/coupons/types/coupon";
 import { CouponsTable } from "@/features/coupons/components/CouponsTable";
 import { CouponEditor } from "@/features/coupons/components/CouponEditor";
 import { branchesApi } from "@/lib/api/master-data/branches.api";
@@ -22,8 +23,6 @@ export default function CouponsPage() {
   const openCreateEditor = useCouponStore((s) => s.openCreateEditor);
   const openEditEditor = useCouponStore((s) => s.openEditEditor);
   const closeEditor = useCouponStore((s) => s.closeEditor);
-  const createCoupon = useCouponStore((s) => s.createCoupon);
-  const updateCoupon = useCouponStore((s) => s.updateCoupon);
   const toggleActive = useCouponStore((s) => s.toggleActive);
   const getFilteredCoupons = useCouponStore((s) => s.getFilteredCoupons);
 
@@ -140,10 +139,13 @@ export default function CouponsPage() {
         branches={branches}
         onClose={closeEditor}
         onSave={async (input) => {
-          if (editorMode === "create") {
-            await createCoupon(input);
-          } else if (selectedCoupon) {
-            await updateCoupon(selectedCoupon.id, input);
+          const state = useCouponStore.getState();
+          if (state.editorMode === "create") {
+            await state.createCoupon(input as CreateCouponInput);
+          } else if (state.selectedCoupon) {
+            await state.updateCoupon(state.selectedCoupon.id, input);
+          } else {
+            throw new Error("No coupon selected to update");
           }
         }}
       />

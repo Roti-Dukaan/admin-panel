@@ -1,12 +1,12 @@
-import { format } from "date-fns";
 import { formatDeliverySlotLabel } from "@/lib/delivery-slot-display";
+import { formatIstDate, formatIstDateTime } from "@/lib/date";
 import { DocumentBrandHeader } from "@/features/documents/components/DocumentBrandHeader";
 import type { SubscriptionPrepRow } from "../types/kitchen-subscriptions";
 import { ROTI_TYPE_LABELS } from "../types/kitchen-subscriptions";
 
 export function SubscriptionDispatchTicket({ row }: { row: SubscriptionPrepRow }) {
   const deliveryDate = row.deliveryDate
-    ? format(new Date(row.deliveryDate), "dd MMM yyyy")
+    ? formatIstDate(row.deliveryDate, { day: "2-digit", month: "short", year: "numeric" })
     : "—";
   const slotLabel =
     row.deliverySlotStart && row.deliverySlotEnd
@@ -82,7 +82,7 @@ export function SubscriptionDispatchTicket({ row }: { row: SubscriptionPrepRow }
       <div className="thermal-signature mt-1">Packed By _____________</div>
       <div className="thermal-signature">Driver _____________</div>
       <div className="thermal-footer">
-        Printed {format(new Date(), "dd MMM yyyy, hh:mm a")}
+        Printed {formatIstDateTime(new Date())}
       </div>
     </article>
   );

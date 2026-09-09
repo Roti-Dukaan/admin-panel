@@ -1,7 +1,7 @@
 "use client";
 
-import { format } from "date-fns";
 import { Clock, Wifi, WifiOff } from "lucide-react";
+import { formatInIst, formatIstTime } from "@/lib/date";
 import { usePrepClock } from "../hooks/usePrepClock";
 
 export function KitchenHeader({ connected = false }: { connected?: boolean }) {
@@ -10,7 +10,9 @@ export function KitchenHeader({ connected = false }: { connected?: boolean }) {
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-gray-900">Kitchen Operations</h1>
-        <p className="text-sm text-gray-500">{format(now, "EEEE, dd MMMM yyyy")}</p>
+        <p className="text-sm text-gray-500">
+          {formatInIst(now, { weekday: "long", day: "2-digit", month: "long", year: "numeric" })}
+        </p>
       </div>
       <div className="flex items-center gap-2 rounded-xl bg-white px-4 py-2 shadow-sm ring-1 ring-black/5">
         <span
@@ -23,9 +25,9 @@ export function KitchenHeader({ connected = false }: { connected?: boolean }) {
           {connected ? "Live" : "Offline"}
         </span>
         <Clock className="h-4 w-4 text-gray-400" />
-        <span className="text-xs font-medium text-gray-500">Local Time</span>
+        <span className="text-xs font-medium text-gray-500">IST</span>
         <span className="font-mono text-sm font-semibold tabular-nums text-gray-900">
-          {format(now, "hh:mm:ss a")}
+          {formatIstTime(now, true)}
         </span>
       </div>
     </div>
