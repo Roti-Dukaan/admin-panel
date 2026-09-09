@@ -5,12 +5,6 @@ import { useParams, useRouter } from "next/navigation";
 import { motion } from "motion/react";
 import { Header } from "@/components/layout/header";
 import { supportApi, type SupportTicket, type SupportMessage, type SupportActivity } from "@/lib/api/support.api";
-import { useAdminAuthStore } from "@/features/admin-auth/store/admin-auth-store";
-import {
-  dismissSupportTicketAlerts,
-  markSupportTicketViewed,
-} from "@/features/support/utils/support-ticket-alerts";
-import { SupportRefundPanel } from "@/features/support/components/SupportRefundPanel";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -32,7 +26,6 @@ export default function TicketDetailPage() {
   const params = useParams();
   const router = useRouter();
   const ticketId = params.ticketId as string;
-  const adminId = useAdminAuthStore((s) => s.user?.id ?? null);
 
   const [ticket, setTicket] = useState<SupportTicket | null>(null);
   const [loading, setLoading] = useState(true);
@@ -64,12 +57,6 @@ export default function TicketDetailPage() {
   useEffect(() => {
     loadTicket();
   }, [loadTicket]);
-
-  useEffect(() => {
-    if (!adminId || !ticketId) return;
-    markSupportTicketViewed(adminId, ticketId);
-    dismissSupportTicketAlerts(ticketId);
-  }, [adminId, ticketId]);
 
   const handleSendMessage = async () => {
     if (!message.trim() || sending) return;
@@ -453,13 +440,6 @@ export default function TicketDetailPage() {
               </CardContent>
             </Card>
           )}
-
-          <SupportRefundPanel
-            ticketId={ticketId}
-            orderId={ticket.orderId ?? ticket.order?.id}
-            orderNumber={ticket.order?.orderNumber}
-            customerName={ticket.customer?.name}
-          />
 
           {/* Branch Details */}
           {ticket.branch && (

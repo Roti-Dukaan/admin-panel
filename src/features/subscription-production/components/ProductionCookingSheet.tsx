@@ -1,7 +1,6 @@
 import { UtensilsCrossed, Store, Clock, Download, Calendar, Clock3, User, Phone, MapPin, CheckCircle, XCircle, AlertTriangle, Loader2, ChevronDown, ChevronUp, FileText } from 'lucide-react';
 import { ProductionStatusBadge, StatusSelect } from '@/features/subscription-production/components/ProductionStatusBadge';
 import type { CookingSheet } from '@/lib/api/subscription-production.api';
-import { formatIstDate, formatIstDateTime, formatIstTime } from '@/lib/date';
 import { useState } from 'react';
 
 export function ProductionCookingSheet({ sheet }: { sheet: CookingSheet | null }) {
@@ -63,14 +62,14 @@ export function ProductionCookingSheet({ sheet }: { sheet: CookingSheet | null }
           <div class="header">
             <h1 class="title">🍽️ Cooking Sheet</h1>
             <p class="subtitle">Branch: ${sheet.branchName} (${sheet.branchCode})</p>
-            <p class="subtitle">Date: ${formatIstDate(sheet.date, {
+            <p class="subtitle">Date: ${new Date(sheet.date).toLocaleDateString('en-IN', {
               weekday: 'long',
               year: 'numeric',
               month: 'long',
               day: 'numeric',
             })}</p>
             ${sheet.deliverySlot ? `<p class="subtitle">Delivery Slot: ${sheet.deliverySlot}</p>` : ''}
-            <p class="subtitle">Generated: ${formatIstDateTime(sheet.generatedAt)}</p>
+            <p class="subtitle">Generated: ${new Date(sheet.generatedAt).toLocaleString('en-IN')}</p>
           </div>
 
           <div class="section">
@@ -206,7 +205,7 @@ export function ProductionCookingSheet({ sheet }: { sheet: CookingSheet | null }
             Cooking Sheet
           </h1>
           <p className="text-gray-600 mt-1">
-            {sheet.branchName} ({sheet.branchCode}) • {formatIstDate(sheet.date, {
+            {sheet.branchName} ({sheet.branchCode}) • {new Date(sheet.date).toLocaleDateString('en-IN', {
               weekday: 'long',
               year: 'numeric',
               month: 'long',
@@ -240,7 +239,10 @@ export function ProductionCookingSheet({ sheet }: { sheet: CookingSheet | null }
         <div className="rounded-xl border border-gray-100 bg-white p-4">
           <p className="text-xs text-gray-500">Generated</p>
           <p className="text-sm font-medium text-gray-900">
-            {formatIstTime(sheet.generatedAt)}
+            {new Date(sheet.generatedAt).toLocaleTimeString('en-IN', {
+              hour: '2-digit',
+              minute: '2-digit',
+            })}
           </p>
         </div>
       </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { formatIstDate, todayDateKey } from "@/lib/date";
+import { format } from "date-fns";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -101,7 +101,7 @@ export function BranchSubscriptionDeliveriesTab({
   showBranchFilter?: boolean;
 } = {}) {
   const deliveryScope: SubscriptionDeliveryApiScope = apiMode;
-  const [date, setDate] = useState(() => todayDateKey());
+  const [date, setDate] = useState(() => format(new Date(), "yyyy-MM-dd"));
   const [slotId, setSlotId] = useState("all");
   const [search, setSearch] = useState("");
 
@@ -236,7 +236,7 @@ export function BranchSubscriptionDeliveriesTab({
               {rows.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={9} className="py-10 text-center text-sm text-gray-500">
-                    No subscription deliveries for {formatIstDate(date)}
+                    No subscription deliveries for {format(new Date(`${date}T12:00:00`), "MMM d, yyyy")}
                   </TableCell>
                 </TableRow>
               ) : (

@@ -18,7 +18,7 @@ import { Header } from "@/components/layout/header";
 import { PlansTable } from "@/features/subscription-plans/components/PlansTable";
 import { PlanEditor } from "@/features/subscription-plans/components/PlanEditor";
 import { DeleteConfirmation } from "@/features/subscription-plans/components/DeleteConfirmation";
-import { CreateSubscriptionPlanDrawer } from "@/features/subscription-packages/components/plan-builder/CreateSubscriptionPlanDrawer";
+import { PackageEditor } from "@/features/subscription-packages/components/PackageEditor";
 import { packagesApi } from "@/features/subscription-packages/services/packages.api";
 import type { SubscriptionPackage } from "@/features/subscription-packages/types/subscription-package";
 
@@ -70,7 +70,7 @@ export default function SubscriptionPlansPage() {
       setPackageEditorMode("edit");
       setPackageEditorOpen(true);
     } catch {
-      // fallback handled in table
+      // Packages without categories can still use legacy plan editor via table actions
     }
   };
 
@@ -86,15 +86,11 @@ export default function SubscriptionPlansPage() {
     }
   };
 
-  const openConfigureMealSlots = async (planId: string, _planName: string) => {
-    await openEditPackage(planId);
-  };
-
   return (
     <div className="min-h-screen bg-gray-50/50">
       <Header
-        title="Subscription Plans"
-        subtitle="Create configurable subscription plans with meal options, schedules, and rules."
+        title="Subscription Packages"
+        subtitle="Create dynamic packages with category-level pricing. No package base price — customers select categories."
         actions={
           <>
             <button className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
@@ -116,7 +112,7 @@ export default function SubscriptionPlansPage() {
               className="inline-flex items-center gap-2 rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-bold text-white hover:bg-gray-800 transition-colors"
             >
               <Plus className="h-4 w-4" />
-              Create Subscription Plan
+              Create Package
             </button>
           </>
         }
@@ -191,15 +187,11 @@ export default function SubscriptionPlansPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.2 }}
         >
-          <PlansTable
-            onEditPackage={openEditPackage}
-            onViewPackage={openViewPackage}
-            onConfigureMealSlots={openConfigureMealSlots}
-          />
+          <PlansTable onEditPackage={openEditPackage} onViewPackage={openViewPackage} />
         </motion.div>
       </div>
 
-      <CreateSubscriptionPlanDrawer
+      <PackageEditor
         open={packageEditorOpen}
         mode={packageEditorMode}
         selected={selectedPackage}

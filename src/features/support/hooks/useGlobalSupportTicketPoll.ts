@@ -4,10 +4,6 @@ import { useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supportApi, type SupportTicket } from "@/lib/api/support.api";
 import type { AdminSupportTicketNewPayload } from "@/lib/realtime/events";
-import {
-  getViewedSupportTicketIds,
-  isSupportTicketViewed,
-} from "@/features/support/utils/support-ticket-alerts";
 
 const POLL_MS = 10_000;
 
@@ -31,7 +27,6 @@ function toAlertPayload(ticket: SupportTicket): AdminSupportTicketNewPayload {
  */
 export function useGlobalSupportTicketPoll(
   enabled: boolean,
-  adminId: string | null,
   onNewTicket: (payload: AdminSupportTicketNewPayload) => void,
 ) {
   const onAlertRef = useRef(onNewTicket);
@@ -40,17 +35,10 @@ export function useGlobalSupportTicketPoll(
   const pollSeen = useRef<Set<string>>(new Set());
   const bootstrapped = useRef(false);
 
-  useEffect(() => {
-    if (!adminId) return;
-    for (const ticketId of getViewedSupportTicketIds(adminId)) {
-      pollSeen.current.add(ticketId);
-    }
-  }, [adminId]);
-
   const query = useQuery({
-    queryKey: ["support", "global-ticket-alerts", "hq", adminId],
+    queryKey: ["support", "global-ticket-alerts", "hq"],
     queryFn: () => supportApi.list({ status: "OPEN", limit: 30 }),
-    enabled: enabled && !!adminId,
+    enabled,
     refetchInterval: POLL_MS,
     refetchIntervalInBackground: true,
     staleTime: POLL_MS,
@@ -74,10 +62,9 @@ export function useGlobalSupportTicketPoll(
     for (const ticket of items) {
       if (pollSeen.current.has(ticket.id)) continue;
       pollSeen.current.add(ticket.id);
-      if (adminId && isSupportTicketViewed(adminId, ticket.id)) continue;
       onAlertRef.current(toAlertPayload(ticket));
     }
-  }, [adminId, query.data?.data.items]);
+  }, [query.data?.data.items]);
 
   return query;
 }

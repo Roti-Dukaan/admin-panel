@@ -1,5 +1,4 @@
 export type CouponDiscountType = "FLAT" | "PERCENTAGE";
-export type CouponOrderType = "REALTIME_ONLY" | "SUBSCRIPTION_ONLY";
 
 export interface Coupon {
   id: string;
@@ -15,7 +14,7 @@ export interface Coupon {
   validFrom: string;
   validTill: string;
   active: boolean;
-  applicableOrderTypes: CouponOrderType[];
+  applicableOrderTypes: string[];
   applicableBranchIds: string[] | null;
   firstOrderOnly: boolean;
   autoApply: boolean;
@@ -40,16 +39,11 @@ export interface CreateCouponInput {
   validTill: string;
   active?: boolean;
   applicableBranchIds?: string[];
-  applicableOrderTypes?: CouponOrderType[];
   firstOrderOnly?: boolean;
   autoApply?: boolean;
 }
 
-export type UpdateCouponInput = Partial<CreateCouponInput> & {
-  totalUsageLimit?: number | null;
-  perUserUsageLimit?: number | null;
-  maxDiscountAmount?: number | null;
-};
+export type UpdateCouponInput = Partial<CreateCouponInput>;
 
 export function formatCouponValue(coupon: Pick<Coupon, "discountType" | "discountValue">): string {
   return coupon.discountType === "FLAT"

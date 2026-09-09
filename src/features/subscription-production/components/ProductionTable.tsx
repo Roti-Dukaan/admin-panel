@@ -1,5 +1,4 @@
 import type { SubscriptionProductionItem } from '@/lib/api/subscription-production.api';
-import { formatIstDate, formatIstDateTime } from '@/lib/date';
 import { ProductionStatusBadge, StatusSelect } from '@/features/subscription-production/components/ProductionStatusBadge';
 import type { SubscriptionProductionStatus } from '@/features/subscription-production/types/subscription-production';
 import { Store, User, Clock, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
@@ -80,7 +79,7 @@ export function ProductionTable({ items, loading, onStatusChange, showBranch, sh
                 {item.subscription?.planName ?? '—'}
               </td>
               <td className="px-4 py-3 text-gray-700">
-                {formatIstDate(item.productionDate, {
+                {new Date(item.productionDate).toLocaleDateString('en-IN', {
                   day: 'numeric',
                   month: 'short',
                   year: 'numeric',
@@ -108,7 +107,12 @@ export function ProductionTable({ items, loading, onStatusChange, showBranch, sh
                 </td>
               )}
               <td className="px-4 py-3 text-xs text-gray-400">
-                {formatIstDateTime(item.generatedAt || item.createdAt)}
+                {new Date(item.generatedAt || item.createdAt).toLocaleDateString('en-IN', {
+                  day: 'numeric',
+                  month: 'short',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
               </td>
             </tr>
           ))}
@@ -138,7 +142,7 @@ export function ExpandedProductionRow({
               <div className="h-2 w-2 rounded-full bg-gray-400" />
               <span className="font-medium text-gray-900">{production.subscription?.customer?.fullName}</span>
               <span className="text-xs text-gray-500">
-                {formatIstDate(production.productionDate, {
+                {new Date(production.productionDate).toLocaleDateString('en-IN', {
                   day: 'numeric',
                   month: 'short',
                 })}

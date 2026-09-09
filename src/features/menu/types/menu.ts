@@ -16,7 +16,6 @@ export interface Category {
   emoji: string;
   color: string;
   bgColor: string;
-  imageUrl?: string;
   sortOrder: number;
   createdAt: number;
 }

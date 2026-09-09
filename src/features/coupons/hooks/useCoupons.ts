@@ -7,7 +7,6 @@ import {
   UpdateCouponInput,
 } from "../types/coupon";
 import { couponsApi } from "../services/coupons.api";
-import { extractApiError } from "@/lib/api/extract-api-error";
 
 interface CouponStore {
   coupons: Coupon[];
@@ -60,40 +59,25 @@ export const useCouponStore = create<CouponStore>((set, get) => ({
   closeEditor: () => set({ editorOpen: false, selectedCoupon: null }),
 
   createCoupon: async (input) => {
-    try {
-      const created = await couponsApi.create(input);
-      set((s) => ({ coupons: [created, ...s.coupons] }));
-      toast.success("Coupon created");
-    } catch (error) {
-      toast.error(extractApiError(error, "Failed to create coupon"));
-      throw error;
-    }
+    const created = await couponsApi.create(input);
+    set((s) => ({ coupons: [created, ...s.coupons] }));
+    toast.success("Coupon created");
   },
 
   updateCoupon: async (id, input) => {
-    try {
-      const updated = await couponsApi.update(id, input);
-      set((s) => ({
-        coupons: s.coupons.map((c) => (c.id === id ? updated : c)),
-      }));
-      toast.success("Coupon updated");
-    } catch (error) {
-      toast.error(extractApiError(error, "Failed to update coupon"));
-      throw error;
-    }
+    const updated = await couponsApi.update(id, input);
+    set((s) => ({
+      coupons: s.coupons.map((c) => (c.id === id ? updated : c)),
+    }));
+    toast.success("Coupon updated");
   },
 
   toggleActive: async (coupon) => {
-    try {
-      const updated = await couponsApi.update(coupon.id, { active: !coupon.active });
-      set((s) => ({
-        coupons: s.coupons.map((c) => (c.id === coupon.id ? updated : c)),
-      }));
-      toast.success(updated.active ? "Coupon activated" : "Coupon deactivated");
-    } catch (error) {
-      toast.error(extractApiError(error, "Failed to update coupon status"));
-      throw error;
-    }
+    const updated = await couponsApi.update(coupon.id, { active: !coupon.active });
+    set((s) => ({
+      coupons: s.coupons.map((c) => (c.id === coupon.id ? updated : c)),
+    }));
+    toast.success(updated.active ? "Coupon activated" : "Coupon deactivated");
   },
 
   getFilteredCoupons: () => {

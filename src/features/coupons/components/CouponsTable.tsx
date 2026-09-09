@@ -57,16 +57,9 @@ export function CouponsTable({
                   <div className="text-xs text-gray-500">{coupon.title}</div>
                 </td>
                 <td className="px-4 py-3">
-                  {(() => {
-                    const expired = new Date(coupon.validTill).getTime() < Date.now();
-                    if (!coupon.active) {
-                      return <Badge variant="secondary">Inactive</Badge>;
-                    }
-                    if (expired) {
-                      return <Badge variant="secondary">Expired</Badge>;
-                    }
-                    return <Badge variant="default">Active</Badge>;
-                  })()}
+                  <Badge variant={coupon.active ? "default" : "secondary"}>
+                    {coupon.active ? "Active" : "Inactive"}
+                  </Badge>
                 </td>
                 <td className="px-4 py-3">{coupon.discountType}</td>
                 <td className="px-4 py-3 font-semibold">{formatCouponValue(coupon)}</td>

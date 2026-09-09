@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { motion } from "motion/react";
 import { AlertTriangle, Phone, RefreshCw, XCircle } from "lucide-react";
 import { usePaymentStore } from "../hooks/usePayments";
@@ -13,7 +14,8 @@ function formatDateTime(ts: number) {
 }
 
 export function FailedPayments() {
-  const failed = usePaymentStore((s) => s.failedPayments);
+  const getFailedPaymentsList = usePaymentStore((s) => s.getFailedPaymentsList);
+  const failed = useMemo(() => getFailedPaymentsList(), [getFailedPaymentsList]);
 
   if (failed.length === 0) {
     return (

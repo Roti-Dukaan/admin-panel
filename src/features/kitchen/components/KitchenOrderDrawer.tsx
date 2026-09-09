@@ -1,5 +1,6 @@
 "use client";
 
+import { format } from "date-fns";
 import {
   X,
   User,
@@ -22,7 +23,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { formatIstDateTime } from "@/lib/date";
 import { useKitchenOrderDetail } from "../hooks/useKitchen";
 import { PreparationTimer } from "./PreparationTimer";
 import { DeliveryStatusCard } from "./DeliveryStatusCard";
@@ -121,21 +121,21 @@ export function KitchenOrderDrawer({
             <Section icon={Package} title="Order Information">
               <Row label="Order Number" value={detail.orderNumber} />
               <Row label="Ticket Number" value={detail.ticketNumber} />
-              <Row label="Created" value={formatIstDateTime(detail.orderCreatedAt)} />
+              <Row label="Created" value={format(new Date(detail.orderCreatedAt), "dd MMM yyyy, hh:mm a")} />
               <Row
                 label="Started Preparing"
-                value={detail.startedPreparingAt ? formatIstDateTime(detail.startedPreparingAt) : "—"}
+                value={detail.startedPreparingAt ? format(new Date(detail.startedPreparingAt), "dd MMM yyyy, hh:mm a") : "—"}
               />
               <Row
                 label="Ready At"
-                value={detail.readyAt ? formatIstDateTime(detail.readyAt) : "—"}
+                value={detail.readyAt ? format(new Date(detail.readyAt), "dd MMM yyyy, hh:mm a") : "—"}
               />
             </Section>
 
             <Section icon={User} title="Customer Information">
-              <Row label="Account name" value={detail.customer?.name ?? "Guest"} />
+              <Row label="Name" value={detail.customer?.name ?? "Guest"} />
               <Row
-                label="Account phone"
+                label="Phone"
                 value={
                   <span className="inline-flex items-center gap-1">
                     <Phone className="h-3.5 w-3.5 text-gray-400" />
@@ -158,29 +158,13 @@ export function KitchenOrderDrawer({
 
             <Section icon={MapPin} title="Delivery Address">
               {detail.address ? (
-                <div className="space-y-2 leading-relaxed text-gray-700">
-                  {(detail.address.customerName || detail.address.phoneNumber) && (
-                    <div className="rounded-lg bg-amber-50 border border-amber-100 px-3 py-2">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-amber-800">
-                        Receiver
-                      </p>
-                      <p className="font-medium text-gray-900">
-                        {detail.address.customerName || "—"}
-                      </p>
-                      <p className="text-sm text-gray-600 inline-flex items-center gap-1">
-                        <Phone className="h-3.5 w-3.5 text-gray-400" />
-                        {detail.address.phoneNumber || "—"}
-                      </p>
-                    </div>
-                  )}
-                  <p>
-                    {detail.address.addressLine1}
-                    {detail.address.addressLine2 ? `, ${detail.address.addressLine2}` : ""}
-                    {detail.address.landmark ? ` (${detail.address.landmark})` : ""}
-                    <br />
-                    {detail.address.city}, {detail.address.state} – {detail.address.pincode}
-                  </p>
-                </div>
+                <p className="leading-relaxed text-gray-700">
+                  {detail.address.addressLine1}
+                  {detail.address.addressLine2 ? `, ${detail.address.addressLine2}` : ""}
+                  {detail.address.landmark ? ` (${detail.address.landmark})` : ""}
+                  <br />
+                  {detail.address.city}, {detail.address.state} – {detail.address.pincode}
+                </p>
               ) : (
                 <p className="text-gray-400">No address captured.</p>
               )}
@@ -318,7 +302,7 @@ export function KitchenOrderDrawer({
                     <div className="text-xs">
                       <p className="font-medium text-gray-700">{entry.status}</p>
                       <p className="text-gray-400">
-                        {formatIstDateTime(entry.createdAt)} · {entry.createdByType}
+                        {format(new Date(entry.createdAt), "dd MMM yyyy, hh:mm a")} · {entry.createdByType}
                       </p>
                       {entry.remarks ? <p className="text-gray-500">{entry.remarks}</p> : null}
                     </div>

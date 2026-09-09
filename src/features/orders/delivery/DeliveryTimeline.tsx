@@ -1,6 +1,6 @@
 import { Check, Loader2, Bike, MapPin, PackageCheck, Truck, Home, AlertCircle } from "lucide-react";
+import { format } from "date-fns";
 import type { DeliveryStatus, DeliveryTimelineEntry } from "@/features/delivery/types/delivery";
-import { formatIstDateTime } from "@/lib/date";
 
 interface DeliveryTimelineProps {
   entries: DeliveryTimelineEntry[];
@@ -68,13 +68,7 @@ export function DeliveryTimeline({ entries, currentStatus, className }: Delivery
                   {title}
                 </p>
                 <span className="shrink-0 text-xs text-gray-400">
-                  {formatIstDateTime(entry.timestamp, {
-                    day: "numeric",
-                    month: "short",
-                    hour: "numeric",
-                    minute: "2-digit",
-                    hour12: true,
-                  })}
+                  {format(new Date(entry.timestamp), "MMM d, h:mm a")}
                 </span>
               </div>
               {(entry.description || entry.label) && (

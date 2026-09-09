@@ -22,20 +22,6 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
-  async redirects() {
-    return [
-      {
-        source: "/mobile-app/banners",
-        destination: "/mobile-app/home-page",
-        permanent: false,
-      },
-      {
-        source: "/mobile-app/banners/:path*",
-        destination: "/mobile-app/home-page",
-        permanent: false,
-      },
-    ];
-  },
   async headers() {
     return [
       {

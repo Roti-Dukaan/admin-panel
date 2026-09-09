@@ -103,11 +103,7 @@ export function OrderDrawer() {
           </DrawerHeader>
 
           <DrawerContent className="space-y-6">
-            <CustomerCard
-              customer={selectedOrder.customer}
-              receiverName={deliveryTracking?.order?.address?.customerName}
-              receiverPhone={deliveryTracking?.order?.address?.phoneNumber}
-            />
+            <CustomerCard customer={selectedOrder.customer} />
 
             <DeliveryCard delivery={selectedOrder.delivery} />
 

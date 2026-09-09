@@ -627,7 +627,7 @@ export function SubscriptionAssignmentPanel({
                 <th className="px-3 py-2">Phone</th>
                 <th className="px-3 py-2">Address</th>
                 <th className="px-3 py-2">Slot</th>
-                <th className="px-3 py-2">Items</th>
+                <th className="px-3 py-2">Rotis</th>
                 <th className="px-3 py-2">Prep</th>
                 <th className="px-3 py-2">Dispatch</th>
                 <th className="px-3 py-2">Assigned to</th>
@@ -662,19 +662,11 @@ export function SubscriptionAssignmentPanel({
                       {row.address}
                     </td>
                     <td className="px-3 py-3 text-gray-600">{row.slot?.name ?? "—"}</td>
-                    <td className="max-w-[220px] px-3 py-3 text-gray-600">
-                      {row.items.length === 0 ? (
-                        <span className="text-gray-400">No items</span>
-                      ) : (
-                        <div className="space-y-0.5">
-                          {row.items.map((item, index) => (
-                            <p key={`${row.id}-${index}`} className="text-xs leading-snug text-gray-700">
-                              <span className="font-semibold text-gray-900">{item.quantity}×</span>{" "}
-                              {item.name}
-                            </p>
-                          ))}
-                        </div>
-                      )}
+                    <td className="px-3 py-3 text-gray-600">
+                      {row.totalQuantity}
+                      <span className="block text-xs text-gray-400">
+                        {row.items.map((i) => `${i.quantity}× ${i.name}`).join(", ")}
+                      </span>
                     </td>
                     <td className="px-3 py-3">
                       <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">

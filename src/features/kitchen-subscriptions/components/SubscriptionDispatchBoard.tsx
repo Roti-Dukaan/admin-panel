@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { todayDateKey } from "@/lib/date";
+import { format } from "date-fns";
 import Link from "next/link";
 import { AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -34,7 +34,7 @@ function ErrorState({ onRetry }: { onRetry: () => void }) {
 }
 
 export function SubscriptionDispatchBoard() {
-  const [date, setDate] = useState(() => todayDateKey());
+  const [date, setDate] = useState(() => format(new Date(), "yyyy-MM-dd"));
   const [slotId, setSlotId] = useState("all");
   const [areaFilter, setAreaFilter] = useState("");
 

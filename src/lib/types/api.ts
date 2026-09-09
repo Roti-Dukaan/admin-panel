@@ -61,15 +61,6 @@ export interface ApiFoodItem {
   foodType?: 'VEG' | 'NON_VEG' | 'EGG';
   isFeatured: boolean;
   customerLabels?: ('CHEF_SPECIAL' | 'BEST_SELLER' | 'NEW' | 'RECOMMENDED' | 'POPULAR')[];
-  healthTags?: (
-    | 'HIGH_PROTEIN'
-    | 'HIGH_FIBER'
-    | 'HEALTHY'
-    | 'GLUTEN_FREE'
-    | 'VEGAN'
-    | 'HOMEMADE'
-    | 'KIDS_FRIENDLY'
-  )[];
   isAvailable: boolean;
   isSubscriptionAvailable: boolean;
   preparationTime: number;

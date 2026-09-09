@@ -18,8 +18,8 @@ function formatCurrency(value: number) {
 
 const statCards = [
   {
-    key: "totalRevenue" as const,
-    label: "Total Revenue",
+    key: "todayRevenue" as const,
+    label: "Today's Revenue",
     icon: IndianRupee,
     color: "text-emerald-600",
     bg: "bg-emerald-50",
@@ -52,10 +52,8 @@ const statCards = [
 ];
 
 export function PaymentsStats() {
-  const payments = usePaymentStore((s) => s.payments);
-  const filters = usePaymentStore((s) => s.filters);
   const getStats = usePaymentStore((s) => s.getStats);
-  const stats = useMemo(() => getStats(), [payments, filters, getStats]);
+  const stats = useMemo(() => getStats(), [getStats]);
 
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">

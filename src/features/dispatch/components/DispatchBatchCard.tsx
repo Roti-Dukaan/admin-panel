@@ -1,6 +1,6 @@
 "use client";
 
-import { formatIstTime } from "@/lib/date";
+import { format } from "date-fns";
 import { ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { DISPATCH_STATUS_META, type DispatchBatchListItem } from "../types/dispatch";
@@ -36,7 +36,7 @@ export function DispatchBatchCard({ batch, onOpen }: Props) {
           )}
           {batch.provider && <span className="capitalize">{batch.provider}</span>}
         </div>
-        <span>{formatIstTime(batch.createdAt)}</span>
+        <span>{format(new Date(batch.createdAt), "hh:mm a")}</span>
       </div>
       <div className="mt-2 flex items-center gap-1 text-xs font-medium text-orange-600">
         View details <ChevronRight className="h-3 w-3" />

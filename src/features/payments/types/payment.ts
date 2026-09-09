@@ -4,7 +4,7 @@ export type PaymentMethodType = 'upi' | 'credit_card' | 'debit_card' | 'net_bank
 
 export type PaymentGateway = 'razorpay';
 
-export type DateFilter = 'today' | 'yesterday' | 'last_7_days' | 'last_30_days' | 'this_month' | 'custom';
+export type DateFilter = 'today' | 'yesterday' | 'last_7_days' | 'last_30_days' | 'custom';
 
 export type CodCollectionStatus = 'collected' | 'pending' | 'failed_collection';
 

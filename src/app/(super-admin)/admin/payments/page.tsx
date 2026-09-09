@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Receipt, Banknote, XCircle, BarChart3 } from "lucide-react";
 import { PaymentsHeader } from "@/features/payments/components/PaymentsHeader";
-import { PaymentsDateRange } from "@/features/payments/components/PaymentsDateRange";
 import { PaymentsStats } from "@/features/payments/components/PaymentsStats";
 import { PaymentsFilters } from "@/features/payments/components/PaymentsFilters";
 import { PaymentsTable } from "@/features/payments/components/PaymentsTable";
@@ -124,14 +123,12 @@ export default function PaymentsPage() {
           />
         </motion.div>
 
-        {/* Date range + Stats */}
+        {/* Stats */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.05 }}
-          className="space-y-3"
         >
-          <PaymentsDateRange />
           <PaymentsStats />
         </motion.div>
 

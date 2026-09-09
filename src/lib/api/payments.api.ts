@@ -20,7 +20,7 @@ interface PaymentStatsResponse {
 }
 
 /** Convert a date preset (IST-aware) into [dateFrom, dateTo] ISO instants. */
-export function resolvePaymentDateRange(
+function resolvePaymentDateRange(
   dateFilter: string | undefined,
   customDateFrom?: string,
   customDateTo?: string,
@@ -45,11 +45,6 @@ export function resolvePaymentDateRange(
       return { dateFrom: new Date(startOfTodayUtc.getTime() - dayMs).toISOString(), dateTo: startOfTodayUtc.toISOString() };
     case 'last_7_days':
       return { dateFrom: new Date(startOfTodayUtc.getTime() - 7 * dayMs).toISOString(), dateTo: new Date(startOfTodayUtc.getTime() + dayMs).toISOString() };
-    case 'this_month': {
-      const startOfMonthIst = new Date(istNow.getFullYear(), istNow.getMonth(), 1, 0, 0, 0, 0);
-      const startOfMonthUtc = new Date(startOfMonthIst.getTime() - istNow.getTime() + now.getTime());
-      return { dateFrom: startOfMonthUtc.toISOString(), dateTo: new Date(startOfTodayUtc.getTime() + dayMs).toISOString() };
-    }
     case 'last_30_days':
     default:
       return { dateFrom: new Date(startOfTodayUtc.getTime() - 30 * dayMs).toISOString(), dateTo: new Date(startOfTodayUtc.getTime() + dayMs).toISOString() };
@@ -78,15 +73,11 @@ function toBackendPaymentMethod(method: string): string {
 function mapBackendStatus(status: string): Payment['paymentStatus'] {
   const map: Record<string, Payment['paymentStatus']> = {
     CAPTURED: 'paid',
-    COLLECTED: 'paid',
-    SETTLED: 'paid',
     AUTHORIZED: 'authorized',
     CREATED: 'pending',
     PAYMENT_PENDING: 'pending',
-    PENDING_COLLECTION: 'pending',
     FAILED: 'failed',
     REFUNDED: 'refunded',
-    PARTIALLY_REFUNDED: 'refunded',
     CANCELLED: 'cancelled',
   };
   return map[status] ?? 'pending';
@@ -104,7 +95,7 @@ function mapBackendPayment(backend: any): Payment {
   return {
     id: backend.id,
     paymentId: backend.paymentReference || backend.id,
-    orderId: backend.orderNumber || backend.order?.orderNumber || backend.checkoutReference || '—',
+    orderId: backend.order?.orderNumber || backend.checkoutReference || '—',
     customerName: backend.customerName || backend.customer?.fullName || backend.customer?.name || 'Guest',
     customerPhone: backend.customerPhone || backend.customer?.phone || '',
     customerEmail: backend.customerEmail || backend.customer?.email || '',

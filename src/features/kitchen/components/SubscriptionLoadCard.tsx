@@ -1,10 +1,10 @@
 "use client";
 
-import { todayDateKey } from "@/lib/date";
+import { format } from "date-fns";
 import { useTodaySubscriptionLoad } from "@/features/kitchen-subscriptions/hooks/useKitchenSubscriptions";
 
 export function SubscriptionLoadCard() {
-  const today = todayDateKey();
+  const today = format(new Date(), "yyyy-MM-dd");
   const { data } = useTodaySubscriptionLoad(today);
 
   if (!data || data.totalDeliveries === 0) return null;

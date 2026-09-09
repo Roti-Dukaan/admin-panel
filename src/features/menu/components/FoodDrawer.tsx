@@ -291,12 +291,7 @@ export function FoodDrawer() {
 
               <Section title="Tags & Labels">
                 <div className="space-y-4">
-                  <HealthTagSelector
-                    selected={watch("healthTags") ?? []}
-                    onChange={(tags) =>
-                      setValue("healthTags", tags, { shouldDirty: true, shouldValidate: true })
-                    }
-                  />
+                  <HealthTagSelector selected={watch("healthTags")} onChange={(tags) => setValue("healthTags", tags)} />
                   <div>
                     <h4 className="mb-2 text-sm font-medium text-gray-700">Customer Labels</h4>
                     <div className="flex flex-wrap gap-2">

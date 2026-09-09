@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { SlidersHorizontal, Search, ChevronDown, Check } from "lucide-react";
+import { SlidersHorizontal, Search, X, ChevronDown, Check } from "lucide-react";
 import { usePaymentStore } from "../hooks/usePayments";
-import type { PaymentStatus, PaymentMethodType } from "../types/payment";
+import type { PaymentStatus, PaymentMethodType, DateFilter } from "../types/payment";
+import { PAYMENT_STATUS_CONFIG, PAYMENT_METHOD_CONFIG } from "../types/payment";
 
 const STATUS_OPTIONS: { value: PaymentStatus | 'all'; label: string }[] = [
   { value: 'all', label: 'All Status' },
@@ -22,6 +23,14 @@ const METHOD_OPTIONS: { value: PaymentMethodType | 'all'; label: string }[] = [
   { value: 'net_banking', label: 'Net Banking' },
   { value: 'wallet', label: 'Wallet' },
   { value: 'cod', label: 'COD' },
+];
+
+const DATE_OPTIONS: { value: DateFilter; label: string }[] = [
+  { value: 'today', label: 'Today' },
+  { value: 'yesterday', label: 'Yesterday' },
+  { value: 'last_7_days', label: 'Last 7 Days' },
+  { value: 'last_30_days', label: 'Last 30 Days' },
+  { value: 'custom', label: 'Custom Range' },
 ];
 
 function SelectDropdown({
@@ -101,7 +110,7 @@ export function PaymentsFilters() {
       refresh();
     }, 300);
     return () => clearTimeout(timer);
-  }, [filters.status, filters.method, filters.search, refresh]);
+  }, [filters.status, filters.method, filters.dateFilter, filters.customDateFrom, filters.customDateTo, filters.search, refresh]);
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -114,10 +123,12 @@ export function PaymentsFilters() {
   const activeCount = [
     filters.status !== 'all',
     filters.method !== 'all',
+    filters.dateFilter !== 'last_30_days',
   ].filter(Boolean).length;
 
   return (
     <div className="flex items-center gap-3">
+      {/* Search */}
       <div className="relative flex-1 min-w-[200px] max-w-md">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
         <input
@@ -129,6 +140,7 @@ export function PaymentsFilters() {
         />
       </div>
 
+      {/* Filters Button + Dropdown */}
       <div ref={panelRef} className="relative">
         <button
           onClick={() => setPanelOpen(!panelOpen)}
@@ -171,6 +183,34 @@ export function PaymentsFilters() {
                 options={METHOD_OPTIONS}
                 onChange={(val) => setFilters({ method: val as PaymentMethodType | 'all' })}
               />
+
+              <SelectDropdown
+                label="Date Range"
+                value={filters.dateFilter}
+                options={DATE_OPTIONS}
+                onChange={(val) => setFilters({ dateFilter: val as DateFilter })}
+              />
+
+              {filters.dateFilter === 'custom' && (
+                <div className="space-y-2">
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-400">Custom Range</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="date"
+                      value={filters.customDateFrom}
+                      onChange={(e) => setFilters({ customDateFrom: e.target.value })}
+                      className="h-9 flex-1 rounded-lg border border-gray-200 bg-white px-2.5 text-xs text-gray-900 focus:border-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-300"
+                    />
+                    <span className="text-xs text-gray-400">to</span>
+                    <input
+                      type="date"
+                      value={filters.customDateTo}
+                      onChange={(e) => setFilters({ customDateTo: e.target.value })}
+                      className="h-9 flex-1 rounded-lg border border-gray-200 bg-white px-2.5 text-xs text-gray-900 focus:border-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-300"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="mt-5 flex items-center justify-end gap-2">

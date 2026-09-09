@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { FoodItem, FoodItemFormData, MenuFilters, Availability, HealthTag, Category, HEALTH_TAG_CONFIG, CUSTOMER_LABEL_CONFIG, CustomerLabel } from '../types/menu';
+import { FoodItem, FoodItemFormData, MenuFilters, Availability, HealthTag, Category } from '../types/menu';
 import { categoryApi } from '@/lib/api/category.api';
 import { foodItemApi } from '@/lib/api/food.api';
 import type { ApiCategory, ApiFoodItem } from '@/lib/types/api';
@@ -21,7 +21,6 @@ function mapApiCategoryToCategory(api: ApiCategory): Category {
     emoji: '🍽️',
     color: 'text-gray-700',
     bgColor: 'bg-gray-100',
-    imageUrl: api.imageUrl ? resolveImageUrl(api.imageUrl) : undefined,
     sortOrder: api.displayOrder,
     createdAt: new Date(api.createdAt).getTime(),
   };
@@ -48,28 +47,6 @@ function toFormData(dto: Record<string, unknown>, imageFile: File): FormData {
   return fd;
 }
 
-function healthTagsFromApi(tags?: string[]): HealthTag[] {
-  if (!tags?.length) return [];
-  return tags
-    .map((tag) => tag.toLowerCase().replace(/_/g, '-') as HealthTag)
-    .filter((tag) => tag in HEALTH_TAG_CONFIG);
-}
-
-function healthTagsToApi(tags: HealthTag[]): string[] {
-  return tags.map((tag) => tag.replace(/-/g, '_').toUpperCase());
-}
-
-function customerLabelsFromApi(labels?: string[]): CustomerLabel[] {
-  if (!labels?.length) return [];
-  return labels
-    .map((label) => label.toLowerCase().replace(/_/g, '-') as CustomerLabel)
-    .filter((label) => label in CUSTOMER_LABEL_CONFIG);
-}
-
-function customerLabelsToApi(labels: CustomerLabel[]): string[] {
-  return labels.map((label) => label.replace(/-/g, '_').toUpperCase());
-}
-
 function mapApiFoodItemToFoodItem(api: ApiFoodItem, categories: Category[]): FoodItem {
   const category = categories.find(c => c.id === api.categoryId);
   return {
@@ -89,8 +66,8 @@ function mapApiFoodItemToFoodItem(api: ApiFoodItem, categories: Category[]): Foo
       fiber: api.fiber != null ? Number(api.fiber) : 0,
       servingSize: api.servingSize || '',
     },
-    healthTags: healthTagsFromApi(api.healthTags),
-    customerLabels: customerLabelsFromApi(api.customerLabels),
+    healthTags: [],
+    customerLabels: api.customerLabels ?? [],
     availability: !api.isAvailable ? 'unavailable' : 'available',
     foodType: api.foodType ?? (api.isVeg ? 'VEG' : 'NON_VEG'),
     isFeatured: api.isFeatured,
@@ -138,10 +115,9 @@ interface MenuStore {
   openCategoryModal: () => void;
   closeCategoryModal: () => void;
 
-  addCategory: (data: { name: string; slug: string; emoji: string; color: string; bgColor: string }, imageFile?: File) => Promise<void>;
-  updateCategory: (id: string, data: Partial<Category>, imageFile?: File) => Promise<void>;
+  addCategory: (data: { name: string; slug: string; emoji: string; color: string; bgColor: string }) => Promise<void>;
+  updateCategory: (id: string, data: Partial<Category>) => Promise<void>;
   deleteCategory: (id: string) => Promise<void>;
-  reorderCategories: (items: { id: string; displayOrder: number }[]) => Promise<void>;
 
   addFood: (data: FoodItemFormData, imageFile?: File) => Promise<string>;
   updateFood: (id: string, data: FoodItemFormData, imageFile?: File) => Promise<void>;
@@ -250,11 +226,10 @@ export const useMenuStore = create<MenuStore>((set, get) => ({
   openCategoryModal: () => set({ categoryModalOpen: true }),
   closeCategoryModal: () => set({ categoryModalOpen: false }),
 
-  addCategory: async (data, imageFile) => {
+  addCategory: async (data) => {
     try {
       const formData = new FormData();
       formData.append('name', data.name);
-      if (imageFile) formData.append('image', imageFile);
       await categoryApi.create(formData);
       // Reload categories
       const catRes = await categoryApi.list({ limit: 100, sort: 'displayOrder', order: 'asc' });
@@ -266,11 +241,10 @@ export const useMenuStore = create<MenuStore>((set, get) => ({
     }
   },
 
-  updateCategory: async (id, data, imageFile) => {
+  updateCategory: async (id, data) => {
     try {
       const formData = new FormData();
       if (data.name) formData.append('name', data.name);
-      if (imageFile) formData.append('image', imageFile);
       await categoryApi.update(id, formData);
       const catRes = await categoryApi.list({ limit: 100, sort: 'displayOrder', order: 'asc' });
       const categories = (catRes.data?.items || []).map(mapApiCategoryToCategory);
@@ -293,25 +267,6 @@ export const useMenuStore = create<MenuStore>((set, get) => ({
     }
   },
 
-  reorderCategories: async (items) => {
-    const previous = get().categories;
-    const orderMap = new Map(items.map((item) => [item.id, item.displayOrder]));
-    const categories = [...get().categories]
-      .map((category) => ({
-        ...category,
-        sortOrder: orderMap.get(category.id) ?? category.sortOrder,
-      }))
-      .sort((a, b) => a.sortOrder - b.sortOrder || a.createdAt - b.createdAt);
-    set({ categories });
-    try {
-      await categoryApi.reorder(items);
-    } catch (error) {
-      set({ categories: previous });
-      console.error('Failed to reorder categories:', error);
-      throw error;
-    }
-  },
-
   addFood: async (data, imageFile) => {
     try {
       const dto: Record<string, unknown> = {
@@ -324,8 +279,7 @@ export const useMenuStore = create<MenuStore>((set, get) => ({
         foodType: data.foodType,
         isVeg: data.foodType === 'VEG',
         isFeatured: data.isFeatured,
-        customerLabels: customerLabelsToApi(data.customerLabels),
-        healthTags: healthTagsToApi(data.healthTags),
+        customerLabels: data.customerLabels,
         isAvailable: data.availability === 'available',
         calories: parseNutritionValue(data.calories),
         protein: parseNutritionValue(data.protein),
@@ -363,8 +317,7 @@ export const useMenuStore = create<MenuStore>((set, get) => ({
         foodType: data.foodType,
         isVeg: data.foodType === 'VEG',
         isFeatured: data.isFeatured,
-        customerLabels: customerLabelsToApi(data.customerLabels),
-        healthTags: healthTagsToApi(data.healthTags),
+        customerLabels: data.customerLabels,
         isAvailable: data.availability === 'available',
         calories: parseNutritionValue(data.calories),
         protein: parseNutritionValue(data.protein),

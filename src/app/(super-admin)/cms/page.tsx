@@ -122,8 +122,8 @@ export default function CmsBannersPage() {
   return (
     <div className="min-h-screen bg-gray-50/50">
       <Header
-        title="Website Banners"
-        subtitle="Manage carousel banners for the customer website."
+        title="Homepage Banners"
+        subtitle="Manage carousel banners for the customer homepage."
         actions={
           <Button
             onClick={handleCreate}

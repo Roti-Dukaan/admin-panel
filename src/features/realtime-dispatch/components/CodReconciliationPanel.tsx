@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { todayDateKey } from "@/lib/date";
+import { format } from "date-fns";
 import { toast } from "sonner";
 import {
   AlertTriangle,
@@ -378,7 +378,7 @@ const HANDOVER_FILTERS: { id: CodHandoverFilter; label: string }[] = [
 ];
 
 export function CodReconciliationPanel() {
-  const [date, setDate] = React.useState(() => todayDateKey());
+  const [date, setDate] = React.useState(() => format(new Date(), "yyyy-MM-dd"));
   const [handoverFilter, setHandoverFilter] = React.useState<CodHandoverFilter>("pending_handover");
   const [overrideStop, setOverrideStop] = React.useState<InHouseCodStop | null>(null);
   const queryClient = useQueryClient();

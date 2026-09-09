@@ -8,7 +8,6 @@ import {
   useFulfillmentJobs,
   useRetryFulfillmentJob,
 } from "../hooks/useSubscriptions";
-import { formatIstDate, formatIstDateTime } from "@/lib/date";
 import type { FulfillmentJob } from "../types/subscription";
 
 function statusVariant(status: string): "success" | "warning" | "destructive" | "secondary" | "info" {
@@ -65,7 +64,7 @@ export function FulfillmentHistory() {
                 {jobs.map((job: FulfillmentJob) => (
                   <tr key={job.id} className="border-b border-border/60 transition-colors last:border-0 hover:bg-muted/40">
                     <td className="px-2 py-2 font-medium text-gray-800">
-                      {formatIstDate(job.targetDate)}
+                      {new Date(job.targetDate).toLocaleDateString("en-IN")}
                     </td>
                     <td className="px-2 py-2">
                       <Badge variant={statusVariant(job.status)}>{job.status}</Badge>
@@ -84,7 +83,7 @@ export function FulfillmentHistory() {
                     </td>
                     <td className="px-2 py-2 text-gray-500">{job.triggeredBy}</td>
                     <td className="px-2 py-2 text-gray-500">
-                      {formatIstDateTime(job.startedAt)}
+                      {new Date(job.startedAt).toLocaleString("en-IN")}
                     </td>
                     <td className="px-2 py-2 text-right">
                       {job.failed > 0 && (

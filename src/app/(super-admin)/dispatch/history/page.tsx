@@ -7,7 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { dispatchApi } from "@/features/dispatch/services/dispatch.api";
 import { DISPATCH_STATUS_META, type DispatchBatchListItem } from "@/features/dispatch/types/dispatch";
 import { Badge } from "@/components/ui/badge";
-import { formatIstDateTime } from "@/lib/date";
+import { format } from "date-fns";
 
 export default function DispatchHistoryPage() {
   const [page, setPage] = useState(1);
@@ -67,7 +67,7 @@ export default function DispatchHistoryPage() {
                       </Badge>
                     )}
                     <span className="text-xs text-gray-500">
-                      {formatIstDateTime(batch.createdAt)}
+                      {format(new Date(batch.createdAt), "dd MMM, hh:mm a")}
                     </span>
                   </div>
                 </div>

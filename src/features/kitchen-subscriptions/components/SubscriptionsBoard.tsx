@@ -1,8 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
-import { todayDateKey } from "@/lib/date";
+import { format } from "date-fns";
 import { AlertTriangle, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,15 +15,9 @@ import {
 import { SearchBar } from "@/features/kitchen/components/SearchBar";
 import { useDocumentPreview } from "@/features/documents/context/DocumentPreviewContext";
 import {
-  useAssignableStaff,
-  useSubscriptionAssignment,
-} from "@/features/delivery-boys/hooks/useDeliveryBoys";
-import type { DriverDeliveryStop } from "@/features/delivery-boys/types/delivery-boys";
-import {
   useSubscriptionKitchenSummary,
   useSubscriptionPrepList,
   useSubscriptionStatusMutation,
-  PREP_LIST_KEY,
 } from "../hooks/useKitchenSubscriptions";
 import { SubscriptionStats, SubscriptionPrepSummary } from "./SubscriptionStats";
 import { SubscriptionPrepTable } from "./SubscriptionPrepTable";
@@ -58,95 +51,16 @@ function withPrepStarted(row: SubscriptionPrepRow): SubscriptionPrepRow {
 }
 
 export function SubscriptionsBoard() {
-  const queryClient = useQueryClient();
-  const [date, setDate] = useState(() => todayDateKey());
+  const [date, setDate] = useState(() => format(new Date(), "yyyy-MM-dd"));
   const [search, setSearch] = useState("");
   const [slotId, setSlotId] = useState("all");
   const [ticketRow, setTicketRow] = useState<SubscriptionPrepRow | null>(null);
-  const [assignBusyId, setAssignBusyId] = useState<string | null>(null);
 
   const { openDocument } = useDocumentPreview();
   const filters = useMemo(() => ({ date, slotId, search }), [date, slotId, search]);
-  const slotFilter = slotId === "all" ? undefined : slotId;
   const summaryQuery = useSubscriptionKitchenSummary(date);
   const prepQuery = useSubscriptionPrepList(filters);
   const mutation = useSubscriptionStatusMutation();
-  const {
-    dispatchBoard,
-    assignOne,
-    assignOneSelf,
-    unassignOne,
-    reassign,
-  } = useSubscriptionAssignment(date, slotFilter);
-  const assignableQuery = useAssignableStaff(date, slotFilter);
-
-  const dispatchById = useMemo(() => {
-    const map = new Map<string, DriverDeliveryStop>();
-    for (const stop of dispatchBoard.data ?? []) {
-      map.set(stop.id, stop);
-    }
-    return map;
-  }, [dispatchBoard.data]);
-
-  const refreshAfterAssign = useCallback(async () => {
-    await Promise.all([
-      queryClient.invalidateQueries({ queryKey: PREP_LIST_KEY }),
-      queryClient.invalidateQueries({ queryKey: ["branch", "subscription-kitchen", "summary"] }),
-      dispatchBoard.refetch(),
-    ]);
-  }, [dispatchBoard, queryClient]);
-
-  const handleAssign = useCallback(
-    async (deliveryId: string, assigneeUserId: string) => {
-      setAssignBusyId(deliveryId);
-      try {
-        await assignOne.mutateAsync({ deliveryId, assigneeUserId });
-        await refreshAfterAssign();
-      } finally {
-        setAssignBusyId(null);
-      }
-    },
-    [assignOne, refreshAfterAssign],
-  );
-
-  const handleAssignSelf = useCallback(
-    async (deliveryId: string) => {
-      setAssignBusyId(deliveryId);
-      try {
-        await assignOneSelf.mutateAsync(deliveryId);
-        await refreshAfterAssign();
-      } finally {
-        setAssignBusyId(null);
-      }
-    },
-    [assignOneSelf, refreshAfterAssign],
-  );
-
-  const handleUnassign = useCallback(
-    async (deliveryId: string) => {
-      setAssignBusyId(deliveryId);
-      try {
-        await unassignOne.mutateAsync(deliveryId);
-        await refreshAfterAssign();
-      } finally {
-        setAssignBusyId(null);
-      }
-    },
-    [refreshAfterAssign, unassignOne],
-  );
-
-  const handleReassign = useCallback(
-    async (deliveryId: string, assigneeUserId: string) => {
-      setAssignBusyId(deliveryId);
-      try {
-        await reassign.mutateAsync({ deliveryId, assigneeUserId });
-        await refreshAfterAssign();
-      } finally {
-        setAssignBusyId(null);
-      }
-    },
-    [reassign, refreshAfterAssign],
-  );
 
   const slotOptions = useMemo(() => {
     const slots = summaryQuery.data?.bySlot ?? [];
@@ -303,16 +217,10 @@ export function SubscriptionsBoard() {
         rows={prepQuery.data ?? []}
         onPrep={handlePrep}
         onPack={(id) => mutation.mutate({ id, action: "pack" })}
+        onDispatch={(id) => mutation.mutate({ id, action: "dispatch" })}
         onPrintTicket={openDispatchTicket}
         updatingId={updatingId}
         isLoading={prepQuery.isLoading}
-        staff={assignableQuery.data ?? []}
-        dispatchById={dispatchById}
-        assignBusyId={assignBusyId}
-        onAssign={handleAssign}
-        onAssignSelf={handleAssignSelf}
-        onUnassign={handleUnassign}
-        onReassign={handleReassign}
       />
 
       <SubscriptionDispatchTicketModal

@@ -18,7 +18,6 @@ import {
   Zap,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { formatIstDateTime } from "@/lib/date"
 
 function formatCurrency(amount: number) {
   return new Intl.NumberFormat("en-IN", {
@@ -30,13 +29,12 @@ function formatCurrency(amount: number) {
 
 function formatDateTime(dateStr?: string) {
   if (!dateStr) return "—"
-  return formatIstDateTime(dateStr, {
+  return new Date(dateStr).toLocaleString("en-IN", {
     day: "2-digit",
     month: "short",
     year: "numeric",
-    hour: "numeric",
+    hour: "2-digit",
     minute: "2-digit",
-    hour12: true,
   })
 }
 
@@ -310,12 +308,11 @@ function TimelineStep({
         </p>
         {timestamp && (
           <p className="text-xs text-muted-foreground">
-            {formatIstDateTime(timestamp, {
+            {new Date(timestamp).toLocaleString("en-IN", {
               day: "2-digit",
               month: "short",
-              hour: "numeric",
+              hour: "2-digit",
               minute: "2-digit",
-              hour12: true,
             })}
           </p>
         )}

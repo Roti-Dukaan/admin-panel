@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
-import { formatIstDateTime } from "@/lib/date";
 
 function severityVariant(s: string) {
   if (s === "CRITICAL") return "destructive" as const;
@@ -92,7 +91,7 @@ export function AlertsTab() {
                 {!a.isResolved && <ResolveButton id={a.id} />}
               </div>
               <p className="text-xs text-muted-foreground">{a.message}</p>
-              <p className="mt-1 text-[11px] text-muted-foreground">{formatIstDateTime(a.createdAt)}</p>
+              <p className="mt-1 text-[11px] text-muted-foreground">{new Date(a.createdAt).toLocaleString()}</p>
             </div>
           ))}
         </div>

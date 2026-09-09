@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Search, ChevronLeft, ChevronRight } from "lucide-react";
-import { formatIstDateTime, formatIstTime } from "@/lib/date";
+import { format } from "date-fns";
+import { FNS_DATE_TIME, FNS_TIME } from "@/lib/date";
 import type { Delivery, DeliveryFilters, DeliveryStatus, DeliveryProvider } from "@/features/delivery/types/delivery";
 import { DeliveryStatusBadge, DeliveryProviderBadge, DeliveryTypeBadge } from "./DeliveryStatusBadge";
 import { DeliveryDetailModal } from "./DeliveryDetailModal";
@@ -35,19 +36,13 @@ function orderNumber(delivery: Delivery): string {
 
 function getDeliveryProgressTime(delivery: Delivery): string | null {
   if (delivery.actualDeliveryAt) {
-    return `✓ ${formatIstDateTime(delivery.actualDeliveryAt, {
-      day: "numeric",
-      month: "short",
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    })}`;
+    return `✓ ${format(new Date(delivery.actualDeliveryAt), FNS_DATE_TIME)}`;
   }
   if (delivery.estimatedDeliveryAt) {
-    return `ETA ${formatIstTime(delivery.estimatedDeliveryAt)}`;
+    return `ETA ${format(new Date(delivery.estimatedDeliveryAt), FNS_TIME)}`;
   }
   if (delivery.estimatedPickupAt) {
-    return `Pickup ${formatIstTime(delivery.estimatedPickupAt)}`;
+    return `Pickup ${format(new Date(delivery.estimatedPickupAt), FNS_TIME)}`;
   }
   return null;
 }

@@ -3,7 +3,6 @@
 import { Clock, UtensilsCrossed } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { formatDeliverySlotTime } from "@/lib/delivery-slot-display";
 import { statusBadge } from "./MealSlotSection";
 import type { ProductionBatch } from "../types";
 
@@ -41,7 +40,7 @@ export function ProductionTimeline({ batches }: { batches: ProductionBatch[] }) 
             <CardContent className="pt-4">
               <div className="mb-3 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                 <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 capitalize">
-                  <Clock className="h-3 w-3" /> {formatDeliverySlotTime(b.scheduledStartTime)}
+                  <Clock className="h-3 w-3" /> {b.scheduledStartTime}
                 </span>
                 <span className="capitalize">{b.mealSlot}</span>
                 <span>·</span>

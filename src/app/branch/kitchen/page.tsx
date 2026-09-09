@@ -10,7 +10,7 @@ import { SubscriptionsBoard } from "@/features/kitchen-subscriptions/components/
 import { SubscriptionDispatchBoard } from "@/features/kitchen-subscriptions/components/SubscriptionDispatchBoard"
 import { usePrepClock } from "@/features/kitchen/hooks/usePrepClock"
 import { useRealtimeConnectionStatus } from "@/lib/realtime/useRealtimeConnectionStatus"
-import { formatInIst, formatIstTime } from "@/lib/date"
+import { format } from "date-fns"
 import { Clock, Wifi, WifiOff } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -57,9 +57,7 @@ function BranchKitchenPageContent() {
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between w-full">
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-gray-900">Kitchen Operations</h1>
-              <p className="text-sm text-gray-500">
-                {formatInIst(now, { weekday: "long", day: "2-digit", month: "long", year: "numeric" })}
-              </p>
+              <p className="text-sm text-gray-500">{format(now, "EEEE, dd MMMM yyyy")}</p>
             </div>
             <div className="flex items-center gap-2 rounded-xl bg-white px-4 py-2 shadow-sm ring-1 ring-black/5">
               <span
@@ -71,9 +69,9 @@ function BranchKitchenPageContent() {
                 {connected ? "Live" : "Offline"}
               </span>
               <Clock className="h-4 w-4 text-gray-400" />
-              <span className="text-xs font-medium text-gray-500">IST</span>
+              <span className="text-xs font-medium text-gray-500">Local Time</span>
               <span className="font-mono text-sm font-semibold tabular-nums text-gray-900">
-                {formatIstTime(now, true)}
+                {format(now, "hh:mm:ss a")}
               </span>
             </div>
           </div>

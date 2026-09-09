@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { Bike, User, Phone, MapPin, Clock, Loader2, PackageCheck, Timer, CheckCircle2, Navigation } from "lucide-react";
-import { formatIstTime } from "@/lib/date";
 
 export interface KitchenDeliveryInfo {
   status: string;
@@ -156,7 +155,7 @@ export function DeliveryStatusCard({ delivery }: { delivery: KitchenDeliveryInfo
       {delivery.status === "PICKED_UP" && delivery.actualPickupAt && (
         <p className="mt-2.5 flex items-center gap-1.5 text-xs font-medium text-emerald-700">
           <PackageCheck className="h-3.5 w-3.5" />
-          Picked up at {formatIstTime(delivery.actualPickupAt)}
+          Picked up at {new Date(delivery.actualPickupAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
         </p>
       )}
     </div>
