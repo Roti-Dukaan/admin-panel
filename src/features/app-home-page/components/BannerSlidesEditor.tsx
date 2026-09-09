@@ -126,7 +126,7 @@ export function BannerSlidesEditor({
           <Field label="Lottie animation (optional)">
             <input
               type="file"
-              accept=".json,application/json"
+              accept=".json,application/json,text/json"
               onChange={(e) => handleLottieFileChange(index, e)}
             />
             <p className="mt-1 text-xs text-gray-500">
