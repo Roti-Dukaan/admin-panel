@@ -12,7 +12,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Coupon, CouponDiscountType, CreateCouponInput, UpdateCouponInput } from "../types/coupon";
+import {
+  Coupon,
+  CouponDiscountType,
+  CouponOrderType,
+  CreateCouponInput,
+  UpdateCouponInput,
+} from "../types/coupon";
 
 interface BranchOption {
   id: string;
@@ -55,6 +61,9 @@ function buildSavePayload(form: CreateCouponInput, mode: "create" | "edit"): Cre
     validFrom,
     validTill,
     applicableBranchIds: form.applicableBranchIds ?? [],
+    applicableOrderTypes: form.applicableOrderTypes?.length
+      ? form.applicableOrderTypes
+      : ["REALTIME_ONLY"],
     maxDiscountAmount:
       form.discountType === "PERCENTAGE" ? form.maxDiscountAmount : undefined,
   };
@@ -93,6 +102,7 @@ export function CouponEditor({
     validTill: new Date(Date.now() + 30 * 86400000).toISOString(),
     active: true,
     applicableBranchIds: [],
+    applicableOrderTypes: ["REALTIME_ONLY"],
     firstOrderOnly: false,
     autoApply: false,
   });
@@ -115,6 +125,9 @@ export function CouponEditor({
         validTill: coupon.validTill,
         active: coupon.active,
         applicableBranchIds: coupon.applicableBranchIds ?? [],
+        applicableOrderTypes: coupon.applicableOrderTypes?.length
+          ? coupon.applicableOrderTypes
+          : ["REALTIME_ONLY"],
         firstOrderOnly: coupon.firstOrderOnly,
         autoApply: coupon.autoApply,
       });
@@ -130,6 +143,7 @@ export function CouponEditor({
         validTill: new Date(Date.now() + 30 * 86400000).toISOString(),
         active: true,
         applicableBranchIds: [],
+        applicableOrderTypes: ["REALTIME_ONLY"],
         firstOrderOnly: false,
         autoApply: false,
       });
@@ -137,6 +151,19 @@ export function CouponEditor({
   }, [open, coupon, mode]);
 
   if (!open) return null;
+
+  const toggleOrderType = (orderType: CouponOrderType) => {
+    setForm((prev) => {
+      const current = prev.applicableOrderTypes ?? ["REALTIME_ONLY"];
+      const next = current.includes(orderType)
+        ? current.filter((type) => type !== orderType)
+        : [...current, orderType];
+      return {
+        ...prev,
+        applicableOrderTypes: next.length ? next : ["REALTIME_ONLY"],
+      };
+    });
+  };
 
   const toggleBranch = (branchId: string) => {
     setForm((prev) => {
@@ -192,7 +219,7 @@ export function CouponEditor({
             <h2 className="text-lg font-bold text-gray-900">
               {mode === "create" ? "Create Coupon" : "Edit Coupon"}
             </h2>
-            <p className="text-sm text-gray-500">Realtime orders only</p>
+            <p className="text-sm text-gray-500">Choose which checkout flows can use this coupon</p>
           </div>
 
           <div className="flex-1 space-y-4 px-6 py-4">
@@ -354,6 +381,28 @@ export function CouponEditor({
             </div>
 
             <div className="space-y-2">
+              <Label>Applicable Order Types</Label>
+              <div className="space-y-2 rounded-lg border border-gray-200 p-3">
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={(form.applicableOrderTypes ?? ["REALTIME_ONLY"]).includes("REALTIME_ONLY")}
+                    onChange={() => toggleOrderType("REALTIME_ONLY")}
+                  />
+                  Live / cart orders
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={(form.applicableOrderTypes ?? []).includes("SUBSCRIPTION_ONLY")}
+                    onChange={() => toggleOrderType("SUBSCRIPTION_ONLY")}
+                  />
+                  Subscription checkout
+                </label>
+              </div>
+            </div>
+
+            <div className="space-y-2">
               <Label>Applicable Branches (empty = all)</Label>
               <div className="max-h-32 space-y-2 overflow-y-auto rounded-lg border border-gray-200 p-3">
                 {(branches ?? []).map((branch) => (
@@ -382,7 +431,7 @@ export function CouponEditor({
                   checked={form.firstOrderOnly ?? false}
                   onCheckedChange={(firstOrderOnly) => setForm({ ...form, firstOrderOnly })}
                 />
-                First order only
+                First order / first subscription only
               </label>
               <label className="flex items-center gap-2 text-sm">
                 <Switch

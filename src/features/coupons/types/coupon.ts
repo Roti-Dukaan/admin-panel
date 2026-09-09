@@ -1,4 +1,5 @@
 export type CouponDiscountType = "FLAT" | "PERCENTAGE";
+export type CouponOrderType = "REALTIME_ONLY" | "SUBSCRIPTION_ONLY";
 
 export interface Coupon {
   id: string;
@@ -14,7 +15,7 @@ export interface Coupon {
   validFrom: string;
   validTill: string;
   active: boolean;
-  applicableOrderTypes: string[];
+  applicableOrderTypes: CouponOrderType[];
   applicableBranchIds: string[] | null;
   firstOrderOnly: boolean;
   autoApply: boolean;
@@ -39,6 +40,7 @@ export interface CreateCouponInput {
   validTill: string;
   active?: boolean;
   applicableBranchIds?: string[];
+  applicableOrderTypes?: CouponOrderType[];
   firstOrderOnly?: boolean;
   autoApply?: boolean;
 }
