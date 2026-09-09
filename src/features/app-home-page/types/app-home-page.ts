@@ -125,6 +125,8 @@ export interface BannerSlide {
 export interface BannerUploadFiles {
   bannerImage?: File | null;
   bannerSlideFiles?: Record<number, File>;
+  bannerLottie?: File | null;
+  bannerLottieSlideFiles?: Record<number, File>;
 }
 
 export function defaultBannerSlide(): BannerSlide {
@@ -223,6 +225,7 @@ export function defaultConfigForType(type: AppHomePageSectionType): Record<strin
 
 export const APP_HOME_BANNER_MAX_SIZE_MB = 3;
 export const APP_HOME_BANNER_ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
+export const APP_HOME_LOTTIE_MAX_SIZE_MB = 2;
 
 export function validateAppHomeBannerImage(file: File): string | null {
   if (!APP_HOME_BANNER_ALLOWED_TYPES.includes(file.type as (typeof APP_HOME_BANNER_ALLOWED_TYPES)[number])) {
@@ -231,6 +234,18 @@ export function validateAppHomeBannerImage(file: File): string | null {
   const sizeMb = file.size / (1024 * 1024);
   if (sizeMb > APP_HOME_BANNER_MAX_SIZE_MB) {
     return `File size (${sizeMb.toFixed(2)}MB) exceeds limit of ${APP_HOME_BANNER_MAX_SIZE_MB}MB`;
+  }
+  return null;
+}
+
+export function validateAppHomeBannerLottie(file: File): string | null {
+  const name = file.name.toLowerCase();
+  if (!name.endsWith('.json')) {
+    return 'Lottie file must be a .json file';
+  }
+  const sizeMb = file.size / (1024 * 1024);
+  if (sizeMb > APP_HOME_LOTTIE_MAX_SIZE_MB) {
+    return `File size (${sizeMb.toFixed(2)}MB) exceeds limit of ${APP_HOME_LOTTIE_MAX_SIZE_MB}MB`;
   }
   return null;
 }

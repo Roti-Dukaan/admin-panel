@@ -6,9 +6,11 @@ import type { ApiCategory } from "@/lib/types/api";
 import type { BannerSlide } from "@/features/app-home-page/types/app-home-page";
 import {
   APP_HOME_BANNER_MAX_SIZE_MB,
+  APP_HOME_LOTTIE_MAX_SIZE_MB,
   defaultBannerSlide,
   defaultOffersSlide,
   validateAppHomeBannerImage,
+  validateAppHomeBannerLottie,
 } from "@/features/app-home-page/types/app-home-page";
 
 interface BannerSlidesEditorProps {
@@ -16,9 +18,13 @@ interface BannerSlidesEditorProps {
   categories: ApiCategory[];
   slideFiles: Record<number, File>;
   fileErrors: Record<number, string>;
+  slideLottieFiles: Record<number, File>;
+  lottieFileErrors: Record<number, string>;
   onSlidesChange: (slides: BannerSlide[]) => void;
   onSlideFileChange: (index: number, file: File | null) => void;
   onFileError: (index: number, error: string | null) => void;
+  onSlideLottieFileChange: (index: number, file: File | null) => void;
+  onLottieFileError: (index: number, error: string | null) => void;
   variant?: "banner" | "offers";
 }
 
@@ -27,9 +33,13 @@ export function BannerSlidesEditor({
   categories,
   slideFiles,
   fileErrors,
+  slideLottieFiles,
+  lottieFileErrors,
   onSlidesChange,
   onSlideFileChange,
   onFileError,
+  onSlideLottieFileChange,
+  onLottieFileError,
   variant = "banner",
 }: BannerSlidesEditorProps) {
   const isOffers = variant === "offers";
@@ -48,6 +58,8 @@ export function BannerSlidesEditor({
     onSlidesChange(slides.filter((_, i) => i !== index));
     onSlideFileChange(index, null);
     onFileError(index, null);
+    onSlideLottieFileChange(index, null);
+    onLottieFileError(index, null);
   };
 
   const handleFileChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
@@ -70,6 +82,27 @@ export function BannerSlidesEditor({
     onSlideFileChange(index, file);
   };
 
+  const handleLottieFileChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] ?? null;
+    if (!file) {
+      onSlideLottieFileChange(index, null);
+      onLottieFileError(index, null);
+      return;
+    }
+
+    const validationError = validateAppHomeBannerLottie(file);
+    if (validationError) {
+      onSlideLottieFileChange(index, null);
+      onLottieFileError(index, validationError);
+      e.target.value = "";
+      return;
+    }
+
+    onLottieFileError(index, null);
+    onSlideLottieFileChange(index, file);
+    updateSlide(index, { bannerLottie: "" });
+  };
+
   return (
     <div className="space-y-4">
       {slides.map((slide, index) => (
@@ -90,16 +123,42 @@ export function BannerSlidesEditor({
             )}
           </div>
 
-          <Field label="Lottie animation URL (optional)">
+          <Field label="Lottie animation (optional)">
             <input
-              value={slide.bannerLottie ?? ""}
-              onChange={(e) => updateSlide(index, { bannerLottie: e.target.value })}
-              className="field-input"
-              placeholder="https://lottie.host/…/animation.json"
+              type="file"
+              accept=".json,application/json"
+              onChange={(e) => handleLottieFileChange(index, e)}
             />
             <p className="mt-1 text-xs text-gray-500">
-              Paste a Lottie JSON URL from LottieFiles. When set, the app plays this animation in the banner carousel (image is optional fallback).
+              Upload a Lottie JSON file (max {APP_HOME_LOTTIE_MAX_SIZE_MB}MB). When set, the app plays this animation in the banner carousel.
             </p>
+            {slideLottieFiles[index] && (
+              <p className="mt-1 text-xs text-gray-600">
+                Selected: {slideLottieFiles[index].name} ({(slideLottieFiles[index].size / (1024 * 1024)).toFixed(2)}MB)
+              </p>
+            )}
+            {lottieFileErrors[index] && (
+              <p className="mt-1 text-xs text-red-600">{lottieFileErrors[index]}</p>
+            )}
+            {slide.bannerLottie && !slideLottieFiles[index] && (
+              <p className="mt-1 truncate text-xs text-emerald-700">
+                Saved: {slide.bannerLottie}
+              </p>
+            )}
+            <div className="mt-2">
+              <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-gray-400">Or paste URL</p>
+              <input
+                value={slide.bannerLottie ?? ""}
+                onChange={(e) => {
+                  onSlideLottieFileChange(index, null);
+                  onLottieFileError(index, null);
+                  updateSlide(index, { bannerLottie: e.target.value });
+                }}
+                className="field-input"
+                placeholder="https://lottie.host/…/animation.json"
+                disabled={!!slideLottieFiles[index]}
+              />
+            </div>
           </Field>
 
           <Field label="Banner Image">

@@ -55,6 +55,8 @@ export function SectionEditorDialog({
   const [bannerSlides, setBannerSlides] = useState<BannerSlide[]>([]);
   const [bannerSlideFiles, setBannerSlideFiles] = useState<Record<number, File>>({});
   const [bannerSlideFileErrors, setBannerSlideFileErrors] = useState<Record<number, string>>({});
+  const [bannerSlideLottieFiles, setBannerSlideLottieFiles] = useState<Record<number, File>>({});
+  const [bannerSlideLottieFileErrors, setBannerSlideLottieFileErrors] = useState<Record<number, string>>({});
   const [productPickerOpen, setProductPickerOpen] = useState(false);
   const [categoryPickerOpen, setCategoryPickerOpen] = useState(false);
 
@@ -62,6 +64,8 @@ export function SectionEditorDialog({
     if (!open) return;
     setBannerSlideFiles({});
     setBannerSlideFileErrors({});
+    setBannerSlideLottieFiles({});
+    setBannerSlideLottieFileErrors({});
     if (section) {
       setTitle(section.title ?? String(section.config?.title ?? ""));
       const mergedConfig = { ...defaultConfigForType(section.sectionType), ...section.config };
@@ -94,7 +98,7 @@ export function SectionEditorDialog({
   const updateConfig = (patch: Record<string, unknown>) => setConfig((prev) => ({ ...prev, ...patch }));
 
   const handleSubmit = async (publish: boolean) => {
-    if (Object.keys(bannerSlideFileErrors).length > 0) return;
+    if (Object.keys(bannerSlideFileErrors).length > 0 || Object.keys(bannerSlideLottieFileErrors).length > 0) return;
 
     const activeType = section?.sectionType ?? sectionType;
     const isMultiSlideSection = activeType === "BANNER" || activeType === "OFFERS";
@@ -116,7 +120,10 @@ export function SectionEditorDialog({
     };
 
     const files: BannerUploadFiles | undefined = isMultiSlideSection
-      ? { bannerSlideFiles: bannerSlideFiles }
+      ? {
+          bannerSlideFiles: bannerSlideFiles,
+          bannerLottieSlideFiles: bannerSlideLottieFiles,
+        }
       : undefined;
 
     await onSave(payload, files);
@@ -132,9 +139,9 @@ export function SectionEditorDialog({
             <DialogTitle>{isEdit ? "Edit" : "Create"} {sectionTypeLabel(sectionType)} Section</DialogTitle>
           </DialogHeader>
 
-          {(saveError || Object.keys(bannerSlideFileErrors).length > 0) && (
+          {(saveError || Object.keys(bannerSlideFileErrors).length > 0 || Object.keys(bannerSlideLottieFileErrors).length > 0) && (
             <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-              {Object.values(bannerSlideFileErrors)[0] ?? saveError}
+              {Object.values(bannerSlideFileErrors)[0] ?? Object.values(bannerSlideLottieFileErrors)[0] ?? saveError}
             </div>
           )}
 
@@ -149,6 +156,8 @@ export function SectionEditorDialog({
                 categories={categories}
                 slideFiles={bannerSlideFiles}
                 fileErrors={bannerSlideFileErrors}
+                slideLottieFiles={bannerSlideLottieFiles}
+                lottieFileErrors={bannerSlideLottieFileErrors}
                 variant={sectionType === "OFFERS" ? "offers" : "banner"}
                 onSlidesChange={setBannerSlides}
                 onSlideFileChange={(index, file) => {
@@ -161,6 +170,22 @@ export function SectionEditorDialog({
                 }}
                 onFileError={(index, error) => {
                   setBannerSlideFileErrors((prev) => {
+                    const next = { ...prev };
+                    if (error) next[index] = error;
+                    else delete next[index];
+                    return next;
+                  });
+                }}
+                onSlideLottieFileChange={(index, file) => {
+                  setBannerSlideLottieFiles((prev) => {
+                    const next = { ...prev };
+                    if (file) next[index] = file;
+                    else delete next[index];
+                    return next;
+                  });
+                }}
+                onLottieFileError={(index, error) => {
+                  setBannerSlideLottieFileErrors((prev) => {
                     const next = { ...prev };
                     if (error) next[index] = error;
                     else delete next[index];
@@ -286,8 +311,8 @@ export function SectionEditorDialog({
 
           <DialogFooter className="gap-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button type="button" variant="outline" disabled={saving || Object.keys(bannerSlideFileErrors).length > 0} onClick={() => void handleSubmit(false)}>Save Draft</Button>
-            <Button type="button" disabled={saving || Object.keys(bannerSlideFileErrors).length > 0} onClick={() => void handleSubmit(true)}>
+            <Button type="button" variant="outline" disabled={saving || Object.keys(bannerSlideFileErrors).length > 0 || Object.keys(bannerSlideLottieFileErrors).length > 0} onClick={() => void handleSubmit(false)}>Save Draft</Button>
+            <Button type="button" disabled={saving || Object.keys(bannerSlideFileErrors).length > 0 || Object.keys(bannerSlideLottieFileErrors).length > 0} onClick={() => void handleSubmit(true)}>
               {saving ? "Saving..." : "Publish"}
             </Button>
           </DialogFooter>

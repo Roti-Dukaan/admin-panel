@@ -26,16 +26,25 @@ function appendBannerFiles(form: FormData, files?: BannerUploadFiles) {
   if (files?.bannerImage) {
     form.append('bannerImage', files.bannerImage);
   }
+  if (files?.bannerLottie) {
+    form.append('bannerLottie', files.bannerLottie);
+  }
   if (files?.bannerSlideFiles) {
     for (const [index, file] of Object.entries(files.bannerSlideFiles)) {
       form.append(`bannerImage_${index}`, file);
     }
   }
+  if (files?.bannerLottieSlideFiles) {
+    for (const [index, file] of Object.entries(files.bannerLottieSlideFiles)) {
+      form.append(`bannerLottie_${index}`, file);
+    }
+  }
 }
 
 function hasBannerFiles(files?: BannerUploadFiles): boolean {
-  if (files?.bannerImage) return true;
-  return !!files?.bannerSlideFiles && Object.keys(files.bannerSlideFiles).length > 0;
+  if (files?.bannerImage || files?.bannerLottie) return true;
+  if (files?.bannerSlideFiles && Object.keys(files.bannerSlideFiles).length > 0) return true;
+  return !!files?.bannerLottieSlideFiles && Object.keys(files.bannerLottieSlideFiles).length > 0;
 }
 
 export const appHomePageApi = {
