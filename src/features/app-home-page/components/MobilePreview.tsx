@@ -43,33 +43,15 @@ function PreviewBlock({ section }: { section: AppHomePageSection }) {
   if (type === 'banner' || type === 'BANNER'.toLowerCase() || section.sectionType === 'BANNER') {
     const slides = normalizeBannerSlides(cfg);
     const firstImage = slides.find((slide) => slide.bannerImage)?.bannerImage ?? '';
-    const hasLottie = slides.some((slide) => slide.bannerLottie?.trim());
     return (
       <div className="overflow-hidden rounded-xl bg-orange-100">
         {firstImage ? (
           <div className="relative">
             <img src={firstImage} alt="" className="h-20 w-full object-cover" />
-            {hasLottie && (
-              <span className="absolute left-2 top-2 rounded bg-black/60 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wide text-white">
-                Lottie
-              </span>
-            )}
             {slides.length > 1 && (
               <div className="absolute bottom-1 left-0 right-0 flex justify-center gap-1">
                 {slides.map((_, i) => (
                   <span key={i} className={`h-1.5 rounded-full ${i === 0 ? 'w-3 bg-orange-600' : 'w-1.5 bg-white/80'}`} />
-                ))}
-              </div>
-            )}
-          </div>
-        ) : hasLottie ? (
-          <div className="relative flex h-20 flex-col items-center justify-center bg-gradient-to-br from-orange-200 to-orange-100 text-orange-800">
-            <span className="text-lg">✨</span>
-            <span className="text-[10px] font-bold">Lottie banner</span>
-            {slides.length > 1 && (
-              <div className="absolute bottom-1 left-0 right-0 flex justify-center gap-1">
-                {slides.map((_, i) => (
-                  <span key={i} className={`h-1.5 rounded-full ${i === 0 ? 'w-3 bg-orange-600' : 'w-1.5 bg-white/70'}`} />
                 ))}
               </div>
             )}
@@ -137,17 +119,11 @@ function PreviewBlock({ section }: { section: AppHomePageSection }) {
   if (type === 'offers' || section.sectionType === 'OFFERS') {
     const slides = normalizeBannerSlides(cfg);
     const firstImage = slides.find((slide) => slide.bannerImage)?.bannerImage ?? '';
-    const hasLottie = slides.some((slide) => slide.bannerLottie?.trim());
     return (
       <div className="overflow-hidden rounded-xl border border-orange-200 bg-orange-50">
         {firstImage ? (
           <div className="relative">
             <img src={firstImage} alt="" className="h-16 w-full object-cover" />
-            {hasLottie && (
-              <span className="absolute left-2 top-2 rounded bg-black/60 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wide text-white">
-                Lottie
-              </span>
-            )}
             {slides.length > 1 && (
               <div className="absolute bottom-1 left-0 right-0 flex justify-center gap-1">
                 {slides.map((_, i) => (
@@ -155,10 +131,6 @@ function PreviewBlock({ section }: { section: AppHomePageSection }) {
                 ))}
               </div>
             )}
-          </div>
-        ) : hasLottie ? (
-          <div className="flex h-16 items-center justify-center bg-gradient-to-br from-orange-100 to-orange-50 text-[10px] font-bold text-orange-700">
-            ✨ Lottie banner
           </div>
         ) : null}
         <div className="p-2 text-[10px] font-bold text-orange-800">

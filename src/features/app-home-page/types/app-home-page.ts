@@ -113,8 +113,6 @@ export function sectionStatusLabel(section: AppHomePageSection): string {
 
 export interface BannerSlide {
   bannerImage: string;
-  /** Lottie JSON URL (LottieFiles CDN) or leave empty to use banner image only */
-  bannerLottie?: string;
   title: string;
   ctaText: string;
   actionType: string;
@@ -125,14 +123,11 @@ export interface BannerSlide {
 export interface BannerUploadFiles {
   bannerImage?: File | null;
   bannerSlideFiles?: Record<number, File>;
-  bannerLottie?: File | null;
-  bannerLottieSlideFiles?: Record<number, File>;
 }
 
 export function defaultBannerSlide(): BannerSlide {
   return {
     bannerImage: '',
-    bannerLottie: '',
     title: '',
     ctaText: 'Shop Now',
     actionType: 'category',
@@ -144,7 +139,6 @@ export function defaultBannerSlide(): BannerSlide {
 export function defaultOffersSlide(): BannerSlide {
   return {
     bannerImage: '',
-    bannerLottie: '',
     title: 'Festive Offers',
     ctaText: '',
     actionType: 'offer',
@@ -160,7 +154,6 @@ export function normalizeBannerSlides(config: Record<string, unknown>): BannerSl
       const slide = (raw ?? {}) as Record<string, unknown>;
       return {
         bannerImage: String(slide.bannerImage ?? ''),
-        bannerLottie: String(slide.bannerLottie ?? slide.lottieUrl ?? ''),
         title: String(slide.title ?? ''),
         ctaText: String(slide.ctaText ?? (slide.actionType === 'offer' ? '' : 'Shop Now')),
         actionType: String(slide.actionType ?? 'category'),
@@ -170,10 +163,9 @@ export function normalizeBannerSlides(config: Record<string, unknown>): BannerSl
     });
   }
 
-  if (config.bannerImage || config.bannerLottie || config.title || config.ctaText || config.actionType) {
+  if (config.bannerImage || config.title || config.ctaText || config.actionType) {
     return [{
       bannerImage: String(config.bannerImage ?? ''),
-      bannerLottie: String(config.bannerLottie ?? config.lottieUrl ?? ''),
       title: String(config.title ?? ''),
       ctaText: String(config.ctaText ?? (config.actionType === 'offer' ? '' : 'Shop Now')),
       actionType: String(config.actionType ?? 'category'),
@@ -225,7 +217,6 @@ export function defaultConfigForType(type: AppHomePageSectionType): Record<strin
 
 export const APP_HOME_BANNER_MAX_SIZE_MB = 3;
 export const APP_HOME_BANNER_ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
-export const APP_HOME_LOTTIE_MAX_SIZE_MB = 10;
 
 export function validateAppHomeBannerImage(file: File): string | null {
   if (!APP_HOME_BANNER_ALLOWED_TYPES.includes(file.type as (typeof APP_HOME_BANNER_ALLOWED_TYPES)[number])) {
@@ -235,41 +226,5 @@ export function validateAppHomeBannerImage(file: File): string | null {
   if (sizeMb > APP_HOME_BANNER_MAX_SIZE_MB) {
     return `File size (${sizeMb.toFixed(2)}MB) exceeds limit of ${APP_HOME_BANNER_MAX_SIZE_MB}MB`;
   }
-  return null;
-}
-
-export function isLottieAnimationJson(value: unknown): value is Record<string, unknown> {
-  if (!value || typeof value !== 'object') return false;
-  const record = value as Record<string, unknown>;
-  return (
-    'layers' in record ||
-    'v' in record ||
-    'assets' in record ||
-    'fr' in record
-  );
-}
-
-export function validateAppHomeBannerLottieSize(file: File): string | null {
-  const sizeMb = file.size / (1024 * 1024);
-  if (sizeMb > APP_HOME_LOTTIE_MAX_SIZE_MB) {
-    return `File size (${sizeMb.toFixed(2)}MB) exceeds limit of ${APP_HOME_LOTTIE_MAX_SIZE_MB}MB`;
-  }
-  return null;
-}
-
-export async function validateAppHomeBannerLottieContent(file: File): Promise<string | null> {
-  const sizeError = validateAppHomeBannerLottieSize(file);
-  if (sizeError) return sizeError;
-
-  try {
-    const text = await file.text();
-    const parsed = JSON.parse(text) as unknown;
-    if (!isLottieAnimationJson(parsed)) {
-      return 'This JSON file is not a valid Lottie animation (export from LottieFiles / After Effects).';
-    }
-  } catch {
-    return 'Could not read this file as JSON.';
-  }
-
   return null;
 }

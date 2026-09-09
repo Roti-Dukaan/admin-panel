@@ -1,32 +1,24 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Loader2, Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { ApiCategory } from "@/lib/types/api";
 import type { BannerSlide } from "@/features/app-home-page/types/app-home-page";
 import {
   APP_HOME_BANNER_MAX_SIZE_MB,
-  APP_HOME_LOTTIE_MAX_SIZE_MB,
   defaultBannerSlide,
   defaultOffersSlide,
   validateAppHomeBannerImage,
-  validateAppHomeBannerLottieContent,
 } from "@/features/app-home-page/types/app-home-page";
-import { BannerLottiePreview } from "./BannerLottiePreview";
 
 interface BannerSlidesEditorProps {
   slides: BannerSlide[];
   categories: ApiCategory[];
   slideFiles: Record<number, File>;
   fileErrors: Record<number, string>;
-  slideLottieFiles: Record<number, File>;
-  lottieFileErrors: Record<number, string>;
   onSlidesChange: (slides: BannerSlide[]) => void;
   onSlideFileChange: (index: number, file: File | null) => void;
   onFileError: (index: number, error: string | null) => void;
-  onSlideLottieFileChange: (index: number, file: File | null) => void;
-  onLottieFileError: (index: number, error: string | null) => void;
   variant?: "banner" | "offers";
 }
 
@@ -35,25 +27,13 @@ export function BannerSlidesEditor({
   categories,
   slideFiles,
   fileErrors,
-  slideLottieFiles,
-  lottieFileErrors,
   onSlidesChange,
   onSlideFileChange,
   onFileError,
-  onSlideLottieFileChange,
-  onLottieFileError,
   variant = "banner",
 }: BannerSlidesEditorProps) {
   const isOffers = variant === "offers";
   const newSlide = () => (isOffers ? defaultOffersSlide() : defaultBannerSlide());
-  const [lottiePreviewUrls, setLottiePreviewUrls] = useState<Record<number, string>>({});
-  const [lottieChecking, setLottieChecking] = useState<Record<number, boolean>>({});
-
-  useEffect(() => {
-    return () => {
-      Object.values(lottiePreviewUrls).forEach((url) => URL.revokeObjectURL(url));
-    };
-  }, [lottiePreviewUrls]);
 
   const updateSlide = (index: number, patch: Partial<BannerSlide>) => {
     onSlidesChange(slides.map((slide, i) => (i === index ? { ...slide, ...patch } : slide)));
@@ -68,8 +48,6 @@ export function BannerSlidesEditor({
     onSlidesChange(slides.filter((_, i) => i !== index));
     onSlideFileChange(index, null);
     onFileError(index, null);
-    onSlideLottieFileChange(index, null);
-    onLottieFileError(index, null);
   };
 
   const handleFileChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
@@ -92,54 +70,6 @@ export function BannerSlidesEditor({
     onSlideFileChange(index, file);
   };
 
-  const clearLottiePreview = (index: number) => {
-    setLottiePreviewUrls((prev) => {
-      const next = { ...prev };
-      const existing = next[index];
-      if (existing) URL.revokeObjectURL(existing);
-      delete next[index];
-      return next;
-    });
-  };
-
-  const handleLottieFileChange = async (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] ?? null;
-    if (!file) {
-      onSlideLottieFileChange(index, null);
-      onLottieFileError(index, null);
-      clearLottiePreview(index);
-      return;
-    }
-
-    setLottieChecking((prev) => ({ ...prev, [index]: true }));
-    onLottieFileError(index, null);
-
-    const validationError = await validateAppHomeBannerLottieContent(file);
-    if (validationError) {
-      onSlideLottieFileChange(index, null);
-      onLottieFileError(index, validationError);
-      clearLottiePreview(index);
-      e.target.value = "";
-      setLottieChecking((prev) => {
-        const next = { ...prev };
-        delete next[index];
-        return next;
-      });
-      return;
-    }
-
-    clearLottiePreview(index);
-    const previewUrl = URL.createObjectURL(file);
-    setLottiePreviewUrls((prev) => ({ ...prev, [index]: previewUrl }));
-    onSlideLottieFileChange(index, file);
-    updateSlide(index, { bannerLottie: "" });
-    setLottieChecking((prev) => {
-      const next = { ...prev };
-      delete next[index];
-      return next;
-    });
-  };
-
   return (
     <div className="space-y-4">
       {slides.map((slide, index) => (
@@ -160,67 +90,14 @@ export function BannerSlidesEditor({
             )}
           </div>
 
-          <div className="rounded-xl border-2 border-dashed border-orange-300 bg-orange-50/80 p-4 space-y-3">
-            <div>
-              <p className="text-sm font-bold text-orange-900">Lottie animation — upload .JSON file</p>
-              <p className="mt-1 text-xs text-orange-800/90">
-                Use this field for your animation JSON (max {APP_HOME_LOTTIE_MAX_SIZE_MB}MB).
-                Do not use the image field below for JSON files.
-              </p>
-            </div>
-            <input
-              type="file"
-              accept=".json,application/json,text/json,application/octet-stream,*/*"
-              onChange={(e) => void handleLottieFileChange(index, e)}
-              className="block w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-orange-600 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-white hover:file:bg-orange-700"
-            />
-            {lottieChecking[index] && (
-              <p className="mt-2 flex items-center gap-2 text-xs text-gray-600">
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                Checking animation file…
-              </p>
-            )}
-            {slideLottieFiles[index] && (
-              <div className="mt-2 space-y-2 rounded-lg border border-emerald-200 bg-emerald-50/60 p-2">
-                <p className="text-xs font-semibold text-emerald-800">
-                  Selected: {slideLottieFiles[index].name} ({(slideLottieFiles[index].size / (1024 * 1024)).toFixed(2)}MB)
-                </p>
-                {lottiePreviewUrls[index] && <BannerLottiePreview src={lottiePreviewUrls[index]} />}
-              </div>
-            )}
-            {lottieFileErrors[index] && (
-              <p className="mt-1 text-xs text-red-600">{lottieFileErrors[index]}</p>
-            )}
-            {slide.bannerLottie?.trim() && !slideLottieFiles[index] && (
-              <div className="mt-2 space-y-2 rounded-lg border border-emerald-200 bg-emerald-50/60 p-2">
-                <p className="truncate text-xs font-semibold text-emerald-800">Saved animation</p>
-                <BannerLottiePreview src={slide.bannerLottie.trim()} />
-              </div>
-            )}
-            <div className="mt-2">
-              <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-gray-400">Or paste URL</p>
-              <input
-                value={slide.bannerLottie ?? ""}
-                onChange={(e) => {
-                  onSlideLottieFileChange(index, null);
-                  onLottieFileError(index, null);
-                  updateSlide(index, { bannerLottie: e.target.value });
-                }}
-                className="field-input"
-                placeholder="https://lottie.host/…/animation.json"
-                disabled={!!slideLottieFiles[index]}
-              />
-            </div>
-          </div>
-
-          <Field label="Static banner image (optional fallback)">
+          <Field label="Banner Image">
             <input
               type="file"
               accept="image/jpeg,image/png,image/webp"
               onChange={(e) => handleFileChange(index, e)}
             />
             <p className="mt-1 text-xs text-gray-500">
-              Images only — max {APP_HOME_BANNER_MAX_SIZE_MB}MB · JPG, PNG, WEBP. Optional fallback if animation fails to load.
+              Max {APP_HOME_BANNER_MAX_SIZE_MB}MB · JPG, PNG, WEBP
             </p>
             {slideFiles[index] && (
               <p className="mt-1 text-xs text-gray-600">
