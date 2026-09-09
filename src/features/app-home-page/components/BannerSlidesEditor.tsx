@@ -160,15 +160,20 @@ export function BannerSlidesEditor({
             )}
           </div>
 
-          <Field label="Lottie animation (optional)">
+          <div className="rounded-xl border-2 border-dashed border-orange-300 bg-orange-50/80 p-4 space-y-3">
+            <div>
+              <p className="text-sm font-bold text-orange-900">Lottie animation — upload .JSON file</p>
+              <p className="mt-1 text-xs text-orange-800/90">
+                Use this field for your animation JSON (max {APP_HOME_LOTTIE_MAX_SIZE_MB}MB).
+                Do not use the image field below for JSON files.
+              </p>
+            </div>
             <input
               type="file"
-              accept=".json,application/json,text/json,application/octet-stream"
+              accept=".json,application/json,text/json,application/octet-stream,*/*"
               onChange={(e) => void handleLottieFileChange(index, e)}
+              className="block w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-orange-600 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-white hover:file:bg-orange-700"
             />
-            <p className="mt-1 text-xs text-gray-500">
-              Upload a Lottie JSON file (max {APP_HOME_LOTTIE_MAX_SIZE_MB}MB). When set, the app plays this animation in the banner carousel.
-            </p>
             {lottieChecking[index] && (
               <p className="mt-2 flex items-center gap-2 text-xs text-gray-600">
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -206,16 +211,16 @@ export function BannerSlidesEditor({
                 disabled={!!slideLottieFiles[index]}
               />
             </div>
-          </Field>
+          </div>
 
-          <Field label="Banner Image">
+          <Field label="Static banner image (optional fallback)">
             <input
               type="file"
               accept="image/jpeg,image/png,image/webp"
               onChange={(e) => handleFileChange(index, e)}
             />
             <p className="mt-1 text-xs text-gray-500">
-              Max {APP_HOME_BANNER_MAX_SIZE_MB}MB · JPG, PNG, WEBP · optional if Lottie URL is set
+              Images only — max {APP_HOME_BANNER_MAX_SIZE_MB}MB · JPG, PNG, WEBP. Optional fallback if animation fails to load.
             </p>
             {slideFiles[index] && (
               <p className="mt-1 text-xs text-gray-600">
