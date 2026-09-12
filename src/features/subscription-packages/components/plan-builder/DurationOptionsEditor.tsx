@@ -20,6 +20,7 @@ function emptyOption(days = 7): DurationOptionConfig {
     label: `${days} Days`,
     enabled: true,
     isDefault: false,
+    discountPercent: 0,
   };
 }
 
@@ -84,7 +85,7 @@ export function DurationOptionsEditor({
         <p className="text-sm font-medium text-gray-700">Duration options</p>
         <p className="mt-1 text-xs text-gray-500">
           How many deliveries the customer can choose (e.g. 7, 15, 30). Pricing comes from meal
-          options below — total = per-meal price × selected duration.
+          options below — total = per-meal price × selected duration, minus any tier discount %.
         </p>
       </div>
 
@@ -94,6 +95,7 @@ export function DurationOptionsEditor({
             <tr>
               <th className="px-3 py-2.5 font-semibold">Deliveries</th>
               <th className="px-3 py-2.5 font-semibold">Label</th>
+              <th className="px-3 py-2.5 font-semibold">Discount %</th>
               <th className="px-3 py-2.5 font-semibold">Default</th>
               <th className="px-3 py-2.5 font-semibold" />
             </tr>

@@ -20,6 +20,14 @@ export function validateForPublish(form: PlanBuilderForm): ValidationErrors {
     errors.durationOptions = "Each duration option must have a unique number of deliveries";
   } else if (!getDefaultDurationOption(durationOptions)) {
     errors.durationOptions = "Select a default duration option";
+  } else if (
+    durationOptions.some(
+      (option) =>
+        option.discountPercent != null &&
+        (option.discountPercent < 0 || option.discountPercent > 100),
+    )
+  ) {
+    errors.durationOptions = "Discount must be between 0 and 100 for each duration";
   }
 
   if (!form.config.mealOptions.length) {

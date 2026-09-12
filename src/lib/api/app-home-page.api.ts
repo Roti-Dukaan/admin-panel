@@ -12,7 +12,7 @@ export interface ReorderSectionsPayload {
 
 function appendFormFields(form: FormData, payload: AppHomePageSectionForm) {
   form.append('sectionType', payload.sectionType);
-  if (payload.title) form.append('title', payload.title);
+  if (payload.title !== undefined) form.append('title', payload.title);
   form.append('config', JSON.stringify(payload.config));
   form.append('isActive', String(payload.isActive));
   if (payload.startAt) form.append('startAt', payload.startAt);
@@ -79,7 +79,7 @@ export const appHomePageApi = {
     if (hasBannerFiles(files)) {
       const form = new FormData();
       if (payload.sectionType) form.append('sectionType', payload.sectionType);
-      if (payload.title !== undefined) form.append('title', payload.title);
+      form.append('title', payload.title ?? '');
       if (payload.config) form.append('config', JSON.stringify(payload.config));
       if (payload.isActive !== undefined) form.append('isActive', String(payload.isActive));
       if (payload.startAt) form.append('startAt', payload.startAt);

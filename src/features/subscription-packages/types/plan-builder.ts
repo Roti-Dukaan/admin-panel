@@ -104,6 +104,8 @@ export interface DurationOptionConfig {
   label: string;
   enabled: boolean;
   isDefault?: boolean;
+  /** Extra discount on cycle total (0–100), after per-meal × deliveries. */
+  discountPercent?: number;
 }
 
 export interface PlanBuilderConfig {
@@ -242,6 +244,10 @@ export function normalizeDurationOptionsForSave(
       label: option.label?.trim() || `${Math.max(1, Math.round(Number(option.days) || 1))} Days`,
       enabled: true,
     }))
+      discountPercent: Math.min(
+        100,
+        Math.max(0, Number(option.discountPercent) || 0),
+      ),
     .sort((a, b) => a.days - b.days);
 
   if (!normalized.length) return normalized;

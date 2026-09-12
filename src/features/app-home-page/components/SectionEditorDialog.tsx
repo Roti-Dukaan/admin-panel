@@ -98,8 +98,13 @@ export function SectionEditorDialog({
 
     const activeType = section?.sectionType ?? sectionType;
     const isMultiSlideSection = activeType === "BANNER" || activeType === "OFFERS";
+    const sectionTitleTrimmed = title.trim();
+    const slidesToSave =
+      activeType === "OFFERS"
+        ? bannerSlides.map((slide) => ({ ...slide, title: sectionTitleTrimmed }))
+        : bannerSlides;
     const nextConfig = isMultiSlideSection
-      ? bannerConfigFromSlides(bannerSlides)
+      ? bannerConfigFromSlides(slidesToSave)
       : {
           ...config,
           title: config.title ?? title,
@@ -107,7 +112,7 @@ export function SectionEditorDialog({
 
     const payload: AppHomePageSectionForm = {
       sectionType: section?.sectionType ?? sectionType,
-      title: title || undefined,
+      title: sectionTitleTrimmed,
       config: nextConfig,
       isActive: publish ? isActive : false,
       startAt: startAt ? new Date(startAt).toISOString() : undefined,
@@ -140,7 +145,12 @@ export function SectionEditorDialog({
 
           <div className="space-y-4">
             <Field label="Section Title">
-              <input value={title} onChange={(e) => setTitle(e.target.value)} className="field-input" placeholder="Weekend Sale" />
+              <input value={title} onChange={(e) => setTitle(e.target.value)} className="field-input" placeholder={sectionType === "OFFERS" ? "Optional — shown on offer banner" : "Weekend Sale"} />
+              {sectionType === "OFFERS" && (
+                <p className="mt-1 text-xs text-gray-500">
+                  This text appears on the offer banner in the app. Leave empty for image only.
+                </p>
+              )}
             </Field>
 
             {isMultiSlideSection && (

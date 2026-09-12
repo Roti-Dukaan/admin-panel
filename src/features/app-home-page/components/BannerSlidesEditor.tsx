@@ -112,14 +112,16 @@ export function BannerSlidesEditor({
             )}
           </Field>
 
-          <Field label="Display Title">
-            <input
-              value={slide.title}
-              onChange={(e) => updateSlide(index, { title: e.target.value })}
-              className="field-input"
-              placeholder={isOffers ? "Festive Offers" : "30% OFF YOUR FIRST ORDER"}
-            />
-          </Field>
+          {!isOffers && (
+            <Field label="Display Title">
+              <input
+                value={slide.title}
+                onChange={(e) => updateSlide(index, { title: e.target.value })}
+                className="field-input"
+                placeholder="30% OFF YOUR FIRST ORDER"
+              />
+            </Field>
+          )}
 
           {!isOffers && (
             <Field label="CTA Text">
@@ -142,6 +144,7 @@ export function BannerSlidesEditor({
               <option value="product">Product page</option>
               <option value="offer">Coupons / offers</option>
               <option value="subscription">Subscriptions</option>
+              <option value="referral">Refer &amp; Earn</option>
               <option value="menu">Full menu</option>
               <option value="external">External URL</option>
             </select>
@@ -161,9 +164,17 @@ export function BannerSlidesEditor({
               </select>
             ) : slide.actionType === "menu" ? (
               <input value="Opens full menu" className="field-input bg-gray-50" readOnly />
-            ) : slide.actionType === "offer" || slide.actionType === "subscription" ? (
+            ) : slide.actionType === "offer" ||
+              slide.actionType === "subscription" ||
+              slide.actionType === "referral" ? (
               <input
-                value={slide.actionType === "offer" ? "Opens coupons page" : "Opens subscriptions"}
+                value={
+                  slide.actionType === "offer"
+                    ? "Opens coupons page"
+                    : slide.actionType === "referral"
+                      ? "Opens Refer & Earn page"
+                      : "Opens subscriptions"
+                }
                 className="field-input bg-gray-50"
                 readOnly
               />
