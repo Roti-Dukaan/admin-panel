@@ -243,11 +243,11 @@ export function normalizeDurationOptionsForSave(
       days: Math.max(1, Math.round(Number(option.days) || 1)),
       label: option.label?.trim() || `${Math.max(1, Math.round(Number(option.days) || 1))} Days`,
       enabled: true,
-    }))
       discountPercent: Math.min(
         100,
         Math.max(0, Number(option.discountPercent) || 0),
       ),
+    }))
     .sort((a, b) => a.days - b.days);
 
   if (!normalized.length) return normalized;
