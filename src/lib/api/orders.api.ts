@@ -103,9 +103,25 @@ export const ordersApi = {
     return data.data;
   },
 
-  getStats: async (branchId?: string) => {
-    const query = branchId ? `?branchId=${encodeURIComponent(branchId)}` : "";
-    const { data } = await apiClient.get<{ success: boolean; data: unknown }>(`/admin/orders/stats${query}`);
+  getStats: async (params: {
+    branchId?: string;
+    dateFilter?: string;
+    customStartDate?: string;
+    customEndDate?: string;
+  } = {}) => {
+    const queryParams = new URLSearchParams();
+    if (params.branchId) queryParams.set("branchId", params.branchId);
+    const { dateFrom, dateTo } = resolveDateRange(
+      params.dateFilter,
+      params.customStartDate,
+      params.customEndDate,
+    );
+    if (dateFrom) queryParams.set("dateFrom", dateFrom);
+    if (dateTo) queryParams.set("dateTo", dateTo);
+    const qs = queryParams.toString();
+    const { data } = await apiClient.get<{ success: boolean; data: unknown }>(
+      `/admin/orders/stats${qs ? `?${qs}` : ""}`,
+    );
     return data.data;
   },
 

@@ -71,6 +71,7 @@ export function useBranchOrdersStore() {
         pagination: { ...state.pagination, page: 1 },
       }))
       get().fetchOrders()
+      get().fetchStatistics()
     },
 
     setDateRange: (preset, startDate = "", endDate = "") => {
@@ -84,6 +85,7 @@ export function useBranchOrdersStore() {
         pagination: { ...state.pagination, page: 1 },
       }))
       get().fetchOrders()
+      get().fetchStatistics()
     },
 
     setPage: (page) => {
@@ -140,9 +142,15 @@ export function useBranchOrdersStore() {
     },
 
     fetchStatistics: async () => {
+      const { filters } = get()
       set({ statisticsLoading: true })
       try {
-        const data = await ordersApi.getStats()
+        const data = await ordersApi.getStats({
+          branchId: branchId || undefined,
+          dateFilter: filters.dateFilter,
+          customStartDate: filters.customStartDate,
+          customEndDate: filters.customEndDate,
+        })
         set({ statistics: data as OrderStatistics, statisticsLoading: false })
       } catch (error: any) {
         const message = error?.response?.data?.message || "Failed to fetch statistics"
