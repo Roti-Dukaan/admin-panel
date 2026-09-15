@@ -18,12 +18,12 @@ export function SupportTypingIndicator({
         aria-label={label}
       >
         <span className="font-medium text-gray-700">{label}</span>
-        <span className="inline-flex items-end gap-0.5 pb-0.5" aria-hidden>
-          {[0, 150, 300].map((delay) => (
+        <span className="inline-flex items-end gap-1 pb-0.5" aria-hidden>
+          {[0, 160, 320].map((delay) => (
             <span
               key={delay}
-              className="inline-block h-1.5 w-1.5 rounded-full bg-gray-500 animate-bounce"
-              style={{ animationDelay: `${delay}ms`, animationDuration: "0.9s" }}
+              className="inline-block h-2.5 w-2.5 rounded-full bg-orange-500 animate-bounce"
+              style={{ animationDelay: `${delay}ms`, animationDuration: "0.85s" }}
             />
           ))}
         </span>

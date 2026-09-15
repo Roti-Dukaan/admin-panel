@@ -71,7 +71,7 @@ export default function TicketDetailPage() {
   useSupportTicketRealtime(ticketId, loadTicket, ticket?.branchId);
 
   const canReply = ticket != null && ticket.status !== "CLOSED";
-  const { customerTyping, notifyTyping, stopTyping } = useSupportTicketTyping(ticketId, canReply);
+  const { customerTyping, peerTypingLabel, notifyTyping, stopTyping } = useSupportTicketTyping(ticketId, canReply);
 
   useEffect(() => {
     if (!adminId || !ticketId) return;
@@ -247,7 +247,11 @@ export default function TicketDetailPage() {
 
               {customerTyping && (
                 <SupportTypingIndicator
-                  label={ticket.customer?.name ? `${ticket.customer.name} is typing` : "Customer is typing"}
+                  label={
+                    ticket.customer?.name && peerTypingLabel.startsWith("Customer")
+                      ? `${ticket.customer.name} is typing`
+                      : peerTypingLabel
+                  }
                   align="left"
                 />
               )}
@@ -260,8 +264,10 @@ export default function TicketDetailPage() {
                       <textarea
                         value={message}
                         onChange={(e) => {
-                          setMessage(e.target.value);
-                          notifyTyping();
+                          const next = e.target.value;
+                          setMessage(next);
+                          if (!next.trim()) stopTyping();
+                          else notifyTyping();
                         }}
                         onBlur={stopTyping}
                         placeholder="Type your reply..."

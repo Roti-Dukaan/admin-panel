@@ -46,6 +46,7 @@ export const REALTIME_EVENTS = {
   BRANCH_SUPPORT_TICKET_UPDATED: "branch:support_ticket_updated",
   CUSTOMER_SUPPORT_MESSAGE_UPDATED: "customer:support_message_updated",
   SUPPORT_TICKET_TYPING: "support:ticket_typing",
+  SUPPORT_JOIN_TICKET: "support:join_ticket",
 } as const;
 
 export interface SupportTicketTypingPayload {
