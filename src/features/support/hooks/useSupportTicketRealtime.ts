@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useAdminAuthStore } from "@/features/admin-auth/store/admin-auth-store";
+import { useWorkspace } from "@/contexts/WorkspaceContext";
 import {
   connectRealtime,
-  ensureRealtimeAuth,
+  disconnectRealtime,
   onRealtime,
 } from "@/lib/realtime/socket";
 import {
@@ -13,39 +14,48 @@ import {
   type AdminSupportTicketUpdatedPayload,
 } from "@/lib/realtime/events";
 
+const CONVERSATION_POLL_MS = 8_000;
+
 /**
- * Refreshes an open support ticket when the conversation or status changes.
- * Uses Socket.IO; pull-to-refresh / send still work if the socket is offline.
+ * Keeps an open support ticket in sync (Socket.IO + short polling fallback).
+ * HQ admins listen on admin rooms; branch managers on branch (+ kitchen) rooms.
  */
 export function useSupportTicketRealtime(
   ticketId: string | undefined,
   onRefresh: () => void,
-  branchId?: string | null,
+  ticketBranchId?: string | null,
 ) {
   const accessToken = useAdminAuthStore((s) => s.accessToken);
+  const { branchId: workspaceBranchId } = useWorkspace();
+  const onRefreshRef = useRef(onRefresh);
+  onRefreshRef.current = onRefresh;
+
+  const branchScopeId = ticketBranchId ?? workspaceBranchId ?? null;
+  const listenBranch = !!branchScopeId;
 
   useEffect(() => {
     if (!ticketId || !accessToken) return;
 
-    ensureRealtimeAuth(accessToken);
     connectRealtime(accessToken);
 
-    const refreshIfMatch = (payload: { ticketId: string }) => {
+    const refreshIfMatch = (payload: { ticketId?: string }) => {
       if (payload.ticketId === ticketId) {
-        onRefresh();
+        onRefreshRef.current();
       }
     };
 
-    const cleanups = [
+    const cleanups: Array<() => void> = [];
+
+    cleanups.push(
       onRealtime(REALTIME_EVENTS.ADMIN_SUPPORT_TICKET_REPLIED, (payload: AdminSupportTicketRepliedPayload) => {
         refreshIfMatch(payload);
       }),
       onRealtime(REALTIME_EVENTS.ADMIN_SUPPORT_TICKET_UPDATED, (payload: AdminSupportTicketUpdatedPayload) => {
         refreshIfMatch(payload);
       }),
-    ];
+    );
 
-    if (branchId) {
+    if (listenBranch) {
       cleanups.push(
         onRealtime(REALTIME_EVENTS.BRANCH_SUPPORT_TICKET_REPLIED, (payload: AdminSupportTicketRepliedPayload) => {
           refreshIfMatch(payload);
@@ -56,8 +66,40 @@ export function useSupportTicketRealtime(
       );
     }
 
+    let pollTimer: ReturnType<typeof setInterval> | null = null;
+
+    const startPoll = () => {
+      if (pollTimer) return;
+      pollTimer = setInterval(() => {
+        if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
+        onRefreshRef.current();
+      }, CONVERSATION_POLL_MS);
+    };
+
+    const stopPoll = () => {
+      if (pollTimer) {
+        clearInterval(pollTimer);
+        pollTimer = null;
+      }
+    };
+
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") {
+        onRefreshRef.current();
+        startPoll();
+      } else {
+        stopPoll();
+      }
+    };
+
+    startPoll();
+    document.addEventListener("visibilitychange", onVisibility);
+
     return () => {
       cleanups.forEach((cleanup) => cleanup());
+      stopPoll();
+      document.removeEventListener("visibilitychange", onVisibility);
+      disconnectRealtime();
     };
-  }, [accessToken, ticketId, branchId, onRefresh]);
+  }, [accessToken, ticketId, listenBranch, branchScopeId]);
 }
