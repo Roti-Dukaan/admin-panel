@@ -12,8 +12,6 @@ import {
 } from "@/features/support/utils/support-ticket-alerts";
 import { SupportRefundPanel } from "@/features/support/components/SupportRefundPanel";
 import { useSupportTicketRealtime } from "@/features/support/hooks/useSupportTicketRealtime";
-import { useSupportTicketTyping } from "@/features/support/hooks/useSupportTicketTyping";
-import { SupportTypingIndicator } from "@/features/support/components/SupportTypingIndicator";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -70,9 +68,6 @@ export default function TicketDetailPage() {
 
   useSupportTicketRealtime(ticketId, loadTicket, ticket?.branchId);
 
-  const canReply = ticket != null && ticket.status !== "CLOSED";
-  const { customerTyping, peerTypingLabel, notifyTyping, stopTyping } = useSupportTicketTyping(ticketId, canReply);
-
   useEffect(() => {
     if (!adminId || !ticketId) return;
     markSupportTicketViewed(adminId, ticketId);
@@ -81,7 +76,6 @@ export default function TicketDetailPage() {
 
   const handleSendMessage = async () => {
     if (!message.trim() || sending) return;
-    stopTyping();
     setSending(true);
     try {
       await supportApi.addReply(ticketId, message);
@@ -245,17 +239,6 @@ export default function TicketDetailPage() {
                 </Card>
               ))}
 
-              {customerTyping && (
-                <SupportTypingIndicator
-                  label={
-                    ticket.customer?.name && peerTypingLabel.startsWith("Customer")
-                      ? `${ticket.customer.name} is typing`
-                      : peerTypingLabel
-                  }
-                  align="left"
-                />
-              )}
-
               {/* Reply Input */}
               {ticket.status !== "CLOSED" && (
                 <Card className="border-gray-100">
@@ -263,13 +246,7 @@ export default function TicketDetailPage() {
                     <div className="flex gap-2">
                       <textarea
                         value={message}
-                        onChange={(e) => {
-                          const next = e.target.value;
-                          setMessage(next);
-                          if (!next.trim()) stopTyping();
-                          else notifyTyping();
-                        }}
-                        onBlur={stopTyping}
+                        onChange={(e) => setMessage(e.target.value)}
                         placeholder="Type your reply..."
                         rows={3}
                         className="flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:border-orange-300 focus:outline-none focus:ring-2 focus:ring-orange-100 resize-none"

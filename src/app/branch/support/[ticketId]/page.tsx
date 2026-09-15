@@ -10,8 +10,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Paperclip, Clock, User, Building2, UtensilsCrossed, Truck, Star, MessageSquare } from "lucide-react";
 import { useSupportTicketRealtime } from "@/features/support/hooks/useSupportTicketRealtime";
-import { useSupportTicketTyping } from "@/features/support/hooks/useSupportTicketTyping";
-import { SupportTypingIndicator } from "@/features/support/components/SupportTypingIndicator";
 
 const STATUS_COLORS: Record<string, string> = {
   OPEN: "bg-blue-100 text-blue-700",
@@ -57,8 +55,6 @@ export default function BranchTicketDetailPage() {
   }, [loadTicket]);
 
   useSupportTicketRealtime(ticketId, loadTicket, ticket?.branchId);
-
-  const { customerTyping } = useSupportTicketTyping(ticketId, false);
 
   if (loading) {
     return (
@@ -193,13 +189,6 @@ export default function BranchTicketDetailPage() {
                     <p className="text-center text-sm text-gray-400">No messages yet</p>
                   </CardContent>
                 </Card>
-              )}
-
-              {customerTyping && (
-                <SupportTypingIndicator
-                  label={ticket.customer?.name ? `${ticket.customer.name} is typing` : "Customer is typing"}
-                  align="left"
-                />
               )}
             </motion.div>
           )}

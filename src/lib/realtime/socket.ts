@@ -165,14 +165,6 @@ export function emitRealtime(event: string, payload?: unknown): void {
   const authToken = resolveAuthToken();
   if (!authToken || !API_BASE_URL) return;
   connectIfNeeded(authToken);
-  const s = ensureSocket();
-  const fire = () => {
-    s.emit(event, payload);
-  };
-  if (s.connected) {
-    fire();
-  } else {
-    s.once("connect", fire);
-  }
+  ensureSocket().emit(event, payload);
 }
 
