@@ -42,6 +42,9 @@ export const REALTIME_EVENTS = {
   BRANCH_SUPPORT_TICKET_NEW: "branch:support_ticket_new",
   ADMIN_SUPPORT_TICKET_REPLIED: "admin:support_ticket_replied",
   BRANCH_SUPPORT_TICKET_REPLIED: "branch:support_ticket_replied",
+  ADMIN_SUPPORT_TICKET_UPDATED: "admin:support_ticket_updated",
+  BRANCH_SUPPORT_TICKET_UPDATED: "branch:support_ticket_updated",
+  CUSTOMER_SUPPORT_MESSAGE_UPDATED: "customer:support_message_updated",
 } as const;
 
 export interface KitchenTicketCreatedPayload {
@@ -139,5 +142,16 @@ export interface AdminSupportTicketRepliedPayload {
   branchId: string | null;
   subject: string;
   messagePreview: string;
+  occurredAt: string;
+}
+
+export interface AdminSupportTicketUpdatedPayload {
+  ticketId: string;
+  ticketNumber: string;
+  customerId: string;
+  branchId: string | null;
+  status: string;
+  senderType?: "CUSTOMER" | "ADMIN" | "SYSTEM";
+  messagePreview?: string;
   occurredAt: string;
 }

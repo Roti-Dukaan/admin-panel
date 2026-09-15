@@ -11,6 +11,7 @@ import {
   markSupportTicketViewed,
 } from "@/features/support/utils/support-ticket-alerts";
 import { SupportRefundPanel } from "@/features/support/components/SupportRefundPanel";
+import { useSupportTicketRealtime } from "@/features/support/hooks/useSupportTicketRealtime";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -64,6 +65,8 @@ export default function TicketDetailPage() {
   useEffect(() => {
     loadTicket();
   }, [loadTicket]);
+
+  useSupportTicketRealtime(ticketId, loadTicket, ticket?.branchId);
 
   useEffect(() => {
     if (!adminId || !ticketId) return;
@@ -134,7 +137,11 @@ export default function TicketDetailPage() {
   }
 
   const allMessages = ticket.messages || [];
-  const messages = allMessages.filter((m) => !m.isInternal);
+  const messages = allMessages.filter(
+    (m) =>
+      !m.isInternal &&
+      !(m.senderType === "CUSTOMER" && m.message.trim() === ticket.description.trim()),
+  );
   const activities = ticket.activities || [];
 
   return (
