@@ -32,7 +32,7 @@ export const BRANCH_MANAGER_NAVIGATION: NavItem[] = [
   { label: "Kitchen", href: "/branch/kitchen", icon: UtensilsCrossed, workspace: 'BRANCH_MANAGER' },
   { label: "Menu", href: "/branch/menu", icon: ToggleLeft, workspace: 'BRANCH_MANAGER' },
   { label: "Delivery", href: "/branch/delivery", icon: Truck, workspace: 'BRANCH_MANAGER' },
-  { label: "Delivery Partners", href: "/branch/delivery-boys", icon: Bike, workspace: 'BRANCH_MANAGER' },
+  { label: "Delivery Partners", href: "/branch/delivery-partners", icon: Bike, workspace: 'BRANCH_MANAGER' },
   { label: "My Route", href: "/delivery", icon: Truck, workspace: 'BRANCH_MANAGER' },
   { label: "Customers", href: "/branch/customers", icon: Users, workspace: 'BRANCH_MANAGER' },
   { label: "Team", href: "/branch/team", icon: UserPlus, workspace: 'BRANCH_MANAGER' },

@@ -6,7 +6,7 @@ import type {
   DriverRouteResponse,
   UpdateDeliveryBoyInput,
   DriverDeliveryStop,
-} from "../types/delivery-boys";
+} from "../types/delivery-partners";
 
 function unwrap<T>(promise: Promise<{ data: { success: boolean; data: T } }>): Promise<T> {
   return promise.then((res) => res.data.data);
@@ -20,19 +20,19 @@ function subscriptionDeliveriesBasePath(scope: SubscriptionDeliveryApiScope): st
 
 export const deliveryBoysApi = {
   list: (params?: { branchId?: string; active?: boolean }): Promise<DeliveryBoy[]> =>
-    unwrap(apiClient.get("/delivery-boys", { params })),
+    unwrap(apiClient.get("/delivery-partners", { params })),
 
   getById: (id: string): Promise<DeliveryBoy> =>
-    unwrap(apiClient.get(`/delivery-boys/${id}`)),
+    unwrap(apiClient.get(`/delivery-partners/${id}`)),
 
   create: (body: CreateDeliveryBoyInput): Promise<DeliveryBoy> =>
-    unwrap(apiClient.post("/delivery-boys", body)),
+    unwrap(apiClient.post("/delivery-partners", body)),
 
   update: (id: string, body: UpdateDeliveryBoyInput): Promise<DeliveryBoy> =>
-    unwrap(apiClient.patch(`/delivery-boys/${id}`, body)),
+    unwrap(apiClient.patch(`/delivery-partners/${id}`, body)),
 
   listAssignable: (params?: { date?: string; slotId?: string }): Promise<AssignableStaff[]> =>
-    unwrap(apiClient.get("/delivery-boys/assignable", { params })),
+    unwrap(apiClient.get("/delivery-partners/assignable", { params })),
 
   listDispatchBoard: (
     date: string,
@@ -129,23 +129,23 @@ export const deliveryBoysApi = {
 export const driverRouteApi = {
   myDeliveries: (date: string, tab?: string, slotId?: string): Promise<DriverRouteResponse> =>
     unwrap(
-      apiClient.get("/delivery-boy/my-deliveries", {
+      apiClient.get("/delivery-partner/my-deliveries", {
         params: { date, tab, slotId },
       }),
     ),
 
   myRoute: (date: string, slotId?: string): Promise<DriverRouteResponse> =>
-    unwrap(apiClient.get("/delivery-boy/my-route", { params: { date, slotId } })),
+    unwrap(apiClient.get("/delivery-partner/my-route", { params: { date, slotId } })),
 
   updateStatus: (
     id: string,
     body: { status: "ARRIVED" | "DELIVERED" | "FAILED"; failureReason?: string; note?: string },
   ): Promise<DriverDeliveryStop> =>
-    unwrap(apiClient.patch(`/delivery-boy/delivery/${id}/status`, body)),
+    unwrap(apiClient.patch(`/delivery-partner/delivery/${id}/status`, body)),
 
   updateNote: (id: string, note: string): Promise<DriverDeliveryStop> =>
-    unwrap(apiClient.patch(`/delivery-boy/delivery/${id}/note`, { note })),
+    unwrap(apiClient.patch(`/delivery-partner/delivery/${id}/note`, { note })),
 
   navigation: (id: string): Promise<{ deliveryId: string; url: string; address: string }> =>
-    unwrap(apiClient.get(`/delivery-boy/delivery/${id}/navigation`)),
+    unwrap(apiClient.get(`/delivery-partner/delivery/${id}/navigation`)),
 };

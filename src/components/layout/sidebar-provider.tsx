@@ -11,7 +11,7 @@ const SIDEBAR_ROUTES = [
   "/subscription-operations", "/delivery-slots", "/reports", "/settings", "/admin",
   "/audit-logs", "/branches", "/cities", "/areas", "/branch/dashboard", "/branch/orders",
   "/branch/kitchen", "/branch/subscription-dispatch", "/branch/production", "/branch/menu",
-  "/branch/inventory", "/branch/delivery", "/branch/dispatch", "/branch/delivery-boys",
+  "/branch/inventory", "/branch/delivery", "/branch/dispatch", "/branch/delivery-partners", "/branch/delivery-boys",
   "/branch/customers", "/branch/team", "/branch/reports", "/branch/profile",
   "/branch-inventory", "/support", "/branch/support", "/dispatch", "/cms", "/cms/banners", "/mobile-app", "/contact-messages",
   "/coupons", "/referrals", "/finance",
