@@ -9,7 +9,7 @@ import { ProductionCookingSheet } from "@/features/subscription-production/compo
 import { subscriptionProductionApi, type ProductionQueryParams } from "@/lib/api/subscription-production.api";
 import { Search, Filter, Calendar, ChevronDown, ChevronUp, Download, AlertTriangle, Clock, CheckCircle, XCircle, Loader2, SkipForward, Plus, TrendingUp, BarChart3, Users, Package } from "lucide-react";
 import { DELIVERY_SLOT_LABELS } from "@/features/subscription-production/types/subscription-production";
-import { todayDateKey } from "@/lib/date";
+import { todayDateKey, formatIstDate, tomorrowDateKey } from "@/lib/date";
 
 interface AdminSubscriptionProductionPageProps {
   initialTab?: 'today' | 'tomorrow' | 'summary' | 'list' | 'generate';
@@ -75,7 +75,7 @@ export default function AdminSubscriptionProductionPage({ initialTab = 'today' }
                   Today's Production
                 </h1>
                 <p className="text-gray-600 mt-1">
-                  {new Date().toLocaleDateString('en-IN', {
+                  {formatIstDate(new Date(), {
                     weekday: 'long',
                     year: 'numeric',
                     month: 'long',
@@ -179,7 +179,7 @@ export default function AdminSubscriptionProductionPage({ initialTab = 'today' }
                 Tomorrow's Production
               </h1>
               <p className="text-gray-600 mt-1">
-                {new Date(new Date().setDate(new Date().getDate() + 1)).toLocaleDateString('en-IN', {
+                {formatIstDate(tomorrowDateKey(), {
                   weekday: 'long',
                   year: 'numeric',
                   month: 'long',

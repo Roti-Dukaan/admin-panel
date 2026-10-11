@@ -160,3 +160,11 @@ export function onRealtime(event: string, handler: RealtimeEventHandler): () => 
   };
 }
 
+/** Fire-and-forget client event (e.g. support typing). */
+export function emitRealtime(event: string, payload?: unknown): void {
+  const authToken = resolveAuthToken();
+  if (!authToken || !API_BASE_URL) return;
+  connectIfNeeded(authToken);
+  ensureSocket().emit(event, payload);
+}
+

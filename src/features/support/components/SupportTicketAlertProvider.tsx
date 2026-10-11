@@ -16,6 +16,13 @@ import {
 import { useWorkspace } from "@/contexts/WorkspaceContext";
 import { useAdminAuthStore } from "@/features/admin-auth/store/admin-auth-store";
 import { useGlobalSupportTicketPoll } from "@/features/support/hooks/useGlobalSupportTicketPoll";
+import {
+  dismissSupportTicketAlerts,
+  isSupportTicketViewed,
+  markSupportTicketViewed,
+  supportTicketReplyToastId,
+  supportTicketToastId,
+} from "@/features/support/utils/support-ticket-alerts";
 
 const SUPPORT_TOAST_DURATION_MS = 12_000;
 const PUBLIC_ROUTES = ["/login", "/invitations"];
@@ -49,6 +56,7 @@ export function SupportTicketAlertProvider({
   const pathname = usePathname();
   const { isBranchManager } = useWorkspace();
   const role = useAdminAuthStore((s) => s.role);
+  const adminId = useAdminAuthStore((s) => s.user?.id ?? null);
   const isAuthenticated = useAdminAuthStore((s) => s.isAuthenticated);
   const accessToken = useAdminAuthStore((s) => s.accessToken);
   const seenNewTickets = useRef<Set<string>>(new Set());
@@ -57,46 +65,75 @@ export function SupportTicketAlertProvider({
   const alertsEnabled =
     isAuthenticated &&
     !!accessToken &&
+    !!adminId &&
     !isPublicRoute(pathname) &&
     canReceiveSupportAlerts(role, isBranchManager);
 
+  const openTicket = useCallback(
+    (ticketId: string) => {
+      if (adminId) {
+        markSupportTicketViewed(adminId, ticketId);
+      }
+      dismissSupportTicketAlerts(ticketId);
+      router.push(`/support/${ticketId}`);
+    },
+    [adminId, router],
+  );
+
   const showNewTicketToast = useCallback(
     (payload: AdminSupportTicketNewPayload) => {
+      if (adminId && isSupportTicketViewed(adminId, payload.ticketId)) return;
+
       const dedupeKey = `new:${payload.ticketId}`;
       if (seenNewTickets.current.has(dedupeKey)) return;
       seenNewTickets.current.add(dedupeKey);
 
       toast.info("New support ticket", {
+        id: supportTicketToastId(payload.ticketId),
         description: `${payload.ticketNumber} · ${payload.subject} (${formatCategory(payload.category)})`,
         duration: SUPPORT_TOAST_DURATION_MS,
         action: {
           label: "View ticket",
-          onClick: () => router.push(`/support/${payload.ticketId}`),
+          onClick: () => openTicket(payload.ticketId),
         },
       });
     },
-    [router],
+    [adminId, openTicket],
   );
 
   const showReplyToast = useCallback(
     (payload: AdminSupportTicketRepliedPayload) => {
+      if (adminId && isSupportTicketViewed(adminId, payload.ticketId)) return;
+
       const dedupeKey = `reply:${payload.ticketId}:${payload.occurredAt}`;
       if (seenReplies.current.has(dedupeKey)) return;
       seenReplies.current.add(dedupeKey);
 
       toast.message("Customer replied on support ticket", {
+        id: supportTicketReplyToastId(payload.ticketId),
         description: `${payload.ticketNumber} · ${payload.messagePreview}`,
         duration: SUPPORT_TOAST_DURATION_MS,
         action: {
           label: "Open chat",
-          onClick: () => router.push(`/support/${payload.ticketId}`),
+          onClick: () => openTicket(payload.ticketId),
         },
       });
     },
-    [router],
+    [adminId, openTicket],
   );
 
-  useGlobalSupportTicketPoll(alertsEnabled, showNewTicketToast);
+  useGlobalSupportTicketPoll(alertsEnabled, adminId, showNewTicketToast);
+
+  useEffect(() => {
+    if (!adminId) return;
+    const match = pathname.match(/^\/support\/([^/]+)$/);
+    if (!match) return;
+    const ticketId = match[1];
+    if (ticketId === "list") return;
+
+    markSupportTicketViewed(adminId, ticketId);
+    dismissSupportTicketAlerts(ticketId);
+  }, [adminId, pathname]);
 
   useEffect(() => {
     if (!alertsEnabled || !accessToken) return;

@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Paperclip, Clock, User, Building2, UtensilsCrossed, Truck, Star, MessageSquare } from "lucide-react";
+import { useSupportTicketRealtime } from "@/features/support/hooks/useSupportTicketRealtime";
 
 const STATUS_COLORS: Record<string, string> = {
   OPEN: "bg-blue-100 text-blue-700",
@@ -53,6 +54,8 @@ export default function BranchTicketDetailPage() {
     loadTicket();
   }, [loadTicket]);
 
+  useSupportTicketRealtime(ticketId, loadTicket, ticket?.branchId);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50/50">
@@ -78,7 +81,11 @@ export default function BranchTicketDetailPage() {
     );
   }
 
-  const messages = ticket.messages || [];
+  const messages = (ticket.messages || []).filter(
+    (m) =>
+      !m.isInternal &&
+      !(m.senderType === "CUSTOMER" && m.message.trim() === ticket.description.trim()),
+  );
   const activities = ticket.activities || [];
 
   return (

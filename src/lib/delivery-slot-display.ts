@@ -14,6 +14,14 @@ export function formatDeliverySlotLabel(startTime: string, endTime: string): str
   return `${formatDeliverySlotTime(startTime)} – ${formatDeliverySlotTime(endTime)}`;
 }
 
+/** Format a stored slot window such as "06:00-08:00" for display. */
+export function formatDeliverySlotWindow(window: string): string {
+  const match = window.match(
+    /^\s*(\d{1,2}:\d{2}(?::\d{2})?)\s*(?:-|–|—|to)\s*(\d{1,2}:\d{2}(?::\d{2})?)\s*$/i,
+  );
+  return match ? formatDeliverySlotLabel(match[1], match[2]) : window;
+}
+
 export type Time12Parts = {
   hour: number;
   minute: number;

@@ -5,6 +5,7 @@ export interface SubscriptionRotiItem {
   name: string;
   rotiType: string | null;
   quantity: number;
+  isDefault?: boolean;
 }
 
 export interface SubscriptionDeliveryDashboard {

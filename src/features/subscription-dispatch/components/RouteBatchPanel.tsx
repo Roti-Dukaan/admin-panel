@@ -69,8 +69,19 @@ function SortableStopRow({
       <div className="min-w-0 flex-1">
         <p className="truncate font-medium text-gray-900">{stop.customerName}</p>
         <p className="truncate text-xs text-gray-500">{stop.address}</p>
+        {stop.items.length > 0 && (
+          <div className="mt-1 space-y-0.5">
+            {stop.items.map((item, index) => (
+              <p key={`${stop.id}-item-${index}`} className="text-xs text-gray-600">
+                {item.quantity}× {item.name}
+              </p>
+            ))}
+          </div>
+        )}
       </div>
-      <span className="text-xs text-gray-500">{stop.totalQuantity} rotis</span>
+      <span className="shrink-0 text-xs text-gray-500">
+        {stop.totalQuantity > 0 ? `${stop.totalQuantity} items` : "—"}
+      </span>
     </div>
   );
 }

@@ -9,7 +9,7 @@ import {
 import type { SubscriptionPrepRow } from "../types/kitchen-subscriptions";
 
 const SUMMARY_KEY = ["branch", "subscription-kitchen", "summary"] as const;
-const PREP_LIST_KEY = ["branch", "subscription-kitchen", "prep-list"] as const;
+export const PREP_LIST_KEY = ["branch", "subscription-kitchen", "prep-list"] as const;
 const DISPATCH_KEY = ["branch", "subscription-kitchen", "dispatch-ready"] as const;
 const AUTO_REFRESH_MS = 30_000;
 

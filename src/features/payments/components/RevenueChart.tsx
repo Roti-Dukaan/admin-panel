@@ -39,8 +39,9 @@ function CustomTooltip({ active, payload, label }: any) {
 }
 
 export function RevenueChart() {
+  const payments = usePaymentStore((s) => s.payments);
   const getRevenueTrend = usePaymentStore((s) => s.getRevenueTrend);
-  const rawData = useMemo(() => getRevenueTrend(), [getRevenueTrend]);
+  const rawData = useMemo(() => getRevenueTrend(), [payments, getRevenueTrend]);
   const [granularity, setGranularity] = useState<ChartGranularity>('daily');
 
   const chartData = useMemo(() => {

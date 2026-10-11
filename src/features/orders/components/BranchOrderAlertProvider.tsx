@@ -36,9 +36,7 @@ import {
   ensureOrderRingPlaying,
   ensureAudioLoaded,
   isOrderAlertsEnabled,
-  isOrderAlertsVerifiedThisSession,
   onOrderAlertsEnabledChange,
-  onOrderAlertsVerifiedSessionChange,
   preloadOrderAudio,
   showOrderNotification,
   startOrderRing,
@@ -107,8 +105,9 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
   /** Orders that must keep ringing until Start Preparing (survives dismiss). */
   const [ringingOrderIds, setRingingOrderIds] = useState<string[]>([]);
   const [soundBlocked, setSoundBlocked] = useState(false);
-  const [alertsEnabled, setAlertsEnabled] = useState(false);
-  const [alertsVerifiedSession, setAlertsVerifiedSession] = useState(false);
+  const [alertsEnabled, setAlertsEnabled] = useState(() =>
+    typeof window !== "undefined" ? isOrderAlertsEnabled() : false,
+  );
   const [enablingAlerts, setEnablingAlerts] = useState(false);
   const seen = useRef<Set<string>>(new Set());
   const placementSeen = useRef<Set<string>>(new Set());
@@ -120,12 +119,9 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
 
   useEffect(() => {
     setAlertsEnabled(isOrderAlertsEnabled());
-    setAlertsVerifiedSession(isOrderAlertsVerifiedThisSession());
     const offEnabled = onOrderAlertsEnabledChange(() => setAlertsEnabled(true));
-    const offVerified = onOrderAlertsVerifiedSessionChange(() => setAlertsVerifiedSession(true));
     return () => {
       offEnabled();
-      offVerified();
     };
   }, []);
 
@@ -201,7 +197,6 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
       ensureNotificationPermission();
       if (enabled) {
         setAlertsEnabled(true);
-        setAlertsVerifiedSession(true);
         setSoundBlocked(false);
         toast.success("Sound enabled — you should hear the ringtone for 3 seconds.");
         if (ringingOrderIds.length > 0 || open) {
@@ -514,7 +509,8 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
         </div>
       )}
 
-      {(!alertsVerifiedSession || (soundBlocked && ringingOrderIds.length > 0)) && !missingBranchAssignment && (
+      {!missingBranchAssignment &&
+        (!alertsEnabled || (soundBlocked && ringingOrderIds.length > 0)) && (
         <div
           role="status"
           className="fixed bottom-4 left-1/2 z-[200] w-[min(100%-2rem,28rem)] -translate-x-1/2 rounded-xl border border-orange-200 bg-white p-4 shadow-lg"

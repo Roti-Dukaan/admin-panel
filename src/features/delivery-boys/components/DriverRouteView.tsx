@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { format } from "date-fns";
+import { todayDateKey } from "@/lib/date";
 import { formatDeliverySlotLabel } from "@/lib/delivery-slot-display";
 import {
   AlertTriangle,
@@ -134,11 +134,15 @@ function SubscriptionStopCard({
       </p>
 
       <div className="mt-2 space-y-0.5">
-        {stop.items.map((item, i) => (
-          <p key={i} className="text-xs text-gray-700">
-            {item.quantity}× {item.name}
-          </p>
-        ))}
+        {stop.items.length === 0 ? (
+          <p className="text-xs italic text-gray-400">No items listed</p>
+        ) : (
+          stop.items.map((item, i) => (
+            <p key={i} className="text-xs font-medium text-gray-700">
+              {item.quantity}× {item.name}
+            </p>
+          ))
+        )}
       </div>
 
       {stop.notes && <p className="mt-2 text-xs italic text-gray-500">Note: {stop.notes}</p>}
@@ -424,7 +428,7 @@ export function DriverSubscriptionRouteSection({ date }: { date: string }) {
 export function DriverRouteView() {
   const router = useRouter();
   const logout = useAdminAuthStore((s) => s.logout);
-  const [date, setDate] = React.useState(() => format(new Date(), "yyyy-MM-dd"));
+  const [date, setDate] = React.useState(() => todayDateKey());
 
   const handleLogout = () => {
     logout();

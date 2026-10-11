@@ -258,14 +258,13 @@ export function FoodDrawer() {
                   <Field label="Preparation Time (minutes)" error={errors.preparationTime?.message}>
                     <Input {...register("preparationTime", { required: "Preparation time is required", min: { value: 1, message: "Must be at least 1 minute" } })} type="number" placeholder="15" />
                   </Field>
-
-                  <Field label="Serving Size" error={errors.servingSize?.message}>
-                    <Input {...register("servingSize", { required: "Serving size is required" })} placeholder="e.g., 1 bowl" />
-                  </Field>
                 </div>
               </Section>
 
               <Section title="Nutrition Information">
+                <Field label="Serving Size" error={errors.servingSize?.message}>
+                  <Input {...register("servingSize", { required: "Serving size is required" })} placeholder="e.g., 1 bowl" disabled={isView} />
+                </Field>
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                   <Field label="Calories" error={errors.calories?.message}>
                     <Input {...register("calories", { valueAsNumber: true, min: { value: 0, message: "Calories must be non-negative" } })} type="number" step="any" min={0} placeholder="0" />
@@ -291,7 +290,12 @@ export function FoodDrawer() {
 
               <Section title="Tags & Labels">
                 <div className="space-y-4">
-                  <HealthTagSelector selected={watch("healthTags")} onChange={(tags) => setValue("healthTags", tags)} />
+                  <HealthTagSelector
+                    selected={watch("healthTags") ?? []}
+                    onChange={(tags) =>
+                      setValue("healthTags", tags, { shouldDirty: true, shouldValidate: true })
+                    }
+                  />
                   <div>
                     <h4 className="mb-2 text-sm font-medium text-gray-700">Customer Labels</h4>
                     <div className="flex flex-wrap gap-2">

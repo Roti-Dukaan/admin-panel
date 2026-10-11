@@ -45,6 +45,36 @@ export interface PackageCategory {
   menuItems: PackageMenuItemLink[];
 }
 
+export interface PlanCategoryLimits {
+  includedQuantityPerDelivery: number;
+  maximumQuantityPerDelivery: number;
+  maximumChoicesPerDelivery: number;
+}
+
+export interface PlanCustomizationRules {
+  roti: PlanCategoryLimits;
+  curry: PlanCategoryLimits;
+  addon: PlanCategoryLimits;
+}
+
+export interface AllowedFoodItemLink {
+  id: string;
+  foodItemId: string;
+  active: boolean;
+  displayOrder: number;
+  foodItem: {
+    id: string;
+    name: string;
+    slug: string;
+    imageUrl: string | null;
+    isVeg: boolean;
+    isAvailable: boolean;
+    isSubscriptionAvailable: boolean;
+    servingSize: string | null;
+    category?: { id: string; name: string; slug: string } | null;
+  };
+}
+
 export interface SubscriptionPackage {
   id: string;
   packageId?: string;
@@ -78,18 +108,15 @@ export interface SubscriptionPackage {
   discountType?: string;
   discountValue?: number;
   isDiscountActive?: boolean;
-}
-
-export interface PackageCategoryInput {
-  categoryDefinitionId: string;
-  categoryPrice: number;
-  active?: boolean;
-  includedQuantityPerDelivery?: number;
-  maximumQuantityPerDelivery?: number;
-  minimumSelection?: number;
-  maximumSelection?: number | null;
-  maximumChoicesPerDelivery?: number | null;
-  menuItemIds?: string[];
+  foodItemIds?: string[];
+  allowedFoodItems?: AllowedFoodItemLink[];
+  customizationRules?: PlanCustomizationRules | Record<string, PlanCategoryLimits> | null;
+  planImageUrl?: string | null;
+  durationValue?: number;
+  durationUnit?: "DAYS" | "WEEKS" | "MONTHS";
+  publishStatus?: "DRAFT" | "ACTIVE" | "INACTIVE";
+  planBuilderConfig?: import("./plan-builder").PlanBuilderConfig | null;
+  validityDays?: number;
 }
 
 export interface CreateSubscriptionPackageInput {
@@ -106,13 +133,13 @@ export interface CreateSubscriptionPackageInput {
   availableDeliveryDays?: string[];
   availableDeliverySlots?: string[];
   selectionCutoffHours?: number;
-  allowCustomerCategorySelection?: boolean;
   skipEnabled?: boolean;
   monthlySkipLimit?: number;
   weeklySkipLimit?: number;
   maxSkipDaysPerCycle?: number;
   skipCutoffHours?: number;
-  categories: PackageCategoryInput[];
+  foodItemIds: string[];
+  customizationRules?: PlanCustomizationRules;
 }
 
 export type UpdateSubscriptionPackageInput = Partial<CreateSubscriptionPackageInput>;

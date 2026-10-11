@@ -184,7 +184,7 @@ export default function BannerEditPage({ params }: { params: { id: string } }) {
     <div className="min-h-screen bg-gray-50/50">
       <Header
         title={isNew ? "Create Banner" : "Edit Banner"}
-        subtitle={isNew ? "Add a new homepage carousel banner." : "Update banner details and images."}
+        subtitle={isNew ? "Add a new website carousel banner." : "Update website banner details and images."}
         actions={
           <div className="flex items-center gap-2">
             <Link href="/cms">

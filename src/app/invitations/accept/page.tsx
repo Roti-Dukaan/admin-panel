@@ -3,67 +3,73 @@
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "motion/react";
-import { Loader2, CheckCircle, AlertCircle, Mail, Lock, User } from "lucide-react";
-import { Header } from "@/components/layout/header";
+import { Loader2, CheckCircle, AlertCircle, Mail, ShieldCheck, User } from "lucide-react";
 import { apiClient } from "@/lib/api/http";
+import { adminAuthApi } from "@/features/admin-auth/api/admin-auth.api";
 import { toast } from "sonner";
 import { normalizeEmail } from "@/lib/utils/email";
+
+type InvitationPreview = {
+  email: string;
+  name: string | null;
+  role: string;
+  branchName: string | null;
+  expiresAt: string;
+};
 
 function AcceptInvitationPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
 
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loadingPreview, setLoadingPreview] = useState(true);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState("");
-  const [invitationData, setInvitationData] = useState<{ branchName: string; role: string } | null>(null);
+  const [invitation, setInvitation] = useState<InvitationPreview | null>(null);
 
   useEffect(() => {
     if (!token) {
       setError("Invalid or missing invitation token");
+      setLoadingPreview(false);
       return;
     }
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data } = await apiClient.get("/invitations/preview", { params: { token } });
+        if (!cancelled) setInvitation(data.data);
+      } catch (err: any) {
+        const message = err.response?.data?.message || "Invalid or expired invitation";
+        if (!cancelled) setError(message);
+      } finally {
+        if (!cancelled) setLoadingPreview(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [token]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleAccept = async () => {
+    if (!token || !invitation) return;
     setError("");
-
-    if (!name.trim() || !email.trim() || !password || !confirmPassword) {
-      setError("Please fill in all fields");
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setError("Passwords do not match");
-      return;
-    }
-
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters");
-      return;
-    }
-
     setLoading(true);
     try {
-      await apiClient.post("/invitations/accept", {
-        token,
-        name: name.trim(),
-        email: normalizeEmail(email),
-        password,
-      });
-
+      await apiClient.post("/invitations/accept", { token });
+      const email = normalizeEmail(invitation.email);
+      try {
+        await adminAuthApi.sendOtp(email);
+      } catch {
+        // Account is created; user can still request OTP on the login page.
+      }
       setSubmitted(true);
-      toast.success("Account created successfully! Redirecting to login...");
-
+      toast.success("Invitation accepted. Enter the OTP sent to your email.");
       setTimeout(() => {
-        router.push("/login");
-      }, 2000);
+        router.push(`/login?email=${encodeURIComponent(email)}&otp=1`);
+      }, 1200);
     } catch (err: any) {
       const message = err.response?.data?.message || "Failed to accept invitation";
       setError(message);
@@ -105,8 +111,8 @@ function AcceptInvitationPageContent() {
           >
             <CheckCircle className="h-8 w-8 text-emerald-600" />
           </motion.div>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">Account Created!</h2>
-          <p className="text-gray-500 mb-6">Your account has been set up successfully. Redirecting to login...</p>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Invitation accepted</h2>
+          <p className="text-gray-500 mb-6">We sent a one-time code to your email. Redirecting to sign in...</p>
           <Loader2 className="h-8 w-8 animate-spin text-orange-500 mx-auto" />
         </motion.div>
       </div>
@@ -116,7 +122,6 @@ function AcceptInvitationPageContent() {
   return (
     <div className="min-h-screen bg-gray-50/50">
       <div className="flex min-h-screen">
-        {/* Left Panel */}
         <div className="hidden lg:flex lg:w-[55%] relative overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
           <div className="absolute inset-0 bg-[url('/pattern.svg')] opacity-5" />
           <div className="relative z-10 flex flex-col justify-center p-12 xl:p-16 w-full">
@@ -134,7 +139,7 @@ function AcceptInvitationPageContent() {
                 Join <span className="text-orange-400">Roti Dukaan</span>
               </h1>
               <p className="text-lg text-white/60 mb-10 leading-relaxed">
-                Accept your invitation and set up your admin account to start managing orders, kitchen operations, and business insights.
+                Accept your invitation, then sign in with a one-time code sent to your email. No password needed.
               </p>
 
               <div className="grid grid-cols-2 gap-4">
@@ -143,15 +148,15 @@ function AcceptInvitationPageContent() {
                     <div className="h-10 w-10 rounded-lg bg-orange-500/20 flex items-center justify-center">
                       <User className="h-5 w-5 text-orange-400" />
                     </div>
-                    <span className="text-white font-medium">Create your profile</span>
+                    <span className="text-white font-medium">Use your invited name</span>
                   </div>
                 </div>
                 <div className="bg-white/10 rounded-xl p-4 backdrop-blur-sm">
                   <div className="flex items-center gap-3">
                     <div className="h-10 w-10 rounded-lg bg-emerald-500/20 flex items-center justify-center">
-                      <Lock className="h-5 w-5 text-emerald-400" />
+                      <ShieldCheck className="h-5 w-5 text-emerald-400" />
                     </div>
-                    <span className="text-white font-medium">Set secure password</span>
+                    <span className="text-white font-medium">Email OTP sign-in</span>
                   </div>
                 </div>
                 <div className="bg-white/10 rounded-xl p-4 backdrop-blur-sm">
@@ -177,7 +182,6 @@ function AcceptInvitationPageContent() {
           </div>
         </div>
 
-        {/* Right Panel - Form */}
         <div className="flex w-full lg:w-[45%] items-center justify-center p-6 lg:p-12">
           <div className="w-full max-w-md">
             <motion.div
@@ -187,15 +191,7 @@ function AcceptInvitationPageContent() {
             >
               <div className="mb-8">
                 <h2 className="text-2xl font-bold text-gray-900">Accept Invitation</h2>
-                <p className="text-gray-500 mt-1">
-                  {invitationData ? (
-                    <>
-                      You're invited to <strong>{invitationData.branchName}</strong> as <strong>{invitationData.role}</strong>
-                    </>
-                  ) : (
-                    "Complete your account setup to join Roti Dukaan"
-                  )}
-                </p>
+                <p className="text-gray-500 mt-1">Confirm the details below, then sign in with email OTP.</p>
               </div>
 
               {error && (
@@ -209,102 +205,50 @@ function AcceptInvitationPageContent() {
                 </motion.div>
               )}
 
-              <form onSubmit={handleSubmit} className="space-y-5">
-                <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Full Name *
-                  </label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                    <input
-                      id="name"
-                      type="text"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      placeholder="e.g., Arjun Mehta"
-                      className="w-full h-10 rounded-lg border border-gray-200 bg-white pl-10 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-orange-400 focus:outline-none focus:ring-1 focus:ring-orange-400"
-                      required
-                    />
-                  </div>
+              {loadingPreview ? (
+                <div className="flex justify-center py-10">
+                  <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
                 </div>
-
-                <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Email Address *
-                  </label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                    <input
-                      id="email"
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(normalizeEmail(e.target.value))}
-                      placeholder="arjun@rotidukaan.com"
-                      className="w-full h-10 rounded-lg border border-gray-200 bg-white pl-10 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-orange-400 focus:outline-none focus:ring-1 focus:ring-orange-400"
-                      required
-                    />
+              ) : invitation ? (
+                <div className="space-y-5">
+                  <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 space-y-3 text-sm">
+                    {invitation.name && (
+                      <div>
+                        <p className="text-xs uppercase tracking-wide text-gray-400">Name</p>
+                        <p className="font-medium text-gray-900">{invitation.name}</p>
+                      </div>
+                    )}
+                    <div>
+                      <p className="text-xs uppercase tracking-wide text-gray-400">Email</p>
+                      <p className="font-medium text-gray-900">{invitation.email}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-wide text-gray-400">Kitchen</p>
+                      <p className="font-medium text-gray-900">{invitation.branchName || "Roti Dukaan"}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-wide text-gray-400">Role</p>
+                      <p className="font-medium text-gray-900">{invitation.role}</p>
+                    </div>
                   </div>
+
+                  <button
+                    type="button"
+                    onClick={handleAccept}
+                    disabled={loading}
+                    className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-orange-500 px-6 py-3 text-sm font-semibold text-white hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Accepting...
+                      </>
+                    ) : (
+                      "Accept invitation & send OTP"
+                    )}
+                  </button>
                 </div>
-
-                <div>
-                  <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Password *
-                  </label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                    <input
-                      id="password"
-                      type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Min 8 characters"
-                      className="w-full h-10 rounded-lg border border-gray-200 bg-white pl-10 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-orange-400 focus:outline-none focus:ring-1 focus:ring-orange-400"
-                      required
-                      minLength={8}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Confirm Password *
-                  </label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                    <input
-                      id="confirmPassword"
-                      type="password"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      placeholder="Confirm password"
-                      className="w-full h-10 rounded-lg border border-gray-200 bg-white pl-10 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-orange-400 focus:outline-none focus:ring-1 focus:ring-orange-400"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-gray-900 px-6 py-3 text-sm font-semibold text-white hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Creating Account...
-                    </>
-                  ) : (
-                    "Accept Invitation & Create Account"
-                  )}
-                </button>
-              </form>
-
-              <p className="mt-6 text-center text-sm text-gray-500">
-                By creating an account, you agree to our{" "}
-                <a href="#" className="text-orange-600 hover:underline">Terms of Service</a>
-                {" and "}
-                <a href="#" className="text-orange-600 hover:underline">Privacy Policy</a>
-              </p>
+              ) : null}
             </motion.div>
           </div>
         </div>

@@ -12,11 +12,23 @@ import {
   workspaceFromRoles,
 } from "../utils/role-utils"
 import { isDevOtpVisible } from "@/lib/env"
+import { normalizeEmail } from "@/lib/utils/email"
+
+function emailFromQuery(): { email: string; otpStep: boolean } {
+  if (typeof window === "undefined") return { email: "", otpStep: false }
+  const params = new URLSearchParams(window.location.search)
+  const raw = params.get("email") || ""
+  return {
+    email: raw ? normalizeEmail(raw) : "",
+    otpStep: params.get("otp") === "1",
+  }
+}
 
 export function useAdminLogin() {
   const router = useRouter()
-  const [step, setStep] = React.useState<AuthStep>("email")
-  const [email, setEmail] = React.useState("")
+  const prefill = React.useMemo(() => emailFromQuery(), [])
+  const [step, setStep] = React.useState<AuthStep>(prefill.otpStep && prefill.email ? "otp" : "email")
+  const [email, setEmail] = React.useState(prefill.email)
   const [otp, setOtp] = React.useState("")
   const [devOtpHint, setDevOtpHint] = React.useState<string | null>(null)
   const [isLoading, setIsLoading] = React.useState(false)
