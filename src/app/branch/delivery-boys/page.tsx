@@ -7,7 +7,7 @@ export default function BranchDeliveryBoysPage() {
   return (
     <div className="min-h-screen bg-gray-50/50">
       <Header
-        title="Delivery Boys"
+        title="Delivery Partners"
         subtitle="Subscription delivery staff for your branch."
         showSearch={false}
         actions={null}

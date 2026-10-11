@@ -25,7 +25,7 @@ export default function BranchProfilePage() {
           <div className="space-y-4">
             <div className="flex items-center justify-between py-3 border-b border-gray-100">
               <span className="text-gray-500">Role</span>
-              <span className="font-medium text-gray-900 capitalize">{role?.toLowerCase().replace(/_/g, " ")}</span>
+              <span className="font-medium text-gray-900 capitalize">{role === "DELIVERY_BOY" ? "Delivery Partner" : role?.toLowerCase().replace(/_/g, " ")}</span>
             </div>
             <div className="flex items-center justify-between py-3 border-b border-gray-100">
               <span className="text-gray-500">Email</span>

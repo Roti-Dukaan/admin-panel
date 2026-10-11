@@ -56,7 +56,7 @@ export function SubscriptionDispatchBoard() {
       <div className="rounded-2xl border border-indigo-100 bg-indigo-50/50 p-4">
         <h2 className="text-sm font-bold text-indigo-900">Subscription Dispatch</h2>
         <p className="mt-1 text-sm text-indigo-800/80">
-          Assign packed subscription deliveries to delivery boys or yourself. Mark items as ready in{" "}
+          Assign packed subscription deliveries to delivery partners or yourself. Mark items as ready in{" "}
           <Link href="/branch/kitchen?tab=subscriptions" className="font-medium underline hover:text-indigo-950">
             Kitchen → Subscription Prep
           </Link>{" "}

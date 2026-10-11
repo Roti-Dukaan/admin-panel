@@ -166,7 +166,7 @@ export function DeliveryBoysSection() {
               Subscription Delivery Staff
             </h2>
             <p className="mt-1 text-sm text-gray-500">
-              Manage delivery boys for subscription routes only — not one-time orders.
+              Manage delivery partners for subscription routes only — not one-time orders.
             </p>
           </div>
           {!showForm && !editing && (

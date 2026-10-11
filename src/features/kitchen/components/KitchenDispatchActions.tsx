@@ -134,7 +134,7 @@ export function KitchenDispatchActions({
                 realtimeDispatchApi.dispatchInHouse(deliveryId, {
                   assigneeUserId: selectedBoy,
                 }),
-              "Assigned to delivery boy",
+              "Assigned to delivery partner",
             )
           }
         >
