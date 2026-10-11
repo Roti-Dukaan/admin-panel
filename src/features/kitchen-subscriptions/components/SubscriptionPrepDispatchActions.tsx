@@ -77,7 +77,7 @@ export function SubscriptionPrepDispatchActions({
             onClick={() =>
               run(
                 () => onAssign(row.id, selectedBoy),
-                "Assigned to delivery boy",
+                "Assigned to delivery partner",
               )
             }
           >

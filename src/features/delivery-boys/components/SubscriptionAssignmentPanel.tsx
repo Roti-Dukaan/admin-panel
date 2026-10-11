@@ -607,7 +607,7 @@ export function SubscriptionAssignmentPanel({
           <p className="text-sm font-medium text-gray-700">No subscription deliveries waiting for dispatch</p>
           <p className="mt-2 text-sm text-gray-500">
             Packed deliveries appear here after you mark them ready in Subscription Prep. Use bulk assign or
-            row actions to assign delivery boys or yourself.
+            row actions to assign delivery partners or yourself.
           </p>
         </div>
       ) : (

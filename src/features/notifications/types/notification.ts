@@ -79,7 +79,7 @@ export interface NotificationListResponse {
 export const TARGET_TYPE_OPTIONS: { value: TargetType; label: string }[] = [
   { value: 'all_customers', label: 'All customers' },
   { value: 'active_subscriptions', label: 'Customers with active subscriptions' },
-  { value: 'all_delivery_boys', label: 'All delivery boys' },
+  { value: 'all_delivery_boys', label: 'All delivery partners' },
   { value: 'all_branch_managers', label: 'All branch managers' },
   { value: 'branch', label: 'Specific branch' },
   { value: 'branch_managers', label: 'Branch managers of selected branch' },

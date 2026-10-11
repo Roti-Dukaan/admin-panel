@@ -103,17 +103,12 @@ function formatDate(value: string | null) {
 
 
 function formatRoleLabel(roleName: string | null) {
-
   if (!roleName) return "Unassigned";
-
+  if (roleName === "DELIVERY_BOY") return "Delivery Partner";
   return roleName
-
     .split("_")
-
     .map((part) => part.charAt(0) + part.slice(1).toLowerCase())
-
     .join(" ");
-
 }
 
 
