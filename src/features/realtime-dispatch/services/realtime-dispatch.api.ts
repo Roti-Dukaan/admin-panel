@@ -92,16 +92,16 @@ export const realtimeDriverApi = {
   myDeliveries: (tab?: string): Promise<{
     stops: Array<RealtimeDispatchItem & { id: string; googleMapsUrl: string | null; dispatchStatus: string }>;
     counts: { assigned: number; pending: number; completed: number };
-  }> => unwrap(apiClient.get("/delivery-boy/realtime/my-deliveries", { params: { tab } })),
+  }> => unwrap(apiClient.get("/delivery-partner/realtime/my-deliveries", { params: { tab } })),
 
   updateStatus: (
     deliveryId: string,
     body: { status: "RIDER_ARRIVED" | "PICKED_UP" | "OUT_FOR_DELIVERY" | "DELIVERED" | "FAILED"; failureReason?: string },
-  ) => unwrap(apiClient.patch(`/delivery-boy/realtime/delivery/${deliveryId}/status`, body)),
+  ) => unwrap(apiClient.patch(`/delivery-partner/realtime/delivery/${deliveryId}/status`, body)),
 
   collectCod: (deliveryId: string, collectedAmount: number) =>
     unwrap(
-      apiClient.patch(`/delivery-boy/realtime/delivery/${deliveryId}/cod-collected`, {
+      apiClient.patch(`/delivery-partner/realtime/delivery/${deliveryId}/cod-collected`, {
         collectedAmount,
       }),
     ),

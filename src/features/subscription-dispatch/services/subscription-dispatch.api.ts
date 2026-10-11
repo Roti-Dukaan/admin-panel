@@ -1,5 +1,5 @@
 import { apiClient } from "@/lib/api/http";
-import type { DriverDeliveryStop } from "@/features/delivery-boys/types/delivery-boys";
+import type { DriverDeliveryStop } from "@/features/delivery-partners/types/delivery-partners";
 
 function unwrap<T>(promise: Promise<{ data: { success: boolean; data: T } }>): Promise<T> {
   return promise.then((res) => res.data.data);
@@ -120,10 +120,10 @@ export const subscriptionDispatchApi = {
 
 export const driverSubscriptionRouteApi = {
   listRoutes: (date: string, slot?: string): Promise<SubscriptionRouteBatch[]> =>
-    unwrap(apiClient.get("/delivery-boy/subscription-route", { params: { date, slot } })),
+    unwrap(apiClient.get("/delivery-partner/subscription-route", { params: { date, slot } })),
 
   getRoute: (batchId: string): Promise<SubscriptionRouteBatch> =>
-    unwrap(apiClient.get(`/delivery-boy/subscription-route/${batchId}`)),
+    unwrap(apiClient.get(`/delivery-partner/subscription-route/${batchId}`)),
 
   updateStopStatus: (
     id: string,
@@ -133,8 +133,8 @@ export const driverSubscriptionRouteApi = {
       note?: string;
     },
   ): Promise<SubscriptionRouteBatchStop> =>
-    unwrap(apiClient.patch(`/delivery-boy/subscription-stop/${id}/status`, body)),
+    unwrap(apiClient.patch(`/delivery-partner/subscription-stop/${id}/status`, body)),
 
   navigation: (id: string): Promise<{ deliveryId: string; url: string; address: string }> =>
-    unwrap(apiClient.get(`/delivery-boy/subscription-stop/${id}/navigation`)),
+    unwrap(apiClient.get(`/delivery-partner/subscription-stop/${id}/navigation`)),
 };

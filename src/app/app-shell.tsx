@@ -34,6 +34,7 @@ const SIDEBAR_ROUTES = [
   "/branch/inventory",
   "/branch/delivery",
   "/branch/dispatch",
+  "/branch/delivery-partners",
   "/branch/delivery-boys",
   "/branch/customers",
   "/branch/team",

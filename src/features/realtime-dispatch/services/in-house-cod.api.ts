@@ -160,32 +160,32 @@ export const inHouseRiderApi = {
       codPending: number;
       codCollected: number;
     };
-  }> => unwrap(apiClient.get("/delivery-boy/realtime/my-deliveries", { params })),
+  }> => unwrap(apiClient.get("/delivery-partner/realtime/my-deliveries", { params })),
 
   pickedUp: (deliveryId: string) =>
-    unwrap(apiClient.patch(`/delivery-boy/realtime/delivery/${deliveryId}/picked-up`)),
+    unwrap(apiClient.patch(`/delivery-partner/realtime/delivery/${deliveryId}/picked-up`)),
 
   arrived: (deliveryId: string) =>
-    unwrap(apiClient.patch(`/delivery-boy/realtime/delivery/${deliveryId}/arrived`)),
+    unwrap(apiClient.patch(`/delivery-partner/realtime/delivery/${deliveryId}/arrived`)),
 
   confirmCod: (deliveryId: string, body: { collectedAmount: number; note?: string }) =>
-    unwrap(apiClient.patch(`/delivery-boy/realtime/delivery/${deliveryId}/confirm-cod`, body)),
+    unwrap(apiClient.patch(`/delivery-partner/realtime/delivery/${deliveryId}/confirm-cod`, body)),
 
   delivered: (deliveryId: string, body?: { collectedAmount?: number; note?: string; remarks?: string }) =>
-    unwrap(apiClient.patch(`/delivery-boy/realtime/delivery/${deliveryId}/delivered`, body ?? {})),
+    unwrap(apiClient.patch(`/delivery-partner/realtime/delivery/${deliveryId}/delivered`, body ?? {})),
 
   failed: (deliveryId: string, body: { failureReason: string; remarks?: string }) =>
-    unwrap(apiClient.patch(`/delivery-boy/realtime/delivery/${deliveryId}/failed`, body)),
+    unwrap(apiClient.patch(`/delivery-partner/realtime/delivery/${deliveryId}/failed`, body)),
 
   createCodQr: (orderId: string) =>
-    unwrap(apiClient.post(`/delivery-boy/realtime/orders/${orderId}/cod/qr`)),
+    unwrap(apiClient.post(`/delivery-partner/realtime/orders/${orderId}/cod/qr`)),
 
   getCodQrStatus: (orderId: string) =>
-    unwrap(apiClient.get(`/delivery-boy/realtime/orders/${orderId}/cod/qr/status`)),
+    unwrap(apiClient.get(`/delivery-partner/realtime/orders/${orderId}/cod/qr/status`)),
 
   closeCodQr: (orderId: string) =>
-    unwrap(apiClient.post(`/delivery-boy/realtime/orders/${orderId}/cod/qr/close`)),
+    unwrap(apiClient.post(`/delivery-partner/realtime/orders/${orderId}/cod/qr/close`)),
 
   confirmCodCash: (orderId: string, body: { collectedAmount: number; note?: string }) =>
-    unwrap(apiClient.post(`/delivery-boy/realtime/orders/${orderId}/cod/cash`, body)),
+    unwrap(apiClient.post(`/delivery-partner/realtime/orders/${orderId}/cod/cash`, body)),
 };

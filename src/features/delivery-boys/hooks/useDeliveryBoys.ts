@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { deliveryBoysApi, driverRouteApi } from "../services/delivery-boys.api";
 
-export const DELIVERY_BOYS_KEY = ["delivery-boys"] as const;
+export const DELIVERY_BOYS_KEY = ["delivery-partners"] as const;
 export const DRIVER_ROUTE_KEY = ["driver-route"] as const;
 
 export function useDeliveryBoys(activeOnly?: boolean) {

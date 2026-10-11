@@ -144,14 +144,14 @@ export const dispatchRoutesApi = {
       .then((res) => res.data as string),
 
   myRoutes: (date: string): Promise<DeliveryRoute[]> =>
-    unwrap(apiClient.get("/delivery-boy/routes", { params: { date } })),
+    unwrap(apiClient.get("/delivery-partner/routes", { params: { date } })),
 
   startRoute: (id: string): Promise<DeliveryRoute> =>
-    unwrap(apiClient.post(`/delivery-boy/routes/${id}/start`)),
+    unwrap(apiClient.post(`/delivery-partner/routes/${id}/start`)),
 
   optimizeMyRoute: (date: string): Promise<RouteOptimizationResult> =>
-    unwrap(apiClient.post("/delivery-boy/routes/optimize", null, { params: { date } })),
+    unwrap(apiClient.post("/delivery-partner/routes/optimize", null, { params: { date } })),
 
   getDriverRoute: (id: string): Promise<DeliveryRoute> =>
-    unwrap(apiClient.get(`/delivery-boy/routes/${id}`)),
+    unwrap(apiClient.get(`/delivery-partner/routes/${id}`)),
 };

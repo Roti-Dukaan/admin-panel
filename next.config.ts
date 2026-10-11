@@ -34,6 +34,11 @@ const nextConfig: NextConfig = {
         destination: "/mobile-app/home-page",
         permanent: false,
       },
+      {
+        source: "/branch/delivery-boys",
+        destination: "/branch/delivery-partners",
+        permanent: true,
+      },
     ];
   },
   async headers() {
