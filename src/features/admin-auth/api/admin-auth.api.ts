@@ -26,7 +26,7 @@ export interface CurrentAdminResponse {
 export const adminAuthApi = {
   async sendOtp(email: string): Promise<{ otp?: string; message: string }> {
     const { data } = await apiClient.post('/admin-auth/send-otp', { email: normalizeEmail(email) });
-    return data.data;
+    return (data?.data ?? data) as { otp?: string; message: string };
   },
 
   async login(email: string, otp: string): Promise<AdminLoginResponse> {
