@@ -53,6 +53,8 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       { protocol: "https", hostname: "images.unsplash.com" },
       { protocol: "https", hostname: "api.dicebear.com" },
+      { protocol: "https", hostname: "d3ulec0zs3hw9b.cloudfront.net" },
+      { protocol: "https", hostname: "*.s3.ap-south-1.amazonaws.com" },
     ],
   },
   typescript: {
