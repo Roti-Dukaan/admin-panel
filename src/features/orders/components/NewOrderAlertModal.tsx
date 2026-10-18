@@ -41,9 +41,9 @@ interface NewOrderAlertModalProps {
   queuedCount: number;
   soundBlocked: boolean;
   preparing: boolean;
+  cancelling: boolean;
   onStartPreparing: () => void;
-  onDismiss: () => void;
-  onViewDetails: () => void;
+  onCancel: () => void;
   onEnableSound: () => void;
   enablingSound: boolean;
 }
@@ -54,9 +54,9 @@ export function NewOrderAlertModal({
   queuedCount,
   soundBlocked,
   preparing,
+  cancelling,
   onStartPreparing,
-  onDismiss,
-  onViewDetails,
+  onCancel,
   onEnableSound,
   enablingSound,
 }: NewOrderAlertModalProps) {
@@ -103,12 +103,7 @@ export function NewOrderAlertModal({
   const itemCount = detail?.items?.reduce((sum, item) => sum + item.quantity, 0) ?? alert?.itemCount ?? 0;
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(next) => {
-        if (!next) onDismiss();
-      }}
-    >
+    <Dialog open={open} onOpenChange={() => {}}>
       <DialogPortal container={typeof document !== "undefined" ? document.body : undefined}>
         <DialogOverlay className="z-[9998]" />
         <DialogPrimitive.Content
@@ -119,6 +114,7 @@ export function NewOrderAlertModal({
           )}
           onPointerDownOutside={(e) => e.preventDefault()}
           onInteractOutside={(e) => e.preventDefault()}
+          onEscapeKeyDown={(e) => e.preventDefault()}
         >
         <div className="relative bg-gradient-to-br from-orange-500 via-orange-600 to-red-600 px-6 pb-8 pt-6 text-white">
           <div className="pointer-events-none absolute inset-0 animate-pulse bg-white/5" />
@@ -257,25 +253,15 @@ export function NewOrderAlertModal({
             >
               {preparing ? "Starting…" : "Start Preparing"}
             </Button>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                className="flex-1 rounded-xl"
-                onClick={onViewDetails}
-                disabled={!alert}
-                aria-label={`View details for order ${alert?.orderNumber ?? ""}`}
-              >
-                View Details
-              </Button>
-              <Button
-                variant="ghost"
-                className="flex-1 rounded-xl text-gray-500"
-                onClick={onDismiss}
-                aria-label="Dismiss alert (sound continues until Start Preparing)"
-              >
-                Dismiss
-              </Button>
-            </div>
+            <Button
+              variant="outline"
+              className="h-12 w-full rounded-xl border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800"
+              onClick={onCancel}
+              disabled={!alert || preparing || cancelling}
+              aria-label={`Cancel order ${alert?.orderNumber ?? ""}`}
+            >
+              {cancelling ? "Cancelling…" : "Cancel"}
+            </Button>
           </div>
         </div>
         </DialogPrimitive.Content>

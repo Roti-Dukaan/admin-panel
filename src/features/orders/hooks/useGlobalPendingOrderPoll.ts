@@ -7,7 +7,8 @@ import { branchIdsMatch } from "@/lib/realtime/branch-id";
 import type { BranchOrderNewPayload } from "@/lib/realtime/events";
 import { kitchenItemToAlertPayload } from "../utils/pending-order-alert";
 
-const POLL_MS = 5_000;
+const POLL_MS_DEFAULT = 5_000;
+const POLL_MS_SOCKET_OFFLINE = 2_000;
 
 /**
  * Polls pending kitchen tickets on every branch-manager page so new-order
@@ -18,7 +19,10 @@ export function useGlobalPendingOrderPoll(
   enabled: boolean,
   branchId: string | null | undefined,
   onNewPendingOrder: (payload: BranchOrderNewPayload) => void,
+  options?: { socketConnected?: boolean },
 ) {
+  const pollMs =
+    options?.socketConnected === false ? POLL_MS_SOCKET_OFFLINE : POLL_MS_DEFAULT;
   const onAlertRef = useRef(onNewPendingOrder);
   onAlertRef.current = onNewPendingOrder;
 
@@ -36,9 +40,9 @@ export function useGlobalPendingOrderPoll(
         sortOrder: "desc",
       }),
     enabled: enabled && !!branchId,
-    refetchInterval: POLL_MS,
+    refetchInterval: pollMs,
     refetchIntervalInBackground: true,
-    staleTime: POLL_MS,
+    staleTime: pollMs,
   });
 
   useEffect(() => {
