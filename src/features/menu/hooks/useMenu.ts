@@ -4,6 +4,13 @@ import { categoryApi } from '@/lib/api/category.api';
 import { foodItemApi } from '@/lib/api/food.api';
 import type { ApiCategory, ApiFoodItem } from '@/lib/types/api';
 import { API_BASE_URL } from '@/lib/env';
+import {
+  buildMenuExportCsv,
+  downloadCsv,
+  importRowToPayload,
+  parseMenuImportCsv,
+  resolveCategoryId,
+} from '../utils/menu-csv';
 
 // Backend returns image paths relative to the API server; resolve them to absolute URLs
 // so they load correctly from the admin (and any) frontend origin.
@@ -152,6 +159,8 @@ interface MenuStore {
   toggleFeatured: (id: string) => Promise<void>;
   toggleAvailability: (id: string) => Promise<void>;
   moveFood: (id: string, direction: 'up' | 'down') => Promise<void>;
+  exportMenuCsv: () => Promise<number>;
+  importMenuCsv: (file: File) => Promise<{ created: number; updated: number; skipped: number }>;
 
   getFilteredFoods: () => FoodItem[];
   getCategoryById: (id: string) => Category | undefined;
@@ -395,6 +404,67 @@ export const useMenuStore = create<MenuStore>((set, get) => ({
     } catch (error) {
       console.error('Failed to reload foods:', error);
     }
+  },
+
+  exportMenuCsv: async () => {
+    const categories = get().categories;
+    const items = await foodItemApi.listAll({ sort: 'sort_order' });
+    const csv = buildMenuExportCsv(items, categories);
+    const stamp = new Date().toISOString().slice(0, 10);
+    downloadCsv(`menu-export-${stamp}.csv`, csv);
+    return items.length;
+  },
+
+  importMenuCsv: async (file) => {
+    const text = await file.text();
+    const rows = parseMenuImportCsv(text);
+    if (rows.length === 0) {
+      throw new Error('No valid rows found in CSV');
+    }
+
+    const categories = get().categories.length
+      ? get().categories
+      : (await categoryApi.list({ limit: 100, sort: 'displayOrder', order: 'asc', status: 'active' }))
+          .data?.items?.map(mapApiCategoryToCategory) ?? [];
+
+    const existing = await foodItemApi.listAll({ sort: 'sort_order' });
+    const byId = new Map(existing.map((item) => [item.id, item]));
+    const bySlug = new Map(existing.map((item) => [item.slug.toLowerCase(), item]));
+
+    let created = 0;
+    let updated = 0;
+    let skipped = 0;
+
+    for (const row of rows) {
+      const categoryId = resolveCategoryId(categories, row.categorySlug, row.categoryName);
+      if (!categoryId) {
+        skipped += 1;
+        continue;
+      }
+
+      const payload = importRowToPayload(row, categoryId);
+      const match =
+        (row.id && byId.get(row.id)) ||
+        (row.slug && bySlug.get(row.slug.toLowerCase())) ||
+        undefined;
+
+      try {
+        if (match) {
+          await foodItemApi.update(match.id, payload);
+          updated += 1;
+        } else {
+          await foodItemApi.create(payload);
+          created += 1;
+        }
+      } catch {
+        skipped += 1;
+      }
+    }
+
+    const prodRes = await foodItemApi.list({ limit: 200, sort: 'sort_order' });
+    const foods = (prodRes.data?.items || []).map((p) => mapApiFoodItemToFoodItem(p, categories));
+    set({ foods, categories, dataLoaded: true });
+    return { created, updated, skipped };
   },
 
   deleteFood: async (id) => {

@@ -9,6 +9,21 @@ export const foodItemApi = {
     return data;
   },
 
+  async listAll(params?: Omit<FoodItemQueryParams, 'page' | 'limit'>): Promise<ApiFoodItem[]> {
+    const limit = 200;
+    let page = 1;
+    const items: ApiFoodItem[] = [];
+    while (true) {
+      const res = await foodItemApi.list({ ...params, page, limit, sort: params?.sort ?? 'sort_order' });
+      const batch = res.data?.items ?? [];
+      items.push(...batch);
+      const totalPages = res.data?.totalPages ?? 1;
+      if (page >= totalPages || batch.length === 0) break;
+      page += 1;
+    }
+    return items;
+  },
+
   async getById(id: string): Promise<ApiResponse<ApiFoodItem>> {
     const { data } = await apiClient.get(`/food-items/${id}`);
     return data;
