@@ -21,6 +21,15 @@ export interface Category {
   createdAt: number;
 }
 
+export interface FoodItemVariant {
+  id?: string;
+  name: string;
+  price: number;
+  isDefault: boolean;
+  isAvailable: boolean;
+  sortOrder: number;
+}
+
 export interface NutritionInfo {
   calories: number;
   protein: number;
@@ -38,6 +47,7 @@ export interface FoodItem {
   shortDescription: string;
   category: FoodCategory;
   price: number;
+  variants: FoodItemVariant[];
   preparationTime: number;
   nutrition: NutritionInfo;
   healthTags: HealthTag[];
@@ -75,6 +85,7 @@ export interface FoodItemFormData {
   displayOnWebsite: boolean;
   bestPairedWith: string[];
   sortOrder: number;
+  variants: FoodItemVariant[];
 }
 
 export interface MenuFilters {

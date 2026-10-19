@@ -9,6 +9,8 @@ import { AVAILABILITY_CONFIG, CUSTOMER_LABEL_CONFIG, FoodCategory, Availability,
 import { FoodImageUploader } from "./FoodImageUploader";
 import { HealthTagSelector } from "./HealthTagSelector";
 import { FoodPreview } from "./FoodPreview";
+import { FoodVariantsEditor } from "./FoodVariantsEditor";
+import type { FoodItemVariant } from "../types/menu";
 import { foodItemApi } from "@/lib/api/food.api";
 
 interface FormData {
@@ -84,6 +86,7 @@ export function FoodDrawer() {
   const [imageLoading, setImageLoading] = useState(false);
   const [addImageLoading, setAddImageLoading] = useState(false);
   const [editImageLoading, setEditImageLoading] = useState(false);
+  const [variants, setVariants] = useState<FoodItemVariant[]>([]);
 
   const { register, handleSubmit, watch, setValue, reset, formState: { errors } } = useForm<FormData>({
     defaultValues: {
@@ -111,11 +114,13 @@ export function FoodDrawer() {
   });
 
   const watchAll = watch();
+  const hasNamedVariants = variants.some((variant) => variant.name.trim());
 
   useEffect(() => {
     setImageFile(null);
     setImagePreview(selectedFood?.imageUrl || "");
     setImageLoading(false);
+    setVariants(selectedFood?.variants ?? []);
     if (selectedFood && (isEdit || isView)) {
       reset({
         name: selectedFood.name,
@@ -140,6 +145,7 @@ export function FoodDrawer() {
         sortOrder: selectedFood.sortOrder,
       });
     } else {
+      setVariants([]);
       const nextSortOrder = Math.max(0, ...useMenuStore.getState().foods.map((f) => f.sortOrder)) + 1;
       reset({
         name: "", description: "", shortDescription: "", category: categories[0]?.name || "",
@@ -152,11 +158,18 @@ export function FoodDrawer() {
   }, [selectedFood, isEdit, isView, reset]);
 
   const onSubmit = async (data: FormData) => {
+    const payload = { ...data, variants };
+    const namedVariants = variants.filter((variant) => variant.name.trim());
+    if (namedVariants.length > 0 && namedVariants.some((variant) => variant.price < 0)) {
+      alert("Each variant must have a price of zero or more.");
+      return;
+    }
+
     try {
       if (isAdd && imageFile) {
         setAddImageLoading(true);
         try {
-          await addFood(data, imageFile);
+          await addFood(payload, imageFile);
           await reloadFoods();
         } finally {
           setAddImageLoading(false);
@@ -164,16 +177,16 @@ export function FoodDrawer() {
       } else if (isEdit && selectedFood && imageFile) {
         setEditImageLoading(true);
         try {
-          await updateFood(selectedFood.id, data, imageFile);
+          await updateFood(selectedFood.id, payload, imageFile);
           await reloadFoods();
         } finally {
           setEditImageLoading(false);
         }
       } else {
         if (isEdit && selectedFood) {
-          await updateFood(selectedFood.id, data);
+          await updateFood(selectedFood.id, payload);
         } else if (isAdd) {
-          await addFood(data);
+          await addFood(payload);
         }
       }
     } catch (error) {
@@ -251,14 +264,29 @@ export function FoodDrawer() {
 
               <Section title="Pricing & Timing">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <Field label="Price (₹)" error={errors.price?.message}>
-                    <Input {...register("price", { required: "Price is required", min: { value: 0, message: "Price must be positive" } })} type="number" placeholder="0" />
-                  </Field>
+                  {variants.filter((variant) => variant.name.trim()).length === 0 && (
+                    <Field label="Price (₹)" error={errors.price?.message}>
+                      <Input
+                        {...register("price", {
+                          required: hasNamedVariants ? false : "Price is required",
+                          min: { value: 0, message: "Price must be positive" },
+                        })}
+                        type="number"
+                        placeholder="0"
+                        disabled={isView}
+                      />
+                    </Field>
+                  )}
 
                   <Field label="Preparation Time (minutes)" error={errors.preparationTime?.message}>
                     <Input {...register("preparationTime", { required: "Preparation time is required", min: { value: 1, message: "Must be at least 1 minute" } })} type="number" placeholder="15" />
                   </Field>
                 </div>
+                <FoodVariantsEditor
+                  variants={variants}
+                  onChange={setVariants}
+                  disabled={isView}
+                />
               </Section>
 
               <Section title="Nutrition Information">

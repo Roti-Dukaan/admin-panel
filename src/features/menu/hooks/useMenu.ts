@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { FoodItem, FoodItemFormData, MenuFilters, Availability, HealthTag, Category, HEALTH_TAG_CONFIG, CUSTOMER_LABEL_CONFIG, CustomerLabel } from '../types/menu';
+import { FoodItem, FoodItemFormData, FoodItemVariant, MenuFilters, Availability, HealthTag, Category, HEALTH_TAG_CONFIG, CUSTOMER_LABEL_CONFIG, CustomerLabel } from '../types/menu';
 import { categoryApi } from '@/lib/api/category.api';
 import { foodItemApi } from '@/lib/api/food.api';
 import type { ApiCategory, ApiFoodItem } from '@/lib/types/api';
@@ -39,10 +39,36 @@ function parseNutritionValue(value: unknown): number {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
+function mapApiVariants(api: ApiFoodItem): FoodItemVariant[] {
+  return (api.variants ?? []).map((variant) => ({
+    id: variant.id,
+    name: variant.name,
+    price: Number(variant.price),
+    isDefault: variant.isDefault,
+    isAvailable: variant.isAvailable,
+    sortOrder: variant.sortOrder,
+  }));
+}
+
+function resolveListPrice(api: ApiFoodItem, variants: FoodItemVariant[]): number {
+  if (variants.length > 0) {
+    const preferred =
+      variants.find((variant) => variant.isDefault && variant.isAvailable)
+      ?? variants.find((variant) => variant.isAvailable)
+      ?? variants[0];
+    return Number(preferred?.price ?? api.basePrice);
+  }
+  return Number(api.discountPrice || api.basePrice);
+}
+
 function toFormData(dto: Record<string, unknown>, imageFile: File): FormData {
   const fd = new FormData();
   Object.entries(dto).forEach(([key, value]) => {
     if (value === undefined || value === null) return;
+    if (key === 'variants') {
+      fd.append('variants', JSON.stringify(value ?? []));
+      return;
+    }
     if (Array.isArray(value)) {
       // An empty array still needs a field so the backend can tell "clear it" from "not sent".
       if (value.length === 0) fd.append(key, '');
@@ -79,6 +105,7 @@ function customerLabelsToApi(labels: CustomerLabel[]): string[] {
 
 function mapApiFoodItemToFoodItem(api: ApiFoodItem, categories: Category[]): FoodItem {
   const category = categories.find(c => c.id === api.categoryId);
+  const variants = mapApiVariants(api);
   return {
     id: api.id,
     name: api.name,
@@ -86,7 +113,8 @@ function mapApiFoodItemToFoodItem(api: ApiFoodItem, categories: Category[]): Foo
     description: api.description || '',
     shortDescription: api.shortDescription || '',
     category: category?.name || category?.slug || 'Uncategorized',
-    price: Number(api.discountPrice || api.basePrice),
+    price: resolveListPrice(api, variants),
+    variants,
     preparationTime: api.preparationTime || 20,
     nutrition: {
       calories: api.calories != null ? Number(api.calories) : 0,
@@ -323,12 +351,22 @@ export const useMenuStore = create<MenuStore>((set, get) => ({
 
   addFood: async (data, imageFile) => {
     try {
+      const activeVariants = (data.variants ?? []).filter((variant) => variant.name.trim());
       const dto: Record<string, unknown> = {
         name: data.name,
         description: data.description,
         shortDescription: data.shortDescription,
         categoryId: get().categories.find(c => c.name === data.category || c.slug === data.category)?.id || '',
-        basePrice: data.price,
+        basePrice: activeVariants.length > 0
+          ? (activeVariants.find((variant) => variant.isDefault)?.price ?? activeVariants[0].price)
+          : data.price,
+        variants: activeVariants.map((variant, index) => ({
+          name: variant.name.trim(),
+          price: variant.price,
+          isDefault: variant.isDefault,
+          isAvailable: variant.isAvailable,
+          sortOrder: variant.sortOrder ?? index,
+        })),
         preparationTime: data.preparationTime,
         foodType: data.foodType,
         isVeg: data.foodType === 'VEG',
@@ -362,12 +400,23 @@ export const useMenuStore = create<MenuStore>((set, get) => ({
 
   updateFood: async (id, data, imageFile) => {
     try {
+      const activeVariants = (data.variants ?? []).filter((variant) => variant.name.trim());
       const dto: Record<string, unknown> = {
         name: data.name,
         description: data.description,
         shortDescription: data.shortDescription,
         categoryId: get().categories.find(c => c.name === data.category || c.slug === data.category)?.id,
-        basePrice: data.price,
+        basePrice: activeVariants.length > 0
+          ? (activeVariants.find((variant) => variant.isDefault)?.price ?? activeVariants[0].price)
+          : data.price,
+        variants: activeVariants.map((variant, index) => ({
+          id: variant.id,
+          name: variant.name.trim(),
+          price: variant.price,
+          isDefault: variant.isDefault,
+          isAvailable: variant.isAvailable,
+          sortOrder: variant.sortOrder ?? index,
+        })),
         preparationTime: data.preparationTime,
         foodType: data.foodType,
         isVeg: data.foodType === 'VEG',
