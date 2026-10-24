@@ -78,7 +78,7 @@ const MAIN_ADMIN_NAV_GROUPS: NavGroup[] = [
     roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'],
     items: [
       { label: "Customers", href: "/customers", icon: Users, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
-      { label: "Area Waitlist", href: "/customers/waitlist", icon: BellRing, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
+      { label: "Area Requests", href: "/customers/waitlist", icon: BellRing, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
       { label: "Subscription Plans", href: "/subscription-plans", icon: CalendarDays, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
     ],
   },

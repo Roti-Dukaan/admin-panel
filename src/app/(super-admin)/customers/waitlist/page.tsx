@@ -62,7 +62,7 @@ export default function ServiceWaitlistPage() {
         totalPages: data.totalPages,
       });
     } catch {
-      toast.error("Failed to load the waitlist");
+      toast.error("Failed to load area requests");
     } finally {
       setLoading(false);
     }
@@ -99,8 +99,8 @@ export default function ServiceWaitlistPage() {
   return (
     <div className="min-h-screen bg-gray-50/50">
       <Header
-        title="Service Area Waitlist"
-        subtitle="Customers who tapped “Notify me” in locations without a kitchen."
+        title="Area expansion requests"
+        subtitle='Customers who tapped “Request Roti Dukaan in Your Area” on the coming-soon screen.'
         actions={
           <Button onClick={handleNotify} disabled={notifying || waitingCount === 0}>
             {notifying ? (
@@ -116,7 +116,7 @@ export default function ServiceWaitlistPage() {
       <div className="p-6 space-y-6">
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <p className="text-sm text-gray-500">Waiting customers</p>
+            <p className="text-sm text-gray-500">Pending requests</p>
             <p className="mt-1 text-2xl font-semibold text-gray-900">{waitingCount}</p>
           </div>
           <div className="bg-white rounded-xl border border-gray-200 p-4 text-sm text-gray-600">
@@ -174,7 +174,7 @@ export default function ServiceWaitlistPage() {
               ) : entries.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="py-10 text-center text-gray-500">
-                    No waitlist requests found.
+                    No area requests found.
                   </TableCell>
                 </TableRow>
               ) : (
