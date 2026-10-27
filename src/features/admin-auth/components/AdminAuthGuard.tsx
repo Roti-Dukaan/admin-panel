@@ -8,6 +8,7 @@ import {
   resolvePrimaryRole,
   workspaceFromRole,
 } from "../utils/role-utils"
+import { isSuperAdminRoute } from "@/lib/rbac/super-admin-routes"
 
 const PUBLIC_PATHS = ["/login"]
 
@@ -66,6 +67,16 @@ export function AdminAuthGuard({ children }: { children: React.ReactNode }) {
       !isDeliveryBoyAllowedPath(pathname)
     ) {
       router.replace("/delivery")
+      return
+    }
+
+    if (
+      isAuthenticated &&
+      currentWorkspace === "BRANCH_MANAGER" &&
+      !isPublic &&
+      isSuperAdminRoute(pathname)
+    ) {
+      router.replace("/branch/dashboard")
     }
   }, [pathname, router, isAuthenticated, workspace, role, isPublic])
 

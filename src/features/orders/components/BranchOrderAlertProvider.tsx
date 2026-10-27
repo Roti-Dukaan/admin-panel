@@ -357,6 +357,12 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
       }, 400);
     };
 
+    const offConnect = onRealtime(REALTIME_EVENTS.CONNECT, () => {
+      void qcRef.current.invalidateQueries({
+        queryKey: ["branch-manager", "global-pending-order-alerts"],
+      });
+    });
+
     const offTicketCreated = onRealtime(REALTIME_EVENTS.KITCHEN_TICKET_CREATED, (raw) => {
       const ticket = raw as KitchenTicketCreatedPayload;
       handleKitchenTicketCreated(qcRef.current, ticket);
@@ -441,6 +447,7 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
     });
 
     return () => {
+      offConnect();
       offTicketCreated();
       offBranch();
       offBranchUpdated();

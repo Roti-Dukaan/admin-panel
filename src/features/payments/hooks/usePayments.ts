@@ -102,14 +102,16 @@ function applyDateFilter(payments: Payment[], filters: PaymentFilters): Payment[
  */
 function toCodRecords(payments: Payment[]): CodRecord[] {
   return payments
-    .filter((p) => p.paymentMethod === 'cod')
+    .filter((p) => p.paymentMethod === 'cod' && p.paymentStatus !== 'cancelled')
     .map((p) => ({
       id: p.id,
       orderId: p.orderId,
       customerName: p.customerName,
       customerPhone: p.customerPhone,
       amount: p.amount,
-      collectionStatus: 'pending' as CodCollectionStatus,
+      collectionStatus: (p.paymentStatus === 'paid'
+        ? 'collected'
+        : 'pending') as CodCollectionStatus,
       collectedBy: '',
       collectionTime: null,
       remarks: '',
