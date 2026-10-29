@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
+import { toast } from "sonner";
 import { motion } from "motion/react";
 import { Plus, Download, Upload, Search, UtensilsCrossed, Store, ShoppingCart, Layers, IndianRupee, Loader2 } from "lucide-react";
 import { useMenuStore } from "@/features/menu/hooks/useMenu";
@@ -47,6 +48,42 @@ export default function MenuPage() {
   const clearFilters = useMenuStore((s) => s.clearFilters);
   const openAddDrawer = useMenuStore((s) => s.openAddDrawer);
   const openCategoryModal = useMenuStore((s) => s.openCategoryModal);
+  const exportMenuCsv = useMenuStore((s) => s.exportMenuCsv);
+  const importMenuCsv = useMenuStore((s) => s.importMenuCsv);
+  const importInputRef = useRef<HTMLInputElement>(null);
+  const [csvBusy, setCsvBusy] = useState<"export" | "import" | null>(null);
+
+  const handleExport = async () => {
+    setCsvBusy("export");
+    try {
+      const count = await exportMenuCsv();
+      toast.success(`Exported ${count} menu item${count === 1 ? "" : "s"} to CSV`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Export failed");
+    } finally {
+      setCsvBusy(null);
+    }
+  };
+
+  const handleImportClick = () => importInputRef.current?.click();
+
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setCsvBusy("import");
+    try {
+      const result = await importMenuCsv(file);
+      toast.success(
+        `Import complete: ${result.created} created, ${result.updated} updated` +
+          (result.skipped ? `, ${result.skipped} skipped` : ""),
+      );
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Import failed");
+    } finally {
+      setCsvBusy(null);
+    }
+  };
 
   useEffect(() => {
     loadData();
@@ -69,14 +106,31 @@ export default function MenuPage() {
               <Layers className="h-4 w-4" />
               Categories
             </button>
-            <button className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50">
-              <Download className="h-4 w-4" />
+            <button
+              type="button"
+              onClick={handleExport}
+              disabled={csvBusy !== null}
+              className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-60"
+            >
+              {csvBusy === "export" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
               Export
             </button>
-            <button className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50">
-              <Upload className="h-4 w-4" />
+            <button
+              type="button"
+              onClick={handleImportClick}
+              disabled={csvBusy !== null}
+              className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-60"
+            >
+              {csvBusy === "import" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
               Import
             </button>
+            <input
+              ref={importInputRef}
+              type="file"
+              accept=".csv,text/csv"
+              className="hidden"
+              onChange={handleImportFile}
+            />
             <button
               onClick={openAddDrawer}
               className="inline-flex items-center gap-2 rounded-xl bg-gray-900 px-5 py-2.5 text-sm font-bold text-white hover:bg-gray-800"

@@ -7,6 +7,7 @@ import { AdminAuthGuard } from "@/features/admin-auth/components/AdminAuthGuard"
 import { BranchOrderAlertProvider } from "@/features/orders/components/BranchOrderAlertProvider"
 import { useWorkspace } from "@/contexts/WorkspaceContext"
 import { hydrateAdminAuth } from "@/lib/auth/hydrate-admin-auth"
+import { markAlertSessionStart } from "@/lib/realtime/alert-session"
 
 const SIDEBAR_ROUTES = [
   "/dashboard",
@@ -81,7 +82,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   const isPublic = isPublicRoute(pathname)
 
-  React.useEffect(() => hydrateAdminAuth(() => setAuthReady(true)), [])
+  React.useEffect(() => {
+    markAlertSessionStart()
+    return hydrateAdminAuth(() => setAuthReady(true))
+  }, [])
 
   // Public routes (login, invitations) render immediately — never block behind auth hydration.
   if (!authReady && !isPublic) {

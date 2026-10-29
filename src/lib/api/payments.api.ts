@@ -100,7 +100,16 @@ function mapBackendMethod(method: string): Payment['paymentMethod'] {
   return map[method] ?? 'upi';
 }
 
+function mapDisplayGateway(raw: string | null | undefined): string {
+  if (!raw) return '—';
+  if (raw === 'cash') return 'Cash';
+  if (raw === 'razorpay') return 'Razorpay';
+  return raw.charAt(0).toUpperCase() + raw.slice(1);
+}
+
 function mapBackendPayment(backend: any): Payment {
+  const displayStatus = backend.displayStatus as string | undefined;
+  const rawGateway = backend.displayGateway as string | null | undefined;
   return {
     id: backend.id,
     paymentId: backend.paymentReference || backend.id,
@@ -111,8 +120,10 @@ function mapBackendPayment(backend: any): Payment {
     amount: Number(backend.amount),
     currency: backend.currency || 'INR',
     paymentMethod: mapBackendMethod(backend.paymentMethod),
-    paymentStatus: mapBackendStatus(backend.status),
-    gateway: backend.provider?.toLowerCase() || 'razorpay',
+    paymentStatus: displayStatus
+      ? (displayStatus as Payment['paymentStatus'])
+      : mapBackendStatus(backend.status),
+    gateway: rawGateway !== undefined ? mapDisplayGateway(rawGateway) : mapDisplayGateway(null),
     transactionTime: new Date(backend.createdAt).getTime(),
     items: backend.items?.map((item: any) => ({
       name: item.foodNameSnapshot,

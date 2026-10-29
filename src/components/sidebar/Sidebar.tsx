@@ -27,6 +27,7 @@ import {
   Ticket,
   Mail,
   Bell,
+  BellRing,
   LayoutGrid,
   Gift,
 } from "lucide-react"
@@ -40,6 +41,7 @@ import { useOrdersStore } from "@/features/orders/hooks/useOrders"
 import { BRANCH_MANAGER_NAVIGATION, getNavigationForWorkspace } from "@/config/navigation"
 import { useWorkspace } from "@/contexts/WorkspaceContext"
 import { useBranchName } from "@/features/branch/hooks/useBranchName"
+import { useAdminAuthStore } from "@/features/admin-auth/store/admin-auth-store"
 
 
 const MAIN_ADMIN_NAV_GROUPS: NavGroup[] = [
@@ -77,6 +79,7 @@ const MAIN_ADMIN_NAV_GROUPS: NavGroup[] = [
     roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'],
     items: [
       { label: "Customers", href: "/customers", icon: Users, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
+      { label: "Area Requests", href: "/customers/waitlist", icon: BellRing, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
       { label: "Subscription Plans", href: "/subscription-plans", icon: CalendarDays, roles: ['SUPER_ADMIN', 'OWNER', 'ADMIN'] },
     ],
   },
@@ -150,6 +153,23 @@ export function Sidebar({ collapsed = false, onToggle, mobileOpen = false, onMob
   const branchName = useBranchName()
   const statistics = useOrdersStore((s) => s.statistics)
   const kitchenLiveOrders = (statistics?.preparing ?? 0) + (statistics?.packed ?? 0)
+  const authRole = useAdminAuthStore((s) => s.role)
+  const authRoles = useAdminAuthStore((s) => s.user?.roles ?? [])
+  const userRoles = authRoles.length > 0 ? authRoles : authRole ? [authRole] : []
+
+  const canSeeNavItem = (item: { roles?: string[] }) => {
+    if (!item.roles?.length) return true
+    return item.roles.some((r) => userRoles.includes(r))
+  }
+
+  const filterAdminNavGroups = (groups: NavGroup[]): NavGroup[] =>
+    groups
+      .filter((group) => !group.roles?.length || group.roles.some((r) => userRoles.includes(r)))
+      .map((group) => ({
+        ...group,
+        items: group.items.filter(canSeeNavItem),
+      }))
+      .filter((group) => group.items.length > 0)
 
   const visibleNavGroups = isDeliveryBoy
     ? [{
@@ -174,7 +194,7 @@ export function Sidebar({ collapsed = false, onToggle, mobileOpen = false, onMob
         disabled: false,
       })),
     }]
-    : MAIN_ADMIN_NAV_GROUPS
+    : filterAdminNavGroups(MAIN_ADMIN_NAV_GROUPS)
 
   const homeHref = isDeliveryBoy ? '/delivery' : isBranchManager ? '/branch/dashboard' : '/dashboard'
   const workspaceLabel = isDeliveryBoy ? 'Delivery' : isBranchManager ? 'Branch Manager' : 'Admin'

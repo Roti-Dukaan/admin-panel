@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-
-const SUPER_ADMIN_PATHS = ['/dashboard', '/orders', '/deliveries', '/menu', '/customers', '/subscription-plans', '/subscriptions', '/delivery-slots', '/dispatch', '/reports', '/settings', '/areas', '/audit-logs', '/branches', '/cities', '/branch-inventory', '/subscription-operations', '/admin', '/support', '/coupons', '/contact-messages', '/cms', '/mobile-app']
+import { isSuperAdminRoute } from '@/lib/rbac/super-admin-routes'
 const BRANCH_PATHS = ['/branch/dashboard', '/branch/orders', '/branch/kitchen', '/branch/subscription-dispatch', '/branch/production', '/branch/menu', '/branch/inventory', '/branch/delivery', '/branch/dispatch', '/branch/delivery-partners', '/branch/delivery-boys', '/branch/customers', '/branch/team', '/branch/reports', '/branch/profile', '/branch/support']
 const DELIVERY_BOY_PATHS = ['/delivery']
 
@@ -34,9 +33,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  const isSuperAdminRoute = SUPER_ADMIN_PATHS.some(
-    (path) => pathname === path || pathname.startsWith(path + '/')
-  )
+  const isSuperAdminPath = isSuperAdminRoute(pathname)
   const isBranchRoute = BRANCH_PATHS.some(
     (path) => pathname === path || pathname.startsWith(path + '/')
   )
@@ -57,7 +54,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  if (isSuperAdminRoute) {
+  if (isSuperAdminPath) {
     if (!workspace) {
       return NextResponse.redirect(new URL('/login', request.url))
     }
@@ -117,5 +114,7 @@ export const config = {
     '/contact-messages/:path*',
     '/cms/:path*',
     '/mobile-app/:path*',
+    '/referrals/:path*',
+    '/finance/:path*',
   ],
 }

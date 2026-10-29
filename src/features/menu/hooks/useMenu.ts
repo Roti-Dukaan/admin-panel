@@ -1,9 +1,16 @@
 import { create } from 'zustand';
-import { FoodItem, FoodItemFormData, MenuFilters, Availability, HealthTag, Category, HEALTH_TAG_CONFIG, CUSTOMER_LABEL_CONFIG, CustomerLabel } from '../types/menu';
+import { FoodItem, FoodItemFormData, FoodItemVariant, MenuFilters, Availability, HealthTag, Category, HEALTH_TAG_CONFIG, CUSTOMER_LABEL_CONFIG, CustomerLabel } from '../types/menu';
 import { categoryApi } from '@/lib/api/category.api';
 import { foodItemApi } from '@/lib/api/food.api';
 import type { ApiCategory, ApiFoodItem } from '@/lib/types/api';
 import { API_BASE_URL } from '@/lib/env';
+import {
+  buildMenuExportCsv,
+  downloadCsv,
+  importRowToPayload,
+  parseMenuImportCsv,
+  resolveCategoryId,
+} from '../utils/menu-csv';
 
 // Backend returns image paths relative to the API server; resolve them to absolute URLs
 // so they load correctly from the admin (and any) frontend origin.
@@ -32,10 +39,36 @@ function parseNutritionValue(value: unknown): number {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
+function mapApiVariants(api: ApiFoodItem): FoodItemVariant[] {
+  return (api.variants ?? []).map((variant) => ({
+    id: variant.id,
+    name: variant.name,
+    price: Number(variant.price),
+    isDefault: variant.isDefault,
+    isAvailable: variant.isAvailable,
+    sortOrder: variant.sortOrder,
+  }));
+}
+
+function resolveListPrice(api: ApiFoodItem, variants: FoodItemVariant[]): number {
+  if (variants.length > 0) {
+    const preferred =
+      variants.find((variant) => variant.isDefault && variant.isAvailable)
+      ?? variants.find((variant) => variant.isAvailable)
+      ?? variants[0];
+    return Number(preferred?.price ?? api.basePrice);
+  }
+  return Number(api.discountPrice || api.basePrice);
+}
+
 function toFormData(dto: Record<string, unknown>, imageFile: File): FormData {
   const fd = new FormData();
   Object.entries(dto).forEach(([key, value]) => {
     if (value === undefined || value === null) return;
+    if (key === 'variants') {
+      fd.append('variants', JSON.stringify(value ?? []));
+      return;
+    }
     if (Array.isArray(value)) {
       // An empty array still needs a field so the backend can tell "clear it" from "not sent".
       if (value.length === 0) fd.append(key, '');
@@ -72,6 +105,7 @@ function customerLabelsToApi(labels: CustomerLabel[]): string[] {
 
 function mapApiFoodItemToFoodItem(api: ApiFoodItem, categories: Category[]): FoodItem {
   const category = categories.find(c => c.id === api.categoryId);
+  const variants = mapApiVariants(api);
   return {
     id: api.id,
     name: api.name,
@@ -79,7 +113,8 @@ function mapApiFoodItemToFoodItem(api: ApiFoodItem, categories: Category[]): Foo
     description: api.description || '',
     shortDescription: api.shortDescription || '',
     category: category?.name || category?.slug || 'Uncategorized',
-    price: Number(api.discountPrice || api.basePrice),
+    price: resolveListPrice(api, variants),
+    variants,
     preparationTime: api.preparationTime || 20,
     nutrition: {
       calories: api.calories != null ? Number(api.calories) : 0,
@@ -152,6 +187,8 @@ interface MenuStore {
   toggleFeatured: (id: string) => Promise<void>;
   toggleAvailability: (id: string) => Promise<void>;
   moveFood: (id: string, direction: 'up' | 'down') => Promise<void>;
+  exportMenuCsv: () => Promise<number>;
+  importMenuCsv: (file: File) => Promise<{ created: number; updated: number; skipped: number }>;
 
   getFilteredFoods: () => FoodItem[];
   getCategoryById: (id: string) => Category | undefined;
@@ -314,12 +351,22 @@ export const useMenuStore = create<MenuStore>((set, get) => ({
 
   addFood: async (data, imageFile) => {
     try {
+      const activeVariants = (data.variants ?? []).filter((variant) => variant.name.trim());
       const dto: Record<string, unknown> = {
         name: data.name,
         description: data.description,
         shortDescription: data.shortDescription,
         categoryId: get().categories.find(c => c.name === data.category || c.slug === data.category)?.id || '',
-        basePrice: data.price,
+        basePrice: activeVariants.length > 0
+          ? (activeVariants.find((variant) => variant.isDefault)?.price ?? activeVariants[0].price)
+          : data.price,
+        variants: activeVariants.map((variant, index) => ({
+          name: variant.name.trim(),
+          price: variant.price,
+          isDefault: variant.isDefault,
+          isAvailable: variant.isAvailable,
+          sortOrder: variant.sortOrder ?? index,
+        })),
         preparationTime: data.preparationTime,
         foodType: data.foodType,
         isVeg: data.foodType === 'VEG',
@@ -353,12 +400,23 @@ export const useMenuStore = create<MenuStore>((set, get) => ({
 
   updateFood: async (id, data, imageFile) => {
     try {
+      const activeVariants = (data.variants ?? []).filter((variant) => variant.name.trim());
       const dto: Record<string, unknown> = {
         name: data.name,
         description: data.description,
         shortDescription: data.shortDescription,
         categoryId: get().categories.find(c => c.name === data.category || c.slug === data.category)?.id,
-        basePrice: data.price,
+        basePrice: activeVariants.length > 0
+          ? (activeVariants.find((variant) => variant.isDefault)?.price ?? activeVariants[0].price)
+          : data.price,
+        variants: activeVariants.map((variant, index) => ({
+          id: variant.id,
+          name: variant.name.trim(),
+          price: variant.price,
+          isDefault: variant.isDefault,
+          isAvailable: variant.isAvailable,
+          sortOrder: variant.sortOrder ?? index,
+        })),
         preparationTime: data.preparationTime,
         foodType: data.foodType,
         isVeg: data.foodType === 'VEG',
@@ -395,6 +453,67 @@ export const useMenuStore = create<MenuStore>((set, get) => ({
     } catch (error) {
       console.error('Failed to reload foods:', error);
     }
+  },
+
+  exportMenuCsv: async () => {
+    const categories = get().categories;
+    const items = await foodItemApi.listAll({ sort: 'sort_order' });
+    const csv = buildMenuExportCsv(items, categories);
+    const stamp = new Date().toISOString().slice(0, 10);
+    downloadCsv(`menu-export-${stamp}.csv`, csv);
+    return items.length;
+  },
+
+  importMenuCsv: async (file) => {
+    const text = await file.text();
+    const rows = parseMenuImportCsv(text);
+    if (rows.length === 0) {
+      throw new Error('No valid rows found in CSV');
+    }
+
+    const categories = get().categories.length
+      ? get().categories
+      : (await categoryApi.list({ limit: 100, sort: 'displayOrder', order: 'asc', status: 'active' }))
+          .data?.items?.map(mapApiCategoryToCategory) ?? [];
+
+    const existing = await foodItemApi.listAll({ sort: 'sort_order' });
+    const byId = new Map(existing.map((item) => [item.id, item]));
+    const bySlug = new Map(existing.map((item) => [item.slug.toLowerCase(), item]));
+
+    let created = 0;
+    let updated = 0;
+    let skipped = 0;
+
+    for (const row of rows) {
+      const categoryId = resolveCategoryId(categories, row.categorySlug, row.categoryName);
+      if (!categoryId) {
+        skipped += 1;
+        continue;
+      }
+
+      const payload = importRowToPayload(row, categoryId);
+      const match =
+        (row.id && byId.get(row.id)) ||
+        (row.slug && bySlug.get(row.slug.toLowerCase())) ||
+        undefined;
+
+      try {
+        if (match) {
+          await foodItemApi.update(match.id, payload);
+          updated += 1;
+        } else {
+          await foodItemApi.create(payload);
+          created += 1;
+        }
+      } catch {
+        skipped += 1;
+      }
+    }
+
+    const prodRes = await foodItemApi.list({ limit: 200, sort: 'sort_order' });
+    const foods = (prodRes.data?.items || []).map((p) => mapApiFoodItemToFoodItem(p, categories));
+    set({ foods, categories, dataLoaded: true });
+    return { created, updated, skipped };
   },
 
   deleteFood: async (id) => {

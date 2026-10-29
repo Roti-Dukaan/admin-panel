@@ -322,7 +322,7 @@ export function RealtimeDriverStops({ date }: { date?: string }) {
                     )}
                   >
                     <IndianRupee className="h-3 w-3" />
-                    ₹{stop.codCollectedAmount ?? stop.codExpectedAmount ?? stop.grandTotal}
+                    {stop.codCollectedAmount ?? stop.codExpectedAmount ?? stop.grandTotal}
                     {isCodCollected(stop.codCollectionStatus) ? " · Collected" : " · Collect"}
                   </Badge>
                 )}

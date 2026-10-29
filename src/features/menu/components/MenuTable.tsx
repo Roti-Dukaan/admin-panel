@@ -117,13 +117,21 @@ export function MenuTable() {
     }),
     columnHelper.accessor("price", {
       header: "Price",
-      cell: (info) => (
-        <span className="text-sm font-bold text-gray-900">
-          ₹{typeof info.getValue() === 'number' && info.getValue() > 99999
-            ? (info.getValue() / 100000).toFixed(1) + 'L'
-            : info.getValue()}
-        </span>
-      ),
+      cell: (info) => {
+        const variantCount = info.row.original.variants?.filter((variant) => variant.name.trim()).length ?? 0;
+        return (
+          <div className="flex flex-col gap-0.5">
+            <span className="text-sm font-bold text-gray-900">
+              ₹{typeof info.getValue() === 'number' && info.getValue() > 99999
+                ? (info.getValue() / 100000).toFixed(1) + 'L'
+                : info.getValue()}
+            </span>
+            {variantCount > 0 && (
+              <span className="text-[11px] text-gray-500">{variantCount} variants</span>
+            )}
+          </div>
+        );
+      },
     }),
     columnHelper.accessor("preparationTime", {
       header: "Prep Time",

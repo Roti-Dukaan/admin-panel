@@ -50,6 +50,7 @@ export type RBACModule =
   | 'orders'
   | 'kitchen'
   | 'customers'
+  | 'area_requests'
   | 'menu'
   | 'categories'
   | 'subscription_plans'
@@ -57,6 +58,10 @@ export type RBACModule =
   | 'reports'
   | 'payments'
   | 'coupons'
+  | 'referrals'
+  | 'cms'
+  | 'notifications'
+  | 'support'
   | 'settings'
   | 'roles'
   | 'audit_logs';
@@ -66,6 +71,7 @@ export const RBAC_MODULES: { key: RBACModule; label: string; description: string
   { key: 'orders', label: 'Orders', description: 'Manage customer orders' },
   { key: 'kitchen', label: 'Kitchen', description: 'Kitchen operations and preparation' },
   { key: 'customers', label: 'Customers', description: 'Customer management and profiles' },
+  { key: 'area_requests', label: 'Area Requests', description: 'Coming-soon expansion requests by city' },
   { key: 'menu', label: 'Menu', description: 'Menu item management' },
   { key: 'categories', label: 'Categories', description: 'Category management' },
   { key: 'subscription_plans', label: 'Subscription Plans', description: 'Plan configuration and management' },
@@ -73,6 +79,10 @@ export const RBAC_MODULES: { key: RBACModule; label: string; description: string
   { key: 'reports', label: 'Reports', description: 'Analytics and reporting' },
   { key: 'payments', label: 'Payments', description: 'Payment processing and refunds' },
   { key: 'coupons', label: 'Coupons', description: 'Coupon and discount management' },
+  { key: 'referrals', label: 'Referrals', description: 'Referral campaigns, tracking, and fraud review' },
+  { key: 'cms', label: 'CMS', description: 'Website and mobile app content' },
+  { key: 'notifications', label: 'Notifications', description: 'Push notification campaigns' },
+  { key: 'support', label: 'Customer Support', description: 'Support tickets and help desk' },
   { key: 'settings', label: 'Settings', description: 'System configuration' },
   { key: 'roles', label: 'Roles & Permissions', description: 'Role and permission management' },
   { key: 'audit_logs', label: 'Audit Logs', description: 'Activity and audit trail' },

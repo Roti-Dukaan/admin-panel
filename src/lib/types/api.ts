@@ -45,6 +45,15 @@ export interface ApiCategory {
   deletedAt: string | null;
 }
 
+export interface ApiFoodItemVariant {
+  id: string;
+  name: string;
+  price: number;
+  isDefault: boolean;
+  isAvailable: boolean;
+  sortOrder: number;
+}
+
 export interface ApiFoodItem {
   id: string;
   categoryId: string;
@@ -79,6 +88,7 @@ export interface ApiFoodItem {
   fats: number | null;
   fiber: number | null;
   servingSize: string | null;
+  variants?: ApiFoodItemVariant[];
   sortOrder: number;
   metaTitle: string | null;
   metaDescription: string | null;

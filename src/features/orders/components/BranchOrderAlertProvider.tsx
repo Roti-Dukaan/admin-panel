@@ -45,7 +45,10 @@ import {
 } from "@/lib/realtime/notify";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
 import { useAdminAuthStore } from "@/features/admin-auth/store/admin-auth-store";
-import { useKitchenStageMutation } from "@/features/kitchen/hooks/useKitchen";
+import {
+  useKitchenCancelMutation,
+  useKitchenStageMutation,
+} from "@/features/kitchen/hooks/useKitchen";
 import {
   handleBranchOrderNew,
   handleBranchOrderStatusUpdated,
@@ -62,6 +65,7 @@ import {
 } from "@/features/branch-dashboard/utils/branch-dashboard-realtime-sync";
 import { useOrdersStore } from "../hooks/useOrders";
 import { useGlobalPendingOrderPoll } from "../hooks/useGlobalPendingOrderPoll";
+import { useRealtimeConnectionStatus } from "@/lib/realtime/useRealtimeConnectionStatus";
 import { normalizeOrderStatus } from "../utils/status";
 import { NewOrderAlertModal } from "./NewOrderAlertModal";
 
@@ -112,6 +116,8 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
   const seen = useRef<Set<string>>(new Set());
   const placementSeen = useRef<Set<string>>(new Set());
   const stageMutation = useKitchenStageMutation();
+  const cancelMutation = useKitchenCancelMutation();
+  const socketConnected = useRealtimeConnectionStatus();
 
   const alert = alerts[0] ?? null;
   const open = alerts.length > 0;
@@ -124,6 +130,21 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
       offEnabled();
     };
   }, []);
+
+  useEffect(() => {
+    if (!isBranchManager || !isAuthenticated || missingBranchAssignment) return;
+    if (isOrderAlertsEnabled()) return;
+    try {
+      const key = "roti-order-alert-prompt-shown";
+      if (sessionStorage.getItem(key) === "1") return;
+      sessionStorage.setItem(key, "1");
+    } catch {
+      /* ignore */
+    }
+    toast.info("Enable order alert sound (button at bottom) — required once per browser on production.", {
+      duration: 12000,
+    });
+  }, [isBranchManager, isAuthenticated, missingBranchAssignment]);
 
   const addRingingOrder = useCallback((orderId: string) => {
     setRingingOrderIds((prev) => (prev.includes(orderId) ? prev : [...prev, orderId]));
@@ -283,6 +304,7 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
     isBranchManager && isAuthenticated && !!accessToken,
     branchId,
     (payload) => showAlertRef.current(payload, { forceAlert: true, broadcast: true }),
+    { socketConnected },
   );
 
   // Own the shared socket lifecycle once per branch-manager session. Token
@@ -334,6 +356,12 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
         refetchKitchenQueries(qcRef.current);
       }, 400);
     };
+
+    const offConnect = onRealtime(REALTIME_EVENTS.CONNECT, () => {
+      void qcRef.current.invalidateQueries({
+        queryKey: ["branch-manager", "global-pending-order-alerts"],
+      });
+    });
 
     const offTicketCreated = onRealtime(REALTIME_EVENTS.KITCHEN_TICKET_CREATED, (raw) => {
       const ticket = raw as KitchenTicketCreatedPayload;
@@ -419,6 +447,7 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
     });
 
     return () => {
+      offConnect();
       offTicketCreated();
       offBranch();
       offBranchUpdated();
@@ -464,21 +493,6 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
     };
   }, [ringingOrderIds.length]);
 
-  const dismissAlert = useCallback(
-    (broadcast = true) => {
-      const orderId = alert?.orderId;
-      if (!orderId) return;
-      hideAlert(orderId, broadcast);
-    },
-    [alert?.orderId, hideAlert],
-  );
-
-  const handleViewDetails = () => {
-    if (!alert) return;
-    // Navigate without stopping the alert ring.
-    router.push(`/branch/kitchen?orderId=${alert.orderId}`);
-  };
-
   const handleStartPreparing = () => {
     if (!alert) return;
     const orderId = alert.orderId;
@@ -491,6 +505,14 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
         onSuccess: () => resolveOrder(orderId),
       },
     );
+  };
+
+  const handleCancelOrder = () => {
+    if (!alert) return;
+    cancelMutation.mutate({
+      orderId: alert.orderId,
+      reason: "Cancelled by branch",
+    });
   };
 
   return (
@@ -547,9 +569,9 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
         queuedCount={queuedCount}
         soundBlocked={soundBlocked}
         preparing={stageMutation.isPending}
+        cancelling={cancelMutation.isPending}
         onStartPreparing={handleStartPreparing}
-        onDismiss={() => dismissAlert()}
-        onViewDetails={handleViewDetails}
+        onCancel={handleCancelOrder}
         onEnableSound={() => void handleEnableAlerts()}
         enablingSound={enablingAlerts}
       />

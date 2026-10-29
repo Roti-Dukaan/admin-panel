@@ -8,8 +8,9 @@ import { supportApi, type SupportTicket, type SupportMessage, type SupportActivi
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Paperclip, Clock, User, Building2, UtensilsCrossed, Truck, Star, MessageSquare } from "lucide-react";
+import { ArrowLeft, Paperclip, Clock, User, Building2, UtensilsCrossed, Star, MessageSquare } from "lucide-react";
 import { useSupportTicketRealtime } from "@/features/support/hooks/useSupportTicketRealtime";
+import { CustomerRecentOrdersCard } from "@/features/support/components/CustomerRecentOrdersCard";
 
 const STATUS_COLORS: Record<string, string> = {
   OPEN: "bg-blue-100 text-blue-700",
@@ -29,20 +30,10 @@ export default function BranchTicketDetailPage() {
   const [ticket, setTicket] = useState<SupportTicket | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"conversation" | "activity">("conversation");
-  const [customerOrders, setCustomerOrders] = useState<Array<{ id: string; orderNumber: string; status: string; grandTotal: number; createdAt: string }>>([]);
-
   const loadTicket = useCallback(async () => {
     try {
       const { data } = await supportApi.getById(ticketId);
       setTicket(data);
-      if (data.customerId) {
-        try {
-          const { data: ordersData } = await supportApi.getCustomerOrders(data.customerId, 1, 5);
-          setCustomerOrders(ordersData.items);
-        } catch {
-          // Ignore orders fetch failure
-        }
-      }
     } catch (err) {
       console.error("Failed to load ticket", err);
     } finally {
@@ -289,37 +280,7 @@ export default function BranchTicketDetailPage() {
             </Card>
           )}
 
-          {/* Customer Recent Orders */}
-          {customerOrders.length > 0 && (
-            <Card className="border-gray-100">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                  <Truck className="h-4 w-4" />
-                  Recent Customer Orders
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {customerOrders.map((order) => (
-                  <div key={order.id} className="flex items-center justify-between text-sm border-b border-gray-50 pb-2 last:border-0 last:pb-0">
-                    <div>
-                      <p className="font-medium text-orange-600">{order.orderNumber}</p>
-                      <p className="text-xs text-gray-400">{new Date(order.createdAt).toLocaleDateString()}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xs font-medium text-gray-700">₹{order.grandTotal}</p>
-                      <Badge className={`text-xs ${
-                        order.status === 'DELIVERED' ? 'bg-green-100 text-green-700' :
-                        order.status === 'CANCELLED' ? 'bg-red-100 text-red-700' :
-                        'bg-blue-100 text-blue-700'
-                      }`}>
-                        {order.status.replace(/_/g, ' ')}
-                      </Badge>
-                    </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          )}
+          <CustomerRecentOrdersCard customerId={ticket.customerId} />
 
           {/* Order Details */}
           {ticket.order && (
