@@ -17,6 +17,10 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Send, Paperclip, Clock, User, Building2, UtensilsCrossed, Star, MessageSquare } from "lucide-react";
+import {
+  isImageAttachment,
+  supportAttachmentImageSrc,
+} from "@/lib/utils/support-attachment-url";
 
 const STATUS_COLORS: Record<string, string> = {
   OPEN: "bg-blue-100 text-blue-700",
@@ -128,6 +132,13 @@ export default function TicketDetailPage() {
   }
 
   const allMessages = ticket.messages || [];
+  const initialCustomerMessage = allMessages.find(
+    (m) =>
+      !m.isInternal &&
+      m.senderType === "CUSTOMER" &&
+      m.message.trim() === ticket.description.trim(),
+  );
+  const initialAttachments = initialCustomerMessage?.attachments ?? [];
   const messages = allMessages.filter(
     (m) =>
       !m.isInternal &&
@@ -186,6 +197,39 @@ export default function TicketDetailPage() {
                     <div className="flex-1">
                       <p className="text-sm font-medium text-gray-900">{ticket.customer?.name ?? "Customer"}</p>
                       <p className="mt-1 text-sm text-gray-600 whitespace-pre-wrap">{ticket.description}</p>
+                      {initialAttachments.length > 0 && (
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {initialAttachments.map((att) =>
+                            isImageAttachment(att.fileType, att.url) ? (
+                              <a
+                                key={att.id}
+                                href={supportAttachmentImageSrc(att.url)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="block overflow-hidden rounded-lg border border-gray-200"
+                              >
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                  src={supportAttachmentImageSrc(att.url)}
+                                  alt="Customer attachment"
+                                  className="h-24 w-24 object-cover"
+                                />
+                              </a>
+                            ) : (
+                              <a
+                                key={att.id}
+                                href={att.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 rounded-md bg-gray-50 px-2 py-1 text-xs text-gray-600 hover:bg-gray-100"
+                              >
+                                <Paperclip className="h-3 w-3" />
+                                {att.fileType.split("/").pop()?.toUpperCase()}
+                              </a>
+                            ),
+                          )}
+                        </div>
+                      )}
                       <p className="mt-2 text-xs text-gray-400">{new Date(ticket.createdAt).toLocaleString()}</p>
                     </div>
                   </div>
@@ -215,12 +259,35 @@ export default function TicketDetailPage() {
                         <p className="mt-1 text-sm text-gray-600 whitespace-pre-wrap">{msg.message}</p>
                         {msg.attachments && msg.attachments.length > 0 && (
                           <div className="mt-2 flex flex-wrap gap-2">
-                            {msg.attachments.map((att) => (
-                              <a key={att.id} href={att.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 rounded-md bg-gray-50 px-2 py-1 text-xs text-gray-600 hover:bg-gray-100">
-                                <Paperclip className="h-3 w-3" />
-                                {att.fileType.split("/").pop()?.toUpperCase()}
-                              </a>
-                            ))}
+                            {msg.attachments.map((att) =>
+                              isImageAttachment(att.fileType, att.url) ? (
+                                <a
+                                  key={att.id}
+                                  href={supportAttachmentImageSrc(att.url)}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="block overflow-hidden rounded-lg border border-gray-200"
+                                >
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                                  <img
+                                    src={supportAttachmentImageSrc(att.url)}
+                                    alt="Attachment"
+                                    className="h-24 w-24 object-cover"
+                                  />
+                                </a>
+                              ) : (
+                                <a
+                                  key={att.id}
+                                  href={att.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 rounded-md bg-gray-50 px-2 py-1 text-xs text-gray-600 hover:bg-gray-100"
+                                >
+                                  <Paperclip className="h-3 w-3" />
+                                  {att.fileType.split("/").pop()?.toUpperCase()}
+                                </a>
+                              ),
+                            )}
                           </div>
                         )}
                         <p className="mt-2 text-xs text-gray-400">{new Date(msg.createdAt).toLocaleString()}</p>

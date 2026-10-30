@@ -15,7 +15,8 @@ import { motion } from "motion/react";
 import { ArrowUpDown, MoreHorizontal, Eye, Edit, Copy, Trash2, Star, ToggleLeft, ToggleRight, ImageIcon, ChevronUp, ChevronDown } from "lucide-react";
 import { useMenuStore } from "../hooks/useMenu";
 import { FoodItem, CUSTOMER_LABEL_CONFIG, CustomerLabel } from "../types/menu";
-import { CategoryBadge, AvailabilityBadge } from "./CategoryBadge";
+import { CategoryBadge } from "./CategoryBadge";
+import { MenuAvailabilityToggle } from "./MenuAvailabilityToggle";
 
 const columnHelper = createColumnHelper<FoodItem>();
 
@@ -138,8 +139,14 @@ export function MenuTable() {
       cell: (info) => <span className="text-sm text-gray-600">{info.getValue()} min</span>,
     }),
     columnHelper.accessor("availability", {
-      header: "Status",
-      cell: (info) => <AvailabilityBadge availability={info.getValue()} />,
+      header: "Available",
+      cell: (info) => (
+        <MenuAvailabilityToggle
+          foodId={info.row.original.id}
+          availability={info.getValue()}
+          onToggle={toggleAvailability}
+        />
+      ),
     }),
     columnHelper.accessor("isFeatured", {
       header: "Featured",
