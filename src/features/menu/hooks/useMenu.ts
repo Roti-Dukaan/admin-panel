@@ -567,13 +567,28 @@ export const useMenuStore = create<MenuStore>((set, get) => ({
   toggleAvailability: async (id) => {
     const food = get().foods.find(f => f.id === id);
     if (!food) return;
+    const nextAvailable = food.availability !== 'available';
+    const previousFoods = get().foods;
+    set({
+      foods: previousFoods.map((f) =>
+        f.id === id
+          ? {
+              ...f,
+              availability: nextAvailable ? 'available' : 'unavailable',
+              displayOnWebsite: nextAvailable,
+            }
+          : f,
+      ),
+    });
     try {
-      await foodItemApi.updateAvailability(id, food.availability !== 'available');
+      await foodItemApi.updateAvailability(id, nextAvailable);
       const prodRes = await foodItemApi.list({ limit: 200, sort: 'sort_order' });
       const foods = (prodRes.data?.items || []).map(p => mapApiFoodItemToFoodItem(p, get().categories));
       set({ foods });
     } catch (error) {
       console.error('Failed to toggle availability:', error);
+      set({ foods: previousFoods });
+      throw error;
     }
   },
 
