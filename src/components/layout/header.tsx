@@ -2,8 +2,12 @@
 
 import * as React from "react"
 import { cn } from "@/lib/utils"
+import Link from "next/link"
 import { Bell, Search, Menu } from "lucide-react"
 import { useSidebarMobile } from "./sidebar-provider"
+import { RotiDukaanLogoMark } from "@/components/brand/RotiDukaanLogo"
+import { useWorkspace } from "@/contexts/WorkspaceContext"
+import { getPortalHomeHref } from "@/lib/brand/portal-home"
 
 interface HeaderProps {
   title?: string
@@ -18,6 +22,8 @@ interface HeaderProps {
 export function Header({ title, subtitle, titleNode, dateFilter, actions, showSearch = true, className }: HeaderProps) {
   const [searchFocused, setSearchFocused] = React.useState(false)
   const { setMobileOpen } = useSidebarMobile()
+  const { isBranchManager, isDeliveryBoy } = useWorkspace()
+  const homeHref = getPortalHomeHref({ isBranchManager, isDeliveryBoy })
 
   return (
     <header className={cn("sticky top-0 z-30 flex h-16 items-center justify-between border-b border-gray-100 bg-white/80 backdrop-blur-xl px-6", className)}>
@@ -29,6 +35,13 @@ export function Header({ title, subtitle, titleNode, dateFilter, actions, showSe
         >
           <Menu className="h-5 w-5" />
         </button>
+        <Link
+          href={homeHref}
+          className="shrink-0 rounded-full ring-2 ring-orange-500/15 transition hover:ring-orange-500/35 lg:hidden"
+          aria-label="Roti Dukaan home"
+        >
+          <RotiDukaanLogoMark size="xs" shape="circle" />
+        </Link>
         {titleNode ? (
           <div className="min-w-0">{titleNode}</div>
         ) : (

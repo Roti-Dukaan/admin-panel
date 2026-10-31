@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "motion/react"
 import { EmailStep } from "./EmailStep"
 import { OtpStep } from "./OtpStep"
 import { useAdminLogin } from "../hooks/useAdminLogin"
-import { Store } from "lucide-react"
+import { RotiDukaanLogo } from "@/components/brand/RotiDukaanLogo"
 
 export function AdminLoginCard() {
   const {
@@ -31,14 +31,8 @@ export function AdminLoginCard() {
       transition={{ duration: 0.5, delay: 0.2 }}
       className="w-full max-w-[420px] rounded-3xl bg-white p-8 shadow-2xl shadow-gray-200/50 border border-gray-100"
     >
-      <div className="flex items-center gap-2 mb-8">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-500">
-          <Store className="h-5 w-5 text-white" />
-        </div>
-        <div>
-          <h2 className="text-sm font-bold text-gray-900">Roti Dukaan</h2>
-          <p className="text-xs text-gray-400">Admin Portal</p>
-        </div>
+      <div className="mb-8">
+        <RotiDukaanLogo size="md" theme="light" subtitle="Admin Portal" />
       </div>
 
       <AnimatePresence mode="wait">

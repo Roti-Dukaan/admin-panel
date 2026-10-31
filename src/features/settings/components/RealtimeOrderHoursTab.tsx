@@ -6,6 +6,8 @@ import {
   realtimeOrderHoursApi,
   type RealtimeOrderHoursSettings,
 } from "@/lib/api/realtime-order-hours.api";
+import { DeliverySlotTimeInput } from "@/components/delivery/DeliverySlotTimeInput";
+import { formatDeliverySlotTime } from "@/lib/delivery-slot-display";
 
 function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) {
   return (
@@ -98,22 +100,18 @@ export function RealtimeOrderHoursTab() {
       />
 
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           <label className="block text-xs font-bold uppercase tracking-wider text-gray-400">Opens at (IST)</label>
-          <input
-            type="time"
+          <DeliverySlotTimeInput
             value={form.realtimeOrderOpenTime}
-            onChange={(e) => setForm((p) => ({ ...p, realtimeOrderOpenTime: e.target.value }))}
-            className="h-10 w-full rounded-lg border border-gray-200 px-3 text-sm"
+            onChange={(realtimeOrderOpenTime) => setForm((p) => ({ ...p, realtimeOrderOpenTime }))}
           />
         </div>
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           <label className="block text-xs font-bold uppercase tracking-wider text-gray-400">Closes at (IST)</label>
-          <input
-            type="time"
+          <DeliverySlotTimeInput
             value={form.realtimeOrderCloseTime}
-            onChange={(e) => setForm((p) => ({ ...p, realtimeOrderCloseTime: e.target.value }))}
-            className="h-10 w-full rounded-lg border border-gray-200 px-3 text-sm"
+            onChange={(realtimeOrderCloseTime) => setForm((p) => ({ ...p, realtimeOrderCloseTime }))}
           />
         </div>
       </div>
@@ -122,7 +120,11 @@ export function RealtimeOrderHoursTab() {
         Right now:{" "}
         <strong>{form.currentlyAcceptingOrders ? "Accepting realtime orders" : "Outside order hours"}</strong>
         {form.realtimeOrderScheduleEnabled && (
-          <> (daily {form.realtimeOrderOpenTime} – {form.realtimeOrderCloseTime} IST)</>
+          <>
+            {" "}
+            (daily {formatDeliverySlotTime(form.realtimeOrderOpenTime)} –{" "}
+            {formatDeliverySlotTime(form.realtimeOrderCloseTime)} IST)
+          </>
         )}
       </p>
 

@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { useAdminAuthStore } from "@/features/admin-auth/store/admin-auth-store"
 import { LayoutDashboard, ShoppingBag, Users, UtensilsCrossed, LogOut, ChevronLeft, ChevronRight, ClipboardList, CreditCard, BarChart3, Wallet, Settings, Truck, Store, FolderOpen, Clock, UserPlus, Shield } from "lucide-react"
+import { RotiDukaanLogo } from "@/components/brand/RotiDukaanLogo"
 
 interface NavItem {
   label: string
@@ -72,31 +73,18 @@ export function Sidebar({ collapsed = false, onToggle }: SidebarProps) {
     >
       {/* Logo */}
       <div className={cn("flex h-16 items-center border-b border-gray-100 px-5", collapsed && "justify-center px-0")}>
-        {!collapsed ? (
-          <Link href="/dashboard" className="flex items-center gap-2.5 group">
-            <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full ring-2 ring-orange-500/20 group-hover:ring-orange-500/40 transition-all">
-              <img
-                src="/roti_dukaan_logo.png"
-                alt="Roti Dukaan"
-                className="h-full w-full object-cover"
-              />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-[15px] font-bold text-gray-900 leading-tight">Roti Dukaan</span>
-              <span className="text-[10px] font-medium text-gray-400 uppercase tracking-wider">
-                {isBranchManager ? 'Branch Manager' : 'Admin'}
-              </span>
-            </div>
-          </Link>
-        ) : (
-          <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full ring-2 ring-orange-500/20">
-            <img
-              src="/roti_dukaan_logo.png"
-              alt="Roti Dukaan"
-              className="h-full w-full object-cover"
-            />
-          </div>
-        )}
+        <RotiDukaanLogo
+          href={isBranchManager ? "/branch/dashboard" : "/dashboard"}
+          size="sm"
+          shape="circle"
+          theme="light"
+          markOnly={collapsed}
+          subtitle={
+            <span className="text-[10px] font-medium text-gray-400 uppercase tracking-wider">
+              {isBranchManager ? "Branch Manager" : "Admin"}
+            </span>
+          }
+        />
         {!collapsed && isBranchManager && (
           <div className="ml-auto flex items-center gap-1 rounded-full bg-orange-50 px-2.5 py-1 text-[10px] font-medium text-orange-600">
             <Store className="h-3 w-3" />

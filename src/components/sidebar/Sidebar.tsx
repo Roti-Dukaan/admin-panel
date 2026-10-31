@@ -42,6 +42,7 @@ import { BRANCH_MANAGER_NAVIGATION, getNavigationForWorkspace } from "@/config/n
 import { useWorkspace } from "@/contexts/WorkspaceContext"
 import { useBranchName } from "@/features/branch/hooks/useBranchName"
 import { useAdminAuthStore } from "@/features/admin-auth/store/admin-auth-store"
+import { RotiDukaanLogo } from "@/components/brand/RotiDukaanLogo"
 
 
 const MAIN_ADMIN_NAV_GROUPS: NavGroup[] = [
@@ -217,21 +218,16 @@ export function Sidebar({ collapsed = false, onToggle, mobileOpen = false, onMob
     <>
       {/* Logo */}
       <div className={cn("flex h-16 items-center border-b border-gray-100 px-5", collapsed && "justify-center px-0")}>
-        {!collapsed ? (
-          <Link href={homeHref} className="flex items-center gap-2.5 group min-w-0" title={workspaceDetail ?? workspaceLabel}>
-            <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full ring-2 ring-orange-500/20 group-hover:ring-orange-500/40 transition-all">
-              <img src="/roti_dukaan_logo.png" alt="Roti Dukaan" className="h-full w-full object-cover" />
-            </div>
-            <div className="flex min-w-0 flex-col">
-              <span className="text-[15px] font-bold text-gray-900 leading-tight">Roti Dukaan</span>
-              {logoSubtitle}
-            </div>
-          </Link>
-        ) : (
-          <Link href={homeHref} className="h-9 w-9 shrink-0 overflow-hidden rounded-full ring-2 ring-orange-500/20 hover:ring-orange-500/40 transition-all" title={workspaceDetail ?? workspaceLabel}>
-            <img src="/roti_dukaan_logo.png" alt="Roti Dukaan" className="h-full w-full object-cover" />
-          </Link>
-        )}
+        <RotiDukaanLogo
+          href={homeHref}
+          size="sm"
+          shape="circle"
+          theme="light"
+          markOnly={collapsed}
+          subtitle={logoSubtitle}
+          title={workspaceDetail ?? workspaceLabel}
+          className={cn(!collapsed && "group hover:[&>div:first-child]:ring-orange-500/40")}
+        />
       </div>
 
       {/* Navigation */}
@@ -304,15 +300,15 @@ export function Sidebar({ collapsed = false, onToggle, mobileOpen = false, onMob
             aria-label="Mobile sidebar"
           >
             <div className="flex h-16 items-center justify-between border-b border-gray-100 px-5">
-              <Link href={homeHref} className="flex items-center gap-2.5 min-w-0" onClick={onMobileClose} title={workspaceDetail ?? workspaceLabel}>
-                <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full ring-2 ring-orange-500/20">
-                  <img src="/roti_dukaan_logo.png" alt="Roti Dukaan" className="h-full w-full object-cover" />
-                </div>
-                <div className="flex min-w-0 flex-col">
-                  <span className="text-[15px] font-bold text-gray-900 leading-tight">Roti Dukaan</span>
-                  {logoSubtitle}
-                </div>
-              </Link>
+              <RotiDukaanLogo
+                href={homeHref}
+                size="sm"
+                shape="circle"
+                theme="light"
+                subtitle={logoSubtitle}
+                title={workspaceDetail ?? workspaceLabel}
+                onClick={onMobileClose}
+              />
               <button
                 onClick={onMobileClose}
                 className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
