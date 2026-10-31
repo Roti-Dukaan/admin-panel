@@ -115,37 +115,15 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
   );
   const [enablingAlerts, setEnablingAlerts] = useState(false);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
-  const [cancelOrderId, setCancelOrderId] = useState<string | null>(null);
-  const [activeAlertId, setActiveAlertId] = useState<string | null>(null);
   const seen = useRef<Set<string>>(new Set());
   const placementSeen = useRef<Set<string>>(new Set());
   const stageMutation = useKitchenStageMutation();
   const cancelMutation = useKitchenCancelMutation();
   const socketConnected = useRealtimeConnectionStatus();
 
+  const alert = alerts[0] ?? null;
   const open = alerts.length > 0;
-
-  useEffect(() => {
-    if (alerts.length === 0) {
-      setActiveAlertId(null);
-      return;
-    }
-    if (!activeAlertId || !alerts.some((a) => a.orderId === activeAlertId)) {
-      setActiveAlertId(alerts[0].orderId);
-    }
-  }, [alerts, activeAlertId]);
-
-  const alert =
-    alerts.find((a) => a.orderId === activeAlertId) ?? alerts[0] ?? null;
-
-  const preparingOrderId =
-    stageMutation.isPending && stageMutation.variables
-      ? (stageMutation.variables as { id: string }).id
-      : null;
-  const cancellingOrderId =
-    cancelMutation.isPending && cancelMutation.variables
-      ? (cancelMutation.variables as { orderId: string }).orderId
-      : null;
+  const queuedCount = Math.max(0, alerts.length - 1);
 
   useEffect(() => {
     setAlertsEnabled(isOrderAlertsEnabled());
@@ -546,7 +524,10 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
     };
   }, [ringingOrderIds.length]);
 
-  const handleStartPreparing = (orderId: string) => {
+  const handleStartPreparing = () => {
+    if (!alert) return;
+    const orderId = alert.orderId;
+
     void enableOrderAlerts().then(() => setAlertsEnabled(true));
 
     stageMutation.mutate(
@@ -557,20 +538,19 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
     );
   };
 
-  const handleCancelOrderRequest = (orderId: string) => {
-    setCancelOrderId(orderId);
+  const handleCancelOrderRequest = () => {
+    if (!alert) return;
     setCancelDialogOpen(true);
   };
 
   const handleCancelOrderConfirm = (reason: string) => {
-    const orderId = cancelOrderId ?? alert?.orderId;
-    if (!orderId) return;
+    if (!alert) return;
+    const orderId = alert.orderId;
     cancelMutation.mutate(
       { orderId, reason },
       {
         onSuccess: () => {
           setCancelDialogOpen(false);
-          setCancelOrderId(null);
           resolveOrder(orderId);
         },
       },
@@ -626,13 +606,12 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
       )}
 
       <NewOrderAlertModal
-        alerts={alerts}
-        activeOrderId={activeAlertId}
-        onSelectOrder={setActiveAlertId}
+        alert={alert}
         open={open}
+        queuedCount={queuedCount}
         soundBlocked={soundBlocked}
-        preparingOrderId={preparingOrderId}
-        cancellingOrderId={cancellingOrderId}
+        preparing={stageMutation.isPending}
+        cancelling={cancelMutation.isPending}
         onStartPreparing={handleStartPreparing}
         onCancel={handleCancelOrderRequest}
         onEnableSound={() => void handleEnableAlerts()}
@@ -641,14 +620,8 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
 
       <OrderCancelDialog
         open={cancelDialogOpen}
-        onOpenChange={(next) => {
-          setCancelDialogOpen(next);
-          if (!next) setCancelOrderId(null);
-        }}
-        orderNumber={
-          alerts.find((a) => a.orderId === (cancelOrderId ?? activeAlertId))?.orderNumber ??
-          alert?.orderNumber
-        }
+        onOpenChange={setCancelDialogOpen}
+        orderNumber={alert?.orderNumber}
         confirming={cancelMutation.isPending}
         onConfirm={handleCancelOrderConfirm}
         idPrefix="branch-alert-cancel"
