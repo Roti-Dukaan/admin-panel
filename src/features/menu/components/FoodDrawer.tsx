@@ -19,6 +19,7 @@ interface FormData {
   shortDescription: string;
   category: FoodCategory;
   price: number;
+  discountPrice: number | null;
   preparationTime: number;
   calories: number;
   protein: number;
@@ -95,6 +96,7 @@ export function FoodDrawer() {
       shortDescription: "",
       category: "",
       price: 0,
+      discountPrice: null,
       preparationTime: 15,
       calories: 0,
       protein: 0,
@@ -127,7 +129,8 @@ export function FoodDrawer() {
         description: selectedFood.description,
         shortDescription: selectedFood.shortDescription,
         category: selectedFood.category,
-        price: selectedFood.price,
+        price: selectedFood.basePrice,
+        discountPrice: selectedFood.discountPrice,
         preparationTime: selectedFood.preparationTime,
         calories: selectedFood.nutrition.calories,
         protein: selectedFood.nutrition.protein,
@@ -149,7 +152,7 @@ export function FoodDrawer() {
       const nextSortOrder = Math.max(0, ...useMenuStore.getState().foods.map((f) => f.sortOrder)) + 1;
       reset({
         name: "", description: "", shortDescription: "", category: categories[0]?.name || "",
-        price: 0, preparationTime: 15, calories: 0, protein: 0, carbs: 0, fats: 0, fiber: 0,
+        price: 0, discountPrice: null, preparationTime: 15, calories: 0, protein: 0, carbs: 0, fats: 0, fiber: 0,
         servingSize: "1 bowl", healthTags: [], customerLabels: [], availability: "available",
         foodType: "VEG", isFeatured: false, displayOnWebsite: true, bestPairedWith: [],
         sortOrder: nextSortOrder,
@@ -265,17 +268,45 @@ export function FoodDrawer() {
               <Section title="Pricing & Timing">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {variants.filter((variant) => variant.name.trim()).length === 0 && (
-                    <Field label="Price (₹)" error={errors.price?.message}>
-                      <Input
-                        {...register("price", {
-                          required: hasNamedVariants ? false : "Price is required",
-                          min: { value: 0, message: "Price must be positive" },
-                        })}
-                        type="number"
-                        placeholder="0"
-                        disabled={isView}
-                      />
-                    </Field>
+                    <>
+                      <Field label="Regular price (₹)" error={errors.price?.message}>
+                        <Input
+                          {...register("price", {
+                            required: hasNamedVariants ? false : "Regular price is required",
+                            min: { value: 0, message: "Price must be positive" },
+                            valueAsNumber: true,
+                          })}
+                          type="number"
+                          step="any"
+                          min={0}
+                          placeholder="MRP / list price"
+                          disabled={isView}
+                        />
+                      </Field>
+                      <Field
+                        label="Discounted price (₹)"
+                        error={errors.discountPrice?.message}
+                      >
+                        <Input
+                          {...register("discountPrice", {
+                            valueAsNumber: true,
+                            min: { value: 0, message: "Must be zero or more" },
+                            validate: (value, form) => {
+                              if (value == null || Number.isNaN(value) || value <= 0) return true;
+                              if (value >= form.price) {
+                                return "Discounted price must be less than regular price";
+                              }
+                              return true;
+                            },
+                          })}
+                          type="number"
+                          step="any"
+                          min={0}
+                          placeholder="Optional — customer pays this"
+                          disabled={isView}
+                        />
+                      </Field>
+                    </>
                   )}
 
                   <Field label="Preparation Time (minutes)" error={errors.preparationTime?.message}>

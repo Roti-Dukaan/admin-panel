@@ -47,6 +47,8 @@ export interface FoodItem {
   shortDescription: string;
   category: FoodCategory;
   price: number;
+  basePrice: number;
+  discountPrice: number | null;
   variants: FoodItemVariant[];
   preparationTime: number;
   nutrition: NutritionInfo;
@@ -70,6 +72,7 @@ export interface FoodItemFormData {
   shortDescription: string;
   category: FoodCategory;
   price: number;
+  discountPrice?: number | null;
   preparationTime: number;
   calories: number;
   protein: number;
