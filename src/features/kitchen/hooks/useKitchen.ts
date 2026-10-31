@@ -36,10 +36,13 @@ import {
 } from "@/lib/realtime/events";
 import { ordersApi } from "@/lib/api/orders.api";
 import { resolveOrderAlert } from "@/lib/realtime/order-alert-actions";
+import { isKitchenStageAlreadyHandledError } from "../utils/kitchen-stage-errors";
+import { extractApiError } from "@/lib/api/extract-api-error";
 import { useAdminAuthStore } from "@/features/admin-auth/store/admin-auth-store";
 import { useWorkspace } from "@/contexts/WorkspaceContext";
 import { isCodPayment } from "@/features/orders/utils/order-alert-format";
 import { isKitchenBoardVisible, isScheduledBranchOrder } from "../utils/kitchen-scheduling";
+import { GLOBAL_PENDING_ORDER_ALERTS_KEY } from "@/features/orders/hooks/useGlobalPendingOrderPoll";
 
 const REALTIME_STALE_MS = 5_000;
 const FALLBACK_POLL_MS = 5_000;
@@ -144,9 +147,16 @@ export function useKitchenStageMutation() {
       return { previous };
     },
 
-    onError: (_err, _vars, context) => {
+    onError: (err, variables, context) => {
       context?.previous?.forEach(([key, value]) => qc.setQueryData(key, value));
-      toast.error("Could not update the order. Please try again.");
+      if (isKitchenStageAlreadyHandledError(err)) {
+        resolveOrderAlert(variables.id);
+        void qc.invalidateQueries({ queryKey: KITCHEN_QUERY_KEY });
+        void qc.invalidateQueries({ queryKey: GLOBAL_PENDING_ORDER_ALERTS_KEY });
+        toast.info("This order was already handled by another manager.");
+        return;
+      }
+      toast.error(extractApiError(err, "Could not update the order. Please try again."));
     },
 
     onSuccess: (data) => {

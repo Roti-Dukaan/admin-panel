@@ -68,6 +68,7 @@ import { useGlobalPendingOrderPoll } from "../hooks/useGlobalPendingOrderPoll";
 import { useRealtimeConnectionStatus } from "@/lib/realtime/useRealtimeConnectionStatus";
 import { normalizeOrderStatus } from "../utils/status";
 import { NewOrderAlertModal } from "./NewOrderAlertModal";
+import { OrderCancelDialog } from "./OrderCancelDialog";
 
 /** Statuses where an order still counts as "new" — anything else auto-closes its alert. */
 const NEW_ORDER_STATUSES = new Set([
@@ -113,6 +114,7 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
     typeof window !== "undefined" ? isOrderAlertsEnabled() : false,
   );
   const [enablingAlerts, setEnablingAlerts] = useState(false);
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const seen = useRef<Set<string>>(new Set());
   const placementSeen = useRef<Set<string>>(new Set());
   const stageMutation = useKitchenStageMutation();
@@ -299,12 +301,41 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
   const branchIdRef = useRef(branchId);
   branchIdRef.current = branchId;
 
+  const alertsRef = useRef(alerts);
+  alertsRef.current = alerts;
+
+  const ringingRef = useRef(ringingOrderIds);
+  ringingRef.current = ringingOrderIds;
+
+  const reconcileAlertsWithPendingQueue = useCallback(
+    (items: { orderId: string }[]) => {
+      const pendingIds = new Set(items.map((i) => i.orderId));
+      const staleOrderIds = new Set<string>();
+      for (const a of alertsRef.current) {
+        if (!pendingIds.has(a.orderId)) staleOrderIds.add(a.orderId);
+      }
+      for (const id of ringingRef.current) {
+        if (!pendingIds.has(id)) staleOrderIds.add(id);
+      }
+      for (const orderId of staleOrderIds) {
+        resolveOrderRef.current(orderId, { broadcast: true });
+      }
+    },
+    [],
+  );
+
+  const reconcilePendingRef = useRef(reconcileAlertsWithPendingQueue);
+  reconcilePendingRef.current = reconcileAlertsWithPendingQueue;
+
   // Poll pending kitchen orders on every page — not only /branch/kitchen.
   useGlobalPendingOrderPoll(
     isBranchManager && isAuthenticated && !!accessToken,
     branchId,
     (payload) => showAlertRef.current(payload, { forceAlert: true, broadcast: true }),
-    { socketConnected },
+    {
+      socketConnected,
+      onPendingQueueSnapshot: (items) => reconcilePendingRef.current(items),
+    },
   );
 
   // Own the shared socket lifecycle once per branch-manager session. Token
@@ -507,12 +538,23 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
     );
   };
 
-  const handleCancelOrder = () => {
+  const handleCancelOrderRequest = () => {
     if (!alert) return;
-    cancelMutation.mutate({
-      orderId: alert.orderId,
-      reason: "Cancelled by branch",
-    });
+    setCancelDialogOpen(true);
+  };
+
+  const handleCancelOrderConfirm = (reason: string) => {
+    if (!alert) return;
+    const orderId = alert.orderId;
+    cancelMutation.mutate(
+      { orderId, reason },
+      {
+        onSuccess: () => {
+          setCancelDialogOpen(false);
+          resolveOrder(orderId);
+        },
+      },
+    );
   };
 
   return (
@@ -571,9 +613,18 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
         preparing={stageMutation.isPending}
         cancelling={cancelMutation.isPending}
         onStartPreparing={handleStartPreparing}
-        onCancel={handleCancelOrder}
+        onCancel={handleCancelOrderRequest}
         onEnableSound={() => void handleEnableAlerts()}
         enablingSound={enablingAlerts}
+      />
+
+      <OrderCancelDialog
+        open={cancelDialogOpen}
+        onOpenChange={setCancelDialogOpen}
+        orderNumber={alert?.orderNumber}
+        confirming={cancelMutation.isPending}
+        onConfirm={handleCancelOrderConfirm}
+        idPrefix="branch-alert-cancel"
       />
     </>
   );

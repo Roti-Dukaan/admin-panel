@@ -22,6 +22,9 @@ import { useAdminAuthStore } from "@/features/admin-auth/store/admin-auth-store"
 import { useKitchenStatus, useUpdateKitchenStatus } from "./useKitchenOperations";
 import { KitchenStatusBadge, KITCHEN_STATUS_CONFIG } from "./KitchenStatusBadge";
 import type { KitchenStatusValue } from "@/lib/api/kitchen.api";
+import { KitchenTemporaryCloseDialog } from "./KitchenTemporaryCloseDialog";
+import type { KitchenTemporaryClosePayload } from "./kitchen-closure.constants";
+import { formatIstDateTime } from "@/lib/date";
 
 const STATUS_OPTIONS: KitchenStatusValue[] = ["OPEN", "BUSY", "CLOSED", "MAINTENANCE"];
 
@@ -40,7 +43,7 @@ type FormValues = z.infer<typeof formSchema>;
 const DEFAULT_MESSAGES: Record<KitchenStatusValue, string> = {
   OPEN: "",
   BUSY: "Kitchen is busy. Expect slight delivery delays.",
-  CLOSED: "Kitchen closed for today.",
+  CLOSED: "",
   MAINTENANCE: "Kitchen temporarily unavailable.",
 };
 
@@ -51,6 +54,7 @@ export function KitchenOperationsCard({ compact = false }: { compact?: boolean }
 
   const [status, setStatus] = useState<KitchenStatusValue>("OPEN");
   const [expanded, setExpanded] = useState(!compact);
+  const [closeDialogOpen, setCloseDialogOpen] = useState(false);
 
   const {
     register,
@@ -84,6 +88,10 @@ export function KitchenOperationsCard({ compact = false }: { compact?: boolean }
   const isBusy = watchedStatus === "BUSY";
 
   const onStatusChange = (value: KitchenStatusValue) => {
+    if (value === "CLOSED") {
+      setCloseDialogOpen(true);
+      return;
+    }
     setStatus(value);
     setValue("status", value, { shouldDirty: true });
     // Pre-fill a sensible default message for the chosen status if empty.
@@ -94,12 +102,24 @@ export function KitchenOperationsCard({ compact = false }: { compact?: boolean }
   };
 
   const onSubmit = (values: FormValues) => {
+    if (values.status === "CLOSED") return;
     const payload = {
       status: values.status,
       busyDelayMinutes: values.busyDelayMinutes,
       message: values.message && values.message.trim() ? values.message.trim() : undefined,
     };
     updateMutation.mutate(payload);
+  };
+
+  const handleConfirmClose = (payload: KitchenTemporaryClosePayload) => {
+    updateMutation.mutate(
+      {
+        status: "CLOSED",
+        busyDelayMinutes: data?.busyDelayMinutes,
+        ...payload,
+      },
+      { onSuccess: () => setCloseDialogOpen(false) },
+    );
   };
 
   const handleReset = () => {
@@ -140,6 +160,7 @@ export function KitchenOperationsCard({ compact = false }: { compact?: boolean }
   }
 
   return (
+    <>
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -230,18 +251,24 @@ export function KitchenOperationsCard({ compact = false }: { compact?: boolean }
               )}
             </div>
 
-            <div className={compact ? "space-y-1.5" : "space-y-2"}>
-              <Label htmlFor="kitchen-message">Custom Customer Message</Label>
-              <Textarea
-                id="kitchen-message"
-                rows={compact ? 2 : 3}
-                placeholder="e.g. Kitchen is busy. Expect slight delivery delays."
-                {...register("message")}
-              />
-              {errors.message && (
-                <p className="text-xs text-red-500">{errors.message.message}</p>
-              )}
-            </div>
+            {watchedStatus !== "CLOSED" ? (
+              <div className={compact ? "space-y-1.5" : "space-y-2"}>
+                <Label htmlFor="kitchen-message">Custom customer message</Label>
+                <Textarea
+                  id="kitchen-message"
+                  rows={compact ? 2 : 3}
+                  placeholder="e.g. Kitchen is busy. Expect slight delivery delays."
+                  {...register("message")}
+                />
+                {errors.message && (
+                  <p className="text-xs text-red-500">{errors.message.message}</p>
+                )}
+              </div>
+            ) : data?.scheduledReopenAt ? (
+              <p className="text-sm text-gray-600">
+                Auto-reopens {formatIstDateTime(data.scheduledReopenAt)}
+              </p>
+            ) : null}
 
             <div className="flex items-center gap-3 pt-1">
               <Button
@@ -267,5 +294,16 @@ export function KitchenOperationsCard({ compact = false }: { compact?: boolean }
         )}
       </Card>
     </motion.div>
+
+    <KitchenTemporaryCloseDialog
+      open={closeDialogOpen}
+      onOpenChange={setCloseDialogOpen}
+      initialReasonCode={data?.closureReasonCode}
+      initialCustom={data?.closureReasonCustom}
+      initialReopenAt={data?.scheduledReopenAt}
+      saving={updateMutation.isPending}
+      onConfirm={handleConfirmClose}
+    />
+    </>
   );
 }

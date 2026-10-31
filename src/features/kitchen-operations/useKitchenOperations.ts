@@ -38,7 +38,11 @@ export function useUpdateKitchenStatus() {
     onSuccess: (data: KitchenOperationsStatus) => {
       queryClient.setQueryData(KITCHEN_STATUS_QUERY_KEY, data);
       queryClient.invalidateQueries({ queryKey: ["branch-dashboard", "stats"] });
-      toast.success("Kitchen status updated successfully");
+      if (data.reopenAdjustedForGlobalHours) {
+        toast.success("Kitchen closed. Reopen time adjusted to global order hours.");
+      } else {
+        toast.success("Kitchen status updated successfully");
+      }
     },
     onError: (error: any, _payload, context) => {
       if (context?.previous) {

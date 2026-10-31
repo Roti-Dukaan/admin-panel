@@ -46,10 +46,25 @@ export function normalizeOrder(order: Record<string, unknown>): Order {
       )
     : [];
 
+  const statusChangedByRole = order.statusChangedByRole;
+  const normalizedRole =
+    statusChangedByRole === "admin" ||
+    statusChangedByRole === "branch_manager" ||
+    statusChangedByRole === "delivery_partner" ||
+    statusChangedByRole === "customer" ||
+    statusChangedByRole === "system"
+      ? statusChangedByRole
+      : undefined;
+
   return {
     ...(order as Order),
     status: normalizeOrderStatus(String(order.status ?? "")),
     timeline,
     items,
+    statusChangeReason:
+      typeof order.statusChangeReason === "string" ? order.statusChangeReason : undefined,
+    statusChangedByRole: normalizedRole,
+    statusChangedByName:
+      typeof order.statusChangedByName === "string" ? order.statusChangedByName : undefined,
   };
 }

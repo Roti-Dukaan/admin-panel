@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { kitchenApi } from "@/lib/api/kitchen.api";
 import { branchIdsMatch } from "@/lib/realtime/branch-id";
 import { getAlertSessionStart } from "@/lib/realtime/alert-session";
+import type { KitchenOrderListItem } from "@/lib/api/kitchen.api";
 import type { BranchOrderNewPayload } from "@/lib/realtime/events";
 import { kitchenItemToAlertPayload } from "../utils/pending-order-alert";
 
@@ -22,7 +23,11 @@ export function useGlobalPendingOrderPoll(
   enabled: boolean,
   branchId: string | null | undefined,
   onNewPendingOrder: (payload: BranchOrderNewPayload) => void,
-  options?: { socketConnected?: boolean },
+  options?: {
+    socketConnected?: boolean;
+    /** Fired whenever the pending-queue snapshot changes (used to drop stale alerts). */
+    onPendingQueueSnapshot?: (items: KitchenOrderListItem[]) => void;
+  },
 ) {
   const qc = useQueryClient();
   const pollMs =
@@ -58,8 +63,14 @@ export function useGlobalPendingOrderPoll(
     socketWasConnected.current = connected;
   }, [options?.socketConnected, branchId, qc]);
 
+  const onSnapshotRef = useRef(options?.onPendingQueueSnapshot);
+  onSnapshotRef.current = options?.onPendingQueueSnapshot;
+
   useEffect(() => {
     const items = query.data?.items;
+    if (query.isSuccess) {
+      onSnapshotRef.current?.(items ?? []);
+    }
     if (!items?.length) {
       if (query.isSuccess) {
         bootstrapped.current = true;

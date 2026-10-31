@@ -1,8 +1,10 @@
+import { ROTI_DUKAAN_LOGO_SRC } from "@/components/brand/RotiDukaanLogo"
+
 export function DocumentBrandHeader({ subtitle }: { subtitle: string }) {
   return (
     <header className="thermal-brand-header">
       <img
-        src="/roti_dukaan_logo.png"
+        src={ROTI_DUKAAN_LOGO_SRC}
         alt="Roti Dukaan"
         className="thermal-brand-logo"
         width={36}

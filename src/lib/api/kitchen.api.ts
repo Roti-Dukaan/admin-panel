@@ -6,10 +6,24 @@ export type KitchenPriority = "NORMAL" | "HIGH" | "URGENT";
 
 export type KitchenStatusValue = "OPEN" | "BUSY" | "CLOSED" | "MAINTENANCE";
 
+export type KitchenClosureReasonCode =
+  | "MAINTENANCE"
+  | "HIGH_ORDER_VOLUME"
+  | "INGREDIENT_STOCK_UNAVAILABLE"
+  | "STAFF_UNAVAILABLE"
+  | "POWER_OUTAGE"
+  | "TEMPORARY_OPERATIONAL_ISSUE"
+  | "OTHER";
+
 export interface KitchenOperationsStatus {
   status: KitchenStatusValue;
   busyDelayMinutes: number;
   message: string | null;
+  closureReasonCode?: KitchenClosureReasonCode | null;
+  closureReasonCustom?: string | null;
+  scheduledReopenAt?: string | null;
+  closedBy?: "MANUAL_TEMPORARY" | "GLOBAL_SCHEDULE" | null;
+  reopenAdjustedForGlobalHours?: boolean;
   updatedBy: string | null;
   updatedAt: string;
   createdAt: string;
@@ -19,6 +33,9 @@ export interface UpdateKitchenOperationsPayload {
   status: KitchenStatusValue;
   busyDelayMinutes?: number;
   message?: string;
+  closureReasonCode?: KitchenClosureReasonCode;
+  closureReasonCustom?: string;
+  scheduledReopenAt?: string;
 }
 
 export interface KitchenPrepTimer {

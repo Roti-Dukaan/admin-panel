@@ -1,7 +1,7 @@
 "use client"
 
 import { motion } from "motion/react"
-import { Store } from "lucide-react"
+import { RotiDukaanLogo } from "@/components/brand/RotiDukaanLogo"
 import { FloatingBackground } from "./FloatingBackground"
 import { FeatureCard } from "./FeatureCard"
 import { AdminLoginCard } from "./AdminLoginCard"
@@ -42,12 +42,8 @@ export function AdminAuthLayout() {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="flex items-center gap-3"
           >
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-orange-500 shadow-lg shadow-orange-500/30">
-              <Store className="h-6 w-6 text-white" />
-            </div>
-            <span className="text-xl font-bold text-white">Roti Dukaan</span>
+            <RotiDukaanLogo size="lg" theme="dark" withShadow subtitle="Admin & Branch Portal" />
           </motion.div>
 
           {/* Content */}
@@ -99,12 +95,9 @@ export function AdminAuthLayout() {
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="flex items-center gap-2 mb-10 lg:hidden"
+          className="mb-10 lg:hidden"
         >
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-500">
-            <Store className="h-5 w-5 text-white" />
-          </div>
-          <span className="text-lg font-bold text-gray-900">Roti Dukaan</span>
+          <RotiDukaanLogo size="md" theme="light" subtitle="Admin & Branch Portal" />
         </motion.div>
 
         <AdminLoginCard />
