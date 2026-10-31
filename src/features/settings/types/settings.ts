@@ -14,4 +14,13 @@ export type {
   PincodeData,
 };
 
-export type SettingsTab = 'business' | 'tax' | 'payment' | 'delivery' | 'kitchen' | 'delivery-providers' | 'email' | 'order-escalation';
+export type SettingsTab =
+  | 'business'
+  | 'tax'
+  | 'payment'
+  | 'delivery'
+  | 'kitchen'
+  | 'delivery-providers'
+  | 'email'
+  | 'order-escalation'
+  | 'realtime-order-hours';

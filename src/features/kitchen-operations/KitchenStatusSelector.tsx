@@ -8,34 +8,53 @@ import { Button } from "@/components/ui/button";
 import { KitchenStatusBadge, KITCHEN_STATUS_CONFIG } from "./KitchenStatusBadge";
 import type { KitchenStatusValue } from "@/lib/api/kitchen.api";
 import { useKitchenStatus, useUpdateKitchenStatus } from "./useKitchenOperations";
+import { KitchenTemporaryCloseDialog } from "./KitchenTemporaryCloseDialog";
+import type { KitchenTemporaryClosePayload } from "./kitchen-closure.constants";
 
 export function KitchenStatusSelector() {
   const { data, isLoading } = useKitchenStatus();
   const updateMutation = useUpdateKitchenStatus();
   const [showMessageModal, setShowMessageModal] = useState(false);
+  const [showCloseDialog, setShowCloseDialog] = useState(false);
   const [pendingStatus, setPendingStatus] = useState<KitchenStatusValue | null>(null);
   const [message, setMessage] = useState("");
 
   const status = data?.status ?? "OPEN";
 
   const handleChange = (value: KitchenStatusValue) => {
-    if (value !== status) {
-      if (value === "BUSY" || value === "CLOSED" || value === "MAINTENANCE") {
-        setPendingStatus(value);
-        setMessage(data?.message ?? "");
-        setShowMessageModal(true);
-      } else {
-        updateMutation.mutate({ status: value, message: data?.message ?? undefined });
-      }
+    if (value === status) return;
+    if (value === "CLOSED") {
+      setShowCloseDialog(true);
+      return;
     }
+    if (value === "BUSY" || value === "MAINTENANCE") {
+      setPendingStatus(value);
+      setMessage(data?.message ?? "");
+      setShowMessageModal(true);
+      return;
+    }
+    updateMutation.mutate({ status: value, message: data?.message ?? undefined });
   };
 
-  const handleSave = () => {
-    if (pendingStatus) {
-      updateMutation.mutate({ status: pendingStatus, message: message.trim() || undefined });
-    }
+  const handleSaveBusyMaintenance = () => {
+    if (!pendingStatus) return;
+    updateMutation.mutate({
+      status: pendingStatus,
+      message: message.trim() || undefined,
+    });
     setShowMessageModal(false);
     setPendingStatus(null);
+  };
+
+  const handleConfirmClose = (payload: KitchenTemporaryClosePayload) => {
+    updateMutation.mutate(
+      {
+        status: "CLOSED",
+        busyDelayMinutes: data?.busyDelayMinutes,
+        ...payload,
+      },
+      { onSuccess: () => setShowCloseDialog(false) },
+    );
   };
 
   if (isLoading) return null;
@@ -79,12 +98,22 @@ export function KitchenStatusSelector() {
             <Button variant="outline" onClick={() => setShowMessageModal(false)}>
               Cancel
             </Button>
-            <Button onClick={handleSave} className="bg-orange-500 hover:bg-orange-600">
+            <Button onClick={handleSaveBusyMaintenance} className="bg-orange-500 hover:bg-orange-600">
               Save
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <KitchenTemporaryCloseDialog
+        open={showCloseDialog}
+        onOpenChange={setShowCloseDialog}
+        initialReasonCode={data?.closureReasonCode}
+        initialCustom={data?.closureReasonCustom}
+        initialReopenAt={data?.scheduledReopenAt}
+        saving={updateMutation.isPending}
+        onConfirm={handleConfirmClose}
+      />
     </>
   );
 }

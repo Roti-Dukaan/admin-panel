@@ -26,6 +26,7 @@ import {
   EyeOff,
   Mail,
   Phone,
+  Clock,
 } from "lucide-react";
 import { useSettingsStore } from "@/features/settings/hooks/useSettings";
 import { useDeliveryProviderStore } from "@/features/delivery-providers/hooks/useDeliveryProviders";
@@ -34,6 +35,7 @@ import { PROVIDER_LABELS, STRATEGY_LABELS } from "@/features/delivery-providers/
 import { Header } from "@/components/layout/header";
 import { EmailTab } from "@/features/settings/components/EmailTab";
 import { OrderEscalationTab } from "@/features/settings/components/OrderEscalationTab";
+import { RealtimeOrderHoursTab } from "@/features/settings/components/RealtimeOrderHoursTab";
 import { normalizeEmail } from "@/lib/utils/email";
 
 const tabs: { key: SettingsTab; label: string; icon: React.ElementType }[] = [
@@ -44,6 +46,7 @@ const tabs: { key: SettingsTab; label: string; icon: React.ElementType }[] = [
   { key: "delivery-providers", label: "Delivery Providers", icon: Server },
   { key: "email", label: "Email", icon: Mail },
   { key: "order-escalation", label: "Order Escalation", icon: Phone },
+  { key: "realtime-order-hours", label: "Order Hours", icon: Clock },
 ];
 
 export default function SettingsPage() {
@@ -175,6 +178,7 @@ export default function SettingsPage() {
             )}
             {activeTab === "email" && <EmailTab saving={saving} />}
             {activeTab === "order-escalation" && <OrderEscalationTab />}
+            {activeTab === "realtime-order-hours" && <RealtimeOrderHoursTab />}
           </motion.div>
         )}
       </div>
