@@ -552,12 +552,17 @@ export default function BranchesPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Escalation phone
+                  </label>
                   <Input
                     value={form.phone}
                     onChange={(e) => setForm({ ...form, phone: e.target.value })}
                     placeholder="+919876543210"
                   />
+                  <p className="mt-1 text-xs text-gray-500">
+                    Voice call ~1 min after an unaccepted order. Saved here and synced to the branch manager.
+                  </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Manager Name</label>
