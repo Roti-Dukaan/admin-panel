@@ -299,12 +299,41 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
   const branchIdRef = useRef(branchId);
   branchIdRef.current = branchId;
 
+  const alertsRef = useRef(alerts);
+  alertsRef.current = alerts;
+
+  const ringingRef = useRef(ringingOrderIds);
+  ringingRef.current = ringingOrderIds;
+
+  const reconcileAlertsWithPendingQueue = useCallback(
+    (items: { orderId: string }[]) => {
+      const pendingIds = new Set(items.map((i) => i.orderId));
+      const staleOrderIds = new Set<string>();
+      for (const a of alertsRef.current) {
+        if (!pendingIds.has(a.orderId)) staleOrderIds.add(a.orderId);
+      }
+      for (const id of ringingRef.current) {
+        if (!pendingIds.has(id)) staleOrderIds.add(id);
+      }
+      for (const orderId of staleOrderIds) {
+        resolveOrderRef.current(orderId, { broadcast: true });
+      }
+    },
+    [],
+  );
+
+  const reconcilePendingRef = useRef(reconcileAlertsWithPendingQueue);
+  reconcilePendingRef.current = reconcileAlertsWithPendingQueue;
+
   // Poll pending kitchen orders on every page — not only /branch/kitchen.
   useGlobalPendingOrderPoll(
     isBranchManager && isAuthenticated && !!accessToken,
     branchId,
     (payload) => showAlertRef.current(payload, { forceAlert: true, broadcast: true }),
-    { socketConnected },
+    {
+      socketConnected,
+      onPendingQueueSnapshot: (items) => reconcilePendingRef.current(items),
+    },
   );
 
   // Own the shared socket lifecycle once per branch-manager session. Token
