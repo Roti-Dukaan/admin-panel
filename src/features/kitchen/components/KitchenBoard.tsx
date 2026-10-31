@@ -3,16 +3,7 @@
 import { useMemo, useState } from "react";
 import { AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { OrderCancelDialog } from "@/features/orders/components/OrderCancelDialog";
 import { useKitchenOrders, useKitchenDetailMap, useKitchenStageMutation, useKitchenCancelMutation, useKitchenRealtime, applyKitchenFilters } from "../hooks/useKitchen";
 import { usePrepClock, elapsedSeconds } from "../hooks/usePrepClock";
 import { KitchenStats, type KitchenStatsData } from "./KitchenStats";
@@ -55,7 +46,6 @@ export function KitchenBoard() {
   const [slot, setSlot] = useState<string>("all");
   const [selected, setSelected] = useState<KitchenOrderView | null>(null);
   const [cancelTarget, setCancelTarget] = useState<KitchenOrderView | null>(null);
-  const [cancelReason, setCancelReason] = useState("Cancelled by admin");
 
   const filters = useMemo(
     () => ({ search, deliveryKind, payment, prepTime, slot }),
@@ -186,10 +176,10 @@ export function KitchenBoard() {
     : null;
   const handleAction = (orderId: string, action: "preparing" | "ready") => mutation.mutate({ id: orderId, action });
   const handleCancelRequest = (order: KitchenOrderView) => setCancelTarget(order);
-  const handleCancelConfirm = () => {
-    if (!cancelTarget || !cancelReason.trim()) return;
+  const handleCancelConfirm = (reason: string) => {
+    if (!cancelTarget) return;
     cancelMutation.mutate(
-      { orderId: cancelTarget.orderId, reason: cancelReason.trim() },
+      { orderId: cancelTarget.orderId, reason },
       {
         onSuccess: () => {
           setCancelTarget(null);
@@ -258,38 +248,14 @@ const isLoading = query.isLoading;
         isCancelling={!!selected && cancellingId === selected.orderId}
       />
 
-      <Dialog open={!!cancelTarget} onOpenChange={(open) => !open && setCancelTarget(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Cancel order {cancelTarget?.orderNumber}</DialogTitle>
-            <DialogDescription>
-              This removes the order from the kitchen queue and marks it cancelled. This cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-2">
-            <Label htmlFor="kitchen-cancel-reason">Reason</Label>
-            <Textarea
-              id="kitchen-cancel-reason"
-              value={cancelReason}
-              onChange={(e) => setCancelReason(e.target.value)}
-              placeholder="e.g. Test order, customer requested cancellation"
-              rows={3}
-            />
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setCancelTarget(null)} disabled={cancelMutation.isPending}>
-              Keep Order
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleCancelConfirm}
-              disabled={!cancelReason.trim() || cancelMutation.isPending}
-            >
-              {cancelMutation.isPending ? "Cancelling…" : "Confirm Cancel"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <OrderCancelDialog
+        open={!!cancelTarget}
+        onOpenChange={(open) => !open && setCancelTarget(null)}
+        orderNumber={cancelTarget?.orderNumber}
+        confirming={cancelMutation.isPending}
+        onConfirm={handleCancelConfirm}
+        idPrefix="kitchen-cancel"
+      />
     </div>
   );
 }

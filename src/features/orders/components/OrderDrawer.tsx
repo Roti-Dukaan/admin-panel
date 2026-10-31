@@ -13,8 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
+import { OrderCancelDialog } from "./OrderCancelDialog"
 import { OrderTimeline } from "./OrderTimeline"
 import { OrderItems } from "./OrderItems"
 import { CustomerCard } from "./CustomerCard"
@@ -44,7 +43,6 @@ export function OrderDrawer() {
   const { isBranchManager } = useWorkspace()
   const { selectedOrder, drawerOpen, setDrawerOpen, setSelectedOrder, updateOrderStatus, cancelOrder, updatingStatus } = useOrdersStore()
   const [showCancelDialog, setShowCancelDialog] = useState(false)
-  const [cancelReason, setCancelReason] = useState("Test order / cancelled by admin")
 
   const handleClose = () => {
     setDrawerOpen(false)
@@ -61,10 +59,10 @@ export function OrderDrawer() {
     }
   }
 
-  const handleCancel = async () => {
-    if (!selectedOrder || !cancelReason.trim()) return
+  const handleCancel = async (reason: string) => {
+    if (!selectedOrder) return
     try {
-      await cancelOrder(selectedOrder.id, cancelReason.trim())
+      await cancelOrder(selectedOrder.id, reason)
       toast.success("Order cancelled")
       setShowCancelDialog(false)
       handleClose()
@@ -191,38 +189,14 @@ export function OrderDrawer() {
         </div>
       )}
 
-      <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Cancel order {selectedOrder?.orderNumber}</DialogTitle>
-            <DialogDescription>
-              This removes the order from the kitchen queue and marks it cancelled. This cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-2">
-            <Label htmlFor="order-cancel-reason">Reason</Label>
-            <Textarea
-              id="order-cancel-reason"
-              value={cancelReason}
-              onChange={(e) => setCancelReason(e.target.value)}
-              placeholder="e.g. Test order, customer requested cancellation"
-              rows={3}
-            />
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCancelDialog(false)} disabled={updatingStatus === selectedOrder?.id}>
-              Keep Order
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() => void handleCancel()}
-              disabled={!cancelReason.trim() || updatingStatus === selectedOrder?.id}
-            >
-              {updatingStatus === selectedOrder?.id ? "Cancelling…" : "Confirm Cancel"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <OrderCancelDialog
+        open={showCancelDialog}
+        onOpenChange={setShowCancelDialog}
+        orderNumber={selectedOrder?.orderNumber}
+        confirming={updatingStatus === selectedOrder?.id}
+        onConfirm={(reason) => void handleCancel(reason)}
+        idPrefix="order-drawer-cancel"
+      />
     </Drawer>
   )
 }
