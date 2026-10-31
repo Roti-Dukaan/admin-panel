@@ -58,13 +58,20 @@ function resolveListPrice(api: ApiFoodItem, variants: FoodItemVariant[]): number
       ?? variants[0];
     return Number(preferred?.price ?? api.basePrice);
   }
-  return Number(api.discountPrice || api.basePrice);
+  const discount = api.discountPrice != null ? Number(api.discountPrice) : null;
+  const base = Number(api.basePrice);
+  if (discount != null && discount > 0) return discount;
+  return base;
 }
 
 function toFormData(dto: Record<string, unknown>, imageFile: File): FormData {
   const fd = new FormData();
   Object.entries(dto).forEach(([key, value]) => {
-    if (value === undefined || value === null) return;
+    if (value === undefined) return;
+    if (value === null) {
+      fd.append(key, '');
+      return;
+    }
     if (key === 'variants') {
       fd.append('variants', JSON.stringify(value ?? []));
       return;
@@ -114,6 +121,8 @@ function mapApiFoodItemToFoodItem(api: ApiFoodItem, categories: Category[]): Foo
     shortDescription: api.shortDescription || '',
     category: category?.name || category?.slug || 'Uncategorized',
     price: resolveListPrice(api, variants),
+    basePrice: Number(api.basePrice),
+    discountPrice: api.discountPrice != null ? Number(api.discountPrice) : null,
     variants,
     preparationTime: api.preparationTime || 20,
     nutrition: {
@@ -360,6 +369,12 @@ export const useMenuStore = create<MenuStore>((set, get) => ({
         basePrice: activeVariants.length > 0
           ? (activeVariants.find((variant) => variant.isDefault)?.price ?? activeVariants[0].price)
           : data.price,
+        discountPrice:
+          activeVariants.length > 0
+            ? null
+            : data.discountPrice != null && data.discountPrice > 0
+              ? data.discountPrice
+              : null,
         variants: activeVariants.map((variant, index) => ({
           name: variant.name.trim(),
           price: variant.price,
@@ -409,6 +424,12 @@ export const useMenuStore = create<MenuStore>((set, get) => ({
         basePrice: activeVariants.length > 0
           ? (activeVariants.find((variant) => variant.isDefault)?.price ?? activeVariants[0].price)
           : data.price,
+        discountPrice:
+          activeVariants.length > 0
+            ? null
+            : data.discountPrice != null && data.discountPrice > 0
+              ? data.discountPrice
+              : null,
         variants: activeVariants.map((variant, index) => ({
           id: variant.id,
           name: variant.name.trim(),
