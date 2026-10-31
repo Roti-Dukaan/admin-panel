@@ -35,26 +35,27 @@ import {
 import { cn } from "@/lib/utils";
 
 interface NewOrderAlertModalProps {
-  alert: BranchOrderNewPayload | null;
+  alerts: BranchOrderNewPayload[];
+  activeOrderId: string | null;
+  onSelectOrder: (orderId: string) => void;
   open: boolean;
-  /** How many additional new orders are waiting behind the one shown. */
-  queuedCount: number;
   soundBlocked: boolean;
-  preparing: boolean;
-  cancelling: boolean;
-  onStartPreparing: () => void;
-  onCancel: () => void;
+  preparingOrderId: string | null;
+  cancellingOrderId: string | null;
+  onStartPreparing: (orderId: string) => void;
+  onCancel: (orderId: string) => void;
   onEnableSound: () => void;
   enablingSound: boolean;
 }
 
 export function NewOrderAlertModal({
-  alert,
+  alerts,
+  activeOrderId,
+  onSelectOrder,
   open,
-  queuedCount,
   soundBlocked,
-  preparing,
-  cancelling,
+  preparingOrderId,
+  cancellingOrderId,
   onStartPreparing,
   onCancel,
   onEnableSound,
@@ -62,6 +63,11 @@ export function NewOrderAlertModal({
 }: NewOrderAlertModalProps) {
   const qc = useQueryClient();
   const [elapsedLabel, setElapsedLabel] = useState("Just now");
+
+  const alert =
+    alerts.find((a) => a.orderId === activeOrderId) ?? alerts[0] ?? null;
+  const preparing = !!alert && preparingOrderId === alert.orderId;
+  const cancelling = !!alert && cancellingOrderId === alert.orderId;
 
   const { data: detail } = useQuery({
     queryKey: ["kitchen", "alert-detail", alert?.orderId],
@@ -108,7 +114,7 @@ export function NewOrderAlertModal({
         <DialogOverlay className="z-[9998]" />
         <DialogPrimitive.Content
           className={cn(
-            "fixed left-[50%] top-[50%] z-[9999] grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-0 overflow-hidden border-0 bg-white p-0 shadow-lg duration-200",
+            "fixed left-[50%] top-[50%] z-[9999] flex w-full max-w-lg max-h-[min(92vh,880px)] translate-x-[-50%] translate-y-[-50%] flex-col gap-0 overflow-hidden border-0 bg-white p-0 shadow-lg duration-200",
             "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
             "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 sm:rounded-2xl",
           )}
@@ -145,18 +151,65 @@ export function NewOrderAlertModal({
               {cod ? "COD" : "Online"}
             </div>
           </div>
-          {queuedCount > 0 && (
+          {alerts.length > 1 && (
             <div
               aria-live="polite"
               className="relative mt-3 inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1 text-xs font-semibold text-white ring-1 ring-white/30"
             >
               <BellRing className="h-3.5 w-3.5" />
-              +{queuedCount} more new order{queuedCount === 1 ? "" : "s"} waiting
+              {alerts.length} new orders — scroll the list below to switch
             </div>
           )}
         </div>
 
-        <div className="space-y-4 px-6 py-5">
+        {alerts.length > 1 && (
+          <div className="shrink-0 border-b border-orange-100 bg-orange-50/80 px-4 py-3">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-orange-800/80">
+              Pending orders ({alerts.length})
+            </p>
+            <div
+              className="max-h-36 space-y-2 overflow-y-auto overscroll-contain pr-1"
+              role="listbox"
+              aria-label="New orders queue"
+            >
+              {alerts.map((item, index) => {
+                const selected = item.orderId === alert?.orderId;
+                return (
+                  <button
+                    key={item.orderId}
+                    type="button"
+                    role="option"
+                    aria-selected={selected}
+                    onClick={() => onSelectOrder(item.orderId)}
+                    className={cn(
+                      "w-full rounded-xl border px-3 py-2.5 text-left transition-colors",
+                      selected
+                        ? "border-orange-400 bg-white shadow-sm ring-1 ring-orange-200"
+                        : "border-gray-200 bg-white/90 hover:border-orange-300 hover:bg-white",
+                    )}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-sm font-bold text-gray-900">#{item.orderNumber}</span>
+                      <span className="text-xs font-medium text-gray-500">
+                        {index === 0 ? "Latest" : `#${index + 1} in queue`}
+                      </span>
+                    </div>
+                    <p className="mt-0.5 text-sm font-semibold text-orange-700">
+                      {formatOrderCurrency(item.grandTotal ?? 0)}
+                      <span className="font-normal text-gray-500">
+                        {" "}
+                        · {item.itemCount} item{item.itemCount === 1 ? "" : "s"}
+                      </span>
+                    </p>
+                    <p className="mt-0.5 line-clamp-1 text-xs text-gray-600">{item.itemsSummary}</p>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 py-5">
           <div className="flex items-end justify-between gap-4">
             <div>
               <p className="text-xs font-medium uppercase tracking-wide text-gray-400">Order total</p>
@@ -247,7 +300,7 @@ export function NewOrderAlertModal({
             <Button
               size="lg"
               className="h-14 w-full rounded-xl bg-orange-500 text-base font-bold shadow-lg shadow-orange-200 hover:bg-orange-600"
-              onClick={onStartPreparing}
+              onClick={() => alert && onStartPreparing(alert.orderId)}
               disabled={preparing || !alert}
               aria-label={`Start preparing order ${alert?.orderNumber ?? ""}`}
             >
@@ -256,7 +309,7 @@ export function NewOrderAlertModal({
             <Button
               variant="outline"
               className="h-12 w-full rounded-xl border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800"
-              onClick={onCancel}
+              onClick={() => alert && onCancel(alert.orderId)}
               disabled={!alert || preparing || cancelling}
               aria-label={`Cancel order ${alert?.orderNumber ?? ""}`}
             >
