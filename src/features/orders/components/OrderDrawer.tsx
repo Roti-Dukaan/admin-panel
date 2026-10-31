@@ -24,6 +24,7 @@ import { InvoiceCard } from "./InvoiceCard"
 import { useOrdersStore } from "../hooks/useOrders"
 import { toast } from "sonner"
 import type { OrderStatus } from "../types/order"
+import { STATUS_CHANGED_BY_ROLE_LABELS } from "../types/order"
 import {
   NEXT_ORDER_STATUS,
   STATUS_ACTION_LABELS,
@@ -101,6 +102,29 @@ export function OrderDrawer() {
           </DrawerHeader>
 
           <DrawerContent className="space-y-6">
+            {(selectedOrder.status === "cancelled" || selectedOrder.status === "failed") &&
+            (selectedOrder.statusChangeReason || selectedOrder.statusChangedByRole) ? (
+              <div className="rounded-lg border border-red-200 bg-red-50/80 px-4 py-3 text-sm">
+                {selectedOrder.statusChangeReason ? (
+                  <p className="text-foreground">
+                    <span className="font-medium">Reason: </span>
+                    {selectedOrder.statusChangeReason}
+                  </p>
+                ) : null}
+                {selectedOrder.statusChangedByRole ? (
+                  <p className={cn("text-muted-foreground", selectedOrder.statusChangeReason && "mt-1")}>
+                    <span className="font-medium text-foreground">
+                      {selectedOrder.status === "failed" ? "Marked failed by: " : "Cancelled by: "}
+                    </span>
+                    {STATUS_CHANGED_BY_ROLE_LABELS[selectedOrder.statusChangedByRole]}
+                    {selectedOrder.statusChangedByName
+                      ? ` — ${selectedOrder.statusChangedByName}`
+                      : null}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
+
             <CustomerCard
               customer={selectedOrder.customer}
               receiverName={deliveryTracking?.order?.address?.customerName}

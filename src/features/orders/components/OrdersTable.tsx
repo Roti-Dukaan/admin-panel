@@ -13,7 +13,12 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { StatusBadge } from "./StatusBadge"
 import { useOrdersStore } from "../hooks/useOrders"
 import type { Order, PaymentStatus, PaymentMethod } from "../types/order"
-import { PAYMENT_STATUS_CONFIG, PAYMENT_STATUS_LABELS, PAYMENT_METHOD_CONFIG } from "../types/order"
+import {
+  PAYMENT_STATUS_CONFIG,
+  PAYMENT_STATUS_LABELS,
+  PAYMENT_METHOD_CONFIG,
+  STATUS_CHANGED_BY_ROLE_LABELS,
+} from "../types/order"
 import { Eye, RefreshCw, ChevronLeft, ChevronRight, Smartphone, Banknote, CircleDollarSign } from "lucide-react"
 import { DocumentsMenu } from "@/features/documents"
 import { toast } from "sonner"
@@ -50,6 +55,45 @@ function PaymentMethodBadge({ method }: { method: PaymentMethod }) {
         <CircleDollarSign className="h-3 w-3" />
       ) : null}
       {config.label}
+    </span>
+  )
+}
+
+function CancelledByCell({ order }: { order: Order }) {
+  const isTerminal = order.status === "cancelled" || order.status === "failed"
+  if (!isTerminal) {
+    return <span className="text-xs text-muted-foreground">—</span>
+  }
+
+  const role = order.statusChangedByRole
+  const roleLabel = role ? STATUS_CHANGED_BY_ROLE_LABELS[role] : null
+  const name = order.statusChangedByName?.trim()
+
+  if (!roleLabel && !name) {
+    return <span className="text-xs text-muted-foreground">—</span>
+  }
+
+  return (
+    <div className="max-w-[160px] text-xs leading-snug">
+      {roleLabel ? (
+        <span className="font-medium text-foreground">{roleLabel}</span>
+      ) : null}
+      {name ? (
+        <span className={cn("block text-muted-foreground", roleLabel && "mt-0.5")}>{name}</span>
+      ) : null}
+    </div>
+  )
+}
+
+function CancelReasonCell({ order }: { order: Order }) {
+  const isTerminal = order.status === "cancelled" || order.status === "failed"
+  const reason = order.statusChangeReason?.trim()
+  if (!isTerminal || !reason) {
+    return <span className="text-xs text-muted-foreground">—</span>
+  }
+  return (
+    <span className="block max-w-[220px] text-xs text-foreground leading-snug" title={reason}>
+      {reason}
     </span>
   )
 }
@@ -127,6 +171,8 @@ export function OrdersTable({ onViewDetails }: OrdersTableProps) {
               <TableHead>Settlement Status</TableHead>
               <TableHead>Transaction ID</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>Reason</TableHead>
+              <TableHead>Cancelled / failed by</TableHead>
               <TableHead>Created</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -196,6 +242,12 @@ export function OrdersTable({ onViewDetails }: OrdersTableProps) {
                 </TableCell>
                 <TableCell>
                   <StatusBadge status={order.status} />
+                </TableCell>
+                <TableCell>
+                  <CancelReasonCell order={order} />
+                </TableCell>
+                <TableCell>
+                  <CancelledByCell order={order} />
                 </TableCell>
                 <TableCell className="text-xs text-muted-foreground">
                   {formatDate(order.createdAt)}

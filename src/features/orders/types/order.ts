@@ -19,6 +19,13 @@ export type OrderType = "one_time" | "subscription"
 export type PaymentGateway = "razorpay" | null
 export type CodCollectionStatus = "pending" | "collected" | "failed_collection"
 
+export type StatusChangedByRole =
+  | "admin"
+  | "branch_manager"
+  | "delivery_partner"
+  | "customer"
+  | "system"
+
 export interface Customer {
   id: string
   name: string
@@ -91,8 +98,19 @@ export interface Order {
   status: OrderStatus
   orderType: OrderType
   timeline: OrderTimelineEntry[]
+  statusChangeReason?: string
+  statusChangedByRole?: StatusChangedByRole
+  statusChangedByName?: string
   createdAt: string
   updatedAt: string
+}
+
+export const STATUS_CHANGED_BY_ROLE_LABELS: Record<StatusChangedByRole, string> = {
+  admin: "Admin",
+  branch_manager: "Branch manager",
+  delivery_partner: "Delivery partner",
+  customer: "Customer",
+  system: "System",
 }
 
 export interface OrderStatistics {

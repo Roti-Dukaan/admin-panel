@@ -12,7 +12,8 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
+import { DatetimeAmPmInput } from "@/components/shared/DatetimeAmPmInput";
+import { formatIstDateTime } from "@/lib/date";
 import {
   Select,
   SelectContent,
@@ -163,15 +164,19 @@ export function KitchenTemporaryCloseDialog({
             </div>
           ) : null}
 
-          <div className="space-y-2">
-            <Label htmlFor="kitchen-reopen-at">Expected reopening time</Label>
-            <Input
+            <DatetimeAmPmInput
               id="kitchen-reopen-at"
-              type="datetime-local"
               value={reopenLocal}
-              onChange={(e) => {
-                setReopenLocal(e.target.value);
+              onChange={(next) => {
+                setReopenLocal(next);
                 if (error) setError(null);
+              }}
+            />
+            {reopenLocal && fromDatetimeLocalValue(reopenLocal) ? (
+              <p className="text-xs text-muted-foreground">
+                Selected: {formatIstDateTime(fromDatetimeLocalValue(reopenLocal)!)}
+              </p>
+            ) : null}
               }}
             />
           </div>
