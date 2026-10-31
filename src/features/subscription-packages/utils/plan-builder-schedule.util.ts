@@ -40,7 +40,14 @@ export function syncDayDefaults(option: MealOptionConfig): MealOptionConfig {
 /** Convert legacy per-day mealGroups into universal templates + per-day defaults. */
 export function normalizeMealOption(option: MealOptionConfig): MealOptionConfig {
   if (option.mealGroups?.length) {
-    return syncDayDefaults(option);
+    return syncDayDefaults({
+      ...option,
+      weeklySchedule: (option.weeklySchedule ?? []).map((day) => ({
+        day: day.day,
+        deliveryEnabled: day.deliveryEnabled,
+        defaults: day.defaults ?? {},
+      })),
+    });
   }
 
   const referenceDay =
@@ -53,6 +60,10 @@ export function normalizeMealOption(option: MealOptionConfig): MealOptionConfig 
     selectionRule: group.selectionRule,
     allowedProductIds: [...(group.allowedProductIds ?? [])],
     quantity: group.quantity ?? 1,
+    includedQuantity: group.includedQuantity ?? group.quantity ?? 1,
+    maximumQuantity: group.maximumQuantity ?? group.quantity ?? 1,
+    allowPaidExtras: group.allowPaidExtras,
+    extraUnitPrice: group.extraUnitPrice ?? null,
   }));
 
   const weeklySchedule: DayScheduleConfig[] = (option.weeklySchedule ?? []).map((day) => {

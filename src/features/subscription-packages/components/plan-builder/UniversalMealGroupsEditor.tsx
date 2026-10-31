@@ -135,10 +135,14 @@ export function UniversalMealGroupsEditor({
                   value={group.includedQuantity ?? group.quantity}
                   onChange={(e) => {
                     const includedQuantity = Number(e.target.value);
-                    const maximumQuantity = group.maximumQuantity ?? group.quantity ?? includedQuantity;
+                    const maximumQuantity = Math.max(
+                      includedQuantity,
+                      group.maximumQuantity ?? group.quantity ?? includedQuantity,
+                    );
                     updateGroup(gIdx, {
                       includedQuantity,
-                      quantity: includedQuantity,
+                      maximumQuantity,
+                      quantity: maximumQuantity,
                       ...(group.allowPaidExtras && maximumQuantity <= includedQuantity
                         ? { allowPaidExtras: false }
                         : {}),
@@ -159,6 +163,7 @@ export function UniversalMealGroupsEditor({
                     const maximumQuantity = Number(e.target.value);
                     const includedQuantity = group.includedQuantity ?? group.quantity ?? 1;
                     updateGroup(gIdx, {
+                      includedQuantity,
                       maximumQuantity,
                       quantity: maximumQuantity,
                       ...(group.allowPaidExtras && maximumQuantity <= includedQuantity
