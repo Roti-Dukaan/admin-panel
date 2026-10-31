@@ -30,7 +30,6 @@ import {
   type KitchenTemporaryClosePayload,
 } from "./kitchen-closure.constants";
 import { realtimeOrderHoursApi } from "@/lib/api/realtime-order-hours.api";
-import { formatIstDateTime } from "@/lib/date";
 
 type KitchenTemporaryCloseDialogProps = {
   open: boolean;
@@ -164,6 +163,8 @@ export function KitchenTemporaryCloseDialog({
             </div>
           ) : null}
 
+          <div className="space-y-2">
+            <Label htmlFor="kitchen-reopen-at">Expected reopening time</Label>
             <DatetimeAmPmInput
               id="kitchen-reopen-at"
               value={reopenLocal}
@@ -177,8 +178,6 @@ export function KitchenTemporaryCloseDialog({
                 Selected: {formatIstDateTime(fromDatetimeLocalValue(reopenLocal)!)}
               </p>
             ) : null}
-              }}
-            />
           </div>
 
           {globalPreview?.adjusted ? (
