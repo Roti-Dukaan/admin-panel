@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useForm } from "react-hook-form";
 import { X, Save } from "lucide-react";
-import { useMenuStore } from "../hooks/useMenu";
+import { sortFoodsByDisplayOrder, useMenuStore } from "../hooks/useMenu";
 import { AVAILABILITY_CONFIG, CUSTOMER_LABEL_CONFIG, FoodCategory, Availability, CustomerLabel, HealthTag, FoodType } from "../types/menu";
 import { FoodImageUploader } from "./FoodImageUploader";
 import { HealthTagSelector } from "./HealthTagSelector";
@@ -149,7 +149,7 @@ export function FoodDrawer() {
       });
     } else {
       setVariants([]);
-      const nextSortOrder = Math.max(0, ...useMenuStore.getState().foods.map((f) => f.sortOrder)) + 1;
+      const nextSortOrder = sortFoodsByDisplayOrder(useMenuStore.getState().foods).length;
       reset({
         name: "", description: "", shortDescription: "", category: categories[0]?.name || "",
         price: 0, discountPrice: null, preparationTime: 15, calories: 0, protein: 0, carbs: 0, fats: 0, fiber: 0,

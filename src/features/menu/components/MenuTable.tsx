@@ -37,6 +37,12 @@ export function MenuTable() {
     () => [...foods].sort((a, b) => a.sortOrder - b.sortOrder || a.createdAt - b.createdAt),
     [foods],
   );
+  const filteredDisplayRankById = useMemo(() => {
+    const sortedFiltered = [...filteredFoods].sort(
+      (a, b) => a.sortOrder - b.sortOrder || a.createdAt - b.createdAt,
+    );
+    return new Map(sortedFiltered.map((food, index) => [food.id, index]));
+  }, [filteredFoods]);
   const displayOrderIndexById = useMemo(
     () => new Map(displayOrderFoods.map((food, index) => [food.id, index])),
     [displayOrderFoods],
@@ -54,6 +60,7 @@ export function MenuTable() {
         if (displayIndex === undefined) return null;
         const isFirst = displayIndex === 0;
         const isLast = displayIndex === displayOrderFoods.length - 1;
+        const rankInView = filteredDisplayRankById.get(info.row.original.id) ?? displayIndex;
         return (
           <div className="flex flex-col items-center gap-0.5">
             <button
@@ -65,7 +72,12 @@ export function MenuTable() {
             >
               <ChevronUp className="h-4 w-4" />
             </button>
-            <span className="text-[11px] font-mono text-gray-500">{info.row.original.sortOrder}</span>
+            <span
+              className="text-[11px] font-mono text-gray-500"
+              title={`Menu position ${displayIndex} (0 = first in app)`}
+            >
+              {rankInView}
+            </span>
             <button
               type="button"
               onClick={() => moveFood(info.row.original.id, "down")}
@@ -213,7 +225,7 @@ export function MenuTable() {
       },
       size: 50,
     }),
-  ], [toggleFeatured, openViewDrawer, openEditDrawer, openDeleteModal, duplicateFood, toggleAvailability, openMenu, moveFood, displayOrderFoods, displayOrderIndexById]);
+  ], [toggleFeatured, openViewDrawer, openEditDrawer, openDeleteModal, duplicateFood, toggleAvailability, openMenu, moveFood, displayOrderFoods, displayOrderIndexById, filteredDisplayRankById]);
 
   const table = useReactTable({
     data: filteredFoods,
