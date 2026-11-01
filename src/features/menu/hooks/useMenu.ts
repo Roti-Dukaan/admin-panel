@@ -148,6 +148,30 @@ function mapApiFoodItemToFoodItem(api: ApiFoodItem, categories: Category[]): Foo
   };
 }
 
+export function sortFoodsByDisplayOrder(foods: FoodItem[]): FoodItem[] {
+  return [...foods].sort((a, b) => a.sortOrder - b.sortOrder || a.createdAt - b.createdAt);
+}
+
+function foodSortOrdersNeedRepair(foods: FoodItem[]): boolean {
+  if (foods.length < 2) return false;
+  const sorted = sortFoodsByDisplayOrder(foods);
+  return sorted.some((food, index) => food.sortOrder !== index);
+}
+
+async function persistFoodDisplayOrder(foods: FoodItem[]): Promise<FoodItem[]> {
+  const sorted = sortFoodsByDisplayOrder(foods);
+  const updates = sorted
+    .map((food, index) => ({ food, index }))
+    .filter(({ food, index }) => food.sortOrder !== index);
+  if (!updates.length) {
+    return sorted;
+  }
+  await Promise.all(
+    updates.map(({ food, index }) => foodItemApi.update(food.id, { sortOrder: index })),
+  );
+  return sorted.map((food, index) => ({ ...food, sortOrder: index }));
+}
+
 interface MenuStore {
   foods: FoodItem[];
   categories: Category[];
@@ -237,9 +261,13 @@ export const useMenuStore = create<MenuStore>((set, get) => ({
       const categories = catRes.status === 'fulfilled'
         ? (catRes.value.data?.items || []).map(mapApiCategoryToCategory)
         : [];
-      const foods = prodRes.status === 'fulfilled'
+      let foods = prodRes.status === 'fulfilled'
         ? (prodRes.value.data?.items || []).map(p => mapApiFoodItemToFoodItem(p, categories))
         : [];
+
+      if (foodSortOrdersNeedRepair(foods)) {
+        foods = await persistFoodDisplayOrder(foods);
+      }
 
       set({ categories, foods, dataLoaded: true, loading: false });
     } catch (error) {
@@ -395,7 +423,7 @@ export const useMenuStore = create<MenuStore>((set, get) => ({
         fats: parseNutritionValue(data.fats),
         fiber: parseNutritionValue(data.fiber),
         servingSize: data.servingSize,
-        sortOrder: data.sortOrder ?? Math.max(0, ...get().foods.map((f) => f.sortOrder)) + 1,
+        sortOrder: data.sortOrder ?? sortFoodsByDisplayOrder(get().foods).length,
       };
       const payload: Record<string, unknown> | FormData = imageFile
         ? toFormData(dto, imageFile)
@@ -469,7 +497,10 @@ export const useMenuStore = create<MenuStore>((set, get) => ({
   reloadFoods: async () => {
     try {
       const prodRes = await foodItemApi.list({ limit: 200, sort: 'sort_order' });
-      const foods = (prodRes.data?.items || []).map(p => mapApiFoodItemToFoodItem(p, get().categories));
+      let foods = (prodRes.data?.items || []).map(p => mapApiFoodItemToFoodItem(p, get().categories));
+      if (foodSortOrdersNeedRepair(foods)) {
+        foods = await persistFoodDisplayOrder(foods);
+      }
       set({ foods });
     } catch (error) {
       console.error('Failed to reload foods:', error);
@@ -614,32 +645,17 @@ export const useMenuStore = create<MenuStore>((set, get) => ({
   },
 
   moveFood: async (id, direction) => {
-    const sorted = [...get().foods].sort(
-      (a, b) => a.sortOrder - b.sortOrder || a.createdAt - b.createdAt,
-    );
+    const sorted = sortFoodsByDisplayOrder(get().foods);
     const index = sorted.findIndex((f) => f.id === id);
     if (index === -1) return;
 
     const swapIndex = direction === 'up' ? index - 1 : index + 1;
     if (swapIndex < 0 || swapIndex >= sorted.length) return;
 
-    const current = sorted[index];
-    const neighbor = sorted[swapIndex];
-    let currentOrder = current.sortOrder;
-    let neighborOrder = neighbor.sortOrder;
-
-    if (currentOrder === neighborOrder) {
-      currentOrder = index;
-      neighborOrder = swapIndex;
-    }
+    [sorted[index], sorted[swapIndex]] = [sorted[swapIndex], sorted[index]];
 
     try {
-      await Promise.all([
-        foodItemApi.update(current.id, { sortOrder: neighborOrder }),
-        foodItemApi.update(neighbor.id, { sortOrder: currentOrder }),
-      ]);
-      const prodRes = await foodItemApi.list({ limit: 200, sort: 'sort_order' });
-      const foods = (prodRes.data?.items || []).map((p) => mapApiFoodItemToFoodItem(p, get().categories));
+      const foods = await persistFoodDisplayOrder(sorted);
       set({ foods });
     } catch (error) {
       console.error('Failed to reorder food:', error);
