@@ -5,8 +5,9 @@ Production and preview deploys are handled by **Vercel**, not GitHub Actions EC2
 ## How deploys run
 
 1. Connect the Vercel project to `Roti-Dukaan/admin-panel` in the Vercel dashboard.
-2. Set the production branch (usually `main`).
-3. On push to that branch, Vercel builds and deploys using `vercel.json`:
+2. Set the **production** branch to `main` and (optionally) enable **preview** deploys for `development`.
+3. **Branch policy:** commit to `development` first; promote to `main` via PR — see [docs/BRANCHING.md](docs/BRANCHING.md).
+4. On push, Vercel builds and deploys using `vercel.json`:
    - `installCommand`: `npm install`
    - `buildCommand`: `npm run build`
 
