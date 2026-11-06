@@ -14,11 +14,13 @@ import {
 } from "@/components/ui/select";
 import {
   Coupon,
+  CouponDeliveryType,
   CouponDiscountType,
   CouponOrderType,
   CreateCouponInput,
   UpdateCouponInput,
 } from "../types/coupon";
+import { foodItemApi } from "@/lib/api/food.api";
 
 interface BranchOption {
   id: string;
@@ -91,6 +93,8 @@ export function CouponEditor({
 }: CouponEditorProps) {
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [menuItems, setMenuItems] = useState<{ id: string; name: string }[]>([]);
+  const [menuSearch, setMenuSearch] = useState("");
   const [form, setForm] = useState<CreateCouponInput>({
     code: "",
     title: "",
@@ -103,9 +107,22 @@ export function CouponEditor({
     active: true,
     applicableBranchIds: [],
     applicableOrderTypes: ["REALTIME_ONLY"],
+    applicableFoodItemIds: [],
+    freeItemUnits: 1,
+    applicableDeliveryTypes: ["QUICK", "SCHEDULED"],
     firstOrderOnly: false,
     autoApply: false,
   });
+
+  useEffect(() => {
+    if (!open) return;
+    foodItemApi
+      .listAll({ isAvailable: true })
+      .then((items) =>
+        setMenuItems(items.map((i) => ({ id: i.id, name: i.name ?? i.slug ?? i.id }))),
+      )
+      .catch(() => setMenuItems([]));
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -128,6 +145,11 @@ export function CouponEditor({
         applicableOrderTypes: coupon.applicableOrderTypes?.length
           ? coupon.applicableOrderTypes
           : ["REALTIME_ONLY"],
+        applicableFoodItemIds: coupon.applicableFoodItemIds ?? [],
+        freeItemUnits: coupon.freeItemUnits ?? 1,
+        applicableDeliveryTypes: coupon.applicableDeliveryTypes?.length
+          ? coupon.applicableDeliveryTypes
+          : ["QUICK", "SCHEDULED"],
         firstOrderOnly: coupon.firstOrderOnly,
         autoApply: coupon.autoApply,
       });
@@ -144,6 +166,9 @@ export function CouponEditor({
         active: true,
         applicableBranchIds: [],
         applicableOrderTypes: ["REALTIME_ONLY"],
+        applicableFoodItemIds: [],
+        freeItemUnits: 1,
+        applicableDeliveryTypes: ["QUICK", "SCHEDULED"],
         firstOrderOnly: false,
         autoApply: false,
       });
@@ -151,6 +176,29 @@ export function CouponEditor({
   }, [open, coupon, mode]);
 
   if (!open) return null;
+
+  const toggleDeliveryType = (deliveryType: CouponDeliveryType) => {
+    setForm((prev) => {
+      const current = prev.applicableDeliveryTypes ?? ["QUICK", "SCHEDULED"];
+      const next = current.includes(deliveryType)
+        ? current.filter((t) => t !== deliveryType)
+        : [...current, deliveryType];
+      return {
+        ...prev,
+        applicableDeliveryTypes: next.length ? next : ["SCHEDULED"],
+      };
+    });
+  };
+
+  const toggleFoodItem = (foodItemId: string) => {
+    setForm((prev) => {
+      const current = prev.applicableFoodItemIds ?? [];
+      const next = current.includes(foodItemId)
+        ? current.filter((id) => id !== foodItemId)
+        : [...current, foodItemId];
+      return { ...prev, applicableFoodItemIds: next };
+    });
+  };
 
   const toggleOrderType = (orderType: CouponOrderType) => {
     setForm((prev) => {
@@ -400,6 +448,75 @@ export function CouponEditor({
                   Subscription checkout
                 </label>
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Realtime delivery modes</Label>
+              <div className="space-y-2 rounded-lg border border-gray-200 p-3">
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={(form.applicableDeliveryTypes ?? ["QUICK", "SCHEDULED"]).includes("QUICK")}
+                    onChange={() => toggleDeliveryType("QUICK")}
+                  />
+                  Instant (quick) delivery
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={(form.applicableDeliveryTypes ?? []).includes("SCHEDULED")}
+                    onChange={() => toggleDeliveryType("SCHEDULED")}
+                  />
+                  Scheduled slot delivery
+                </label>
+              </div>
+              <p className="text-xs text-gray-500">
+                For launch promos like “free meal on schedule”, enable scheduled only.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Promotional menu items (optional)</Label>
+              <p className="text-xs text-gray-500">
+                When selected, discount applies only to these items (use 100% + 1 free unit for a free meal).
+              </p>
+              <Input
+                placeholder="Search menu…"
+                value={menuSearch}
+                onChange={(e) => setMenuSearch(e.target.value)}
+              />
+              <div className="max-h-40 space-y-2 overflow-y-auto rounded-lg border border-gray-200 p-3">
+                {menuItems
+                  .filter((item) =>
+                    menuSearch.trim()
+                      ? item.name.toLowerCase().includes(menuSearch.trim().toLowerCase())
+                      : true,
+                  )
+                  .map((item) => (
+                    <label key={item.id} className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={(form.applicableFoodItemIds ?? []).includes(item.id)}
+                        onChange={() => toggleFoodItem(item.id)}
+                      />
+                      {item.name}
+                    </label>
+                  ))}
+              </div>
+              {(form.applicableFoodItemIds?.length ?? 0) > 0 && (
+                <div className="space-y-2">
+                  <Label htmlFor="freeItemUnits">Discounted units per order</Label>
+                  <Input
+                    id="freeItemUnits"
+                    type="number"
+                    min={1}
+                    value={form.freeItemUnits ?? 1}
+                    onChange={(e) =>
+                      setForm({ ...form, freeItemUnits: Number(e.target.value) || 1 })
+                    }
+                  />
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">

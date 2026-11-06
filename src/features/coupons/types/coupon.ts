@@ -1,5 +1,6 @@
 export type CouponDiscountType = "FLAT" | "PERCENTAGE";
 export type CouponOrderType = "REALTIME_ONLY" | "SUBSCRIPTION_ONLY";
+export type CouponDeliveryType = "QUICK" | "SCHEDULED";
 
 export interface Coupon {
   id: string;
@@ -17,6 +18,9 @@ export interface Coupon {
   active: boolean;
   applicableOrderTypes: CouponOrderType[];
   applicableBranchIds: string[] | null;
+  applicableFoodItemIds: string[] | null;
+  freeItemUnits: number;
+  applicableDeliveryTypes: CouponDeliveryType[];
   firstOrderOnly: boolean;
   autoApply: boolean;
   usageCount: number;
@@ -41,6 +45,9 @@ export interface CreateCouponInput {
   active?: boolean;
   applicableBranchIds?: string[];
   applicableOrderTypes?: CouponOrderType[];
+  applicableFoodItemIds?: string[];
+  freeItemUnits?: number;
+  applicableDeliveryTypes?: CouponDeliveryType[];
   firstOrderOnly?: boolean;
   autoApply?: boolean;
 }

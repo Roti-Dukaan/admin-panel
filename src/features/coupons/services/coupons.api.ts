@@ -41,6 +41,13 @@ function normalizeCoupon(raw: Record<string, unknown>): Coupon {
     applicableBranchIds: Array.isArray(raw.applicableBranchIds)
       ? (raw.applicableBranchIds as string[])
       : null,
+    applicableFoodItemIds: Array.isArray(raw.applicableFoodItemIds)
+      ? (raw.applicableFoodItemIds as string[])
+      : null,
+    freeItemUnits: coerceNumber(raw.freeItemUnits, 1),
+    applicableDeliveryTypes: Array.isArray(raw.applicableDeliveryTypes)
+      ? (raw.applicableDeliveryTypes as Coupon["applicableDeliveryTypes"])
+      : ["QUICK", "SCHEDULED"],
     firstOrderOnly: Boolean(raw.firstOrderOnly),
     autoApply: Boolean(raw.autoApply),
     usageCount: coerceNumber(raw.usageCount, 0),
