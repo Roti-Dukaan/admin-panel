@@ -297,6 +297,7 @@ export function applyKitchenFilters(
     if (filters.slot !== "all") {
       if (o.deliverySlot?.name !== filters.slot) return false;
     }
+    if (o.awaitingPrepWindow) return true;
     if (!isKitchenBoardVisible(o)) return false;
     return true;
   });

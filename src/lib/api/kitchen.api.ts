@@ -74,6 +74,8 @@ export interface KitchenOrderListItem {
   readyAt?: string;
   orderCreatedAt: string;
   timer: KitchenPrepTimer;
+  awaitingPrepWindow?: boolean;
+  prepWindowOpensAt?: string;
 }
 
 export interface KitchenOrderListResponse {

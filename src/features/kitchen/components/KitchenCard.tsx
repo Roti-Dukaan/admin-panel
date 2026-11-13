@@ -39,6 +39,13 @@ export function KitchenCard({
   const meta = STAGE_META[order.kitchenStatus];
   const isScheduled = getDeliveryKind(order) === "scheduled";
   const slotWindow = formatSlotWindow(order.deliverySlot);
+  const prepOpensLabel = order.prepWindowOpensAt
+    ? new Date(order.prepWindowOpensAt).toLocaleTimeString("en-IN", {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      })
+    : null;
   const method = detail?.payment?.paymentMethod ?? order.paymentMethod ?? null;
   const isCod = isCodPayment(method ?? undefined);
   const isPaid = method !== null && !isCod;
@@ -97,12 +104,19 @@ export function KitchenCard({
             <Clock className="h-3 w-3" />
             {slotWindow}
           </Badge>
-        ) : (
+        ) : null}
+        {order.awaitingPrepWindow && prepOpensLabel ? (
+          <Badge variant="outline" className="gap-1 border-violet-200 bg-violet-50 text-violet-800">
+            <Clock className="h-3 w-3" />
+            Prep opens {prepOpensLabel}
+          </Badge>
+        ) : null}
+        {!isScheduled ? (
           <Badge variant="outline" className="gap-1 border-sky-200 bg-sky-50 text-sky-700">
             <Zap className="h-3 w-3" />
             Quick
           </Badge>
-        )}
+        ) : null}
       </div>
 
       <div className="mt-3 space-y-0.5">
@@ -169,7 +183,7 @@ export function KitchenCard({
           variant="outline"
           size="sm"
         />
-        {order.kitchenStatus === "PENDING" && (
+        {order.kitchenStatus === "PENDING" && !order.awaitingPrepWindow && (
           <Button
             type="button"
             className="w-full bg-amber-500 text-white hover:bg-amber-600"
@@ -183,6 +197,11 @@ export function KitchenCard({
             Start Preparing
           </Button>
         )}
+        {order.awaitingPrepWindow && prepOpensLabel ? (
+          <div className="rounded-lg border border-violet-100 bg-violet-50 px-3 py-2 text-center text-xs font-medium text-violet-800">
+            Queued for scheduled slot · ticket appears at {prepOpensLabel} (30 min before slot)
+          </div>
+        ) : null}
         {order.kitchenStatus === "PREPARING" && (
           <Button
             type="button"
