@@ -67,6 +67,7 @@ import { useOrdersStore } from "../hooks/useOrders";
 import { useGlobalPendingOrderPoll } from "../hooks/useGlobalPendingOrderPoll";
 import { useRealtimeConnectionStatus } from "@/lib/realtime/useRealtimeConnectionStatus";
 import { normalizeOrderStatus } from "../utils/status";
+import { isScheduledOrderAlert } from "../utils/pending-order-alert";
 import { NewOrderAlertModal } from "./NewOrderAlertModal";
 import { OrderCancelDialog } from "./OrderCancelDialog";
 
@@ -244,6 +245,7 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
       options?: { broadcast?: boolean; forceAlert?: boolean },
     ) => {
       if (!branchIdsMatch(branchId, payload.branchId)) return;
+      if (isScheduledOrderAlert(payload)) return;
 
       const alreadyAlerted = seen.current.has(payload.orderId);
       if (alreadyAlerted && !options?.forceAlert) {
@@ -420,6 +422,7 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
 
       if (isScheduledBranchOrder(payload)) {
         placementSeen.current.add(payload.orderId);
+        return;
       }
 
       showAlertRef.current(payload);
@@ -470,6 +473,7 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
         scheduleOrdersRefresh();
         if (isScheduledBranchOrder(payload)) {
           placementSeen.current.add(payload.orderId);
+          return;
         }
         showAlertRef.current(payload, { broadcast: false });
       },

@@ -7,7 +7,10 @@ import { branchIdsMatch } from "@/lib/realtime/branch-id";
 import { getAlertSessionStart } from "@/lib/realtime/alert-session";
 import type { KitchenOrderListItem } from "@/lib/api/kitchen.api";
 import type { BranchOrderNewPayload } from "@/lib/realtime/events";
-import { kitchenItemToAlertPayload } from "../utils/pending-order-alert";
+import {
+  isScheduledKitchenQueueItem,
+  kitchenItemToAlertPayload,
+} from "../utils/pending-order-alert";
 
 const POLL_MS_DEFAULT = 5_000;
 const POLL_MS_SOCKET_OFFLINE = 2_000;
@@ -83,6 +86,7 @@ export function useGlobalPendingOrderPoll(
     if (!bootstrapped.current) {
       for (const item of items) {
         if (item.kitchenStatus !== "PENDING") continue;
+        if (isScheduledKitchenQueueItem(item)) continue;
         const createdMs = new Date(item.orderCreatedAt).getTime();
         if (createdMs < sessionStartedAt) {
           pollSeen.current.add(item.orderId);
@@ -93,6 +97,7 @@ export function useGlobalPendingOrderPoll(
 
     for (const item of items) {
       if (item.kitchenStatus !== "PENDING") continue;
+      if (isScheduledKitchenQueueItem(item)) continue;
       if (pollSeen.current.has(item.orderId)) continue;
       pollSeen.current.add(item.orderId);
 
