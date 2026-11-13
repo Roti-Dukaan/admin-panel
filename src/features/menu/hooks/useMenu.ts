@@ -3,7 +3,7 @@ import { FoodItem, FoodItemFormData, FoodItemVariant, MenuFilters, Availability,
 import { categoryApi } from '@/lib/api/category.api';
 import { foodItemApi } from '@/lib/api/food.api';
 import type { ApiCategory, ApiFoodItem } from '@/lib/types/api';
-import { API_BASE_URL } from '@/lib/env';
+import { resolveCatalogImageUrl } from '@/lib/utils/catalog-image';
 import {
   buildMenuExportCsv,
   downloadCsv,
@@ -12,12 +12,8 @@ import {
   resolveCategoryId,
 } from '../utils/menu-csv';
 
-// Backend returns image paths relative to the API server; resolve them to absolute URLs
-// so they load correctly from the admin (and any) frontend origin.
 function resolveImageUrl(url?: string | null): string {
-  if (!url) return '/foods/placeholder.jpg';
-  if (/^https?:\/\//.test(url)) return url;
-  return `${API_BASE_URL}${url.startsWith('/') ? '' : '/'}${url}`;
+  return resolveCatalogImageUrl(url) || '/foods/placeholder.jpg';
 }
 
 function mapApiCategoryToCategory(api: ApiCategory): Category {

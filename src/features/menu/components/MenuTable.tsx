@@ -17,6 +17,7 @@ import { useMenuStore } from "../hooks/useMenu";
 import { FoodItem, CUSTOMER_LABEL_CONFIG, CustomerLabel } from "../types/menu";
 import { CategoryBadge } from "./CategoryBadge";
 import { MenuAvailabilityToggle } from "./MenuAvailabilityToggle";
+import { CatalogThumb } from "@/components/ui/CatalogThumb";
 
 const columnHelper = createColumnHelper<FoodItem>();
 
@@ -102,7 +103,7 @@ export function MenuTable() {
       cell: (info) => {
         const url = info.row.original.imageUrl;
         return url ? (
-          <img
+          <CatalogThumb
             src={url}
             alt={info.row.original.name}
             className="h-10 w-10 rounded-lg object-cover"

@@ -23,6 +23,7 @@ import { X, Plus, GripVertical, Trash2, Edit3, Check } from "lucide-react";
 import { useMenuStore } from "../hooks/useMenu";
 import { Category, EMOJI_OPTIONS, COLOR_OPTIONS } from "../types/menu";
 import { FoodImageUploader } from "./FoodImageUploader";
+import { CatalogThumb } from "@/components/ui/CatalogThumb";
 
 const CATEGORY_IMAGE_HINT = [
   "Recommended: 800 x 800 px",
@@ -420,7 +421,11 @@ function SortableCategoryRow({
         </button>
         <span className="w-5 shrink-0 text-xs font-bold text-gray-400">{index + 1}</span>
         {cat.imageUrl ? (
-          <img src={cat.imageUrl} alt={cat.name} className="h-9 w-9 shrink-0 rounded-lg object-cover ring-1 ring-gray-200" />
+          <CatalogThumb
+            src={cat.imageUrl}
+            alt={cat.name}
+            className="h-9 w-9 shrink-0 rounded-lg object-cover ring-1 ring-gray-200"
+          />
         ) : (
           <span className="shrink-0 text-xl">{cat.emoji}</span>
         )}

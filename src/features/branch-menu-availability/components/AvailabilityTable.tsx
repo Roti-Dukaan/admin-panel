@@ -2,6 +2,7 @@ import type { BranchMenuAvailabilityItem } from '@/lib/api/branch-menu-availabil
 import { AvailabilityStatusBadge, StatusSelect } from './AvailabilityStatusBadge';
 import type { AvailabilityStatus } from '../types/branch-menu-availability';
 import { UtensilsCrossed, Store } from 'lucide-react';
+import { CatalogThumb } from '@/components/ui/CatalogThumb';
 
 interface AvailabilityTableProps {
   items: BranchMenuAvailabilityItem[];
@@ -59,7 +60,11 @@ export function AvailabilityTable({ items, loading, showBranch, excludeActionSta
                 <div className="flex items-center gap-3">
                   <div className="h-9 w-9 shrink-0 overflow-hidden rounded-lg bg-gray-100">
                     {item.foodItem?.imageUrl ? (
-                      <img src={item.foodItem.imageUrl} alt={item.foodItem.name} className="h-full w-full object-cover" />
+                      <CatalogThumb
+                        src={item.foodItem.imageUrl}
+                        alt={item.foodItem.name}
+                        className="h-full w-full object-cover"
+                      />
                     ) : (
                       <div className="flex h-full items-center justify-center">
                         <UtensilsCrossed className="h-4 w-4 text-gray-400" />

@@ -3,6 +3,7 @@
 import { Star, Clock } from "lucide-react";
 import { HEALTH_TAG_CONFIG, CUSTOMER_LABEL_CONFIG, CustomerLabel, HealthTag, FoodType } from "../types/menu";
 import { useMenuStore } from "../hooks/useMenu";
+import { CatalogThumb } from "@/components/ui/CatalogThumb";
 
 interface FoodPreviewProps {
   food: {
@@ -30,13 +31,11 @@ export function FoodPreview({ food }: FoodPreviewProps) {
       {/* Image Placeholder */}
       <div className="relative h-40 bg-gradient-to-br from-orange-100 to-amber-50">
         {food.imageUrl ? (
-          <img
+          <CatalogThumb
             src={food.imageUrl}
             alt={food.name}
             className="h-full w-full object-cover"
-            onError={(e) => {
-              (e.target as HTMLImageElement).style.display = "none";
-            }}
+            priority
           />
         ) : (
           <div className="flex h-full items-center justify-center">
