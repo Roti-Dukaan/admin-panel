@@ -23,6 +23,8 @@ import { defaultConfigForType, normalizeBannerSlides, bannerConfigFromSlides, se
 import { BannerSlidesEditor } from "./BannerSlidesEditor";
 import { CategoryPickerDialog } from "./CategoryPickerDialog";
 import { ProductPickerDialog } from "./ProductPickerDialog";
+import { DatetimeAmPmInput } from "@/components/shared/DatetimeAmPmInput";
+import { fromDatetimeLocalValue, toDatetimeLocalValue } from "@/lib/datetime-local";
 
 interface SectionEditorDialogProps {
   open: boolean;
@@ -68,8 +70,8 @@ export function SectionEditorDialog({
       setConfig(mergedConfig);
       setBannerSlides(normalizeBannerSlides(mergedConfig));
       setIsActive(section.isActive);
-      setStartAt(section.startAt ? toLocalInput(section.startAt) : "");
-      setEndAt(section.endAt ? toLocalInput(section.endAt) : "");
+      setStartAt(section.startAt ? toDatetimeLocalValue(section.startAt) : "");
+      setEndAt(section.endAt ? toDatetimeLocalValue(section.endAt) : "");
       setTargetLocations(Array.isArray(section.targetLocations) ? section.targetLocations : []);
     } else {
       setTitle("");
@@ -115,8 +117,8 @@ export function SectionEditorDialog({
       title: sectionTitleTrimmed,
       config: nextConfig,
       isActive: publish ? isActive : false,
-      startAt: startAt ? new Date(startAt).toISOString() : undefined,
-      endAt: endAt ? new Date(endAt).toISOString() : undefined,
+      startAt: startAt ? fromDatetimeLocalValue(startAt) ?? undefined : undefined,
+      endAt: endAt ? fromDatetimeLocalValue(endAt) ?? undefined : undefined,
       targetLocations,
     };
 
@@ -258,10 +260,10 @@ export function SectionEditorDialog({
 
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Start">
-                <input type="datetime-local" value={startAt} onChange={(e) => setStartAt(e.target.value)} className="field-input" />
+                <DatetimeAmPmInput value={startAt} onChange={setStartAt} />
               </Field>
               <Field label="End">
-                <input type="datetime-local" value={endAt} onChange={(e) => setEndAt(e.target.value)} className="field-input" />
+                <DatetimeAmPmInput value={endAt} onChange={setEndAt} />
               </Field>
             </div>
 
@@ -358,10 +360,4 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       {children}
     </div>
   );
-}
-
-function toLocalInput(iso: string) {
-  const d = new Date(iso);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }

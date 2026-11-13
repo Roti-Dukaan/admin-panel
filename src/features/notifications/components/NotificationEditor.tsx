@@ -16,6 +16,8 @@ import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { CreateNotificationInput, TargetType } from "../types/notification";
 import { NOTIFICATION_TYPE_OPTIONS, TARGET_TYPE_OPTIONS } from "../types/notification";
+import { DatetimeAmPmInput } from "@/components/shared/DatetimeAmPmInput";
+import { fromDatetimeLocalValue } from "@/lib/datetime-local";
 
 interface NotificationEditorProps {
   onSubmit: (input: CreateNotificationInput) => Promise<void>;
@@ -52,7 +54,7 @@ export function NotificationEditor({ onSubmit }: NotificationEditorProps) {
         targetBranchId: targetBranchId.trim() || undefined,
         targetRole: targetRole.trim() || undefined,
         targetUserId: targetUserId.trim() || undefined,
-        scheduledAt: !sendNow && scheduledAt ? new Date(scheduledAt).toISOString() : undefined,
+        scheduledAt: !sendNow && scheduledAt ? fromDatetimeLocalValue(scheduledAt) ?? undefined : undefined,
         sendNow,
       });
       setTitle("");
@@ -149,12 +151,10 @@ export function NotificationEditor({ onSubmit }: NotificationEditorProps) {
           {!sendNow && (
             <div className="space-y-2 md:col-span-2">
               <Label htmlFor="scheduledAt">Schedule for</Label>
-              <Input
+              <DatetimeAmPmInput
                 id="scheduledAt"
-                type="datetime-local"
                 value={scheduledAt}
-                onChange={(e) => setScheduledAt(e.target.value)}
-                required={!sendNow}
+                onChange={setScheduledAt}
               />
             </div>
           )}

@@ -21,6 +21,8 @@ import {
   UpdateCouponInput,
 } from "../types/coupon";
 import { foodItemApi } from "@/lib/api/food.api";
+import { DatetimeAmPmInput } from "@/components/shared/DatetimeAmPmInput";
+import { fromDatetimeLocalValue, toDatetimeLocalValue } from "@/lib/datetime-local";
 
 interface BranchOption {
   id: string;
@@ -36,24 +38,9 @@ interface CouponEditorProps {
   onSave: (input: CreateCouponInput | UpdateCouponInput) => Promise<void>;
 }
 
-function toLocalInputValue(iso: string | undefined): string {
-  if (!iso) return "";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "";
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-
-function fromLocalInputValue(local: string): string | null {
-  if (!local.trim()) return null;
-  const d = new Date(local);
-  if (Number.isNaN(d.getTime())) return null;
-  return d.toISOString();
-}
-
 function buildSavePayload(form: CreateCouponInput, mode: "create" | "edit"): CreateCouponInput | UpdateCouponInput {
-  const validFrom = fromLocalInputValue(toLocalInputValue(form.validFrom)) ?? form.validFrom;
-  const validTill = fromLocalInputValue(toLocalInputValue(form.validTill)) ?? form.validTill;
+  const validFrom = fromDatetimeLocalValue(toDatetimeLocalValue(form.validFrom)) ?? form.validFrom;
+  const validTill = fromDatetimeLocalValue(toDatetimeLocalValue(form.validTill)) ?? form.validTill;
 
   const payload: CreateCouponInput = {
     ...form,
@@ -402,28 +389,24 @@ export function CouponEditor({
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label htmlFor="validFrom">Valid From</Label>
-                <Input
+                <DatetimeAmPmInput
                   id="validFrom"
-                  type="datetime-local"
-                  value={toLocalInputValue(form.validFrom)}
-                  onChange={(e) => {
-                    const iso = fromLocalInputValue(e.target.value);
+                  value={toDatetimeLocalValue(form.validFrom)}
+                  onChange={(local) => {
+                    const iso = fromDatetimeLocalValue(local);
                     if (iso) setForm({ ...form, validFrom: iso });
                   }}
-                  required
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="validTill">Valid Until</Label>
-                <Input
+                <DatetimeAmPmInput
                   id="validTill"
-                  type="datetime-local"
-                  value={toLocalInputValue(form.validTill)}
-                  onChange={(e) => {
-                    const iso = fromLocalInputValue(e.target.value);
+                  value={toDatetimeLocalValue(form.validTill)}
+                  onChange={(local) => {
+                    const iso = fromDatetimeLocalValue(local);
                     if (iso) setForm({ ...form, validTill: iso });
                   }}
-                  required
                 />
               </div>
             </div>
