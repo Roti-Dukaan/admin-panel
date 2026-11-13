@@ -629,6 +629,7 @@ export function BranchOrderAlertProvider({ children }: { children: React.ReactNo
         confirming={cancelMutation.isPending}
         onConfirm={handleCancelOrderConfirm}
         idPrefix="branch-alert-cancel"
+        elevated
       />
     </>
   );

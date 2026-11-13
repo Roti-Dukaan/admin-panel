@@ -2,14 +2,18 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
+import * as DialogPrimitive from "@radix-ui/react-dialog";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
+  DialogOverlay,
+  DialogPortal,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 import {
   resolveOrderCancelReason,
   type OrderCancelReasonOption,
@@ -23,6 +27,8 @@ type OrderCancelDialogProps = {
   confirming?: boolean;
   onConfirm: (reason: string) => void;
   idPrefix?: string;
+  /** Stack above NewOrderAlertModal (z-[9999]). */
+  elevated?: boolean;
 };
 
 export function OrderCancelDialog({
@@ -32,6 +38,7 @@ export function OrderCancelDialog({
   confirming = false,
   onConfirm,
   idPrefix = "order-cancel",
+  elevated = false,
 }: OrderCancelDialogProps) {
   const [selected, setSelected] = useState<OrderCancelReasonOption | null>(null);
   const [otherText, setOtherText] = useState("");
@@ -48,39 +55,56 @@ export function OrderCancelDialog({
     [selected, otherText],
   );
 
+  const body = (
+    <>
+      <DialogHeader>
+        <DialogTitle>Cancel order {orderNumber}</DialogTitle>
+        <DialogDescription>
+          This removes the order from the kitchen queue and marks it cancelled. This cannot be
+          undone.
+        </DialogDescription>
+      </DialogHeader>
+      <OrderCancelReasonForm
+        selected={selected}
+        onSelectedChange={setSelected}
+        otherText={otherText}
+        onOtherTextChange={setOtherText}
+        idPrefix={idPrefix}
+      />
+      <DialogFooter>
+        <Button variant="outline" onClick={() => onOpenChange(false)} disabled={confirming}>
+          Keep Order
+        </Button>
+        <Button
+          variant="destructive"
+          disabled={!resolvedReason || confirming}
+          onClick={() => {
+            if (!resolvedReason) return;
+            onConfirm(resolvedReason);
+          }}
+        >
+          {confirming ? "Cancelling…" : "Confirm Cancel"}
+        </Button>
+      </DialogFooter>
+    </>
+  );
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Cancel order {orderNumber}</DialogTitle>
-          <DialogDescription>
-            This removes the order from the kitchen queue and marks it cancelled. This cannot be
-            undone.
-          </DialogDescription>
-        </DialogHeader>
-        <OrderCancelReasonForm
-          selected={selected}
-          onSelectedChange={setSelected}
-          otherText={otherText}
-          onOtherTextChange={setOtherText}
-          idPrefix={idPrefix}
-        />
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={confirming}>
-            Keep Order
-          </Button>
-          <Button
-            variant="destructive"
-            disabled={!resolvedReason || confirming}
-            onClick={() => {
-              if (!resolvedReason) return;
-              onConfirm(resolvedReason);
-            }}
+      {elevated ? (
+        <DialogPortal>
+          <DialogOverlay className="z-[10000]" />
+          <DialogPrimitive.Content
+            className={cn(
+              "fixed left-[50%] top-[50%] z-[10001] grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-white p-6 shadow-lg duration-200 sm:rounded-lg",
+            )}
           >
-            {confirming ? "Cancelling…" : "Confirm Cancel"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
+            {body}
+          </DialogPrimitive.Content>
+        </DialogPortal>
+      ) : (
+        <DialogContent>{body}</DialogContent>
+      )}
     </Dialog>
   );
 }
