@@ -23,6 +23,11 @@ export interface InviteBranchManagerPayload {
   phone: string
 }
 
+export interface UpdateBranchManagerPayload {
+  name: string
+  phone: string
+}
+
 export interface InviteBranchManagerResponse {
   action: "invited" | "assigned"
   message: string
@@ -51,6 +56,17 @@ export const branchTeamApi = {
     const response = await apiClient.post<{ success: boolean; data: InviteBranchManagerResponse }>(
       "/admin/branch/team/managers",
       payload
+    )
+    return unwrap(response)
+  },
+
+  updateManager: async (
+    managerId: string,
+    payload: UpdateBranchManagerPayload,
+  ): Promise<BranchManagerUser> => {
+    const response = await apiClient.patch<{ success: boolean; data: BranchManagerUser }>(
+      `/admin/branch/team/managers/${managerId}`,
+      payload,
     )
     return unwrap(response)
   },
