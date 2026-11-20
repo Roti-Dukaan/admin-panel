@@ -20,7 +20,9 @@ import {
 import { KITCHEN_DETAIL_QUERY_KEY } from "../utils/kitchen-realtime-sync";
 import { IN_HOUSE_DISPATCH_ONLY } from "@/features/realtime-dispatch/dispatch-mode";
 
+/** Matches realtime dispatch board: kitchen-ready deliveries awaiting a partner. */
 const DISPATCHABLE_DELIVERY_STATUSES = new Set([
+  "WAITING_FOR_KITCHEN",
   "WAITING_FOR_PROVIDER",
   "PROVIDER_ASSIGNMENT_FAILED",
 ]);

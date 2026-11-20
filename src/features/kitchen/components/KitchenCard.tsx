@@ -229,9 +229,11 @@ export function KitchenCard({
             ) : null}
             {!detail?.delivery?.id ||
             !(
-              ["WAITING_FOR_PROVIDER", "PROVIDER_ASSIGNMENT_FAILED"].includes(
-                detail.delivery.status,
-              ) ||
+              [
+                "WAITING_FOR_KITCHEN",
+                "WAITING_FOR_PROVIDER",
+                "PROVIDER_ASSIGNMENT_FAILED",
+              ].includes(detail.delivery.status) ||
               (detail.delivery.provider !== "BORZO" &&
                 [
                   "PROVIDER_ASSIGNED",

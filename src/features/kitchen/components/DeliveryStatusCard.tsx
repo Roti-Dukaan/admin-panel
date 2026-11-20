@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Bike, User, Phone, MapPin, Clock, Loader2, PackageCheck, Timer, CheckCircle2, Navigation } from "lucide-react";
+import { Bike, User, Phone, MapPin, Clock, Loader2, Package, PackageCheck, Timer, CheckCircle2, Navigation } from "lucide-react";
 import { formatIstTime } from "@/lib/date";
 
 export interface KitchenDeliveryInfo {
@@ -226,6 +226,12 @@ const BANNER_META: Record<
   string,
   { icon: React.ReactNode; label: string; bg: string; text: string; pulse?: boolean }
 > = {
+  WAITING_FOR_KITCHEN: {
+    icon: <Package className="h-3.5 w-3.5" />,
+    label: "Awaiting dispatch",
+    bg: "bg-violet-50",
+    text: "text-violet-800",
+  },
   WAITING_FOR_PROVIDER: { icon: <Loader2 className="h-3.5 w-3.5" />, label: "Searching", bg: "bg-blue-50", text: "text-blue-700", pulse: true },
   PROVIDER_ASSIGNMENT_FAILED: { icon: <Bike className="h-3.5 w-3.5" />, label: "Assignment Failed", bg: "bg-rose-50", text: "text-rose-700" },
   PROVIDER_ASSIGNED: { icon: <Navigation className="h-3.5 w-3.5" />, label: "Partner Assigned", bg: "bg-emerald-50", text: "text-emerald-700" },
