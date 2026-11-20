@@ -37,6 +37,7 @@ export type RealtimeDispatchItem = {
   createdAt: string;
   canDispatch: boolean;
   canChangeProvider: boolean;
+  canReassignInHouse: boolean;
 };
 
 export type RealtimeDispatchBoard = {
@@ -74,6 +75,14 @@ export const realtimeDispatchApi = {
 
   assignSelf: (deliveryId: string, notes?: string): Promise<RealtimeDispatchItem> =>
     unwrap(apiClient.post(`/branch-manager/realtime-dispatch/${deliveryId}/assign-self`, { notes })),
+
+  reassignInHouse: (
+    deliveryId: string,
+    body: { assigneeUserId: string; notes?: string },
+  ): Promise<RealtimeDispatchItem> =>
+    unwrap(
+      apiClient.post(`/branch-manager/realtime-dispatch/${deliveryId}/reassign-in-house`, body),
+    ),
 
   changeProvider: (
     deliveryId: string,

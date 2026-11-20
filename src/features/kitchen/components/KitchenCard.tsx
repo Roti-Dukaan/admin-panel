@@ -223,11 +223,22 @@ export function KitchenCard({
                 deliveryId={detail.delivery.id}
                 deliveryStatus={detail.delivery.status}
                 orderId={order.orderId}
+                riderName={detail.delivery.riderName}
+                provider={detail.delivery.provider}
               />
             ) : null}
             {!detail?.delivery?.id ||
-            !["WAITING_FOR_PROVIDER", "PROVIDER_ASSIGNMENT_FAILED"].includes(
-              detail.delivery.status,
+            !(
+              ["WAITING_FOR_PROVIDER", "PROVIDER_ASSIGNMENT_FAILED"].includes(
+                detail.delivery.status,
+              ) ||
+              (detail.delivery.provider !== "BORZO" &&
+                [
+                  "PROVIDER_ASSIGNED",
+                  "RIDER_ARRIVING",
+                  "RIDER_ARRIVED",
+                  "AWAITING_PICKUP",
+                ].includes(detail.delivery.status))
             ) ? (
               <div className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-emerald-200 bg-emerald-50 px-3 py-2.5 text-center text-xs font-medium text-emerald-700">
                 <CheckCircle2 className="h-4 w-4" />

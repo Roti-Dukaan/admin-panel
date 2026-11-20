@@ -21,6 +21,7 @@ import {
 } from "../services/realtime-dispatch.api";
 import { useDeliveriesRealtime } from "@/features/delivery/hooks/useDeliveriesRealtime";
 import { cn } from "@/lib/utils";
+import { IN_HOUSE_DISPATCH_ONLY } from "../dispatch-mode";
 
 function CodBadge({ item }: { item: RealtimeDispatchItem }) {
   if (item.paymentMethod !== "COD") return null;
@@ -126,27 +127,71 @@ function DispatchRow({
           {itemsSummary(item.items)}
         </p>
 
-        {item.canDispatch && (
+        {item.canReassignInHouse && (
           <div className="flex shrink-0 flex-wrap items-center gap-1">
+            {item.assigneeName ? (
+              <span className="text-[10px] font-medium text-violet-700">
+                {item.assigneeName}
+              </span>
+            ) : null}
+            <Select value={selectedBoy} onValueChange={setSelectedBoy}>
+              <SelectTrigger className="h-7 w-[7.5rem] text-[11px]">
+                <SelectValue placeholder="Reassign" />
+              </SelectTrigger>
+              <SelectContent>
+                {assignees
+                  .filter((a) => a.id !== item.assignedToUserId)
+                  .map((a) => (
+                    <SelectItem key={a.id} value={a.id} className="text-xs">
+                      {a.name ?? a.email} ({a.activeLoad})
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
             <Button
               size="sm"
+              variant="secondary"
               className="h-7 px-2 text-xs"
-              disabled={busy}
+              disabled={busy || !selectedBoy}
               onClick={() =>
-                run(() => realtimeDispatchApi.dispatchBorzo(item.deliveryId), "Sent to Borzo")
+                run(
+                  () =>
+                    realtimeDispatchApi.reassignInHouse(item.deliveryId, {
+                      assigneeUserId: selectedBoy,
+                    }),
+                  "Reassigned delivery partner",
+                )
               }
             >
-              {busy ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <Truck className="mr-1 h-3.5 w-3.5" />
-              )}
-              Borzo
+              <Bike className="mr-1 h-3.5 w-3.5" />
+              Reassign
             </Button>
+          </div>
+        )}
+
+        {item.canDispatch && (
+          <div className="flex shrink-0 flex-wrap items-center gap-1">
+            {!IN_HOUSE_DISPATCH_ONLY ? (
+              <Button
+                size="sm"
+                className="h-7 px-2 text-xs"
+                disabled={busy}
+                onClick={() =>
+                  run(() => realtimeDispatchApi.dispatchBorzo(item.deliveryId), "Sent to Borzo")
+                }
+              >
+                {busy ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Truck className="mr-1 h-3.5 w-3.5" />
+                )}
+                Borzo
+              </Button>
+            ) : null}
 
             <Select value={selectedBoy} onValueChange={setSelectedBoy}>
               <SelectTrigger className="h-7 w-[7.5rem] text-[11px]">
-                <SelectValue placeholder="Boy" />
+                <SelectValue placeholder="Partner" />
               </SelectTrigger>
               <SelectContent>
                 {assignees.map((a) => (
