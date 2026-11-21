@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Clock, Loader2, Save } from "lucide-react";
+import { toast } from "sonner";
 import {
   realtimeOrderHoursApi,
   type RealtimeOrderHoursSettings,
@@ -9,12 +10,23 @@ import {
 import { DeliverySlotTimeInput } from "@/components/delivery/DeliverySlotTimeInput";
 import { formatDeliverySlotTime } from "@/lib/delivery-slot-display";
 
-function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) {
+function Toggle({
+  checked,
+  onChange,
+  label,
+  disabled,
+}: {
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  label: string;
+  disabled?: boolean;
+}) {
   return (
     <label className="flex items-center justify-between cursor-pointer group">
       <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900">{label}</span>
       <button
         type="button"
+        disabled={disabled}
         onClick={() => onChange(!checked)}
         style={{ backgroundColor: checked ? "#f97316" : "#e5e7eb" }}
         className="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors"
@@ -48,23 +60,51 @@ export function RealtimeOrderHoursTab() {
       .finally(() => setLoading(false));
   }, []);
 
-  const handleSave = async () => {
+  const persistSettings = async (next: RealtimeOrderHoursSettings) => {
     setSaving(true);
     setError(null);
     setSuccess(null);
     try {
       const res = await realtimeOrderHoursApi.updateSettings({
-        realtimeOrderScheduleEnabled: form.realtimeOrderScheduleEnabled,
-        realtimeOrderOpenTime: form.realtimeOrderOpenTime,
-        realtimeOrderCloseTime: form.realtimeOrderCloseTime,
+        realtimeOrderScheduleEnabled: next.realtimeOrderScheduleEnabled,
+        realtimeOrderOpenTime: next.realtimeOrderOpenTime,
+        realtimeOrderCloseTime: next.realtimeOrderCloseTime,
       });
-      setForm(res.data.data);
-      setSuccess("Global order hours saved. All kitchens follow this IST schedule.");
-    } catch {
-      setError("Failed to save order hours");
+      const saved = res.data.data;
+      setForm(saved);
+      if (!next.realtimeOrderScheduleEnabled) {
+        const reopened = (saved as { kitchensReopenedFromGlobalSchedule?: number })
+          .kitchensReopenedFromGlobalSchedule;
+        const msg =
+          typeof reopened === "number" && reopened > 0
+            ? `Global order hours disabled. Reopened ${reopened} kitchen(s) that were closed by the schedule.`
+            : "Global order hours disabled. Branches control kitchen open/close on their own.";
+        setSuccess(msg);
+        toast.success(msg);
+      } else {
+        const msg = "Global order hours saved. All kitchens follow this IST schedule.";
+        setSuccess(msg);
+        toast.success(msg);
+      }
+    } catch (err: unknown) {
+      const message =
+        err && typeof err === "object" && "response" in err
+          ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
+          : undefined;
+      const text = message || "Failed to save order hours";
+      setError(text);
+      toast.error(text);
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleSave = () => void persistSettings(form);
+
+  const handleToggleEnabled = (enabled: boolean) => {
+    const next = { ...form, realtimeOrderScheduleEnabled: enabled };
+    setForm(next);
+    void persistSettings(next);
   };
 
   if (loading) {
@@ -95,11 +135,18 @@ export function RealtimeOrderHoursTab() {
 
       <Toggle
         checked={form.realtimeOrderScheduleEnabled}
-        onChange={(v) => setForm((p) => ({ ...p, realtimeOrderScheduleEnabled: v }))}
+        onChange={handleToggleEnabled}
         label="Enable global order schedule"
+        disabled={saving}
       />
+      <p className="text-xs text-gray-500 -mt-2">
+        Changes save immediately when you flip this switch. Use &quot;Save schedule&quot; below only for open/close
+        times.
+      </p>
 
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+      <div
+        className={`grid grid-cols-1 gap-5 sm:grid-cols-2 ${!form.realtimeOrderScheduleEnabled ? "opacity-50 pointer-events-none" : ""}`}
+      >
         <div className="space-y-2">
           <label className="block text-xs font-bold uppercase tracking-wider text-gray-400">Opens at (IST)</label>
           <DeliverySlotTimeInput
@@ -117,10 +164,12 @@ export function RealtimeOrderHoursTab() {
       </div>
 
       <p className="text-sm text-gray-600 rounded-lg bg-gray-50 px-3 py-2">
-        Right now:{" "}
-        <strong>{form.currentlyAcceptingOrders ? "Accepting realtime orders" : "Outside order hours"}</strong>
-        {form.realtimeOrderScheduleEnabled && (
+        {!form.realtimeOrderScheduleEnabled ? (
+          <strong>Global hours off</strong>
+        ) : (
           <>
+            Right now:{" "}
+            <strong>{form.currentlyAcceptingOrders ? "Accepting realtime orders" : "Outside order hours"}</strong>
             {" "}
             (daily {formatDeliverySlotTime(form.realtimeOrderOpenTime)} –{" "}
             {formatDeliverySlotTime(form.realtimeOrderCloseTime)} IST)
